@@ -1,19 +1,27 @@
 //! How to use from C
 //!
-//! ```c
-//! gifski *g = gifski_new(&settings);
+//! Please note that it is impossible to use this API in a single-threaded program.
+//!   You must have at least two threads -- one for adding the frames, and another for writing.
 //!
-//! // Call on decoder thread:
-//! gifski_add_frame_rgba(g, i, width, height, buffer, 5);
-//! gifski_end_adding_frames(g);
+//!  ```c
+//!  gifski *g = gifski_new(&settings);
 //!
-//! // Call on encoder thread:
-//! gifski_write(g, "file.gif");
-//! gifski_drop(g);
-//! ```
+//!  // Call on decoder thread:
+//!  gifski_add_frame_rgba(g, i, width, height, buffer, 5);
+//!  gifski_end_adding_frames(g);
+//!
+//!  // Call on encoder thread:
+//!  gifski_write(g, "file.gif");
+//!  gifski_drop(g);
+//!  ```
+//!
+//!  It's safe to call `gifski_drop()` after `gifski_write()`, because `gifski_write()` blocks until `gifski_end_adding_frames()` is called.
+//!
+//!  It's safe and efficient to call `gifski_add_frame_*` in a loop as fast as you can get frames,
+//!  because it blocks and waits until previous frames are written.
 
 use super::*;
-use std::os::raw::{c_char, c_int};
+use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
 use std::slice;
 use std::fs::File;
@@ -34,6 +42,15 @@ pub struct GifskiSettings {
     pub once: bool,
     /// Lower quality, but faster encode.
     pub fast: bool,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ARGB8 {
+    pub a: u8,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
 }
 
 /// Opaque handle used in methods
@@ -121,9 +138,15 @@ pub extern "C" fn gifski_new(settings: *const GifskiSettings) -> *mut GifskiHand
 
 /// File path must be valid UTF-8. This function is asynchronous.
 ///
-/// Delay is in 1/100ths of a second
+/// Delay is in 1/100ths of a second.
 ///
-/// Call `gifski_end_adding_frames()` after you add all frames. See also `gifski_write()`
+/// While you add frames, `gifski_write()` should be running already on another thread.
+/// If `gifski_write()` is not running already, it may make `gifski_add_frame_*` block and wait for
+/// write to start.
+///
+/// Call `gifski_end_adding_frames()` after you add all frames.
+///
+/// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
 pub extern "C" fn gifski_add_frame_png_file(handle: *mut GifskiHandle, index: u32, file_path: *const c_char, delay: u16) -> GifskiError {
     if file_path.is_null() {
@@ -142,25 +165,65 @@ pub extern "C" fn gifski_add_frame_png_file(handle: *mut GifskiHandle, index: u3
 
 /// Pixels is an array width×height×4 bytes large. The array is copied, so you can free/reuse it immediately.
 ///
-/// Delay is in 1/100ths of a second
+/// Delay is in 1/100ths of a second.
 ///
-/// The call may block and wait until the encoder thread needs more frames.
+/// While you add frames, `gifski_write()` should be running already on another thread.
+/// If `gifski_write()` is not running already, it may make `gifski_add_frame_*` block and wait for
+/// write to start.
 ///
-/// Call `gifski_end_adding_frames()` after you add all frames. See also `gifski_write()`
+/// Call `gifski_end_adding_frames()` after you add all frames.
+///
+/// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
 pub extern "C" fn gifski_add_frame_rgba(handle: *mut GifskiHandle, index: u32, width: u32, height: u32, pixels: *const RGBA8, delay: u16) -> GifskiError {
-    if handle.is_null() || pixels.is_null() {
+    if pixels.is_null() {
+        return GifskiError::NULL_ARG;
+    }
+    let pixels = unsafe {
+        slice::from_raw_parts(pixels, width as usize * height as usize)
+    };
+    add_frame_rgba(handle, index, ImgVec::new(pixels.to_owned(), width as usize, height as usize), delay)
+}
+
+fn add_frame_rgba(handle: *mut GifskiHandle, index: u32, frame: ImgVec<RGBA8>, delay: u16) -> GifskiError {
+    if handle.is_null() {
         return GifskiError::NULL_ARG;
     }
     let g = unsafe {handle.as_mut().unwrap()};
     if let Some(ref mut c) = g.collector {
-        let px = unsafe {
-            slice::from_raw_parts(pixels, width as usize * height as usize)
-        };
-        c.add_frame_rgba(index as usize, ImgVec::new(px.to_owned(), width as usize, height as usize), delay).into()
+        c.add_frame_rgba(index as usize, frame, delay).into()
     } else {
         GifskiError::INVALID_STATE
     }
+}
+
+/// Same as `gifski_add_frame_rgba`, except it expects components in ARGB order
+#[no_mangle]
+pub extern "C" fn gifski_add_frame_argb(handle: *mut GifskiHandle, index: u32, width: u32, height: u32, pixels: *const ARGB8, delay: u16) -> GifskiError {
+    if pixels.is_null() {
+        return GifskiError::NULL_ARG;
+    }
+    let pixels = unsafe {
+        slice::from_raw_parts(pixels, width as usize * height as usize)
+    };
+    add_frame_rgba(handle, index, ImgVec::new(pixels.iter().map(|p| RGBA8 {
+        r: p.r,
+        g: p.g,
+        b: p.b,
+        a: p.a,
+    }).collect(), width as usize, height as usize), delay)
+}
+
+/// Same as `gifski_add_frame_rgba`, except it expects RGB components (3 bytes per pixel)
+#[no_mangle]
+pub extern "C" fn gifski_add_frame_rgb(handle: *mut GifskiHandle, index: u32, width: u32, height: u32, pixels: *const RGB8, delay: u16) -> GifskiError {
+    if pixels.is_null() {
+        return GifskiError::NULL_ARG;
+    }
+    let pixels = unsafe {
+        slice::from_raw_parts(pixels, width as usize * height as usize)
+    };
+    add_frame_rgba(handle, index, ImgVec::new(pixels.iter().map(|&p| p.into()).collect(), width as usize, height as usize), delay)
 }
 
 /// You must call it at some point (after all frames are set), otherwise `gifski_write()` will never end!
@@ -175,18 +238,24 @@ pub extern "C" fn gifski_end_adding_frames(handle: *mut GifskiHandle) -> GifskiE
 
 /// Get a callback for frame processed, and abort processing if desired.
 ///
-/// The callback is called once per frame with `NULL`, and then once with non-null message on end.
+/// The callback is called once per frame.
+/// It gets arbitrary pointer (`user_data`) as an argument. `user_data` can be `NULL`.
+/// The callback must be thread-safe (it will be called from another thread).
 ///
 /// The callback must return `1` to continue processing, or `0` to abort.
 ///
-/// Must be called before `gifski_write()`
+/// Must be called before `gifski_write()` to take effect.
 #[no_mangle]
-pub extern "C" fn gifski_set_progress_callback(handle: *mut GifskiHandle, cb: unsafe fn(*const i8) -> c_int) {
+pub extern "C" fn gifski_set_progress_callback(handle: *mut GifskiHandle, cb: unsafe fn(*mut c_void) -> c_int, user_data: *mut c_void) {
     let g = unsafe {handle.as_mut().unwrap()};
-    g.progress = Some(ProgressCallback::new(cb));
+    g.progress = Some(ProgressCallback::new(cb, user_data));
 }
 
-/// Write frames to `destination` and keep waiting for more frames until `gifski_end_adding_frames` is called.
+/// Start writing to the `destination` and keep waiting for more frames until `gifski_end_adding_frames()` is called.
+///
+/// This call will block until the entire file is written. You will need to add frames on another thread.
+///
+/// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
 pub extern "C" fn gifski_write(handle: *mut GifskiHandle, destination: *const c_char) -> GifskiError {
     if destination.is_null() {
@@ -228,11 +297,12 @@ fn c() {
     });
     assert!(!g.is_null());
     assert_eq!(GifskiError::NULL_ARG, gifski_add_frame_rgba(g, 0, 1, 1, ptr::null(), 5));
-    fn cb(_m: *const i8) -> c_int {
+    fn cb(_: *mut c_void) -> c_int {
         1
     }
-    gifski_set_progress_callback(g, cb);
+    gifski_set_progress_callback(g, cb, ptr::null_mut());
     assert_eq!(GifskiError::OK, gifski_add_frame_rgba(g, 0, 1, 1, &RGBA::new(0,0,0,0), 5));
+    assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 1, 1, 1, &RGB::new(0,0,0), 5));
     assert_eq!(GifskiError::OK, gifski_end_adding_frames(g));
     assert_eq!(GifskiError::INVALID_STATE, gifski_end_adding_frames(g));
     gifski_drop(g);

@@ -11,7 +11,6 @@ extension AVAssetImageGenerator {
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private weak var window: NSWindow!
-	var g: OpaquePointer!
 
 	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
 		return true
@@ -23,62 +22,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func gifski(inputFile: URL, outputFile: URL) {
 		var settings = GifskiSettings(width: 0, height: 0, quality: 100, once: false, fast: false)
-		let g = gifski_new(&settings)
-		self.g = g
+        let g = gifski_new(&settings)
 
-		let asset = AVURLAsset(url: inputFile, options: nil)
-		let generator = AVAssetImageGenerator(asset: asset)
-		generator.requestedTimeToleranceAfter = kCMTimeZero
-		generator.requestedTimeToleranceBefore = kCMTimeZero
+        gifski_set_progress_callback(g, { user_data in
+            print("Writing frame");
+            return 1
+        }, nil)
 
-		let FPS = 24
-		let frameCount = Int(asset.duration.seconds) * FPS
-		var frameForTimes = [CMTime]()
+        DispatchQueue.global(qos: .utility).async {
+            let asset = AVURLAsset(url: inputFile, options: nil)
+            let generator = AVAssetImageGenerator(asset: asset)
+            generator.requestedTimeToleranceAfter = kCMTimeZero
+            generator.requestedTimeToleranceBefore = kCMTimeZero
 
-//		for i in 0..<frameCount {
-//			frameForTimes.append(CMTimeMake(Int64(i), Int32(FPS)))
-//		}
+            let FPS = 24
+            let frameCount = Int(asset.duration.seconds) * FPS
+            var frameForTimes = [CMTime]()
 
-		frameForTimes.append(CMTimeMake(1, Int32(FPS)))
-		frameForTimes.append(CMTimeMake(2, Int32(FPS)))
-		frameForTimes.append(CMTimeMake(3, Int32(FPS)))
-		frameForTimes.append(CMTimeMake(4, Int32(FPS)))
+            for i in 0..<frameCount {
+                frameForTimes.append(CMTimeMake(Int64(i), Int32(FPS)))
+            }
 
-		// FIXME: Hangs when this is enabled
-		// frameForTimes.append(CMTimeMake(5, Int32(FPS)))
+            var i = 0
 
-		gifski_set_progress_callback(g) { isDone in
-			print("isDone", isDone)
+            generator.generateCGImagesAsynchronouslyForTimePoints(frameForTimes) { _, image, _, _, error in
+                print("Reading frame:", i)
 
-			return 1
-		}
+                guard let image = image, error == nil else {
+                    fatalError("Error with image \(i): \(error!)")
+                }
 
-		var i = 0
+				let buffer = CFDataGetBytePtr(image.dataProvider!.data)
 
-		generator.generateCGImagesAsynchronouslyForTimePoints(frameForTimes) { _, image, _, _, error in
-			guard let image = image, error == nil else {
-				fatalError("Error with image \(i): \(error!)")
-			}
+				let result = gifski_add_frame_argb(
+					g,
+					UInt32(i),
+					UInt32(image.width),
+					UInt32(image.height),
+					buffer,
+					UInt16(100 / FPS)
+				)
+				precondition(result == GIFSKI_OK, String(describing: result))
 
-			let buffer = CFDataGetBytePtr(image.dataProvider!.data)
+                i += 1
 
-			// TODO: Figure out how I can run this concurrently with GCD
-			let result = gifski_add_frame_rgba(g, UInt32(i), UInt32(image.width), UInt32(image.height), buffer, UInt16(100 / FPS))
-			precondition(result == GIFSKI_OK, String(describing: result))
+                if i == frameForTimes.count {
+                    gifski_end_adding_frames(g)
+                }
+            }
+        }
 
-			print("Frame:", i)
-
-			i += 1
-
-			if i == frameForTimes.count {
-				self.done(outputFile: outputFile)
-			}
-		}
-	}
-
-	func done(outputFile: URL) {
-		gifski_end_adding_frames(g)
-		gifski_write(g, outputFile.path)
-		gifski_drop(g)
-	}
+        gifski_write(g, outputFile.path)
+        gifski_drop(g)
+    }
 }
