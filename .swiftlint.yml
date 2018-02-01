@@ -1,0 +1,52 @@
+disabled_rules:
+  - file_length
+  - line_length
+  - identifier_name
+  - todo # Enabled this again!
+  - vertical_whitespace # Enabled this again!
+  - force_cast # Enabled this again!
+  - force_try
+  - large_tuple
+opt_in_rules:
+  # - force_unwrapping
+  - empty_count
+  - prohibited_super_call
+  - conditional_returns_on_newline
+  - implicit_return
+  - overridden_super_call
+  - private_outlet
+  - redundant_nil_coalescing
+  - first_where
+  - explicit_init
+  - switch_case_on_newline
+  - number_separator
+  - object_literal
+  - extension_access_modifier
+  - closure_end_indentation
+  - closure_spacing
+  - operator_usage_whitespace
+  - nimble_operator
+  - attributes
+  - fatal_error_message
+  - unneeded_parentheses_in_closure_argument
+  - trailing_closure
+  - block_based_kvo
+  - discouraged_direct_init
+  - strict_fileprivate # Enable when using Swift 4
+  - joined_default_parameter
+  - pattern_matching_keywords
+  - contains_over_first_not_nil
+  - fallthrough
+  - array_init
+  - multiline_arguments
+  - literal_expression_end_indentation
+  - sorted_first_last
+  - private_action
+  - yoda_condition
+  - required_enum_case
+force_cast: warning
+force_unwrapping: warning
+number_separator:
+  minimum_length: 5
+excluded:
+  - Carthage

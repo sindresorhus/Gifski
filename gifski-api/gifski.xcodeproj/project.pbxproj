@@ -1,0 +1,283 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 48;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		CA605CE58FE195A8025023B5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CA6071C8BFD722D117092DB7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CA60FB6F97415B50F10B8D0B;
+			remoteInfo = Cargo;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		5A571EEB201613A0006FC323 /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gifski.h; sourceTree = "<group>"; };
+		ADDEDBA66A6E1 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
+		CA6057D088DDFCD3E9A2ECBC /* Cargo.toml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.text-based-dylib-definition"; path = Cargo.toml; sourceTree = "<group>"; };
+		CA608A209BAEAE13C0448516 /* gifski */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gifski; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA60E15ACA76538A1122A904 /* libgifski.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgifski.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA60F2BAC541F7CC3EDC5919 /* libgifski.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libgifski.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		ADDEDBA66A6E2 /* Required Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				ADDEDBA66A6E1 /* libresolv.tbd */,
+			);
+			name = "Required Libraries";
+			sourceTree = "<group>";
+		};
+		CA6027C53F7CDB28378AB0AF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CA60E15ACA76538A1122A904 /* libgifski.a */,
+				CA60F2BAC541F7CC3EDC5919 /* libgifski.dylib */,
+				CA608A209BAEAE13C0448516 /* gifski */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CA608FCB6D0DEABA7974CB17 = {
+			isa = PBXGroup;
+			children = (
+				5A571EEB201613A0006FC323 /* gifski.h */,
+				CA6057D088DDFCD3E9A2ECBC /* Cargo.toml */,
+				ADDEDBA66A6E2 /* Required Libraries */,
+				CA6027C53F7CDB28378AB0AF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		CA60FB6F97415B50F10B8D0B /* Cargo */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "build $(CARGO_FLAGS)";
+			buildConfigurationList = CA6045D4FC1B1EBBFEF4C27E /* Build configuration list for PBXLegacyTarget "Cargo" */;
+			buildPhases = (
+			);
+			buildToolPath = "$(HOME)/.cargo/bin/cargo";
+			buildWorkingDirectory = "$(SRCROOT)";
+			name = Cargo;
+			passBuildSettingsInEnvironment = 1;
+			productName = Cargo;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXNativeTarget section */
+		CA6034DF35B8B3463979F9E1 /* gifski */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA6011E5EF709265C3F746D3 /* Build configuration list for PBXNativeTarget "gifski" */;
+			buildPhases = (
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CA60F84D519C5C0E4BCE3C96 /* PBXTargetDependency */,
+			);
+			name = gifski;
+			productName = gifski;
+			productReference = CA608A209BAEAE13C0448516 /* gifski */;
+			productType = "com.apple.product-type.tool";
+		};
+		CA60830E21151E3801EAF9E6 /* libgifski */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA60927671D1A6FF55C3B425 /* Build configuration list for PBXNativeTarget "libgifski" */;
+			buildPhases = (
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CA60F84D519C5C0E4BCE3C96 /* PBXTargetDependency */,
+			);
+			name = libgifski;
+			productName = libgifski.dylib;
+			productReference = CA60F2BAC541F7CC3EDC5919 /* libgifski.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		CA60BE6FA45DCE43A0FB0E19 /* gifski */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA606A23C5120EBB66370910 /* Build configuration list for PBXNativeTarget "gifski" */;
+			buildPhases = (
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CA60F84D519C5C0E4BCE3C96 /* PBXTargetDependency */,
+			);
+			name = gifski;
+			productName = libgifski.a;
+			productReference = CA60E15ACA76538A1122A904 /* libgifski.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CA6071C8BFD722D117092DB7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0920;
+				TargetAttributes = {
+					CA6034DF35B8B3463979F9E1 = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
+					CA60830E21151E3801EAF9E6 = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
+					CA60BE6FA45DCE43A0FB0E19 = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
+					CA60FB6F97415B50F10B8D0B = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = CA6045D4FC1B1EBBFEF4C27E /* Build configuration list for PBXLegacyTarget "Cargo" */;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = CA608FCB6D0DEABA7974CB17;
+			productRefGroup = CA6027C53F7CDB28378AB0AF /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CA60BE6FA45DCE43A0FB0E19 /* gifski */,
+				CA60830E21151E3801EAF9E6 /* libgifski */,
+				CA6034DF35B8B3463979F9E1 /* gifski */,
+				CA60FB6F97415B50F10B8D0B /* Cargo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXTargetDependency section */
+		CA60F84D519C5C0E4BCE3C96 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CA60FB6F97415B50F10B8D0B /* Cargo */;
+			targetProxy = CA605CE58FE195A8025023B5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		CA60126CFEBA7EA035468567 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		CA6035A0F9D6CF89E7D8CE2B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		CA6047858A35823BB5AAFFE9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		CA606664351F3999716AC398 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				CARGO_FLAGS = "";
+				CARGO_TARGET_DIR = "$(BUILD_DIR)/target";
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/target/debug";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		CA607D324586A756260D8C6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CA60A6CBB415A3F210C045F9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CA60BCD636CEF1727293E02F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				CARGO_FLAGS = "--release";
+				CARGO_TARGET_DIR = "$(BUILD_DIR)/target";
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/target/release";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		CA60D8DBF44B054D485FA535 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CA6011E5EF709265C3F746D3 /* Build configuration list for PBXNativeTarget "gifski" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA6035A0F9D6CF89E7D8CE2B /* Release */,
+				CA60A6CBB415A3F210C045F9 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA6045D4FC1B1EBBFEF4C27E /* Build configuration list for PBXLegacyTarget "Cargo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA60BCD636CEF1727293E02F /* Release */,
+				CA606664351F3999716AC398 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA606A23C5120EBB66370910 /* Build configuration list for PBXNativeTarget "gifski" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA6047858A35823BB5AAFFE9 /* Release */,
+				CA60D8DBF44B054D485FA535 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA60927671D1A6FF55C3B425 /* Build configuration list for PBXNativeTarget "libgifski" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA60126CFEBA7EA035468567 /* Release */,
+				CA607D324586A756260D8C6D /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CA6071C8BFD722D117092DB7 /* Project object */;
+}
