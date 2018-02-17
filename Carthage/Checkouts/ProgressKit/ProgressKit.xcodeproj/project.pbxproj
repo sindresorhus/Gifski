@@ -1,0 +1,510 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		"ProgressKit::ProgressKitPackageTests::ProductTarget" /* ProgressKitPackageTests */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = OBJ_56 /* Build configuration list for PBXAggregateTarget "ProgressKitPackageTests" */;
+			buildPhases = (
+			);
+			dependencies = (
+				OBJ_59 /* PBXTargetDependency */,
+			);
+			name = ProgressKitPackageTests;
+			productName = ProgressKitPackageTests;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		OBJ_33 /* ProgressKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_23 /* ProgressKitTests.swift */; };
+		OBJ_35 /* ProgressKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "ProgressKit::ProgressKit::Product" /* ProgressKit.framework */; };
+		OBJ_42 /* BaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* BaseView.swift */; };
+		OBJ_43 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* CircularProgressView.swift */; };
+		OBJ_44 /* Crawler.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* Crawler.swift */; };
+		OBJ_45 /* DeterminateAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* DeterminateAnimation.swift */; };
+		OBJ_46 /* IndeterminateAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* IndeterminateAnimation.swift */; };
+		OBJ_47 /* MaterialProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* MaterialProgress.swift */; };
+		OBJ_48 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* ProgressBar.swift */; };
+		OBJ_49 /* ProgressUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_16 /* ProgressUtils.swift */; };
+		OBJ_50 /* Rainbow.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* Rainbow.swift */; };
+		OBJ_51 /* RotatingArc.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_18 /* RotatingArc.swift */; };
+		OBJ_52 /* ShootingStars.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_19 /* ShootingStars.swift */; };
+		OBJ_53 /* Spinner.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_20 /* Spinner.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6623CECC1F2B61A90062B339 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "ProgressKit::ProgressKit";
+			remoteInfo = ProgressKit;
+		};
+		6623CECD1F2B61A90062B339 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "ProgressKit::ProgressKitTests";
+			remoteInfo = ProgressKitTests;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		66C5DA851F2BC7FD00B2BA40 /* Demo-macOS.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = "Demo-macOS.playground"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		OBJ_10 /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
+		OBJ_11 /* Crawler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Crawler.swift; sourceTree = "<group>"; };
+		OBJ_12 /* DeterminateAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeterminateAnimation.swift; sourceTree = "<group>"; };
+		OBJ_13 /* IndeterminateAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndeterminateAnimation.swift; sourceTree = "<group>"; };
+		OBJ_14 /* MaterialProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaterialProgress.swift; sourceTree = "<group>"; };
+		OBJ_15 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
+		OBJ_16 /* ProgressUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressUtils.swift; sourceTree = "<group>"; };
+		OBJ_17 /* Rainbow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rainbow.swift; sourceTree = "<group>"; };
+		OBJ_18 /* RotatingArc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RotatingArc.swift; sourceTree = "<group>"; };
+		OBJ_19 /* ShootingStars.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShootingStars.swift; sourceTree = "<group>"; };
+		OBJ_20 /* Spinner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spinner.swift; sourceTree = "<group>"; };
+		OBJ_23 /* ProgressKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressKitTests.swift; sourceTree = "<group>"; };
+		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		OBJ_9 /* BaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseView.swift; sourceTree = "<group>"; };
+		"ProgressKit::ProgressKit::Product" /* ProgressKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = ProgressKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"ProgressKit::ProgressKitTests::Product" /* ProgressKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = ProgressKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		OBJ_34 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_35 /* ProgressKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_54 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		667419711F2B9DF1001F9A21 /* Demo */ = {
+			isa = PBXGroup;
+			children = (
+				66C5DA851F2BC7FD00B2BA40 /* Demo-macOS.playground */,
+			);
+			path = Demo;
+			sourceTree = "<group>";
+		};
+		OBJ_21 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_22 /* ProgressKitTests */,
+			);
+			name = Tests;
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_22 /* ProgressKitTests */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_23 /* ProgressKitTests.swift */,
+			);
+			name = ProgressKitTests;
+			path = Tests/ProgressKitTests;
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_25 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				"ProgressKit::ProgressKitTests::Product" /* ProgressKitTests.xctest */,
+				"ProgressKit::ProgressKit::Product" /* ProgressKit.framework */,
+			);
+			name = Products;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		OBJ_5 = {
+			isa = PBXGroup;
+			children = (
+				OBJ_6 /* Package.swift */,
+				667419711F2B9DF1001F9A21 /* Demo */,
+				OBJ_7 /* Sources */,
+				OBJ_21 /* Tests */,
+				OBJ_25 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		OBJ_7 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_8 /* ProgressKit */,
+			);
+			name = Sources;
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_8 /* ProgressKit */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_9 /* BaseView.swift */,
+				OBJ_10 /* CircularProgressView.swift */,
+				OBJ_11 /* Crawler.swift */,
+				OBJ_12 /* DeterminateAnimation.swift */,
+				OBJ_13 /* IndeterminateAnimation.swift */,
+				OBJ_14 /* MaterialProgress.swift */,
+				OBJ_15 /* ProgressBar.swift */,
+				OBJ_16 /* ProgressUtils.swift */,
+				OBJ_17 /* Rainbow.swift */,
+				OBJ_18 /* RotatingArc.swift */,
+				OBJ_19 /* ShootingStars.swift */,
+				OBJ_20 /* Spinner.swift */,
+			);
+			name = ProgressKit;
+			path = Sources/ProgressKit;
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		"ProgressKit::ProgressKit" /* ProgressKit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_38 /* Build configuration list for PBXNativeTarget "ProgressKit" */;
+			buildPhases = (
+				OBJ_41 /* Sources */,
+				OBJ_54 /* Frameworks */,
+				6623CEDB1F2B62900062B339 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ProgressKit;
+			productName = ProgressKit;
+			productReference = "ProgressKit::ProgressKit::Product" /* ProgressKit.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		"ProgressKit::ProgressKitTests" /* ProgressKitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_29 /* Build configuration list for PBXNativeTarget "ProgressKitTests" */;
+			buildPhases = (
+				OBJ_32 /* Sources */,
+				OBJ_34 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				OBJ_36 /* PBXTargetDependency */,
+			);
+			name = ProgressKitTests;
+			productName = ProgressKitTests;
+			productReference = "ProgressKit::ProgressKitTests::Product" /* ProgressKitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		OBJ_1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0900;
+			};
+			buildConfigurationList = OBJ_2 /* Build configuration list for PBXProject "ProgressKit" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = OBJ_5;
+			productRefGroup = OBJ_25 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				"ProgressKit::ProgressKitTests" /* ProgressKitTests */,
+				"ProgressKit::ProgressKit" /* ProgressKit */,
+				"ProgressKit::ProgressKitPackageTests::ProductTarget" /* ProgressKitPackageTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6623CEDB1F2B62900062B339 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		OBJ_32 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_33 /* ProgressKitTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_41 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_42 /* BaseView.swift in Sources */,
+				OBJ_43 /* CircularProgressView.swift in Sources */,
+				OBJ_44 /* Crawler.swift in Sources */,
+				OBJ_45 /* DeterminateAnimation.swift in Sources */,
+				OBJ_46 /* IndeterminateAnimation.swift in Sources */,
+				OBJ_47 /* MaterialProgress.swift in Sources */,
+				OBJ_48 /* ProgressBar.swift in Sources */,
+				OBJ_49 /* ProgressUtils.swift in Sources */,
+				OBJ_50 /* Rainbow.swift in Sources */,
+				OBJ_51 /* RotatingArc.swift in Sources */,
+				OBJ_52 /* ShootingStars.swift in Sources */,
+				OBJ_53 /* Spinner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		OBJ_36 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "ProgressKit::ProgressKit" /* ProgressKit */;
+			targetProxy = 6623CECC1F2B61A90062B339 /* PBXContainerItemProxy */;
+		};
+		OBJ_59 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "ProgressKit::ProgressKitTests" /* ProgressKitTests */;
+			targetProxy = 6623CECD1F2B61A90062B339 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		OBJ_3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_NS_ASSERTIONS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_SWIFT_FLAGS = "-DXcode";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = SWIFT_PACKAGE;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
+				USE_HEADERMAP = NO;
+			};
+			name = Debug;
+		};
+		OBJ_30 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = ProgressKit.xcodeproj/ProgressKitTests_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks @loader_path/Frameworks";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				TARGET_NAME = ProgressKitTests;
+			};
+			name = Debug;
+		};
+		OBJ_31 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = ProgressKit.xcodeproj/ProgressKitTests_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks @loader_path/Frameworks";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				TARGET_NAME = ProgressKitTests;
+			};
+			name = Release;
+		};
+		OBJ_39 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = ProgressKit.xcodeproj/ProgressKit_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = ProgressKit;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				TARGET_NAME = ProgressKit;
+			};
+			name = Debug;
+		};
+		OBJ_4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				OTHER_SWIFT_FLAGS = "-DXcode";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = SWIFT_PACKAGE;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
+				USE_HEADERMAP = NO;
+			};
+			name = Release;
+		};
+		OBJ_40 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = ProgressKit.xcodeproj/ProgressKit_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = ProgressKit;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				TARGET_NAME = ProgressKit;
+			};
+			name = Release;
+		};
+		OBJ_57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		OBJ_58 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		OBJ_2 /* Build configuration list for PBXProject "ProgressKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_3 /* Debug */,
+				OBJ_4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		OBJ_29 /* Build configuration list for PBXNativeTarget "ProgressKitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_30 /* Debug */,
+				OBJ_31 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		OBJ_38 /* Build configuration list for PBXNativeTarget "ProgressKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_39 /* Debug */,
+				OBJ_40 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		OBJ_56 /* Build configuration list for PBXAggregateTarget "ProgressKitPackageTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_57 /* Debug */,
+				OBJ_58 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = OBJ_1 /* Project object */;
+}

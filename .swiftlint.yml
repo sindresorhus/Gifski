@@ -38,12 +38,12 @@ opt_in_rules:
   - contains_over_first_not_nil
   - fallthrough
   - array_init
-  - multiline_arguments
   - literal_expression_end_indentation
   - sorted_first_last
   - private_action
   - yoda_condition
   - required_enum_case
+  - discouraged_optional_boolean
 force_cast: warning
 force_unwrapping: warning
 number_separator:
