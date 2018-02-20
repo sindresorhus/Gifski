@@ -1,4 +1,5 @@
 import Cocoa
+import AVFoundation
 
 
 struct Meta {
@@ -21,13 +22,168 @@ struct Meta {
 }
 
 
+struct Misc {
+	static func alert(title: String, text: String) {
+		let alert = NSAlert()
+		alert.messageText = title
+		alert.informativeText = text
+		alert.runModal()
+	}
+}
+
+
+/// This is useful as `awakeFromNib` is not called for programatically created views
+class SSView: NSView {
+	var didAppearWasCalled = false
+
+	/// Meant to be overridden in subclasses
+	func didAppear() {}
+
+	override func viewDidMoveToSuperview() {
+		super.viewDidMoveToSuperview()
+
+		if !didAppearWasCalled {
+			didAppearWasCalled = true
+			didAppear()
+		}
+	}
+}
+
+
+extension NSViewController {
+	var appDelegate: AppDelegate {
+		return NSApp.delegate as! AppDelegate
+	}
+}
+
+
+/// Video metadata
+extension AVURLAsset {
+	struct VideoMetadata {
+		let dimensions: CGSize
+		let duration: Double
+		let frameCount: Double
+		let fileSize: Int
+	}
+
+	var videoMetadata: VideoMetadata? {
+		guard let track = tracks(withMediaType: .video).first else {
+			return nil
+		}
+
+		let dimensions = track.naturalSize.applying(track.preferredTransform)
+
+		return VideoMetadata(
+			dimensions: CGSize(width: fabs(dimensions.width), height: fabs(dimensions.height)),
+			duration: duration.seconds,
+			frameCount: Double(track.nominalFrameRate),
+			fileSize: url.fileSize
+		)
+	}
+}
+extension URL {
+	var videoMetadata: AVURLAsset.VideoMetadata? {
+		return AVURLAsset(url: self).videoMetadata
+	}
+}
+
+
 extension CALayer {
-	/*
-	Disable the implicit CALayer animation
+	/**
+	Set CALayer properties without the implicit animation
+
+	```
+	CALayer.withoutImplicitAnimations {
+		view.layer?.opacity = 0.4
+	}
+	```
+	*/
+	static func withoutImplicitAnimations(closure: () -> Void) {
+		CATransaction.begin()
+		CATransaction.setDisableActions(true)
+		closure()
+		CATransaction.commit()
+	}
+
+	/**
+	Set CALayer properties with the implicit animation
+	This is the default, but instances might have manually turned it off
+
+	```
+	CALayer.withImplicitAnimations {
+		view.layer?.opacity = 0.4
+	}
+	```
+	*/
+	static func withImplicitAnimations(closure: () -> Void) {
+		CATransaction.begin()
+		CATransaction.setDisableActions(false)
+		closure()
+		CATransaction.commit()
+	}
+
+	/**
+	Toggle the implicit CALayer animation
 	Can be useful for text layers
 	*/
-	func disableAnimation() {
-		actions = ["contents": NSNull()]
+	var implicitAnimations: Bool {
+		get {
+			return actions == nil
+		}
+		set {
+			if newValue {
+				actions = nil
+			} else {
+				actions = ["contents": NSNull()]
+			}
+		}
+	}
+}
+
+extension CALayer {
+	/// This is required for CALayers that are created independently of a view
+	func setAutomaticContentsScale() {
+		/// TODO: This should ideally use the screen the layer is currently on. I think we need to first find the window the layer is positioned and then the screen from that.
+		contentsScale = NSScreen.main?.backingScaleFactor ?? 2
+	}
+}
+
+
+extension NSView {
+	func center(inView view: NSView) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			centerYAnchor.constraint(equalTo: view.centerYAnchor)
+		])
+	}
+
+	func addSubviewToCenter(_ view: NSView) {
+		addSubview(view)
+		view.center(inView: superview!)
+	}
+}
+
+
+extension NSControl {
+	/// Trigger the `.action` selector on the control
+	func triggerAction() {
+		sendAction(action, to: target)
+	}
+}
+
+
+extension DispatchQueue {
+	/**
+	```
+	DispatchQueue.main.asyncAfter(duration: 100.milliseconds) {
+		print("100 ms later")
+	}
+	```
+	*/
+	func asyncAfter(duration: TimeInterval, execute: @escaping () -> Void) {
+		asyncAfter(deadline: .now() + duration, execute: execute)
 	}
 }
 
@@ -38,11 +194,25 @@ let foo = Label(text: "Foo")
 ```
 */
 final class Label: NSTextField {
+	var text: String {
+		get {
+			return stringValue
+		}
+		set {
+			stringValue = newValue
+		}
+	}
+
 	/// Allow the it to be disabled like other NSControl's
 	override var isEnabled: Bool {
 		didSet {
 			textColor = isEnabled ? NSColor.controlTextColor : NSColor.disabledControlTextColor
 		}
+	}
+
+	/// Support setting the text later with the `.text` property
+	convenience init() {
+		self.init(labelWithString: "")
 	}
 
 	convenience init(text: String) {
@@ -87,11 +257,11 @@ Mark unimplemented functions and have them fail with a useful message
 
 ```
 func foo() {
-unimplemented()
+	unimplemented()
 }
 
 foo()
-//=> foo() in main.swift:1 has not been implemented
+//=> "foo() in main.swift:1 has not been implemented"
 ```
 */
 func unimplemented(function: StaticString = #function, file: String = #file, line: UInt = #line) -> Never {
@@ -176,7 +346,7 @@ extension NSMenuItem {
 	let menuItem = NSMenuItem(title: "Unicorn")
 
 	menuItem.onAction = { sender in
-	print("NSMenuItem action: \(sender)")
+		print("NSMenuItem action: \(sender)")
 	}
 	```
 	*/
@@ -224,7 +394,7 @@ extension NSControl {
 	let button = NSButton(title: "Unicorn", target: nil, action: nil)
 
 	button.onAction = { sender in
-	print("Button action: \(sender)")
+		print("Button action: \(sender)")
 	}
 	```
 	*/
@@ -241,47 +411,77 @@ extension NSControl {
 }
 
 
+extension CAMediaTimingFunction {
+	static let `default` = CAMediaTimingFunction(name: kCAMediaTimingFunctionDefault)
+	static let linear = CAMediaTimingFunction(name: kCAMediaTimingFunctionLinear)
+	static let easeIn = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseIn)
+	static let easeOut = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseOut)
+	static let easeInOut = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
+}
+
+
 extension NSView {
 	/**
 	```
 	let label = NSTextField(labelWithString: "Unicorn")
-	view.fadeIn(label)
+	view.addSubviewByFadingIn(label)
 	```
 	*/
-	func fadeIn(_ view: NSView, duration: TimeInterval = 1, completion: (() -> Void)? = nil) {
+	func addSubviewByFadingIn(_ view: NSView, duration: TimeInterval = 1, completion: (() -> Void)? = nil) {
 		NSAnimationContext.runAnimationGroup({ context in
 			context.duration = duration
 			animator().addSubview(view)
 		}, completionHandler: completion)
 	}
 
-	func fadeOut(_ view: NSView, duration: TimeInterval = 1, completion: (() -> Void)? = nil) {
+	func removeSubviewByFadingOut(_ view: NSView, duration: TimeInterval = 1, completion: (() -> Void)? = nil) {
 		NSAnimationContext.runAnimationGroup({ context in
 			context.duration = duration
 			view.animator().removeFromSuperview()
 		}, completionHandler: completion)
 	}
-}
 
+	static func animate(
+		duration: TimeInterval = 1,
+		delay: TimeInterval = 0,
+		timingFunction: CAMediaTimingFunction = .easeInOut,
+		animations: @escaping (() -> Void),
+		completion: (() -> Void)? = nil
+	) {
+		let block = {
+			NSAnimationContext.runAnimationGroup({ context in
+				context.allowsImplicitAnimation = true
+				context.duration = duration
+				context.timingFunction = timingFunction
+				animations()
+			}, completionHandler: completion)
+		}
 
-extension NSAttributedString {
-	var nsRange: NSRange {
-		return NSRange(0..<length)
+		if delay > 0 {
+			DispatchQueue.main.asyncAfter(duration: delay, execute: block)
+		} else {
+			block()
+		}
 	}
 
-	/// Returns a `NSMutableAttributedString` version
-	func mutable() -> NSMutableAttributedString {
-		return mutableCopy() as! NSMutableAttributedString
+	func fadeIn(duration: TimeInterval = 1, delay: TimeInterval = 0, completion: (() -> Void)? = nil) {
+		isHidden = true
+
+		NSView.animate(duration: duration, delay: delay, animations: {
+			self.isHidden = false
+		}, completion: completion)
 	}
 
-	func applying(attributes: [NSAttributedStringKey: Any]) -> NSAttributedString {
-		let new = mutable()
-		new.addAttributes(attributes, range: nsRange)
-		return new
-	}
+	func fadeOut(duration: TimeInterval = 1, delay: TimeInterval = 0, completion: (() -> Void)? = nil) {
+		isHidden = false
 
-	func colored(with color: NSColor) -> NSAttributedString {
-		return applying(attributes: [.foregroundColor: color])
+		NSView.animate(duration: duration, delay: delay, animations: {
+			self.alphaValue = 0
+		}, completion: {
+			self.isHidden = true
+			self.alphaValue = 1
+			completion?()
+		})
 	}
 }
 
@@ -413,11 +613,6 @@ extension URL {
 		}
 	}
 
-	/// File UTI
-	var typeIdentifier: String? {
-		return (try? resourceValues(forKeys: [.typeIdentifierKey]))?.typeIdentifier
-	}
-
 	func changingFileExtension(to fileExtension: String) -> URL {
 		var url = self
 		url.fileExtension = fileExtension
@@ -429,9 +624,31 @@ extension URL {
 		components.addDictionaryAsQuery(dict)
 		return components.url ?? self
 	}
+
+	private func resourceValue<T>(forKey key: URLResourceKey) -> T? {
+		guard let values = try? resourceValues(forKeys: [key]) else {
+			return nil
+		}
+
+		return values.allValues[key] as? T
+	}
+
+	/// File UTI
+	var typeIdentifier: String? {
+		return resourceValue(forKey: .typeIdentifierKey)
+	}
+
+	/// File size in bytes
+	var fileSize: Int {
+		return resourceValue(forKey: .fileSizeKey) ?? 0
+	}
 }
 
 extension CGSize {
+	static func * (lhs: CGSize, rhs: Double) -> CGSize {
+		return CGSize(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
+	}
+
 	init(widthHeight: CGFloat) {
 		self.width = widthHeight
 		self.height = widthHeight

@@ -1,8 +1,23 @@
 import Cocoa
 
-class DropView: NSView {
+class DropView: SSView {
+	var dropText: String? {
+		didSet {
+			if let text = dropText {
+				dropLabel.text = text
+			}
+		}
+	}
+
+	lazy private var dropLabel: Label = {
+		let label = Label()
+		label.textColor = .systemGray
+		label.font = .systemFont(ofSize: 14, weight: .light)
+		return label
+	}()
+
 	var highlightColor: NSColor {
-		return NSColor.selectedControlColor
+		return .selectedControlColor
 	}
 
 	var acceptedTypes: [NSPasteboard.PasteboardType] {
@@ -12,7 +27,14 @@ class DropView: NSView {
 	private var isDraggingHighlighted: Bool = false {
 		didSet {
 			needsDisplay = true
+
+			/// TODO: Animate the color change
+			dropLabel.textColor = isDraggingHighlighted ? highlightColor : .disabledControlTextColor
 		}
+	}
+
+	override func didAppear() {
+		addSubviewToCenter(dropLabel)
 	}
 
 	override init(frame: NSRect) {
@@ -68,7 +90,7 @@ final class VideoDropView: DropView {
 	var onComplete: (([URL]) -> Void)?
 
 	override var highlightColor: NSColor {
-		return NSColor.appTheme
+		return .appTheme
 	}
 
 	override var acceptedTypes: [NSPasteboard.PasteboardType] {
@@ -76,7 +98,7 @@ final class VideoDropView: DropView {
 	}
 
 	override func onEntered(_ sender: NSDraggingInfo) -> Bool {
-		return !sender.fileURLs(types: ["public.movie"]).isEmpty
+		return sender.fileURLs(types: ["public.movie"]).count == 1
 	}
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {

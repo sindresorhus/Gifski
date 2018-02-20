@@ -15,16 +15,27 @@ final class Gifski {
 	private(set) var progress: Double = 0
 	var onProgress: ((_ progress: Double) -> Void)?
 
-	func convertFile(_ inputFile: URL, outputFile: URL, quality: Double = 1) {
+	func convertFile(
+		_ inputFile: URL,
+		outputFile: URL,
+		quality: Double = 1,
+		dimensions: CGSize? = nil
+	) {
 		guard !isRunning else {
 			return
 		}
 
-		isRunning = true
 		frameCount = 0
 		frameIndex = 0
+		isRunning = true
 
-		var settings = GifskiSettings(width: 0, height: 0, quality: UInt8(quality * 100), once: false, fast: false)
+		var settings = GifskiSettings(
+			width: UInt32(dimensions?.width ?? 0),
+			height: UInt32(dimensions?.height ?? 0),
+			quality: UInt8(quality * 100),
+			once: false,
+			fast: false
+		)
 		let g = gifski_new(&settings)
 
 		let context = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
@@ -71,7 +82,7 @@ final class Gifski {
 					g,
 					UInt32(frameIndex),
 					UInt32(image.width),
-                    UInt32(image.bytesPerRow),
+					UInt32(image.bytesPerRow),
 					UInt32(image.height),
 					buffer,
 					UInt16(100 / FPS)

@@ -10,37 +10,8 @@ extension NSColor {
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private weak var window: NSWindow!
-	var imageView: NSImageView!
-	var imageDropView: VideoDropView!
-	var gifski = Gifski()
-
-	lazy var outputQualitySlider: NSSlider = {
-		let slider = NSSlider()
-		slider.frame = CGRect(width: 150, height: 32)
-		slider.numberOfTickMarks = 10
-		slider.allowsTickMarkValuesOnly = true
-		slider.doubleValue = defaults["outputQuality"] as! Double
-
-		slider.onAction = { _ in
-			defaults["outputQuality"] = slider.doubleValue
-		}
-
-		return slider
-	}()
-
-	lazy var outputQualityView: NSView = {
-		let view = NSView()
-		view.addSubview(outputQualitySlider)
-		view.frame.width = 280
-		view.frame.height = 32
-
-		let qualityLabel = Label(text: "Quality:")
-		qualityLabel.frame.y = 9
-		view.addSubview(qualityLabel)
-		outputQualitySlider.frame.x = qualityLabel.frame.right
-
-		return view
-	}()
+	var videoDropView: VideoDropView!
+	let gifski = Gifski()
 
 	lazy var circularProgress: CircularProgressView = {
 		let size: CGFloat = 160
@@ -48,28 +19,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		view.centerInWindow(window)
 		view.foreground = .appTheme
 		view.strokeWidth = 2
-		view.percentLabelLayer.contentsScale = 2 /// TODO: Find out why I must set this
-		view.percentLabelLayer.disableAnimation()
+		view.percentLabelLayer.setAutomaticContentsScale()
+		view.percentLabelLayer.implicitAnimations = false
 		view.layer?.backgroundColor = .clear
+		view.isHidden = true
 		return view
 	}()
 
-	lazy var dropToConvertLabel: NSTextField = {
-		let text = NSAttributedString(string: "Drop a Video to Convert")
-			.applying(attributes: [.font: NSFont.systemFont(ofSize: 15, weight: .regular)])
-			.colored(with: .appTheme)
-		let label = NSTextField(labelWithAttributedString: text)
-		label.frame = window.contentView!.frame.centered(size: label.frame.size)
-		return label
-	}()
-
-	var isInInitialState = true
 	var hasFinishedLaunching = false
 	var urlsToConvertOnLaunch: URL!
+	var choosenDimensions: CGSize!
 
 	@objc dynamic var isRunning: Bool = false {
 		didSet {
-			imageDropView.isHidden = isRunning
+			if isRunning {
+				videoDropView.isHidden = true
+			} else {
+				videoDropView.fadeIn()
+			}
+
+			circularProgress.isHidden = !isRunning
 		}
 	}
 
@@ -101,14 +70,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		let view = window.contentView!
 
-		/// TODO: Move this to a NSViewController
-		view.addSubview(dropToConvertLabel)
+		view.addSubview(circularProgress)
 
-		imageDropView = VideoDropView(frame: view.frame)
-		imageDropView.onComplete = { url in
+		videoDropView = VideoDropView(frame: view.frame)
+		videoDropView.dropText = "Drop a Video to Convert to GIF"
+		videoDropView.onComplete = { url in
 			self.convert(url.first!)
 		}
-		view.addSubview(imageDropView, positioned: .above, relativeTo: nil)
+		view.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil) /// TODO: This is dirty, find a better way
 
@@ -122,17 +91,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			return
 		}
 
-		guard let imageUrls = (urls.first { $0.typeIdentifier == "public.movie" }) else {
+		guard urls.count == 1 else {
+			Misc.alert(title: "Max one file", text: "You can only convert a single file at the time")
 			return
 		}
 
+		let videoUrl = urls.first!
+
 		/// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
 		if hasFinishedLaunching {
-			convert(imageUrls)
+			convert(videoUrl)
 		} else {
 			// This method is called before `applicationDidFinishLaunching`,
-			// so we buffer it up if images are "Open with" this app
-			urlsToConvertOnLaunch = imageUrls
+			// so we buffer it up a video is "Open with" this app
+			urlsToConvertOnLaunch = videoUrl
 		}
 	}
 
@@ -151,7 +123,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		let panel = NSOpenPanel()
 		panel.canChooseDirectories = false
 		panel.canCreateDirectories = false
-		panel.allowsMultipleSelection = true
 		panel.allowedFileTypes = ["public.movie"]
 
 		panel.beginSheetModal(for: window) {
@@ -166,16 +137,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		if progress == 1 {
 			circularProgress.percentLabelLayer.string = "✔"
-			isRunning = false
+			circularProgress.fadeOut(delay: 1) {
+				self.isRunning = false
+			}
 		}
-	}
-
-	func createSaveAccessoryView() -> NSView {
-		let view = NSView(frame: CGRect(width: 280, height: 32))
-		view.autoresizingMask = [.minXMargin, .maxXMargin]
-		// TODO: Use auto-layout here to place and size the controls
-		view.addSubview(outputQualityView)
-		return view
 	}
 
 	func convert(_ inputUrl: URL) {
@@ -185,7 +150,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		panel.nameFieldStringValue = inputUrl.changingFileExtension(to: "gif").filename
 		panel.prompt = "Convert"
 		panel.message = "Choose where to save the GIF"
-		panel.accessoryView = createSaveAccessoryView()
+
+		let accessoryViewController = SavePanelAccessoryViewController()
+		accessoryViewController.inputUrl = inputUrl
+		panel.accessoryView = accessoryViewController.view
 
 		panel.beginSheetModal(for: window) {
 			if $0 == .OK {
@@ -201,16 +169,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		isRunning = true
 
-		if isInInitialState {
-			isInInitialState = false
-			window.contentView!.fadeOut(dropToConvertLabel)
-			window.contentView!.fadeIn(circularProgress)
-		}
-
 		circularProgress.animated = false
 		circularProgress.progress = 0
 		circularProgress.animated = true
 
-		gifski.convertFile(inputUrl, outputFile: outputUrl, quality: defaults["outputQuality"] as! Double)
+		gifski.convertFile(
+			inputUrl,
+			outputFile: outputUrl,
+			quality: defaults["outputQuality"] as! Double,
+			dimensions: choosenDimensions
+		)
 	}
 }

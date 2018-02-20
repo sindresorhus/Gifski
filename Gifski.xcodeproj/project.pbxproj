@@ -16,6 +16,8 @@
 		E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3AE628A1E5CD2F300035A2F /* MainMenu.xib */; };
 		E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */; };
 		E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* util.swift */; };
+		E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */; };
+		E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */; };
 		E3FD61AE201BD3A80087160A /* libgifski.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD61A1201BD29E0087160A /* libgifski.dylib */; };
 /* End PBXBuildFile section */
 
@@ -80,6 +82,8 @@
 		E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Gifski.entitlements; sourceTree = "<group>"; };
 		E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDropView.swift; sourceTree = "<group>"; };
 		E3D08F6D1E5D7BFD00F465DF /* util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = util.swift; sourceTree = "<group>"; };
+		E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavePanelAccessoryViewController.swift; sourceTree = "<group>"; };
+		E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SavePanelAccessoryViewController.xib; sourceTree = "<group>"; };
 		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; };
 		E3FD6197201BD29E0087160A /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
 		E3FD61A4201BD2DA0087160A /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = "<group>"; };
@@ -134,6 +138,8 @@
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
 				E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */,
 				E339F010203820ED003B78FB /* Gifski.swift */,
+				E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */,
+				E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
@@ -255,6 +261,7 @@
 			files = (
 				E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */,
 				E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */,
+				E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,6 +293,7 @@
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
 				E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */,
+				E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
