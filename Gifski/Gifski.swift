@@ -71,6 +71,7 @@ final class Gifski {
 					g,
 					UInt32(frameIndex),
 					UInt32(image.width),
+                    UInt32(image.bytesPerRow),
 					UInt32(image.height),
 					buffer,
 					UInt16(100 / FPS)

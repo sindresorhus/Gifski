@@ -10,7 +10,7 @@ license = "AGPL-3.0+"
 name = "gifski"
 readme = "README.md"
 repository = "https://github.com/ImageOptim/gifski"
-version = "0.8.0"
+version = "0.8.1"
 
 [package.metadata.deb]
 features = ["openmp"]

@@ -72,7 +72,7 @@ enum GifskiError {
   GIFSKI_PERMISSION_DENIED,
   /** I/O error: file already exists */
   GIFSKI_ALREADY_EXISTS,
-  /** misc I/O error */
+  /** invalid arguments passed to function */
   GIFSKI_INVALID_INPUT,
   /** misc I/O error */
   GIFSKI_TIMED_OUT,
@@ -137,18 +137,26 @@ GifskiError gifski_add_frame_rgba(gifski *handle,
                            const unsigned char *pixels,
                            uint16_t delay);
 
-/** Same as `gifski_add_frame_rgba`, except it expects components in ARGB order */
+/** Same as `gifski_add_frame_rgba`, except it expects components in ARGB order.
+
+Bytes per row must be multiple of 4 and greater or equal width×4.
+*/
 GifskiError gifski_add_frame_argb(gifski *handle,
                            uint32_t index,
                            uint32_t width,
+                           uint32_t bytes_per_row,
                            uint32_t height,
                            const unsigned char *pixels,
                            uint16_t delay);
 
-/** Same as `gifski_add_frame_rgba`, except it expects RGB components (3 bytes per pixel) */
+/** Same as `gifski_add_frame_rgba`, except it expects RGB components (3 bytes per pixel)
+
+Bytes per row must be multiple of 3 and greater or equal width×3.
+*/
 GifskiError gifski_add_frame_rgb(gifski *handle,
                            uint32_t index,
                            uint32_t width,
+                           uint32_t bytes_per_row,
                            uint32_t height,
                            const unsigned char *pixels,
                            uint16_t delay);

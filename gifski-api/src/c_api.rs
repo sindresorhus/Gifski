@@ -23,6 +23,7 @@
 use super::*;
 use std::os::raw::{c_char, c_int, c_void};
 use std::ptr;
+use std::mem;
 use std::slice;
 use std::fs::File;
 use std::ffi::CStr;
@@ -198,32 +199,46 @@ fn add_frame_rgba(handle: *mut GifskiHandle, index: u32, frame: ImgVec<RGBA8>, d
 }
 
 /// Same as `gifski_add_frame_rgba`, except it expects components in ARGB order
+///
+/// Bytes per row must be multiple of 4 and greater or equal width×4.
 #[no_mangle]
-pub extern "C" fn gifski_add_frame_argb(handle: *mut GifskiHandle, index: u32, width: u32, height: u32, pixels: *const ARGB8, delay: u16) -> GifskiError {
+pub extern "C" fn gifski_add_frame_argb(handle: *mut GifskiHandle, index: u32, width: u32, bytes_per_row: u32, height: u32, pixels: *const ARGB8, delay: u16) -> GifskiError {
     if pixels.is_null() {
         return GifskiError::NULL_ARG;
     }
+    let width = width as usize;
+    let stride = bytes_per_row as usize / mem::size_of_val(unsafe{&*pixels});
+    if stride < width {
+        return GifskiError::INVALID_INPUT;
+    }
     let pixels = unsafe {
-        slice::from_raw_parts(pixels, width as usize * height as usize)
+        slice::from_raw_parts(pixels, stride * height as usize)
     };
-    add_frame_rgba(handle, index, ImgVec::new(pixels.iter().map(|p| RGBA8 {
+    add_frame_rgba(handle, index, ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|p| RGBA8 {
         r: p.r,
         g: p.g,
         b: p.b,
         a: p.a,
-    }).collect(), width as usize, height as usize), delay)
+    })).collect(), width as usize, height as usize), delay)
 }
 
 /// Same as `gifski_add_frame_rgba`, except it expects RGB components (3 bytes per pixel)
+///
+/// Bytes per row must be multiple of 3 and greater or equal width×3.
 #[no_mangle]
-pub extern "C" fn gifski_add_frame_rgb(handle: *mut GifskiHandle, index: u32, width: u32, height: u32, pixels: *const RGB8, delay: u16) -> GifskiError {
+pub extern "C" fn gifski_add_frame_rgb(handle: *mut GifskiHandle, index: u32, width: u32, bytes_per_row: u32, height: u32, pixels: *const RGB8, delay: u16) -> GifskiError {
     if pixels.is_null() {
         return GifskiError::NULL_ARG;
     }
+    let width = width as usize;
+    let stride = bytes_per_row as usize / mem::size_of_val(unsafe{&*pixels});
+    if stride < width {
+        return GifskiError::INVALID_INPUT;
+    }
     let pixels = unsafe {
-        slice::from_raw_parts(pixels, width as usize * height as usize)
+        slice::from_raw_parts(pixels, stride * height as usize)
     };
-    add_frame_rgba(handle, index, ImgVec::new(pixels.iter().map(|&p| p.into()).collect(), width as usize, height as usize), delay)
+    add_frame_rgba(handle, index, ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|&p| p.into())).collect(), width as usize, height as usize), delay)
 }
 
 /// You must call it at some point (after all frames are set), otherwise `gifski_write()` will never end!
@@ -295,6 +310,10 @@ fn c() {
         once: false,
         fast: true,
     });
+
+    let rgb: *const RGB8 = ptr::null();
+    assert_eq!(3, mem::size_of_val(unsafe{&*rgb}));
+
     assert!(!g.is_null());
     assert_eq!(GifskiError::NULL_ARG, gifski_add_frame_rgba(g, 0, 1, 1, ptr::null(), 5));
     fn cb(_: *mut c_void) -> c_int {
@@ -302,7 +321,7 @@ fn c() {
     }
     gifski_set_progress_callback(g, cb, ptr::null_mut());
     assert_eq!(GifskiError::OK, gifski_add_frame_rgba(g, 0, 1, 1, &RGBA::new(0,0,0,0), 5));
-    assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 1, 1, 1, &RGB::new(0,0,0), 5));
+    assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 1, 1, 3, 1, &RGB::new(0,0,0), 5));
     assert_eq!(GifskiError::OK, gifski_end_adding_frames(g));
     assert_eq!(GifskiError::INVALID_STATE, gifski_end_adding_frames(g));
     gifski_drop(g);
