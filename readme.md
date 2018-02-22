@@ -13,7 +13,7 @@ This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts 
 
 Requires macOS 10.13 or later.
 
-Brought to you by [Sindre Sorhus](https://github.com/sindresorhus) and [Kornel Lesiński](https://github.com/kornelski)
+Created by [Sindre Sorhus](https://github.com/sindresorhus) and [Kornel Lesiński](https://github.com/kornelski).
 
 
 ## License

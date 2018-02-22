@@ -15,6 +15,7 @@
 		E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3AE62861E5CD2F300035A2F /* AppDelegate.swift */; };
 		E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E3AE62881E5CD2F300035A2F /* Assets.xcassets */; };
 		E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3AE628A1E5CD2F300035A2F /* MainMenu.xib */; };
+		E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = E3C3DB4E203F154300CB8BB9 /* Credits.rtf */; };
 		E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */; };
 		E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* util.swift */; };
 		E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */; };
@@ -80,6 +81,7 @@
 		E3AE628B1E5CD2F300035A2F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		E3AE628D1E5CD2F300035A2F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Gifski.entitlements; sourceTree = "<group>"; };
+		E3C3DB4E203F154300CB8BB9 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDropView.swift; sourceTree = "<group>"; };
 		E3D08F6D1E5D7BFD00F465DF /* util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = util.swift; sourceTree = "<group>"; };
 		E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavePanelAccessoryViewController.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 				E3AE628D1E5CD2F300035A2F /* Info.plist */,
 				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
 				E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */,
+				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
 			);
 			path = Gifski;
 			sourceTree = "<group>";
@@ -262,6 +265,7 @@
 				E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */,
 				E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */,
 				E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */,
+				E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
