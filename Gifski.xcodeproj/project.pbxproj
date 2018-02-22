@@ -20,6 +20,7 @@
 		E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* util.swift */; };
 		E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */; };
 		E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */; };
+		E3FDC26D203F32DA00C00409 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD61A6201BD3640087160A /* libresolv.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,6 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E3FDC26D203F32DA00C00409 /* libresolv.tbd in Frameworks */,
 				5A1FDC6F203F0B050065E0F5 /* libgifski.a in Frameworks */,
 				E34798D01F882FB3003F9142 /* ProgressKit.framework in Frameworks */,
 			);
