@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5A1FDC6F203F0B050065E0F5 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD619F201BD29E0087160A /* libgifski.a */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
 		E34798D01F882FB3003F9142 /* ProgressKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E34798CF1F882FB3003F9142 /* ProgressKit.framework */; };
 		E34798D11F882FB3003F9142 /* ProgressKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E34798CF1F882FB3003F9142 /* ProgressKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -18,7 +19,6 @@
 		E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* util.swift */; };
 		E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */; };
 		E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */; };
-		E3FD61AE201BD3A80087160A /* libgifski.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD61A1201BD29E0087160A /* libgifski.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,7 +95,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E3FD61AE201BD3A80087160A /* libgifski.dylib in Frameworks */,
+				5A1FDC6F203F0B050065E0F5 /* libgifski.a in Frameworks */,
 				E34798D01F882FB3003F9142 /* ProgressKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
