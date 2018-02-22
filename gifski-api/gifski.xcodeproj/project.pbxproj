@@ -106,6 +106,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = CA606A23C5120EBB66370910 /* Build configuration list for PBXNativeTarget "gifski" */;
 			buildPhases = (
+				5ACFDEB0203F419E00A508F2 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -163,6 +164,24 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		5ACFDEB0203F419E00A508F2 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(CARGO_XCODE_PRODUCTS_DIR)/libgifski.a",
+			);
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/libgifski.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ln -f \"${CARGO_XCODE_PRODUCTS_DIR}/libgifski.a\" \"${BUILT_PRODUCTS_DIR}/\"";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXTargetDependency section */
 		CA60F84D519C5C0E4BCE3C96 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -201,7 +220,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CARGO_FLAGS = "";
-				CARGO_TARGET_DIR = "$(BUILD_DIR)/target";
+				CARGO_TARGET_DIR = "$(BUILD_DIR)/cargo-target";
+				CARGO_XCODE_PRODUCTS_DIR = "$(BUILD_DIR)/cargo-target/debug";
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -217,7 +237,6 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/target/debug";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -250,7 +269,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CARGO_FLAGS = "--release";
-				CARGO_TARGET_DIR = "$(BUILD_DIR)/target";
+				CARGO_TARGET_DIR = "$(BUILD_DIR)/cargo-target";
+				CARGO_XCODE_PRODUCTS_DIR = "$(BUILD_DIR)/cargo-target/release";
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
@@ -266,7 +286,6 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/target/release";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
