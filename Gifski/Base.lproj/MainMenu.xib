@@ -108,10 +108,16 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                         <items>
-                            <menuItem title="Website" id="IJ2-L8-CcF" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
+                            <menuItem title="Gifski app website" id="IJ2-L8-CcF" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://github.com/sindresorhus/gifski-app"/>
+                                </userDefinedRuntimeAttributes>
+                            </menuItem>
+                            <menuItem title="About Gifski library" id="TcL-ZY-7a3" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://gif.ski"/>
                                 </userDefinedRuntimeAttributes>
                             </menuItem>
                             <menuItem title="Send Feedback…" id="sOe-gQ-Htm" customClass="FeedbackMenuItem" customModule="Gifski" customModuleProvider="target">
