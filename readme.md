@@ -18,4 +18,4 @@ Created by [Sindre Sorhus](https://github.com/sindresorhus) and [Kornel Lesińsk
 
 ## License
 
-MIT
+MIT (the Mac app) + [gifski library license](https://github.com/ImageOptim/gifski/blob/master/LICENSE)
