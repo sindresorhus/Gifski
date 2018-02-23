@@ -18,17 +18,12 @@ Created by [Sindre Sorhus](https://github.com/sindresorhus) and [Kornel Lesińsk
 
 ## Download
 
-**Soon**
-
-<!--
 [![](https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/macappstore-lrg.svg)](https://geo.itunes.apple.com/us/app/gifski/id1351639930?mt=12)
--->
 
 
 ## Screenshots
 
 <img src="Stuff/screenshot.jpg" width="918" height="413">
-
 <img src="Stuff/screenshot2.jpg" width="918" height="413">
 
 

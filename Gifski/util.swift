@@ -6,6 +6,8 @@ struct Meta {
 	static func openSubmitFeedbackPage() {
 		let body =
 		"""
+		<!-- Provide your feedback here. Include as many details as possible. -->
+
 
 		---
 		\(App.name) \(App.version) (\(App.build))
@@ -206,7 +208,7 @@ final class Label: NSTextField {
 	/// Allow the it to be disabled like other NSControl's
 	override var isEnabled: Bool {
 		didSet {
-			textColor = isEnabled ? NSColor.controlTextColor : NSColor.disabledControlTextColor
+			textColor = isEnabled ? .controlTextColor : .disabledControlTextColor
 		}
 	}
 

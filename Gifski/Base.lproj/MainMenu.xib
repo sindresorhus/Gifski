@@ -108,13 +108,19 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                         <items>
-                            <menuItem title="Gifski app website" id="IJ2-L8-CcF" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
+                            <menuItem title="Gifski.app Website" id="IJ2-L8-CcF" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://sindresorhus.com/gifski"/>
+                                </userDefinedRuntimeAttributes>
+                            </menuItem>
+                            <menuItem title="Gifski.app Source Code" id="LPR-FD-PrP" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://github.com/sindresorhus/gifski-app"/>
                                 </userDefinedRuntimeAttributes>
                             </menuItem>
-                            <menuItem title="About Gifski library" id="TcL-ZY-7a3" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
+                            <menuItem title="About Gifski Library" id="TcL-ZY-7a3" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://gif.ski"/>
