@@ -11,6 +11,8 @@
 
 This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts videos to GIF animations using [`pngquant`](https://pngquant.org)'s fancy features for efficient cross-frame palettes and temporal dithering. It produces animated GIFs that use thousands of colors per frame.
 
+**It's on [Product Hunt](https://www.producthunt.com/posts/gifski) ✨**
+
 Requires macOS 10.13 or later.
 
 Created by [Sindre Sorhus](https://github.com/sindresorhus) and [Kornel Lesiński](https://github.com/kornelski).
