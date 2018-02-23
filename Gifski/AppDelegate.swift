@@ -1,8 +1,6 @@
 import Cocoa
 import ProgressKit
 
-private let defaults = UserDefaults.standard
-
 extension NSColor {
 	static let appTheme = NSColor(named: NSColor.Name("Theme"))!
 }
@@ -175,7 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		gifski.convertFile(
 			inputUrl,
-			outputFile: outputUrl,
+			outputUrl: outputUrl,
 			quality: defaults["outputQuality"] as! Double,
 			dimensions: choosenDimensions
 		)

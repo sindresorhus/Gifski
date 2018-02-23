@@ -15,11 +15,16 @@ final class Gifski {
 	private(set) var progress: Double = 0
 	var onProgress: ((_ progress: Double) -> Void)?
 
+	/**
+	- parameters:
+		- frameRate: Clamped to 5...30. Uses the frame rate of `inputUrl` if not specified.
+	*/
 	func convertFile(
-		_ inputFile: URL,
-		outputFile: URL,
+		_ inputUrl: URL,
+		outputUrl: URL,
 		quality: Double = 1,
-		dimensions: CGSize? = nil
+		dimensions: CGSize? = nil,
+		frameRate: Int? = nil
 	) {
 		guard !isRunning else {
 			return
@@ -57,17 +62,17 @@ final class Gifski {
 		}, context)
 
 		DispatchQueue.global(qos: .utility).async {
-			let asset = AVURLAsset(url: inputFile, options: nil)
+			let asset = AVURLAsset(url: inputUrl, options: nil)
 			let generator = AVAssetImageGenerator(asset: asset)
 			generator.requestedTimeToleranceAfter = kCMTimeZero
 			generator.requestedTimeToleranceBefore = kCMTimeZero
 
-			let FPS = 24
-			self.frameCount = Int(asset.duration.seconds) * FPS
+			let fps = (frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
+			self.frameCount = Int(asset.duration.seconds * fps)
 
 			var frameForTimes = [CMTime]()
 			for i in 0..<self.frameCount {
-				frameForTimes.append(CMTimeMake(Int64(i), Int32(FPS)))
+				frameForTimes.append(CMTimeMake(Int64(i), Int32(fps)))
 			}
 
 			var frameIndex = 0
@@ -85,7 +90,7 @@ final class Gifski {
 					UInt32(image.bytesPerRow),
 					UInt32(image.height),
 					buffer,
-					UInt16(100 / FPS)
+					UInt16(100 / fps)
 				)
 				precondition(result == GIFSKI_OK, String(describing: result))
 
@@ -96,7 +101,7 @@ final class Gifski {
 				}
 			}
 
-			gifski_write(g, outputFile.path)
+			gifski_write(g, outputUrl.path)
 			gifski_drop(g)
 		}
 	}

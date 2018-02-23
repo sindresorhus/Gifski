@@ -38,10 +38,12 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		qualitySlider.onAction = { _ in
-			UserDefaults.standard["outputQuality"] = self.qualitySlider.doubleValue
+			defaults["outputQuality"] = self.qualitySlider.doubleValue
 			estimateFileSize()
 		}
 
+		// Set initial defaults
 		dimensionsSlider.triggerAction()
+		qualitySlider.doubleValue = defaults["outputQuality"] as! Double
 	}
 }

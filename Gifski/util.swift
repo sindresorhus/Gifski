@@ -2,6 +2,9 @@ import Cocoa
 import AVFoundation
 
 
+let defaults = UserDefaults.standard
+
+
 struct Meta {
 	static func openSubmitFeedbackPage() {
 		let body =
@@ -52,6 +55,53 @@ class SSView: NSView {
 }
 
 
+extension Comparable {
+	/// Note: It's not possible to implement `Range` or `PartialRangeUpTo` here as we can't know what `1.1..<1.53` would be. They only work with Stridable in our case.
+
+	/// Example: 20.5.clamped(from: 10.3, to: 15)
+	func clamped(from lowerBound: Self, to upperBound: Self) -> Self {
+		return min(max(self, lowerBound), upperBound)
+	}
+
+	/// Example: 20.5.clamped(to: 10.3...15)
+	func clamped(to range: ClosedRange<Self>) -> Self {
+		return clamped(from: range.lowerBound, to: range.upperBound)
+	}
+
+	/// Example: 20.5.clamped(to: ...10.3)
+	/// => 10.3
+	func clamped(to range: PartialRangeThrough<Self>) -> Self {
+		return min(self, range.upperBound)
+	}
+
+	/// Example: 5.5.clamped(to: 10.3...)
+	/// => 10.3
+	func clamped(to range: PartialRangeFrom<Self>) -> Self {
+		return max(self, range.lowerBound)
+	}
+}
+
+extension Strideable where Stride: SignedInteger {
+	/// Example: 20.clamped(to: 5..<10)
+	/// => 9
+	func clamped(to range: CountableRange<Self>) -> Self {
+		return clamped(from: range.lowerBound, to: range.upperBound.advanced(by: -1))
+	}
+
+	/// Example: 20.clamped(to: 5...10)
+	/// => 10
+	func clamped(to range: CountableClosedRange<Self>) -> Self {
+		return clamped(from: range.lowerBound, to: range.upperBound)
+	}
+
+	/// Example: 20.clamped(to: ..<10)
+	/// => 9
+	func clamped(to range: PartialRangeUpTo<Self>) -> Self {
+		return min(self, range.upperBound.advanced(by: -1))
+	}
+}
+
+
 extension NSViewController {
 	var appDelegate: AppDelegate {
 		return NSApp.delegate as! AppDelegate
@@ -64,7 +114,7 @@ extension AVURLAsset {
 	struct VideoMetadata {
 		let dimensions: CGSize
 		let duration: Double
-		let frameCount: Double
+		let frameRate: Double
 		let fileSize: Int
 	}
 
@@ -78,7 +128,7 @@ extension AVURLAsset {
 		return VideoMetadata(
 			dimensions: CGSize(width: fabs(dimensions.width), height: fabs(dimensions.height)),
 			duration: duration.seconds,
-			frameCount: Double(track.nominalFrameRate),
+			frameRate: Double(track.nominalFrameRate),
 			fileSize: url.fileSize
 		)
 	}
