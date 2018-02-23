@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private weak var window: NSWindow!
 	var videoDropView: VideoDropView!
 	let gifski = Gifski()
+	var progress: Progress?
 
 	lazy var circularProgress: CircularProgressView = {
 		let size: CGFloat = 160
@@ -135,6 +136,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		circularProgress.progress = CGFloat(progress)
 
 		if progress == 1 {
+			self.progress?.unpublish()
+
 			circularProgress.percentLabelLayer.string = "✔"
 			circularProgress.fadeOut(delay: 1) {
 				self.isRunning = false
@@ -178,12 +181,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		circularProgress.progress = 0
 		circularProgress.animated = true
 
-		gifski.convertFile(
+		progress = gifski.convertFile(
 			inputUrl,
 			outputUrl: outputUrl,
 			quality: defaults["outputQuality"] as! Double,
 			dimensions: choosenDimensions,
 			frameRate: choosenFrameRate
 		)
+		progress?.publish()
 	}
 }
