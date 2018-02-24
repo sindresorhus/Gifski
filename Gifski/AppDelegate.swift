@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	var hasFinishedLaunching = false
 	var urlsToConvertOnLaunch: URL!
 	var choosenDimensions: CGSize!
+	var choosenFrameRate: Int!
 
 	@objc dynamic var isRunning: Bool = false {
 		didSet {
@@ -175,7 +176,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			inputUrl,
 			outputUrl: outputUrl,
 			quality: defaults["outputQuality"] as! Double,
-			dimensions: choosenDimensions
+			dimensions: choosenDimensions,
+			frameRate: choosenFrameRate
 		)
 	}
 }

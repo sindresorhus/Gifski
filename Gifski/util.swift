@@ -55,6 +55,30 @@ class SSView: NSView {
 }
 
 
+extension AVAssetImageGenerator {
+	func generateCGImagesAsynchronously(forTimePoints timePoints: [CMTime], completionHandler: @escaping AVAssetImageGeneratorCompletionHandler) {
+		let times = timePoints.map { NSValue(time: $0) }
+		generateCGImagesAsynchronously(forTimes: times, completionHandler: completionHandler)
+	}
+}
+
+
+extension CMTime {
+	static var zero: CMTime = kCMTimeZero
+	static var invalid: CMTime = kCMTimeInvalid
+}
+
+
+extension CMTimeScale {
+	/**
+	```
+	CMTime(seconds: (1 / fps) * Double(i), preferredTimescale: .video)
+	```
+	*/
+	static var video: Int32 = 600 // This is what Apple recommends
+}
+
+
 extension Comparable {
 	/// Note: It's not possible to implement `Range` or `PartialRangeUpTo` here as we can't know what `1.1..<1.53` would be. They only work with Stridable in our case.
 

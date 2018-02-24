@@ -1,10 +1,12 @@
 import Cocoa
 
 final class SavePanelAccessoryViewController: NSViewController {
-	@IBOutlet private weak var dimensionsSlider: NSSlider!
-	@IBOutlet private weak var dimensionsLabel: NSTextField!
-	@IBOutlet private weak var qualitySlider: NSSlider!
 	@IBOutlet private weak var estimatedSizeLabel: NSTextField!
+	@IBOutlet private weak var scaleSlider: NSSlider!
+	@IBOutlet private weak var scaleLabel: NSTextField!
+	@IBOutlet private weak var frameRateSlider: NSSlider!
+	@IBOutlet private weak var frameRateLabel: NSTextField!
+	@IBOutlet private weak var qualitySlider: NSSlider!
 	var inputUrl: URL!
 
 	override func viewDidLoad() {
@@ -18,23 +20,30 @@ final class SavePanelAccessoryViewController: NSViewController {
 		/// TODO: Use KVO here
 
 		let metadata = inputUrl.videoMetadata!
-		let FPS = 24.0
-		let frameCount = metadata.duration * FPS
+		let frameRate = Int(metadata.frameRate).clamped(to: 5...30)
 		var currentDimensions = metadata.dimensions
 
 		func estimateFileSize() {
-			var fileSize = (Double(currentDimensions.width) * Double(currentDimensions.height) * Double(frameCount)) / 3
+			let frameCount = metadata.duration * frameRateSlider.doubleValue
+			var fileSize = (Double(currentDimensions.width) * Double(currentDimensions.height) * frameCount) / 3
 			fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
 			estimatedSizeLabel.stringValue = formatter.string(fromByteCount: Int64(fileSize))
 		}
 
-		dimensionsSlider.onAction = { _ in
-			currentDimensions = metadata.dimensions * self.dimensionsSlider.doubleValue
-			self.dimensionsLabel.stringValue = "\(Int(currentDimensions.width))×\(Int(currentDimensions.height))"
+		scaleSlider.onAction = { _ in
+			currentDimensions = metadata.dimensions * self.scaleSlider.doubleValue
+			self.scaleLabel.stringValue = "\(Int(currentDimensions.width))×\(Int(currentDimensions.height))"
 			estimateFileSize()
 
 			/// TODO: Feels hacky to do it this way. Find a better way to pass the state.
 			self.appDelegate.choosenDimensions = currentDimensions
+		}
+
+		frameRateSlider.onAction = { _ in
+			let frameRate = self.frameRateSlider.integerValue
+			self.frameRateLabel.stringValue = "\(frameRate)"
+			self.appDelegate.choosenFrameRate = frameRate
+			estimateFileSize()
 		}
 
 		qualitySlider.onAction = { _ in
@@ -43,7 +52,11 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		// Set initial defaults
-		dimensionsSlider.triggerAction()
+		scaleSlider.triggerAction()
+		frameRateSlider.maxValue = Double(frameRate)
+		frameRateSlider.integerValue = frameRate
+		frameRateSlider.triggerAction()
 		qualitySlider.doubleValue = defaults["outputQuality"] as! Double
+		qualitySlider.triggerAction()
 	}
 }

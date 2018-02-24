@@ -1,13 +1,6 @@
 import Foundation
 import AVFoundation
 
-extension AVAssetImageGenerator {
-	func generateCGImagesAsynchronously(forTimePoints timePoints: [CMTime], completionHandler: @escaping AVAssetImageGeneratorCompletionHandler) {
-		let times = timePoints.map { NSValue(time: $0) }
-		generateCGImagesAsynchronously(forTimes: times, completionHandler: completionHandler)
-	}
-}
-
 final class Gifski {
 	private var frameCount = 0
 	private var frameIndex = 0
@@ -64,15 +57,15 @@ final class Gifski {
 		DispatchQueue.global(qos: .utility).async {
 			let asset = AVURLAsset(url: inputUrl, options: nil)
 			let generator = AVAssetImageGenerator(asset: asset)
-			generator.requestedTimeToleranceAfter = kCMTimeZero
-			generator.requestedTimeToleranceBefore = kCMTimeZero
+			generator.requestedTimeToleranceAfter = .zero
+			generator.requestedTimeToleranceBefore = .zero
 
 			let fps = (frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
 			self.frameCount = Int(asset.duration.seconds * fps)
 
 			var frameForTimes = [CMTime]()
 			for i in 0..<self.frameCount {
-				frameForTimes.append(CMTimeMake(Int64(i), Int32(fps)))
+				frameForTimes.append(CMTime(seconds: (1 / fps) * Double(i), preferredTimescale: .video))
 			}
 
 			var frameIndex = 0
