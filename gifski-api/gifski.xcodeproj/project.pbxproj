@@ -59,7 +59,7 @@
 /* Begin PBXLegacyTarget section */
 		CA60FB6F97415B50F10B8D0B /* Cargo */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "build $(CARGO_FLAGS)";
+			buildArgumentsString = "build $(CARGO_FLAGS) --features=openmp";
 			buildConfigurationList = CA6045D4FC1B1EBBFEF4C27E /* Build configuration list for PBXLegacyTarget "Cargo" */;
 			buildPhases = (
 			);
@@ -220,6 +220,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CARGO_FLAGS = "";
+				CC = "gcc-7";
 				CARGO_TARGET_DIR = "$(BUILD_DIR)/cargo-target";
 				CARGO_XCODE_PRODUCTS_DIR = "$(BUILD_DIR)/cargo-target/debug";
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
@@ -269,6 +270,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CARGO_FLAGS = "--release";
+				CC = "gcc-7";
 				CARGO_TARGET_DIR = "$(BUILD_DIR)/cargo-target";
 				CARGO_XCODE_PRODUCTS_DIR = "$(BUILD_DIR)/cargo-target/release";
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
