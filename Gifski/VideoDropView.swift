@@ -98,11 +98,11 @@ final class VideoDropView: DropView {
 	}
 
 	override func onEntered(_ sender: NSDraggingInfo) -> Bool {
-		return sender.fileURLs(types: ["public.movie"]).count == 1
+		return sender.fileURLs(types: System.supportedVideoTypes).count == 1
 	}
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {
-		if let url = sender.fileURLs(types: ["public.movie"]).first {
+		if let url = sender.fileURLs(types: System.supportedVideoTypes).first {
 			onComplete?([url])
 			return true
 		}
