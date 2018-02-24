@@ -133,6 +133,15 @@ extension NSViewController {
 }
 
 
+extension AVAsset {
+	var isSupportedVideo: Bool {
+		return !tracks(withMediaType: .video).isEmpty
+	}
+
+	var isSupportedAudio: Bool {
+		return !tracks(withMediaType: .audio).isEmpty
+	}
+}
 /// Video metadata
 extension AVURLAsset {
 	struct VideoMetadata {
@@ -160,6 +169,14 @@ extension AVURLAsset {
 extension URL {
 	var videoMetadata: AVURLAsset.VideoMetadata? {
 		return AVURLAsset(url: self).videoMetadata
+	}
+
+	var isSupportedVideo: Bool {
+		return AVAsset(url: self).isSupportedVideo
+	}
+
+	var isSupportedAudio: Bool {
+		return AVAsset(url: self).isSupportedAudio
 	}
 }
 
@@ -609,6 +626,12 @@ struct System {
 		sysctlbyname("hw.model", &model, &size, nil, 0)
 		return String(cString: model)
 	}()
+
+	static let supportedVideoTypes = [
+		AVFileType.mp4.rawValue,
+		AVFileType.m4v.rawValue,
+		AVFileType.mov.rawValue
+	]
 }
 
 

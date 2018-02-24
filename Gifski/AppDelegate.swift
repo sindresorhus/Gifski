@@ -122,7 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		let panel = NSOpenPanel()
 		panel.canChooseDirectories = false
 		panel.canCreateDirectories = false
-		panel.allowedFileTypes = ["public.movie"]
+		panel.allowedFileTypes = System.supportedVideoTypes
 
 		panel.beginSheetModal(for: window) {
 			if $0 == .OK {
@@ -143,6 +143,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func convert(_ inputUrl: URL) {
+		// We already specify the UTIs we support, so this can only happen on invalid but supported files
+		guard inputUrl.isSupportedVideo else {
+			Misc.alert(title: "Video not supported", text: "The video you tried to convert could not be read.")
+			return
+		}
+
 		let panel = NSSavePanel()
 		panel.canCreateDirectories = true
 		panel.directoryURL = inputUrl.directoryURL
