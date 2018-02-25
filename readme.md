@@ -32,3 +32,13 @@ Created by [Sindre Sorhus](https://github.com/sindresorhus) and [Kornel Lesińsk
 ## License
 
 MIT (the Mac app) + [gifski library license](https://github.com/ImageOptim/gifski/blob/master/LICENSE)
+
+## Building from source
+
+To build the app in Xcode you need to have [Rust](https://www.rust-lang.org/), GCC 7 and [Carthage](https://github.com/Carthage/Carthage) installed first:
+
+```sh
+curl https://sh.rustup.rs -sSf | sh
+brew install gcc carthage SwiftLint
+carthage bootstrap
+```
