@@ -4,22 +4,22 @@ import AVFoundation
 final class Gifski {
 	private(set) var isRunning = false
 	private var progress: Progress!
+    private var observation: NSKeyValueObservation?
 
 	// `progress.fractionCompleted` is KVO-compliant, but we expose this for convenience
-	var onProgress: ((_ progress: Double) -> Void)?
+	var onProgress: ((_ progress: Progress) -> Void)?
 
 	/**
 	- parameters:
 		- frameRate: Clamped to 5...30. Uses the frame rate of `inputUrl` if not specified.
 	*/
-	@discardableResult
 	func convertFile(
 		_ inputUrl: URL,
 		outputUrl: URL,
 		quality: Double = 1,
 		dimensions: CGSize? = nil,
 		frameRate: Int? = nil
-	) -> Progress {
+	) {
 		/// TODO: Find a better way to handle this
 		guard !isRunning else {
 			fatalError("Create a new instance if you want to run multiple conversions at once")
@@ -27,30 +27,31 @@ final class Gifski {
 
 		isRunning = true
 
-		progress = Progress(parent: nil, userInfo: [.fileURLKey: outputUrl])
-		progress.fileURL = outputUrl
+		progress = Progress(parent: Progress.current(), userInfo: [:])
 
-		var settings = GifskiSettings(
+        observation = progress.observe(\Progress.fractionCompleted) { (progress, _) in
+            DispatchQueue.main.async {
+                self.onProgress?(progress)
+                self.isRunning = !progress.isFinished
+            }
+        }
+
+		let settings = GifskiSettings(
 			width: UInt32(dimensions?.width ?? 0),
 			height: UInt32(dimensions?.height ?? 0),
 			quality: UInt8(quality * 100),
 			once: false,
 			fast: false
 		)
-		let g = gifski_new(&settings)
+        guard let g = GifskiWrapper(settings: settings) else {
+            fatalError("Gifski instantiated with invalid settings")
+        }
 
-		let context = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-		gifski_set_progress_callback(g, { user_data in
-			let mySelf = Unmanaged<Gifski>.fromOpaque(user_data!).takeUnretainedValue()
-
-			DispatchQueue.main.async {
-				mySelf.progress.completedUnitCount += 1
-				mySelf.onProgress?(mySelf.progress.fractionCompleted)
-				mySelf.isRunning = !mySelf.progress.isFinished
-			}
-
-			return mySelf.progress.isCancelled ? 0 : 1
-		}, context)
+        g.setProgressCallback(context: &progress) { context in
+            let progress = context!.assumingMemoryBound(to: Progress.self).pointee
+            progress.completedUnitCount += 1
+            return progress.isCancelled ? 0 : 1
+        }
 
 		DispatchQueue.global(qos: .utility).async {
 			let asset = AVURLAsset(url: inputUrl, options: nil)
@@ -73,30 +74,24 @@ final class Gifski {
 					fatalError("Error with image \(frameIndex): \(error!)")
 				}
 
-				let buffer = CFDataGetBytePtr(image.dataProvider!.data)
+                do {
+                    try g.addFrameARGB(index: frameIndex, image: image, fps: fps)
 
-				let result = gifski_add_frame_argb(
-					g,
-					UInt32(frameIndex),
-					UInt32(image.width),
-					UInt32(image.bytesPerRow),
-					UInt32(image.height),
-					buffer,
-					UInt16(100 / fps)
-				)
-				precondition(result == GIFSKI_OK, String(describing: result))
+                    frameIndex += 1
 
-				frameIndex += 1
-
-				if frameIndex == frameForTimes.count {
-					gifski_end_adding_frames(g)
-				}
+                    if frameIndex == frameForTimes.count {
+                        try g.endAddingFrames()
+                    }
+                } catch {
+                    fatalError(error.localizedDescription)
+                }
 			}
 
-			gifski_write(g, outputUrl.path)
-			gifski_drop(g)
+            do {
+                try g.write(path: outputUrl.path)
+            } catch {
+                fatalError(error.localizedDescription)
+            }
 		}
-
-		return progress
 	}
 }

@@ -251,12 +251,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 
-	func updateProgress(_ progress: Double) {
-		circularProgress.progress = CGFloat(progress)
+	func updateProgress(_ progress: Progress) {
+		circularProgress.progress = CGFloat(progress.fractionCompleted)
 
-		if progress == 1 {
-			self.progress?.unpublish()
-
+		if progress.isFinished {
 			circularProgress.percentLabelLayer.string = "✔"
 			circularProgress.fadeOut(delay: 1) {
 				self.isRunning = false
@@ -300,14 +298,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		circularProgress.progress = 0
 		circularProgress.animated = true
 
-		progress = gifski.convertFile(
+        progress = Progress(totalUnitCount: 1)
+        progress?.becomeCurrent(withPendingUnitCount: 1)
+		gifski.convertFile(
 			inputUrl,
 			outputUrl: outputUrl,
 			quality: defaults["outputQuality"] as! Double,
 			dimensions: choosenDimensions,
 			frameRate: choosenFrameRate
 		)
-		progress?.publish()
+        progress?.resignCurrent()
 
 		DockIconProgress.progress = progress
 		DockIconProgress.style = .circle(radius: 55, color: .appTheme)
