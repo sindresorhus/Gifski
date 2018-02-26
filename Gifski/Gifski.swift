@@ -72,12 +72,23 @@ final class Gifski {
 
 			var frameIndex = 0
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { _, image, _, _, error in
-				guard let image = image, error == nil else {
+				guard let image = image,
+					let data = image.dataProvider?.data,
+					let buffer = CFDataGetBytePtr(data),
+					error == nil
+				else {
 					fatalError("Error with image \(frameIndex): \(error!)")
 				}
 
 				do {
-					try g.addFrameARGB(index: frameIndex, image: image, fps: fps)
+					try g.addFrameARGB(
+						index: UInt32(frameIndex),
+						width: UInt32(image.width),
+						bytesPerRow: UInt32(image.bytesPerRow),
+						height: UInt32(image.height),
+						pixels: buffer,
+						delay: UInt16(100 / fps)
+					)
 
 					frameIndex += 1
 
@@ -94,7 +105,7 @@ final class Gifski {
 			} catch {
 				fatalError(error.localizedDescription)
 			}
-			selfprogress.unpublish()
+			self.progress.unpublish()
 		}
 	}
 }

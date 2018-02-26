@@ -72,18 +72,9 @@ final class GifskiWrapper {
 		gifski_set_progress_callback(pointer, cb, context)
 	}
 
-	func addFrameARGB(index: Int, image: CGImage, fps: Double) throws {
-		let buffer = CFDataGetBytePtr(image.dataProvider!.data)
+	func addFrameARGB(index: UInt32, width: UInt32, bytesPerRow: UInt32, height: UInt32, pixels: UnsafePointer<UInt8>, delay: UInt16) throws {
 		try wrap {
-			gifski_add_frame_rgb(
-				pointer,
-				UInt32(index),
-				UInt32(image.width),
-				UInt32(image.bytesPerRow),
-				UInt32(image.height),
-				buffer,
-				UInt16(100 / fps)
-			)
+			gifski_add_frame_argb(pointer, index, width, bytesPerRow, height, pixels, delay)
 		}
 	}
 
