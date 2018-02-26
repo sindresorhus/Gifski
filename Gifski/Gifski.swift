@@ -27,9 +27,11 @@ final class Gifski {
 
 		isRunning = true
 
-		progress = Progress(parent: Progress.current(), userInfo: [:])
+        progress = Progress(parent: .current(), userInfo: [.fileURLKey: outputUrl])
+        progress.fileURL = outputUrl
+        progress.publish()
 
-        observation = progress.observe(\Progress.fractionCompleted) { (progress, _) in
+        observation = progress.observe(\.fractionCompleted) { progress, _ in
             DispatchQueue.main.async {
                 self.onProgress?(progress)
                 self.isRunning = !progress.isFinished
@@ -92,6 +94,7 @@ final class Gifski {
             } catch {
                 fatalError(error.localizedDescription)
             }
+            self.progress.unpublish()
 		}
 	}
 }
