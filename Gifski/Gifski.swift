@@ -4,7 +4,7 @@ import AVFoundation
 final class Gifski {
 	private(set) var isRunning = false
 	private var progress: Progress!
-    private var observation: NSKeyValueObservation?
+	private var observation: NSKeyValueObservation?
 
 	// `progress.fractionCompleted` is KVO-compliant, but we expose this for convenience
 	var onProgress: ((_ progress: Progress) -> Void)?
@@ -27,16 +27,16 @@ final class Gifski {
 
 		isRunning = true
 
-        progress = Progress(parent: .current(), userInfo: [.fileURLKey: outputUrl])
-        progress.fileURL = outputUrl
-        progress.publish()
+		progress = Progress(parent: .current(), userInfo: [.fileURLKey: outputUrl])
+		progress.fileURL = outputUrl
+		progress.publish()
 
-        observation = progress.observe(\.fractionCompleted) { progress, _ in
-            DispatchQueue.main.async {
-                self.onProgress?(progress)
-                self.isRunning = !progress.isFinished
-            }
-        }
+		observation = progress.observe(\.fractionCompleted) { progress, _ in
+			DispatchQueue.main.async {
+				self.onProgress?(progress)
+				self.isRunning = !progress.isFinished
+			}
+		}
 
 		let settings = GifskiSettings(
 			width: UInt32(dimensions?.width ?? 0),
@@ -45,15 +45,15 @@ final class Gifski {
 			once: false,
 			fast: false
 		)
-        guard let g = GifskiWrapper(settings: settings) else {
-            fatalError("Gifski instantiated with invalid settings")
-        }
+		guard let g = GifskiWrapper(settings: settings) else {
+			fatalError("Gifski instantiated with invalid settings")
+		}
 
-        g.setProgressCallback(context: &progress) { context in
-            let progress = context!.assumingMemoryBound(to: Progress.self).pointee
-            progress.completedUnitCount += 1
-            return progress.isCancelled ? 0 : 1
-        }
+		g.setProgressCallback(context: &progress) { context in
+			let progress = context!.assumingMemoryBound(to: Progress.self).pointee
+			progress.completedUnitCount += 1
+			return progress.isCancelled ? 0 : 1
+		}
 
 		DispatchQueue.global(qos: .utility).async {
 			let asset = AVURLAsset(url: inputUrl, options: nil)
@@ -76,25 +76,25 @@ final class Gifski {
 					fatalError("Error with image \(frameIndex): \(error!)")
 				}
 
-                do {
-                    try g.addFrameARGB(index: frameIndex, image: image, fps: fps)
+				do {
+					try g.addFrameARGB(index: frameIndex, image: image, fps: fps)
 
-                    frameIndex += 1
+					frameIndex += 1
 
-                    if frameIndex == frameForTimes.count {
-                        try g.endAddingFrames()
-                    }
-                } catch {
-                    fatalError(error.localizedDescription)
-                }
+					if frameIndex == frameForTimes.count {
+						try g.endAddingFrames()
+					}
+				} catch {
+					fatalError(error.localizedDescription)
+				}
 			}
 
-            do {
-                try g.write(path: outputUrl.path)
-            } catch {
-                fatalError(error.localizedDescription)
-            }
-            self.progress.unpublish()
+			do {
+				try g.write(path: outputUrl.path)
+			} catch {
+				fatalError(error.localizedDescription)
+			}
+			selfprogress.unpublish()
 		}
 	}
 }

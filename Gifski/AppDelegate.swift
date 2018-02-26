@@ -298,8 +298,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		circularProgress.progress = 0
 		circularProgress.animated = true
 
-        progress = Progress(totalUnitCount: 1)
-        progress?.becomeCurrent(withPendingUnitCount: 1)
+		progress = Progress(totalUnitCount: 1)
+		progress?.becomeCurrent(withPendingUnitCount: 1)
 		gifski.convertFile(
 			inputUrl,
 			outputUrl: outputUrl,
@@ -307,7 +307,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			dimensions: choosenDimensions,
 			frameRate: choosenFrameRate
 		)
-        progress?.resignCurrent()
+		progress?.resignCurrent()
 
 		DockIconProgress.progress = progress
 		DockIconProgress.style = .circle(radius: 55, color: .appTheme)
