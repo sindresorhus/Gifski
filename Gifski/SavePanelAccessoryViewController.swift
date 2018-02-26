@@ -12,8 +12,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
-		view.autoresizingMask = [.minXMargin, .maxXMargin]
-
 		let formatter = ByteCountFormatter()
 		formatter.zeroPadsFractionDigits = true
 
