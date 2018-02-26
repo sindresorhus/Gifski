@@ -248,6 +248,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OPENMP_STATIC = 1;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -297,6 +298,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OPENMP_STATIC = 1;
 				SDKROOT = macosx;
 			};
 			name = Release;
