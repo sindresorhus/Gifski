@@ -1,36 +1,56 @@
 import Foundation
 
-enum GifskiWrapperError: UInt32, Error {
-    /** one of input arguments was NULL */
+enum GifskiWrapperError: UInt32, LocalizedError {
     case nullArg = 1
-    /** a one-time function was called twice, or functions were called in wrong order */
     case invalidState
-    /** internal error related to palette quantization */
     case quant
-    /** internal error related to gif composing */
     case gif
-    /** internal error related to multithreading */
     case threadLost
-    /** I/O error: file or directory not found */
     case notFound
-    /** I/O error: permission denied */
     case permissionDenied
-    /** I/O error: file already exists */
     case alreadyExists
-    /** invalid arguments passed to function */
     case invalidInput
-    /** misc I/O error */
     case timedOut
-    /** misc I/O error */
     case writeZero
-    /** misc I/O error */
     case interrupted
-    /** misc I/O error */
     case unexpectedEof
-    /** progress callback returned 0, writing aborted */
     case aborted
-    /** should not happen, file a bug */
     case other
+
+    var errorDescription: String? {
+        switch self {
+        case .nullArg:
+            return "one of input arguments was NULL"
+        case .invalidState:
+            return "a one-time function was called twice, or functions were called in wrong order"
+        case .quant:
+            return "internal error related to palette quantization"
+        case .gif:
+            return "internal error related to gif composing"
+        case .threadLost:
+            return "internal error related to multithreading"
+        case .notFound:
+            return "I/O error: file or directory not found"
+        case .permissionDenied:
+            return "I/O error: permission denied"
+        case .alreadyExists:
+            return "I/O error: file already exists"
+        case .invalidInput:
+            return "invalid arguments passed to function"
+        case .timedOut:
+            return "misc I/O error"
+        case .writeZero:
+            return "misc I/O error"
+        case .interrupted:
+            return "misc I/O error"
+        case .unexpectedEof:
+            return "misc I/O error"
+        case .aborted:
+            return "progress callback returned 0, writing aborted"
+        case .other:
+            return "should not happen, file a bug"
+        }
+    }
 }
 
 final class GifskiWrapper {
