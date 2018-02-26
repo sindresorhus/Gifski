@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		5A1FDC6F203F0B050065E0F5 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD619F201BD29E0087160A /* libgifski.a */; };
-		5A1FDC77203F0C6D0065E0F5 /* libgomp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A1FDC72203F0C6D0065E0F5 /* libgomp.a */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
 		E34798D01F882FB3003F9142 /* ProgressKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E34798CF1F882FB3003F9142 /* ProgressKit.framework */; };
@@ -75,7 +74,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		5A1FDC72203F0C6D0065E0F5 /* libgomp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgomp.a; path = /usr/local/opt/gcc/lib/gcc/7/libgomp.a; sourceTree = "<group>"; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GifskiWrapper.swift; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gifski.swift; sourceTree = "<group>"; };
 		E34798CF1F882FB3003F9142 /* ProgressKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ProgressKit.framework; path = Carthage/Build/Mac/ProgressKit.framework; sourceTree = "<group>"; };
@@ -105,7 +103,6 @@
 				E3FDC26D203F32DA00C00409 /* libresolv.tbd in Frameworks */,
 				5A1FDC6F203F0B050065E0F5 /* libgifski.a in Frameworks */,
 				E34798D01F882FB3003F9142 /* ProgressKit.framework in Frameworks */,
-				5A1FDC77203F0C6D0065E0F5 /* libgomp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -115,7 +112,6 @@
 		E317EE121F88305800359C57 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				5A1FDC72203F0C6D0065E0F5 /* libgomp.a */,
 				E3FD61A6201BD3640087160A /* libresolv.tbd */,
 				E3FD61A4201BD2DA0087160A /* gifski.h */,
 				E34798D41F882FEE003F9142 /* ProgressKit.framework.dSYM */,
