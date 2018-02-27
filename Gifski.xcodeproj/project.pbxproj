@@ -74,7 +74,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GifskiWrapper.swift; sourceTree = "<group>"; };
+		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E34798CF1F882FB3003F9142 /* ProgressKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ProgressKit.framework; path = Carthage/Build/Mac/ProgressKit.framework; sourceTree = "<group>"; };
 		E34798D41F882FEE003F9142 /* ProgressKit.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = ProgressKit.framework.dSYM; path = Carthage/Build/Mac/ProgressKit.framework.dSYM; sourceTree = "<group>"; };
@@ -144,9 +144,10 @@
 			children = (
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
 				E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */,
-				E339F010203820ED003B78FB /* Gifski.swift */,
 				E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */,
 				E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */,
+				E339F010203820ED003B78FB /* Gifski.swift */,
+				C2040B8820435871004EE259 /* GifskiWrapper.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
@@ -154,7 +155,6 @@
 				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
 				E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */,
 				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
-				C2040B8820435871004EE259 /* GifskiWrapper.swift */,
 			);
 			path = Gifski;
 			sourceTree = "<group>";
