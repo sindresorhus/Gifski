@@ -11,7 +11,7 @@
 
 This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts videos to GIF animations using [`pngquant`](https://pngquant.org)'s fancy features for efficient cross-frame palettes and temporal dithering. It produces animated GIFs that use thousands of colors per frame.
 
-**It's on [Product Hunt](https://www.producthunt.com/posts/gifski) ✨**
+**[Blog post](https://blog.sindresorhus.com/gifski-972692460aa5)** &nbsp;&nbsp; **[Product Hunt](https://www.producthunt.com/posts/gifski)**
 
 Requires macOS 10.13 or later.
 
@@ -29,16 +29,17 @@ Created by [Sindre Sorhus](https://github.com/sindresorhus) and [Kornel Lesińsk
 <img src="Stuff/screenshot2.jpg" width="918" height="413">
 
 
-## License
-
-MIT (the Mac app) + [gifski library license](https://github.com/ImageOptim/gifski/blob/master/LICENSE)
-
 ## Building from source
 
-To build the app in Xcode you need to have [Rust](https://www.rust-lang.org/), GCC 7 and [Carthage](https://github.com/Carthage/Carthage) installed first:
+To build the app in Xcode you need to have [Rust](https://www.rust-lang.org), GCC 7 and [Carthage](https://github.com/Carthage/Carthage) installed first:
 
 ```sh
 curl https://sh.rustup.rs -sSf | sh
 brew install gcc carthage SwiftLint
 carthage bootstrap
 ```
+
+
+## License
+
+MIT (the Mac app) + [gifski library license](https://github.com/ImageOptim/gifski/blob/master/LICENSE)
