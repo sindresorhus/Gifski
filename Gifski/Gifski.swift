@@ -8,7 +8,7 @@ final class Gifski {
 	// `progress.fractionCompleted` is KVO-compliant, but we expose this for convenience
 	var onProgress: ((_ progress: Progress) -> Void)?
 
-	class func convertFile(
+	static func convertFile(
 		_ inputUrl: URL,
 		outputUrl: URL,
 		quality: Double = 1,
@@ -16,7 +16,13 @@ final class Gifski {
 		frameRate: Int? = nil
 		) -> Gifski {
 		let gifski = Gifski()
-		gifski.convertFile(inputUrl, outputUrl: outputUrl, quality: quality, dimensions: dimensions, frameRate: frameRate)
+		gifski.convertFile(
+			inputUrl,
+			outputUrl: outputUrl,
+			quality: quality,
+			dimensions: dimensions,
+			frameRate: frameRate
+		)
 		return gifski
 	}
 
