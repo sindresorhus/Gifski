@@ -8,11 +8,9 @@ final class DockIconProgress {
 	private static var previousProgressValue: Double = 0
 	private static var progressObserver: NSKeyValueObservation?
 
-	private static var dockImageView: NSImageView = {
-		let dockImageView = NSImageView()
-		NSApp.dockTile.contentView = dockImageView
-		return dockImageView
-	}()
+	private static var dockImageView = with(NSImageView()) {
+		NSApp.dockTile.contentView = $0
+	}
 
 	static var progress: Progress? {
 		didSet {
@@ -127,22 +125,26 @@ extension NSColor {
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private weak var window: NSWindow!
-	var videoDropView: VideoDropView!
 	let gifski = Gifski()
 	var progress: Progress?
 
-	lazy var circularProgress: CircularProgressView = {
-		let size: CGFloat = 160
-		let view = CircularProgressView(frame: CGRect(widthHeight: size))
-		view.centerInWindow(window)
-		view.foreground = .appTheme
-		view.strokeWidth = 2
-		view.percentLabelLayer.setAutomaticContentsScale()
-		view.percentLabelLayer.implicitAnimations = false
-		view.layer?.backgroundColor = .clear
-		view.isHidden = true
-		return view
-	}()
+	lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
+		$0.foreground = .appTheme
+		$0.strokeWidth = 2
+		$0.percentLabelLayer.setAutomaticContentsScale()
+		$0.percentLabelLayer.implicitAnimations = false
+		$0.layer?.backgroundColor = .clear
+		$0.isHidden = true
+		$0.centerInWindow(window)
+	}
+
+	lazy var videoDropView = with(VideoDropView()) {
+		$0.frame = window.contentView!.frame
+		$0.dropText = "Drop a Video to Convert to GIF"
+		$0.onComplete = { url in
+			self.convert(url.first!)
+		}
+	}
 
 	var hasFinishedLaunching = false
 	var urlsToConvertOnLaunch: URL!
@@ -167,16 +169,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			"outputQuality": 1
 		])
 
-		window.titleVisibility = .hidden
-		window.appearance = NSAppearance(named: .vibrantDark)
-		window.tabbingMode = .disallowed
-		window.titlebarAppearsTransparent = true
-		window.isMovableByWindowBackground = true
-		window.styleMask.remove([.resizable, .fullScreen])
-		window.styleMask.insert(.fullSizeContentView)
-		window.isRestorable = false
-		window.setFrame(CGRect(width: 360, height: 240), display: true)
-		window.center()
+		with(window!) {
+			$0.titleVisibility = .hidden
+			$0.appearance = NSAppearance(named: .vibrantDark)
+			$0.tabbingMode = .disallowed
+			$0.titlebarAppearsTransparent = true
+			$0.isMovableByWindowBackground = true
+			$0.styleMask.remove([.resizable, .fullScreen])
+			$0.styleMask.insert(.fullSizeContentView)
+			$0.isRestorable = false
+			$0.setFrame(CGRect(width: 360, height: 240), display: true)
+			$0.center()
+		}
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
@@ -188,14 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 
 		let view = window.contentView!
-
 		view.addSubview(circularProgress)
-
-		videoDropView = VideoDropView(frame: view.frame)
-		videoDropView.dropText = "Drop a Video to Convert to GIF"
-		videoDropView.onComplete = { url in
-			self.convert(url.first!)
-		}
 		view.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil) /// TODO: This is dirty, find a better way

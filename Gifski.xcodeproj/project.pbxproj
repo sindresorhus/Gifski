@@ -73,19 +73,19 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gifski.swift; sourceTree = "<group>"; };
+		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E34798CF1F882FB3003F9142 /* ProgressKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ProgressKit.framework; path = Carthage/Build/Mac/ProgressKit.framework; sourceTree = "<group>"; };
 		E34798D41F882FEE003F9142 /* ProgressKit.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = ProgressKit.framework.dSYM; path = Carthage/Build/Mac/ProgressKit.framework.dSYM; sourceTree = "<group>"; };
 		E3AE62831E5CD2F300035A2F /* Gifski.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gifski.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E3AE62861E5CD2F300035A2F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E3AE62861E5CD2F300035A2F /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = AppDelegate.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3AE62881E5CD2F300035A2F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E3AE628B1E5CD2F300035A2F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		E3AE628D1E5CD2F300035A2F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Gifski.entitlements; sourceTree = "<group>"; };
 		E3C3DB4E203F154300CB8BB9 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
-		E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDropView.swift; sourceTree = "<group>"; };
-		E3D08F6D1E5D7BFD00F465DF /* util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = util.swift; sourceTree = "<group>"; };
-		E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavePanelAccessoryViewController.swift; sourceTree = "<group>"; };
+		E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = VideoDropView.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E3D08F6D1E5D7BFD00F465DF /* util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = util.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = SavePanelAccessoryViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SavePanelAccessoryViewController.xib; sourceTree = "<group>"; };
 		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; };
 		E3FD6197201BD29E0087160A /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
@@ -127,6 +127,7 @@
 				E317EE121F88305800359C57 /* Frameworks */,
 			);
 			sourceTree = "<group>";
+			usesTabs = 1;
 		};
 		E3AE62841E5CD2F300035A2F /* Products */ = {
 			isa = PBXGroup;
