@@ -96,7 +96,7 @@ extension NSBezierPath {
 
 		return path
 	}
-	
+
 	/// UIKit polyfill
 	convenience init(roundedRect rect: CGRect, cornerRadius: CGFloat) {
 		self.init(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)

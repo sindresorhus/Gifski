@@ -125,7 +125,13 @@ extension NSColor {
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private weak var window: NSWindow!
-	let gifski = Gifski()
+	var gifski: Gifski? {
+		didSet {
+			gifski?.onProgress = { [weak self] progress in
+				self?.updateProgress(progress)
+			}
+		}
+	}
 	var progress: Progress?
 
 	lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
@@ -187,10 +193,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		hasFinishedLaunching = true
 		NSApplication.shared.isAutomaticCustomizeTouchBarMenuItemEnabled = true
 
-		gifski.onProgress = { progress in
-			self.updateProgress(progress)
-		}
-
 		let view = window.contentView!
 		view.addSubview(circularProgress)
 		view.addSubview(videoDropView, positioned: .above, relativeTo: nil)
@@ -248,12 +250,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 
-	func updateProgress(_ progress: Double) {
-		circularProgress.progress = CGFloat(progress)
+	func updateProgress(_ progress: Progress) {
+		circularProgress.progress = CGFloat(progress.fractionCompleted)
 
-		if progress == 1 {
-			self.progress?.unpublish()
-
+		if progress.isFinished {
 			circularProgress.percentLabelLayer.string = "✔"
 			circularProgress.fadeOut(delay: 1) {
 				self.isRunning = false
@@ -297,14 +297,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		circularProgress.progress = 0
 		circularProgress.animated = true
 
-		progress = gifski.convertFile(
+		progress = Progress(totalUnitCount: 1)
+		progress?.becomeCurrent(withPendingUnitCount: 1)
+		gifski = Gifski.convertFile(
 			inputUrl,
 			outputUrl: outputUrl,
 			quality: defaults["outputQuality"] as! Double,
 			dimensions: choosenDimensions,
 			frameRate: choosenFrameRate
 		)
-		progress?.publish()
+		progress?.resignCurrent()
 
 		DockIconProgress.progress = progress
 		DockIconProgress.style = .circle(radius: 55, color: .appTheme)
