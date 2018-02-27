@@ -2,31 +2,35 @@ import Foundation
 import AVFoundation
 
 final class Gifski {
-	private(set) var isRunning = false
 	private var progress: Progress!
 	private var observation: NSKeyValueObservation?
 
 	// `progress.fractionCompleted` is KVO-compliant, but we expose this for convenience
 	var onProgress: ((_ progress: Progress) -> Void)?
 
+	class func convertFile(
+		_ inputUrl: URL,
+		outputUrl: URL,
+		quality: Double = 1,
+		dimensions: CGSize? = nil,
+		frameRate: Int? = nil
+		) -> Gifski {
+		let gifski = Gifski()
+		gifski.convertFile(inputUrl, outputUrl: outputUrl, quality: quality, dimensions: dimensions, frameRate: frameRate)
+		return gifski
+	}
+
 	/**
 	- parameters:
 		- frameRate: Clamped to 5...30. Uses the frame rate of `inputUrl` if not specified.
 	*/
-	func convertFile(
+	private func convertFile(
 		_ inputUrl: URL,
 		outputUrl: URL,
 		quality: Double = 1,
 		dimensions: CGSize? = nil,
 		frameRate: Int? = nil
 	) {
-		/// TODO: Find a better way to handle this
-		guard !isRunning else {
-			fatalError("Create a new instance if you want to run multiple conversions at once")
-		}
-
-		isRunning = true
-
 		progress = Progress(parent: .current(), userInfo: [.fileURLKey: outputUrl])
 		progress.fileURL = outputUrl
 		progress.publish()
@@ -34,7 +38,6 @@ final class Gifski {
 		observation = progress.observe(\.fractionCompleted) { progress, _ in
 			DispatchQueue.main.async {
 				self.onProgress?(progress)
-				self.isRunning = !progress.isFinished
 			}
 		}
 

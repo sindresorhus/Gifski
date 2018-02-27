@@ -125,7 +125,13 @@ extension NSColor {
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private weak var window: NSWindow!
-	let gifski = Gifski()
+	var gifski: Gifski? {
+		didSet {
+			gifski?.onProgress = { [weak self] progress in
+				self?.updateProgress(progress)
+			}
+		}
+	}
 	var progress: Progress?
 
 	lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
@@ -186,10 +192,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationDidFinishLaunching(_ notification: Notification) {
 		hasFinishedLaunching = true
 		NSApplication.shared.isAutomaticCustomizeTouchBarMenuItemEnabled = true
-
-		gifski.onProgress = { progress in
-			self.updateProgress(progress)
-		}
 
 		let view = window.contentView!
 		view.addSubview(circularProgress)
@@ -297,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		progress = Progress(totalUnitCount: 1)
 		progress?.becomeCurrent(withPendingUnitCount: 1)
-		gifski.convertFile(
+		gifski = Gifski.convertFile(
 			inputUrl,
 			outputUrl: outputUrl,
 			quality: defaults["outputQuality"] as! Double,
