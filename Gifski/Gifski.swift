@@ -1,52 +1,48 @@
 import Foundation
 import AVFoundation
 
-final class Gifski {
-	private var progress: Progress!
-	private var observation: NSKeyValueObservation?
+enum Result {
+	case success
+	case error(GifskiConversionError)
+}
 
-	// `progress.fractionCompleted` is KVO-compliant, but we expose this for convenience
-	var onProgress: ((_ progress: Progress) -> Void)?
+enum GifskiConversionError: LocalizedError {
+	case invalidSettings
+	case generateFrameFailed
+	case addFrameFailed(GifskiWrapperError)
+	case endAddingFramesFailed(GifskiWrapperError)
+	case writeFailed(GifskiWrapperError)
 
-	static func convertFile(
-		_ inputUrl: URL,
-		outputUrl: URL,
-		quality: Double = 1,
-		dimensions: CGSize? = nil,
-		frameRate: Int? = nil
-		) -> Gifski {
-		let gifski = Gifski()
-		gifski.convertFile(
-			inputUrl,
-			outputUrl: outputUrl,
-			quality: quality,
-			dimensions: dimensions,
-			frameRate: frameRate
-		)
-		return gifski
+	var errorDescription: String? {
+		switch self {
+		case .invalidSettings:
+			return "Invalid settings"
+		case .generateFrameFailed:
+			return "Failed to generate frame"
+		case .addFrameFailed(let error):
+			return "Failed to add frame, with underlying error: \(error.localizedDescription)"
+		case .endAddingFramesFailed(let error):
+			return "Failed to end adding frames, with underlying error: \(error.localizedDescription)"
+		case .writeFailed(let error):
+			return "Failed to write to output, with underlying errror: \(error.localizedDescription)"
+		}
 	}
+}
+
+final class Gifski {
 
 	/**
 	- parameters:
 		- frameRate: Clamped to 5...30. Uses the frame rate of `inputUrl` if not specified.
 	*/
-	private func convertFile(
-		_ inputUrl: URL,
-		outputUrl: URL,
-		quality: Double = 1,
+	static func convert(
+		fileAt inputUrl: URL,
+		outputTo outputUrl: URL,
+		withQuality quality: Double = 1,
 		dimensions: CGSize? = nil,
-		frameRate: Int? = nil
+		frameRate: Int? = nil,
+		completionHandler: ((Result) -> Void)?
 	) {
-		progress = Progress(parent: .current(), userInfo: [.fileURLKey: outputUrl])
-		progress.fileURL = outputUrl
-		progress.publish()
-
-		observation = progress.observe(\.fractionCompleted) { progress, _ in
-			DispatchQueue.main.async {
-				self.onProgress?(progress)
-			}
-		}
-
 		let settings = GifskiSettings(
 			width: UInt32(dimensions?.width ?? 0),
 			height: UInt32(dimensions?.height ?? 0),
@@ -55,8 +51,13 @@ final class Gifski {
 			fast: false
 		)
 		guard let g = GifskiWrapper(settings: settings) else {
-			fatalError("Gifski instantiated with invalid settings")
+			completionHandler?(.error(.invalidSettings))
+			return
 		}
+
+		var progress = Progress(parent: .current(), userInfo: [.fileURLKey: outputUrl])
+		progress.fileURL = outputUrl
+		progress.publish()
 
 		g.setProgressCallback(context: &progress) { context in
 			let progress = context!.assumingMemoryBound(to: Progress.self).pointee
@@ -72,7 +73,7 @@ final class Gifski {
 
 			let fps = (frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
 			let frameCount = Int(asset.duration.seconds * fps)
-			self.progress.totalUnitCount = Int64(frameCount)
+			progress.totalUnitCount = Int64(frameCount)
 
 			var frameForTimes = [CMTime]()
 			for i in 0..<frameCount {
@@ -86,7 +87,9 @@ final class Gifski {
 					let buffer = CFDataGetBytePtr(data),
 					error == nil
 				else {
-					fatalError("Error with image \(frameIndex): \(error!)")
+					completionHandler?(.error(.generateFrameFailed))
+					progress.unpublish()
+					return
 				}
 
 				do {
@@ -98,23 +101,32 @@ final class Gifski {
 						pixels: buffer,
 						delay: UInt16(100 / fps)
 					)
+				} catch {
+					completionHandler?(.error(.addFrameFailed(error as! GifskiWrapperError)))
+					progress.unpublish()
+					return
+				}
 
-					frameIndex += 1
+				frameIndex += 1
 
+				do {
 					if frameIndex == frameForTimes.count {
 						try g.endAddingFrames()
 					}
 				} catch {
-					fatalError(error.localizedDescription)
+					completionHandler?(.error(.endAddingFramesFailed(error as! GifskiWrapperError)))
+					progress.unpublish()
+					return
 				}
 			}
 
 			do {
 				try g.write(path: outputUrl.path)
+				completionHandler?(.success)
 			} catch {
-				fatalError(error.localizedDescription)
+				completionHandler?(.error(.writeFailed(error as! GifskiWrapperError)))
 			}
-			self.progress.unpublish()
+			progress.unpublish()
 		}
 	}
 }

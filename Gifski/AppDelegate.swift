@@ -125,14 +125,8 @@ extension NSColor {
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private weak var window: NSWindow!
-	var gifski: Gifski? {
-		didSet {
-			gifski?.onProgress = { [weak self] progress in
-				self?.updateProgress(progress)
-			}
-		}
-	}
-	var progress: Progress?
+
+	private var progressObserver: NSKeyValueObservation?
 
 	lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
 		$0.foreground = .appTheme
@@ -250,17 +244,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 
-	func updateProgress(_ progress: Progress) {
-		circularProgress.progress = CGFloat(progress.fractionCompleted)
-
-		if progress.isFinished {
-			circularProgress.percentLabelLayer.string = "✔"
-			circularProgress.fadeOut(delay: 1) {
-				self.isRunning = false
-			}
-		}
-	}
-
 	func convert(_ inputUrl: URL) {
 		// We already specify the UTIs we support, so this can only happen on invalid but supported files
 		guard inputUrl.isSupportedVideo else {
@@ -297,16 +280,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		circularProgress.progress = 0
 		circularProgress.animated = true
 
-		progress = Progress(totalUnitCount: 1)
-		progress?.becomeCurrent(withPendingUnitCount: 1)
-		gifski = Gifski.convertFile(
-			inputUrl,
-			outputUrl: outputUrl,
-			quality: defaults["outputQuality"] as! Double,
+		let progress = Progress(totalUnitCount: 1)
+		progress.becomeCurrent(withPendingUnitCount: 1)
+		Gifski.convert(
+			fileAt: inputUrl,
+			outputTo: outputUrl,
+			withQuality: defaults["outputQuality"] as! Double,
 			dimensions: choosenDimensions,
 			frameRate: choosenFrameRate
-		)
-		progress?.resignCurrent()
+		) { [weak self] result in
+			DispatchQueue.main.async {
+				switch result {
+				case .success:
+					self?.circularProgress.percentLabelLayer.string = "✔"
+					self?.circularProgress.fadeOut(delay: 1) {
+						self?.isRunning = false
+					}
+				case .error(let error):
+					fatalError(error.localizedDescription)
+				}
+			}
+		}
+		progress.resignCurrent()
+
+		progressObserver = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
+			self?.circularProgress.progress = CGFloat(progress.fractionCompleted)
+		}
 
 		DockIconProgress.progress = progress
 		DockIconProgress.style = .circle(radius: 55, color: .appTheme)
