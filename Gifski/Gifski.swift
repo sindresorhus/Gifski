@@ -6,6 +6,14 @@ enum Result {
 	case error(GifskiConversionError)
 }
 
+extension Result {
+	func forceSuccess() {
+		if case .error(let error) = self {
+			fatalError(error.localizedDescription)
+		}
+	}
+}
+
 enum GifskiConversionError: LocalizedError {
 	case invalidSettings
 	case generateFrameFailed
@@ -29,24 +37,32 @@ enum GifskiConversionError: LocalizedError {
 	}
 }
 
-final class Gifski {
+/**
+- parameters:
+- frameRate: Clamped to 5...30. Uses the frame rate of `inputUrl` if not specified.
+*/
+struct Conversion {
+	let input: URL
+	let output: URL
+	let quality: Double
+	let dimensions: CGSize
+	let frameRate: Int?
 
-	/**
-	- parameters:
-		- frameRate: Clamped to 5...30. Uses the frame rate of `inputUrl` if not specified.
-	*/
-	static func convert(
-		fileAt inputUrl: URL,
-		outputTo outputUrl: URL,
-		withQuality quality: Double = 1,
-		dimensions: CGSize? = nil,
-		frameRate: Int? = nil,
-		completionHandler: ((Result) -> Void)?
-	) {
+	init(input: URL, output: URL, quality: Double = 1, dimensions: CGSize = .zero, frameRate: Int? = nil) {
+		self.input = input
+		self.output = output
+		self.quality = quality
+		self.dimensions = dimensions
+		self.frameRate = frameRate
+	}
+}
+
+final class Gifski {
+	static func run(_ conversion: Conversion, completionHandler: ((Result) -> Void)?) {
 		let settings = GifskiSettings(
-			width: UInt32(dimensions?.width ?? 0),
-			height: UInt32(dimensions?.height ?? 0),
-			quality: UInt8(quality * 100),
+			width: UInt32(conversion.dimensions.width),
+			height: UInt32(conversion.dimensions.height),
+			quality: UInt8(conversion.quality * 100),
 			once: false,
 			fast: false
 		)
@@ -55,9 +71,8 @@ final class Gifski {
 			return
 		}
 
-		var progress = Progress(parent: .current(), userInfo: [.fileURLKey: outputUrl])
-		progress.fileURL = outputUrl
-		progress.publish()
+		var progress = Progress(parent: .current(), userInfo: [.fileURLKey: conversion.output])
+		progress.fileURL = conversion.output
 
 		g.setProgressCallback(context: &progress) { context in
 			let progress = context!.assumingMemoryBound(to: Progress.self).pointee
@@ -66,12 +81,15 @@ final class Gifski {
 		}
 
 		DispatchQueue.global(qos: .utility).async {
-			let asset = AVURLAsset(url: inputUrl, options: nil)
+			progress.publish()
+			defer { progress.unpublish() }
+
+			let asset = AVURLAsset(url: conversion.input, options: nil)
 			let generator = AVAssetImageGenerator(asset: asset)
 			generator.requestedTimeToleranceAfter = .zero
 			generator.requestedTimeToleranceBefore = .zero
 
-			let fps = (frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
+			let fps = (conversion.frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
 			let frameCount = Int(asset.duration.seconds * fps)
 			progress.totalUnitCount = Int64(frameCount)
 
@@ -88,7 +106,6 @@ final class Gifski {
 					error == nil
 				else {
 					completionHandler?(.error(.generateFrameFailed))
-					progress.unpublish()
 					return
 				}
 
@@ -103,7 +120,6 @@ final class Gifski {
 					)
 				} catch {
 					completionHandler?(.error(.addFrameFailed(error as! GifskiWrapperError)))
-					progress.unpublish()
 					return
 				}
 
@@ -115,18 +131,16 @@ final class Gifski {
 					}
 				} catch {
 					completionHandler?(.error(.endAddingFramesFailed(error as! GifskiWrapperError)))
-					progress.unpublish()
 					return
 				}
 			}
 
 			do {
-				try g.write(path: outputUrl.path)
+				try g.write(path: conversion.output.path)
 				completionHandler?(.success)
 			} catch {
 				completionHandler?(.error(.writeFailed(error as! GifskiWrapperError)))
 			}
-			progress.unpublish()
 		}
 	}
 }

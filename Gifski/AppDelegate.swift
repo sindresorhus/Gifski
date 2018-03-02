@@ -281,30 +281,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		circularProgress.animated = true
 
 		let progress = Progress(totalUnitCount: 1)
-		progress.becomeCurrent(withPendingUnitCount: 1)
-		Gifski.convert(
-			fileAt: inputUrl,
-			outputTo: outputUrl,
-			withQuality: defaults["outputQuality"] as! Double,
-			dimensions: choosenDimensions,
-			frameRate: choosenFrameRate
-		) { [weak self] result in
-			DispatchQueue.main.async {
-				switch result {
-				case .success:
-					self?.circularProgress.percentLabelLayer.string = "✔"
-					self?.circularProgress.fadeOut(delay: 1) {
-						self?.isRunning = false
+
+		progress.performAsCurrent(withPendingUnitCount: 1) {
+			let conversion = Conversion(
+				input: inputUrl,
+				output: outputUrl,
+				quality: defaults["outputQuality"] as! Double,
+				dimensions: self.choosenDimensions,
+				frameRate: self.choosenFrameRate
+			)
+			Gifski.run(conversion) { result in
+				DispatchQueue.main.async {
+					result.forceSuccess()
+					self.circularProgress.percentLabelLayer.string = "✔"
+					self.circularProgress.fadeOut(delay: 1) {
+						self.isRunning = false
 					}
-				case .error(let error):
-					fatalError(error.localizedDescription)
 				}
 			}
 		}
-		progress.resignCurrent()
 
-		progressObserver = progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-			self?.circularProgress.progress = CGFloat(progress.fractionCompleted)
+		progressObserver = progress.observe(\.fractionCompleted) { progress, _ in
+			self.circularProgress.progress = CGFloat(progress.fractionCompleted)
 		}
 
 		DockIconProgress.progress = progress
