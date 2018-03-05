@@ -15,8 +15,6 @@ This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts 
 
 Requires macOS 10.13 or later.
 
-Created by [Sindre Sorhus](https://github.com/sindresorhus) and [Kornel Lesiński](https://github.com/kornelski).
-
 
 ## Download
 
@@ -38,6 +36,13 @@ curl https://sh.rustup.rs -sSf | sh
 brew install gcc carthage SwiftLint
 carthage bootstrap
 ```
+
+
+## Maintainers
+
+- [Sindre Sorhus](https://github.com/sindresorhus)
+- [Kornel Lesiński](https://github.com/kornelski)
+- [Lars-Jørgen Kristiansen](https://github.com/LarsJK)
 
 
 ## License
