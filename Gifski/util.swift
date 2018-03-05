@@ -74,6 +74,62 @@ class SSView: NSView {
 }
 
 
+extension NSView {
+	func toImage() -> NSImage {
+		let rep = bitmapImageRepForCachingDisplay(in: bounds)!
+		cacheDisplay(in: bounds, to: rep)
+		let image = NSImage(size: bounds.size)
+		image.addRepresentation(rep)
+		return image
+	}
+
+	func toImageView() -> NSImageView {
+		let view = NSImageView()
+		view.image = toImage()
+		view.frame = frame
+		view.autoresizingMask = autoresizingMask
+		return view
+	}
+}
+
+
+extension NSView {
+	/**
+	Animate by placing a screenshot of the view above it, changing the properties on the view, and then fading out the screenshot.
+	Can be useful for properties that cannot normally be animated.
+	*/
+	func animateCrossFade(
+		duration: TimeInterval = 1,
+		delay: TimeInterval = 0,
+		animations: @escaping (() -> Void),
+		completion: (() -> Void)? = nil
+	) {
+		let fadeView = toImageView()
+		superview?.addSubview(fadeView, positioned: .above, relativeTo: nil)
+		animations()
+		fadeView.fadeOut(duration: duration, delay: delay, completion: completion)
+	}
+}
+
+
+extension NSTextField {
+	/**
+	Animate the text color.
+	We cannot use `NSView.animate()` here as the property is not animatable.
+	*/
+	func animateTextColor(
+		to color: NSColor,
+		duration: TimeInterval = 0.5,
+		delay: TimeInterval = 0,
+		completion: (() -> Void)? = nil
+	) {
+		animateCrossFade(duration: duration, delay: delay, animations: {
+			self.textColor = color
+		}, completion: completion)
+	}
+}
+
+
 extension NSBezierPath {
 	/// UIKit polyfill
 	var cgPath: CGPath {
@@ -600,19 +656,13 @@ extension NSView {
 		animations: @escaping (() -> Void),
 		completion: (() -> Void)? = nil
 	) {
-		let block = {
+		DispatchQueue.main.asyncAfter(duration: delay) {
 			NSAnimationContext.runAnimationGroup({ context in
 				context.allowsImplicitAnimation = true
 				context.duration = duration
 				context.timingFunction = timingFunction
 				animations()
 			}, completionHandler: completion)
-		}
-
-		if delay > 0 {
-			DispatchQueue.main.asyncAfter(duration: delay, execute: block)
-		} else {
-			block()
 		}
 	}
 
