@@ -2,13 +2,12 @@ disabled_rules:
   - file_length
   - line_length
   - identifier_name
-  - todo # Enabled this again!
-  - vertical_whitespace # Enabled this again!
-  - force_cast # Enabled this again!
+  - vertical_whitespace
+  - force_cast
   - force_try
   - large_tuple
+  - function_body_length
 opt_in_rules:
-  # - force_unwrapping
   - empty_count
   - prohibited_super_call
   - conditional_returns_on_newline
@@ -32,7 +31,7 @@ opt_in_rules:
   - trailing_closure
   - block_based_kvo
   - discouraged_direct_init
-  - strict_fileprivate # Enable when using Swift 4
+  - strict_fileprivate
   - joined_default_parameter
   - pattern_matching_keywords
   - contains_over_first_not_nil

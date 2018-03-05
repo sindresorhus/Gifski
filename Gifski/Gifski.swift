@@ -54,6 +54,7 @@ final class Gifski {
 			once: false,
 			fast: false
 		)
+
 		guard let g = GifskiWrapper(settings: settings) else {
 			fatalError("Gifski instantiated with invalid settings")
 		}
@@ -69,6 +70,7 @@ final class Gifski {
 			let generator = AVAssetImageGenerator(asset: asset)
 			generator.requestedTimeToleranceAfter = .zero
 			generator.requestedTimeToleranceBefore = .zero
+			generator.appliesPreferredTrackTransform = true
 
 			let fps = (frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
 			let frameCount = Int(asset.duration.seconds * fps)
@@ -83,8 +85,7 @@ final class Gifski {
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { _, image, _, _, error in
 				guard let image = image,
 					let data = image.dataProvider?.data,
-					let buffer = CFDataGetBytePtr(data),
-					error == nil
+					let buffer = CFDataGetBytePtr(data)
 				else {
 					fatalError("Error with image \(frameIndex): \(error!)")
 				}

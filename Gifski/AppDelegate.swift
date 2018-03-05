@@ -55,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func applicationWillFinishLaunching(_ notification: Notification) {
 		defaults.register(defaults: [
+			"NSApplicationCrashOnExceptions": true,
 			"NSFullScreenMenuItemEverywhere": false,
 			"outputQuality": 1
 		])
