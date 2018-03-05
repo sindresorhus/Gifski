@@ -1,64 +1,52 @@
 import Foundation
 import AVFoundation
 
-enum Result {
-	case success
-	case error(GifskiConversionError)
-}
-
-extension Result {
-	func forceSuccess() {
-		if case .error(let error) = self {
-			fatalError(error.localizedDescription)
-		}
-	}
-}
-
-enum GifskiConversionError: LocalizedError {
-	case invalidSettings
-	case generateFrameFailed
-	case addFrameFailed(GifskiWrapperError)
-	case endAddingFramesFailed(GifskiWrapperError)
-	case writeFailed(GifskiWrapperError)
-
-	var errorDescription: String? {
-		switch self {
-		case .invalidSettings:
-			return "Invalid settings"
-		case .generateFrameFailed:
-			return "Failed to generate frame"
-		case .addFrameFailed(let error):
-			return "Failed to add frame, with underlying error: \(error.localizedDescription)"
-		case .endAddingFramesFailed(let error):
-			return "Failed to end adding frames, with underlying error: \(error.localizedDescription)"
-		case .writeFailed(let error):
-			return "Failed to write to output, with underlying errror: \(error.localizedDescription)"
-		}
-	}
-}
-
-/**
-- parameters:
-- frameRate: Clamped to 5...30. Uses the frame rate of `inputUrl` if not specified.
-*/
-struct Conversion {
-	let input: URL
-	let output: URL
-	let quality: Double
-	let dimensions: CGSize
-	let frameRate: Int?
-
-	init(input: URL, output: URL, quality: Double = 1, dimensions: CGSize = .zero, frameRate: Int? = nil) {
-		self.input = input
-		self.output = output
-		self.quality = quality
-		self.dimensions = dimensions
-		self.frameRate = frameRate
-	}
-}
-
 final class Gifski {
-	static func run(_ conversion: Conversion, completionHandler: ((Result) -> Void)?) {
+
+	enum Error: LocalizedError {
+		case invalidSettings
+		case generateFrameFailed
+		case addFrameFailed(GifskiWrapperError)
+		case endAddingFramesFailed(GifskiWrapperError)
+		case writeFailed(GifskiWrapperError)
+
+		var errorDescription: String? {
+			switch self {
+			case .invalidSettings:
+				return "Invalid settings"
+			case .generateFrameFailed:
+				return "Failed to generate frame"
+			case .addFrameFailed(let error):
+				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
+			case .endAddingFramesFailed(let error):
+				return "Failed to end adding frames, with underlying error: \(error.localizedDescription)"
+			case .writeFailed(let error):
+				return "Failed to write to output, with underlying error: \(error.localizedDescription)"
+			}
+		}
+	}
+
+	/**
+	- parameters:
+	- frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
+	*/
+	struct Conversion {
+		let input: URL
+		let output: URL
+		let quality: Double
+		let dimensions: CGSize
+		let frameRate: Int?
+
+		init(input: URL, output: URL, quality: Double = 1, dimensions: CGSize = .zero, frameRate: Int? = nil) {
+			self.input = input
+			self.output = output
+			self.quality = quality
+			self.dimensions = dimensions
+			self.frameRate = frameRate
+		}
+	}
+
+	static func run(_ conversion: Conversion, completionHandler: ((Error?) -> Void)?) {
 		let settings = GifskiSettings(
 			width: UInt32(conversion.dimensions.width),
 			height: UInt32(conversion.dimensions.height),
@@ -67,7 +55,7 @@ final class Gifski {
 			fast: false
 		)
 		guard let g = GifskiWrapper(settings: settings) else {
-			completionHandler?(.error(.invalidSettings))
+			completionHandler?(.invalidSettings)
 			return
 		}
 
@@ -105,7 +93,7 @@ final class Gifski {
 					let buffer = CFDataGetBytePtr(data),
 					error == nil
 				else {
-					completionHandler?(.error(.generateFrameFailed))
+					completionHandler?(.generateFrameFailed)
 					return
 				}
 
@@ -119,7 +107,7 @@ final class Gifski {
 						delay: UInt16(100 / fps)
 					)
 				} catch {
-					completionHandler?(.error(.addFrameFailed(error as! GifskiWrapperError)))
+					completionHandler?(.addFrameFailed(error as! GifskiWrapperError))
 					return
 				}
 
@@ -130,16 +118,16 @@ final class Gifski {
 						try g.endAddingFrames()
 					}
 				} catch {
-					completionHandler?(.error(.endAddingFramesFailed(error as! GifskiWrapperError)))
+					completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
 					return
 				}
 			}
 
 			do {
 				try g.write(path: conversion.output.path)
-				completionHandler?(.success)
+				completionHandler?(nil)
 			} catch {
-				completionHandler?(.error(.writeFailed(error as! GifskiWrapperError)))
+				completionHandler?(.writeFailed(error as! GifskiWrapperError))
 			}
 		}
 	}

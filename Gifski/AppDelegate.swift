@@ -283,16 +283,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		let progress = Progress(totalUnitCount: 1)
 
 		progress.performAsCurrent(withPendingUnitCount: 1) {
-			let conversion = Conversion(
+			let conversion = Gifski.Conversion(
 				input: inputUrl,
 				output: outputUrl,
 				quality: defaults["outputQuality"] as! Double,
 				dimensions: self.choosenDimensions,
 				frameRate: self.choosenFrameRate
 			)
-			Gifski.run(conversion) { result in
+			Gifski.run(conversion) { error in
 				DispatchQueue.main.async {
-					result.forceSuccess()
+					if let error = error {
+						fatalError(error.localizedDescription)
+					}
 					self.circularProgress.percentLabelLayer.string = "✔"
 					self.circularProgress.fadeOut(delay: 1) {
 						self.isRunning = false
