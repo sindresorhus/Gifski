@@ -20,35 +20,29 @@ enum GifskiWrapperError: UInt32, LocalizedError {
 	var errorDescription: String? {
 		switch self {
 		case .nullArg:
-			return "one of input arguments was NULL"
+			return "One of input arguments was NULL"
 		case .invalidState:
-			return "a one-time function was called twice, or functions were called in wrong order"
+			return "A one-time function was called twice, or functions were called in wrong order"
 		case .quant:
-			return "internal error related to palette quantization"
+			return "Internal error related to palette quantization"
 		case .gif:
-			return "internal error related to gif composing"
+			return "Internal error related to GIF composing"
 		case .threadLost:
-			return "internal error related to multithreading"
+			return "Internal error related to multithreading"
 		case .notFound:
-			return "I/O error: file or directory not found"
+			return "I/O error: File or directory not found"
 		case .permissionDenied:
-			return "I/O error: permission denied"
+			return "I/O error: Permission denied"
 		case .alreadyExists:
-			return "I/O error: file already exists"
+			return "I/O error: File already exists"
 		case .invalidInput:
-			return "invalid arguments passed to function"
-		case .timedOut:
-			return "misc I/O error"
-		case .writeZero:
-			return "misc I/O error"
-		case .interrupted:
-			return "misc I/O error"
-		case .unexpectedEof:
-			return "misc I/O error"
+			return "Invalid arguments passed to function"
+		case .timedOut, .writeZero, .interrupted, .unexpectedEof:
+			return "Misc I/O error"
 		case .aborted:
-			return "progress callback returned 0, writing aborted"
+			return "Progress callback returned 0, writing aborted"
 		case .other:
-			return "should not happen, file a bug"
+			return "Should not happen, file a bug: https://github.com/ImageOptim/gifski"
 		}
 	}
 }
