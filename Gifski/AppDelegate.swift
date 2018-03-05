@@ -147,7 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func convert(_ inputUrl: URL) {
 		// We already specify the UTIs we support, so this can only happen on invalid but supported files
-		guard inputUrl.isSupportedVideo else {
+		guard inputUrl.isVideoDecodable else {
 			Misc.alert(title: "Video not supported", text: "The video you tried to convert could not be read.")
 			return
 		}

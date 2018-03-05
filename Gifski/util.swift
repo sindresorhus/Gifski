@@ -183,12 +183,22 @@ extension NSViewController {
 
 
 extension AVAsset {
-	var isSupportedVideo: Bool {
-		return !tracks(withMediaType: .video).isEmpty
+	var isVideoDecodable: Bool {
+		guard isReadable,
+			let firstVideoTrack = tracks(withMediaType: .video).first else {
+				return false
+			}
+
+		return firstVideoTrack.isDecodable
 	}
 
-	var isSupportedAudio: Bool {
-		return !tracks(withMediaType: .audio).isEmpty
+	var isAudioDecodable: Bool {
+		guard isReadable,
+			let firstAudioTrack = tracks(withMediaType: .audio).first else {
+				return false
+			}
+
+		return firstAudioTrack.isDecodable
 	}
 }
 /// Video metadata
@@ -220,12 +230,12 @@ extension URL {
 		return AVURLAsset(url: self).videoMetadata
 	}
 
-	var isSupportedVideo: Bool {
-		return AVAsset(url: self).isSupportedVideo
+	var isVideoDecodable: Bool {
+		return AVAsset(url: self).isVideoDecodable
 	}
 
-	var isSupportedAudio: Bool {
-		return AVAsset(url: self).isSupportedAudio
+	var isAudioDecodable: Bool {
+		return AVAsset(url: self).isAudioDecodable
 	}
 }
 
