@@ -75,27 +75,12 @@ class SSView: NSView {
 
 
 extension NSView {
-	func toImage() -> NSImage {
-		let rep = bitmapImageRepForCachingDisplay(in: bounds)!
-		cacheDisplay(in: bounds, to: rep)
-		let image = NSImage(size: bounds.size)
-		image.addRepresentation(rep)
-		return image
+	func copyView<T: NSView>() -> T {
+		return NSKeyedUnarchiver.unarchiveObject(with: NSKeyedArchiver.archivedData(withRootObject: self)) as! T
 	}
 
-	func toImageView() -> NSImageView {
-		let view = NSImageView()
-		view.image = toImage()
-		view.frame = frame
-		view.autoresizingMask = autoresizingMask
-		return view
-	}
-}
-
-
-extension NSView {
 	/**
-	Animate by placing a screenshot of the view above it, changing the properties on the view, and then fading out the screenshot.
+	Animate by placing a copy of the view above it, changing properties on the view, and then fading out the copy.
 	Can be useful for properties that cannot normally be animated.
 	*/
 	func animateCrossFade(
@@ -104,7 +89,7 @@ extension NSView {
 		animations: @escaping (() -> Void),
 		completion: (() -> Void)? = nil
 	) {
-		let fadeView = toImageView()
+		let fadeView = copyView()
 		superview?.addSubview(fadeView, positioned: .above, relativeTo: nil)
 		animations()
 		fadeView.fadeOut(duration: duration, delay: delay, completion: completion)

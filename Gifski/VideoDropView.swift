@@ -27,7 +27,7 @@ class DropView: SSView {
 	private var isDraggingHighlighted: Bool = false {
 		didSet {
 			needsDisplay = true
-			dropLabel.animateTextColor(to: isDraggingHighlighted ? highlightColor : .disabledControlTextColor)
+			dropLabel.animateTextColor(to: isDraggingHighlighted ? highlightColor : .disabledControlTextColor, duration: 0.3)
 		}
 	}
 
