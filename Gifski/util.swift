@@ -74,6 +74,47 @@ class SSView: NSView {
 }
 
 
+extension NSView {
+	func copyView<T: NSView>() -> T {
+		return NSKeyedUnarchiver.unarchiveObject(with: NSKeyedArchiver.archivedData(withRootObject: self)) as! T
+	}
+
+	/**
+	Animate by placing a copy of the view above it, changing properties on the view, and then fading out the copy.
+	Can be useful for properties that cannot normally be animated.
+	*/
+	func animateCrossFade(
+		duration: TimeInterval = 1,
+		delay: TimeInterval = 0,
+		animations: @escaping (() -> Void),
+		completion: (() -> Void)? = nil
+	) {
+		let fadeView = copyView()
+		superview?.addSubview(fadeView, positioned: .above, relativeTo: nil)
+		animations()
+		fadeView.fadeOut(duration: duration, delay: delay, completion: completion)
+	}
+}
+
+
+extension NSTextField {
+	/**
+	Animate the text color.
+	We cannot use `NSView.animate()` here as the property is not animatable.
+	*/
+	func animateTextColor(
+		to color: NSColor,
+		duration: TimeInterval = 0.5,
+		delay: TimeInterval = 0,
+		completion: (() -> Void)? = nil
+	) {
+		animateCrossFade(duration: duration, delay: delay, animations: {
+			self.textColor = color
+		}, completion: completion)
+	}
+}
+
+
 extension NSBezierPath {
 	/// UIKit polyfill
 	var cgPath: CGPath {
@@ -600,19 +641,13 @@ extension NSView {
 		animations: @escaping (() -> Void),
 		completion: (() -> Void)? = nil
 	) {
-		let block = {
+		DispatchQueue.main.asyncAfter(duration: delay) {
 			NSAnimationContext.runAnimationGroup({ context in
 				context.allowsImplicitAnimation = true
 				context.duration = duration
 				context.timingFunction = timingFunction
 				animations()
 			}, completionHandler: completion)
-		}
-
-		if delay > 0 {
-			DispatchQueue.main.asyncAfter(duration: delay, execute: block)
-		} else {
-			block()
 		}
 	}
 
