@@ -60,7 +60,7 @@ final class Gifski {
 			return
 		}
 
-		var progress = Progress(parent: .current(), userInfo: [.fileURLKey: conversion.output])
+		var progress = Progress(parent: .current())
 		progress.fileURL = conversion.output
 
 		g.setProgressCallback(context: &progress) { context in
