@@ -9,14 +9,8 @@ extension NSColor {
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	@IBOutlet private weak var window: NSWindow!
-	var gifski: Gifski? {
-		didSet {
-			gifski?.onProgress = { [weak self] progress in
-				self?.updateProgress(progress)
-			}
-		}
-	}
-	var progress: Progress?
+
+	private var progressObserver: NSKeyValueObservation?
 
 	lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
 		$0.foreground = .appTheme
@@ -135,17 +129,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 	}
 
-	func updateProgress(_ progress: Progress) {
-		circularProgress.progress = CGFloat(progress.fractionCompleted)
-
-		if progress.isFinished {
-			circularProgress.percentLabelLayer.string = "✔"
-			circularProgress.fadeOut(delay: 1) {
-				self.isRunning = false
-			}
-		}
-	}
-
 	func convert(_ inputUrl: URL) {
 		// We already specify the UTIs we support, so this can only happen on invalid but supported files
 		guard inputUrl.isVideoDecodable else {
@@ -182,16 +165,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		circularProgress.progress = 0
 		circularProgress.animated = true
 
-		progress = Progress(totalUnitCount: 1)
-		progress?.becomeCurrent(withPendingUnitCount: 1)
-		gifski = Gifski.convertFile(
-			inputUrl,
-			outputUrl: outputUrl,
-			quality: defaults["outputQuality"] as! Double,
-			dimensions: choosenDimensions,
-			frameRate: choosenFrameRate
-		)
-		progress?.resignCurrent()
+		let progress = Progress(totalUnitCount: 1)
+
+		progress.performAsCurrent(withPendingUnitCount: 1) {
+			let conversion = Gifski.Conversion(
+				input: inputUrl,
+				output: outputUrl,
+				quality: defaults["outputQuality"] as! Double,
+				dimensions: self.choosenDimensions,
+				frameRate: self.choosenFrameRate
+			)
+			Gifski.run(conversion) { error in
+				DispatchQueue.main.async {
+					if let error = error {
+						fatalError(error.localizedDescription)
+					}
+					self.circularProgress.percentLabelLayer.string = "✔"
+					self.circularProgress.fadeOut(delay: 1) {
+						self.isRunning = false
+					}
+				}
+			}
+		}
+
+		progressObserver = progress.observe(\.fractionCompleted) { progress, _ in
+			self.circularProgress.progress = CGFloat(progress.fractionCompleted)
+		}
 
 		DockProgress.progress = progress
 		DockProgress.style = .circle(radius: 55, color: .appTheme)

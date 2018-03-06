@@ -2,62 +2,66 @@ import Foundation
 import AVFoundation
 
 final class Gifski {
-	private var progress: Progress!
-	private var observation: NSKeyValueObservation?
 
-	// `progress.fractionCompleted` is KVO-compliant, but we expose this for convenience
-	var onProgress: ((_ progress: Progress) -> Void)?
+	enum Error: LocalizedError {
+		case invalidSettings
+		case generateFrameFailed
+		case addFrameFailed(GifskiWrapperError)
+		case endAddingFramesFailed(GifskiWrapperError)
+		case writeFailed(GifskiWrapperError)
 
-	static func convertFile(
-		_ inputUrl: URL,
-		outputUrl: URL,
-		quality: Double = 1,
-		dimensions: CGSize? = nil,
-		frameRate: Int? = nil
-		) -> Gifski {
-		let gifski = Gifski()
-		gifski.convertFile(
-			inputUrl,
-			outputUrl: outputUrl,
-			quality: quality,
-			dimensions: dimensions,
-			frameRate: frameRate
-		)
-		return gifski
+		var errorDescription: String? {
+			switch self {
+			case .invalidSettings:
+				return "Invalid settings"
+			case .generateFrameFailed:
+				return "Failed to generate frame"
+			case .addFrameFailed(let error):
+				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
+			case .endAddingFramesFailed(let error):
+				return "Failed to end adding frames, with underlying error: \(error.localizedDescription)"
+			case .writeFailed(let error):
+				return "Failed to write to output, with underlying error: \(error.localizedDescription)"
+			}
+		}
 	}
 
 	/**
 	- parameters:
-		- frameRate: Clamped to 5...30. Uses the frame rate of `inputUrl` if not specified.
+	- frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
 	*/
-	private func convertFile(
-		_ inputUrl: URL,
-		outputUrl: URL,
-		quality: Double = 1,
-		dimensions: CGSize? = nil,
-		frameRate: Int? = nil
-	) {
-		progress = Progress(parent: .current(), userInfo: [.fileURLKey: outputUrl])
-		progress.fileURL = outputUrl
-		progress.publish()
+	struct Conversion {
+		let input: URL
+		let output: URL
+		let quality: Double
+		let dimensions: CGSize
+		let frameRate: Int?
 
-		observation = progress.observe(\.fractionCompleted) { progress, _ in
-			DispatchQueue.main.async {
-				self.onProgress?(progress)
-			}
+		init(input: URL, output: URL, quality: Double = 1, dimensions: CGSize = .zero, frameRate: Int? = nil) {
+			self.input = input
+			self.output = output
+			self.quality = quality
+			self.dimensions = dimensions
+			self.frameRate = frameRate
 		}
+	}
 
+	static func run(_ conversion: Conversion, completionHandler: ((Error?) -> Void)?) {
 		let settings = GifskiSettings(
-			width: UInt32(dimensions?.width ?? 0),
-			height: UInt32(dimensions?.height ?? 0),
-			quality: UInt8(quality * 100),
+			width: UInt32(conversion.dimensions.width),
+			height: UInt32(conversion.dimensions.height),
+			quality: UInt8(conversion.quality * 100),
 			once: false,
 			fast: false
 		)
 
 		guard let g = GifskiWrapper(settings: settings) else {
-			fatalError("Gifski instantiated with invalid settings")
+			completionHandler?(.invalidSettings)
+			return
 		}
+
+		var progress = Progress(parent: .current(), userInfo: [.fileURLKey: conversion.output])
+		progress.fileURL = conversion.output
 
 		g.setProgressCallback(context: &progress) { context in
 			let progress = context!.assumingMemoryBound(to: Progress.self).pointee
@@ -66,15 +70,18 @@ final class Gifski {
 		}
 
 		DispatchQueue.global(qos: .utility).async {
-			let asset = AVURLAsset(url: inputUrl, options: nil)
+			progress.publish()
+			defer { progress.unpublish() }
+
+			let asset = AVURLAsset(url: conversion.input, options: nil)
 			let generator = AVAssetImageGenerator(asset: asset)
 			generator.requestedTimeToleranceAfter = .zero
 			generator.requestedTimeToleranceBefore = .zero
 			generator.appliesPreferredTrackTransform = true
 
-			let fps = (frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
+			let fps = (conversion.frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
 			let frameCount = Int(asset.duration.seconds * fps)
-			self.progress.totalUnitCount = Int64(frameCount)
+			progress.totalUnitCount = Int64(frameCount)
 
 			var frameForTimes = [CMTime]()
 			for i in 0..<frameCount {
@@ -87,7 +94,8 @@ final class Gifski {
 					let data = image.dataProvider?.data,
 					let buffer = CFDataGetBytePtr(data)
 				else {
-					fatalError("Error with image \(frameIndex): \(error!)")
+					completionHandler?(.generateFrameFailed)
+					return
 				}
 
 				do {
@@ -99,23 +107,29 @@ final class Gifski {
 						pixels: buffer,
 						delay: UInt16(100 / fps)
 					)
+				} catch {
+					completionHandler?(.addFrameFailed(error as! GifskiWrapperError))
+					return
+				}
 
-					frameIndex += 1
+				frameIndex += 1
 
+				do {
 					if frameIndex == frameForTimes.count {
 						try g.endAddingFrames()
 					}
 				} catch {
-					fatalError(error.localizedDescription)
+					completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
+					return
 				}
 			}
 
 			do {
-				try g.write(path: outputUrl.path)
+				try g.write(path: conversion.output.path)
+				completionHandler?(nil)
 			} catch {
-				fatalError(error.localizedDescription)
+				completionHandler?(.writeFailed(error as! GifskiWrapperError))
 			}
-			self.progress.unpublish()
 		}
 	}
 }
