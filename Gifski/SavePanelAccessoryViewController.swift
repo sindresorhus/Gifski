@@ -8,6 +8,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private weak var frameRateLabel: NSTextField!
 	@IBOutlet private weak var qualitySlider: NSSlider!
 	var inputUrl: URL!
+	var onDimensionChange: ((CGSize) -> Void)?
+	var onFramerateChange: ((Int) -> Void)?
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -32,15 +34,13 @@ final class SavePanelAccessoryViewController: NSViewController {
 			currentDimensions = metadata.dimensions * self.scaleSlider.doubleValue
 			self.scaleLabel.stringValue = "\(Int(currentDimensions.width))×\(Int(currentDimensions.height))"
 			estimateFileSize()
-
-			/// TODO: Feels hacky to do it this way. Find a better way to pass the state.
-			self.appDelegate.choosenDimensions = currentDimensions
+			self.onDimensionChange?(currentDimensions)
 		}
 
 		frameRateSlider.onAction = { _ in
 			let frameRate = self.frameRateSlider.integerValue
 			self.frameRateLabel.stringValue = "\(frameRate)"
-			self.appDelegate.choosenFrameRate = frameRate
+			self.onFramerateChange?(frameRate)
 			estimateFileSize()
 		}
 

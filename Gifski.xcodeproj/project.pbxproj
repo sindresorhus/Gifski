@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		5A1FDC6F203F0B050065E0F5 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD619F201BD29E0087160A /* libgifski.a */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
+		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
+		C2AFA91E204FFEFD00FC5A7F /* MainWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = C2AFA91C204FFEFD00FC5A7F /* MainWindowController.xib */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
 		E34798D01F882FB3003F9142 /* ProgressKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E34798CF1F882FB3003F9142 /* ProgressKit.framework */; };
 		E34798D11F882FB3003F9142 /* ProgressKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E34798CF1F882FB3003F9142 /* ProgressKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -79,6 +81,8 @@
 
 /* Begin PBXFileReference section */
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
+		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
+		C2AFA91C204FFEFD00FC5A7F /* MainWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MainWindowController.xib; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E34798CF1F882FB3003F9142 /* ProgressKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ProgressKit.framework; path = Carthage/Build/Mac/ProgressKit.framework; sourceTree = "<group>"; };
 		E34798D41F882FEE003F9142 /* ProgressKit.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = ProgressKit.framework.dSYM; path = Carthage/Build/Mac/ProgressKit.framework.dSYM; sourceTree = "<group>"; };
@@ -163,6 +167,8 @@
 				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
 				E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */,
 				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
+				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
+				C2AFA91C204FFEFD00FC5A7F /* MainWindowController.xib */,
 			);
 			path = Gifski;
 			sourceTree = "<group>";
@@ -280,6 +286,7 @@
 				E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */,
 				E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */,
 				E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */,
+				C2AFA91E204FFEFD00FC5A7F /* MainWindowController.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,6 +315,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E339F011203820ED003B78FB /* Gifski.swift in Sources */,
+				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
