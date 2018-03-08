@@ -2,6 +2,10 @@ import Cocoa
 import ProgressKit
 import DockProgress
 
+extension NSNib.Name {
+	static let mainWindowController = NSNib.Name("MainWindowController")
+}
+
 class MainWindowController: NSWindowController {
 
 	private var progressObserver: NSKeyValueObservation?
@@ -62,20 +66,8 @@ class MainWindowController: NSWindowController {
 		window!.makeKeyAndOrderFront(nil) /// TODO: This is dirty, find a better way
     }
 
-	// MARK: -
-
-	@objc
-	func open(_ sender: AnyObject) {
-		let panel = NSOpenPanel()
-		panel.canChooseDirectories = false
-		panel.canCreateDirectories = false
-		panel.allowedFileTypes = System.supportedVideoTypes
-
-		panel.beginSheetModal(for: window!) {
-			if $0 == .OK {
-				self.convert(panel.url!)
-			}
-		}
+	override var windowNibName: NSNib.Name? {
+		return .mainWindowController
 	}
 
 	func convert(_ inputUrl: URL) {
@@ -152,6 +144,22 @@ class MainWindowController: NSWindowController {
 
 		DockProgress.progress = progress
 		DockProgress.style = .circle(radius: 55, color: .appTheme)
+	}
+
+	// MARK: -
+
+	@objc
+	func open(_ sender: AnyObject) {
+		let panel = NSOpenPanel()
+		panel.canChooseDirectories = false
+		panel.canCreateDirectories = false
+		panel.allowedFileTypes = System.supportedVideoTypes
+
+		panel.beginSheetModal(for: window!) {
+			if $0 == .OK {
+				self.convert(panel.url!)
+			}
+		}
 	}
 
 	@objc

@@ -22,7 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
-		mainWindowController = MainWindowController(windowNibName: NSNib.Name(rawValue: "MainWindowController"))
+		mainWindowController = MainWindowController()
 		mainWindowController.showWindow(self)
 
 		hasFinishedLaunching = true
