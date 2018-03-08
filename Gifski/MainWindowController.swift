@@ -43,8 +43,8 @@ class MainWindowController: NSWindowController {
 		}
 	}
 
-    override func windowDidLoad() {
-        super.windowDidLoad()
+	override func windowDidLoad() {
+		super.windowDidLoad()
 
 		with(window!) {
 			$0.titleVisibility = .hidden
@@ -64,7 +64,7 @@ class MainWindowController: NSWindowController {
 		view.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
 		window!.makeKeyAndOrderFront(nil) /// TODO: This is dirty, find a better way
-    }
+	}
 
 	override var windowNibName: NSNib.Name? {
 		return .mainWindowController
