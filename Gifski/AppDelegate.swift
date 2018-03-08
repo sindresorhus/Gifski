@@ -8,7 +8,7 @@ extension NSColor {
 
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
-	var mainWindowController: MainWindowController!
+	var mainWindowController = MainWindowController()
 
 	var hasFinishedLaunching = false
 	var urlsToConvertOnLaunch: URL!
@@ -22,7 +22,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
-		mainWindowController = MainWindowController()
 		mainWindowController.showWindow(self)
 
 		hasFinishedLaunching = true

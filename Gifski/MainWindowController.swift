@@ -10,7 +10,7 @@ class MainWindowController: NSWindowController {
 
 	private var progressObserver: NSKeyValueObservation?
 
-	lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
+	private lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
 		$0.foreground = .appTheme
 		$0.strokeWidth = 2
 		$0.percentLabelLayer.setAutomaticContentsScale()
@@ -20,7 +20,7 @@ class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
-	lazy var videoDropView = with(VideoDropView()) {
+	private lazy var videoDropView = with(VideoDropView()) {
 		$0.frame = window!.contentView!.frame
 		$0.dropText = "Drop a Video to Convert to GIF"
 		$0.onComplete = { url in
@@ -28,8 +28,8 @@ class MainWindowController: NSWindowController {
 		}
 	}
 
-	var choosenDimensions: CGSize = .zero
-	var choosenFrameRate: Int?
+	private var choosenDimensions: CGSize = .zero
+	private var choosenFrameRate: Int?
 
 	var isRunning: Bool = false {
 		didSet {
@@ -44,8 +44,6 @@ class MainWindowController: NSWindowController {
 	}
 
 	override func windowDidLoad() {
-		super.windowDidLoad()
-
 		with(window!) {
 			$0.titleVisibility = .hidden
 			$0.appearance = NSAppearance(named: .vibrantDark)
