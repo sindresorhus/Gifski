@@ -81,7 +81,7 @@
 
 /* Begin PBXFileReference section */
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
-		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
+		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91C204FFEFD00FC5A7F /* MainWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MainWindowController.xib; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E34798CF1F882FB3003F9142 /* ProgressKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ProgressKit.framework; path = Carthage/Build/Mac/ProgressKit.framework; sourceTree = "<group>"; };
@@ -99,7 +99,7 @@
 		E3D08F6D1E5D7BFD00F465DF /* util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = util.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = SavePanelAccessoryViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SavePanelAccessoryViewController.xib; sourceTree = "<group>"; };
-		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; };
+		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; usesTabs = 1; };
 		E3FD6197201BD29E0087160A /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
 		E3FD61A4201BD2DA0087160A /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = "<group>"; };
 		E3FD61A6201BD3640087160A /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
@@ -155,20 +155,20 @@
 			isa = PBXGroup;
 			children = (
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
-				E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */,
+				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
+				C2AFA91C204FFEFD00FC5A7F /* MainWindowController.xib */,
 				E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */,
 				E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */,
+				E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */,
 				E339F010203820ED003B78FB /* Gifski.swift */,
 				C2040B8820435871004EE259 /* GifskiWrapper.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
-				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
+				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
 				E3AE628D1E5CD2F300035A2F /* Info.plist */,
 				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
 				E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */,
 				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
-				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
-				C2AFA91C204FFEFD00FC5A7F /* MainWindowController.xib */,
 			);
 			path = Gifski;
 			sourceTree = "<group>";
