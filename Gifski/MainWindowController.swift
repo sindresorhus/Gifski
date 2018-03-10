@@ -46,7 +46,7 @@ class MainWindowController: NSWindowController {
 	override func windowDidLoad() {
 		with(window!) {
 			$0.titleVisibility = .hidden
-			$0.appearance = NSAppearance(named: .vibrantDark)
+			$0.appearance = .app
 			$0.tabbingMode = .disallowed
 			$0.titlebarAppearsTransparent = true
 			$0.isMovableByWindowBackground = true
@@ -71,11 +71,12 @@ class MainWindowController: NSWindowController {
 	func convert(_ inputUrl: URL) {
 		// We already specify the UTIs we support, so this can only happen on invalid but supported files
 		guard inputUrl.isVideoDecodable else {
-			Misc.alert(title: "Video not supported", text: "The video you tried to convert could not be read.")
+			NSAlert.showModal(title: "Video not supported", message: "The video you tried to convert could not be read.")
 			return
 		}
 
 		let panel = NSSavePanel()
+		panel.appearance = .app
 		panel.canCreateDirectories = true
 		panel.directoryURL = inputUrl.directoryURL
 		panel.nameFieldStringValue = inputUrl.changingFileExtension(to: "gif").filename
@@ -149,6 +150,7 @@ class MainWindowController: NSWindowController {
 	@objc
 	func open(_ sender: AnyObject) {
 		let panel = NSOpenPanel()
+		panel.appearance = .app
 		panel.canChooseDirectories = false
 		panel.canCreateDirectories = false
 		panel.allowedFileTypes = System.supportedVideoTypes

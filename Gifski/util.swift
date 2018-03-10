@@ -46,16 +46,6 @@ struct Meta {
 }
 
 
-struct Misc {
-	static func alert(title: String, text: String) {
-		let alert = NSAlert()
-		alert.messageText = title
-		alert.informativeText = text
-		alert.runModal()
-	}
-}
-
-
 /// This is useful as `awakeFromNib` is not called for programatically created views
 class SSView: NSView {
 	var didAppearWasCalled = false
@@ -69,6 +59,126 @@ class SSView: NSView {
 		if !didAppearWasCalled {
 			didAppearWasCalled = true
 			didAppear()
+		}
+	}
+}
+
+
+extension NSAppearance {
+	static let aqua = NSAppearance(named: .aqua)!
+	static let light = NSAppearance(named: .vibrantLight)!
+	static let dark = NSAppearance(named: .vibrantDark)!
+
+	static var system: NSAppearance {
+		let isDark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
+		return NSAppearance(named: isDark ? .vibrantDark : .vibrantLight)!
+	}
+}
+
+
+extension NSAppearance {
+	private struct AssociatedKeys {
+		static let app = AssociatedObject<NSAppearance>()
+	}
+
+	/// The chosen appearance for the app
+	/// We're not using `.current` as it doesn't work across threads
+	static var app: NSAppearance {
+		get {
+			return AssociatedKeys.app[self] ?? .aqua
+		}
+		set {
+			current = newValue
+			AssociatedKeys.app[self] = newValue
+		}
+	}
+}
+
+
+extension NSColor {
+	/// Get the complementary color of the current color
+	var complementary: NSColor {
+		guard let ciColor = CIColor(color: self) else {
+			return self
+		}
+
+		let compRed = 1 - ciColor.red
+		let compGreen = 1 - ciColor.green
+		let compBlue = 1 - ciColor.blue
+
+		return NSColor(red: compRed, green: compGreen, blue: compBlue, alpha: alphaComponent)
+	}
+}
+
+
+extension NSView {
+	/**
+	Iterate through subviews of a specific type and change properties on them
+
+	```
+	view.forEachSubview(ofType: NSTextField.self) {
+		$0.textColor = .white
+	}
+	```
+	*/
+	func forEachSubview<T>(ofType type: T.Type, deep: Bool = true, closure: (T) -> Void) {
+		for view in subviews {
+			if let view = view as? T {
+				closure(view)
+			} else if deep {
+				view.forEachSubview(ofType: type, deep: deep, closure: closure)
+			}
+		}
+	}
+
+	func invertTextColorOnTextFieldsIfDark() {
+		guard NSAppearance.app == .dark else {
+			return
+		}
+
+		forEachSubview(ofType: NSTextField.self) {
+			$0.textColor = $0.textColor?.complementary
+		}
+	}
+}
+
+
+extension NSAlert {
+	static func showModal(
+		title: String,
+		message: String? = nil,
+		style: NSAlert.Style = .critical
+	) {
+		NSAlert(
+			title: title,
+			message: message,
+			style: style
+		).runModal()
+	}
+
+	convenience init(
+		title: String,
+		message: String? = nil,
+		style: NSAlert.Style = .critical
+	) {
+		self.init()
+		self.messageText = title
+		self.alertStyle = style
+
+		if let message = message {
+			self.informativeText = message
+		}
+
+		// Adhere to the current app appearance
+		self.appearance = .app
+	}
+
+	var appearance: NSAppearance {
+		get {
+			return window.appearance ?? .aqua
+		}
+		set {
+			window.appearance = newValue
 		}
 	}
 }
