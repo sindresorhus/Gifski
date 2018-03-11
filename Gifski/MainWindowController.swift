@@ -45,8 +45,9 @@ class MainWindowController: NSWindowController {
 
 	override func windowDidLoad() {
 		with(window!) {
-			$0.titleVisibility = .hidden
+			$0.delegate = self
 			$0.appearance = .app
+			$0.titleVisibility = .hidden
 			$0.tabbingMode = .disallowed
 			$0.titlebarAppearsTransparent = true
 			$0.isMovableByWindowBackground = true
@@ -71,7 +72,11 @@ class MainWindowController: NSWindowController {
 	func convert(_ inputUrl: URL) {
 		// We already specify the UTIs we support, so this can only happen on invalid but supported files
 		guard inputUrl.isVideoDecodable else {
-			NSAlert.showModal(title: "Video not supported", message: "The video you tried to convert could not be read.")
+			NSAlert.showModal(
+				for: window,
+				title: "Video not supported",
+				message: "The video you tried to convert could not be read."
+			)
 			return
 		}
 
@@ -171,5 +176,4 @@ class MainWindowController: NSWindowController {
 			return super.validateMenuItem(menuItem)
 		}
 	}
-
 }

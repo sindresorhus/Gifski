@@ -64,6 +64,33 @@ class SSView: NSView {
 }
 
 
+extension NSWindow {
+	var toolbarView: NSView? {
+		return standardWindowButton(.closeButton)?.superview
+	}
+
+	var titlebarView: NSView? {
+		return toolbarView?.superview
+	}
+
+	var titlebarHeight: Double {
+		return Double(titlebarView?.bounds.height ?? 0)
+	}
+}
+
+
+extension NSWindowController: NSWindowDelegate {
+	public func window(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
+		// Adjust sheet position so it goes below the traffic lights
+		if window.styleMask.contains(.fullSizeContentView) {
+			return rect.offsetBy(dx: 0, dy: CGFloat(-window.titlebarHeight))
+		}
+
+		return rect
+	}
+}
+
+
 extension NSAppearance {
 	static let aqua = NSAppearance(named: .aqua)!
 	static let light = NSAppearance(named: .vibrantLight)!
@@ -144,12 +171,36 @@ extension NSView {
 
 
 extension NSAlert {
+	/// Show a modal alert sheet on a window
+	/// If the window is nil, it will be a app-modal alert
+	static func showModal(
+		for window: NSWindow?,
+		title: String,
+		message: String? = nil,
+		style: NSAlert.Style = .critical
+	) -> NSApplication.ModalResponse {
+		guard let window = window else {
+			return NSAlert(
+				title: title,
+				message: message,
+				style: style
+			).runModal()
+		}
+
+		return NSAlert(
+			title: title,
+			message: message,
+			style: style
+		).runModal(for: window)
+	}
+
+	/// Show a app-modal (window indepedendent) alert
 	static func showModal(
 		title: String,
 		message: String? = nil,
 		style: NSAlert.Style = .critical
-	) {
-		NSAlert(
+	) -> NSApplication.ModalResponse {
+		return NSAlert(
 			title: title,
 			message: message,
 			style: style
@@ -180,6 +231,15 @@ extension NSAlert {
 		set {
 			window.appearance = newValue
 		}
+	}
+
+	/// Runs the alert as a window-modal sheel
+	func runModal(for window: NSWindow) -> NSApplication.ModalResponse {
+		beginSheetModal(for: window) { returnCode in
+			NSApp.stopModal(withCode: returnCode)
+		}
+
+		return NSApp.runModal(for: window)
 	}
 }
 

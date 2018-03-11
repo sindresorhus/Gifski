@@ -40,7 +40,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 
 		guard urls.count == 1 else {
-			NSAlert.showModal(title: "Max one file", message: "You can only convert a single file at the time")
+			NSAlert.showModal(
+				for: mainWindowController.window,
+				title: "Max one file",
+				message: "You can only convert a single file at the time"
+			)
 			return
 		}
 
