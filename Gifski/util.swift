@@ -173,6 +173,7 @@ extension NSView {
 extension NSAlert {
 	/// Show a modal alert sheet on a window
 	/// If the window is nil, it will be a app-modal alert
+	@discardableResult
 	static func showModal(
 		for window: NSWindow?,
 		title: String,
@@ -195,6 +196,7 @@ extension NSAlert {
 	}
 
 	/// Show a app-modal (window indepedendent) alert
+	@discardableResult
 	static func showModal(
 		title: String,
 		message: String? = nil,
@@ -234,6 +236,7 @@ extension NSAlert {
 	}
 
 	/// Runs the alert as a window-modal sheel
+	@discardableResult
 	func runModal(for window: NSWindow) -> NSApplication.ModalResponse {
 		beginSheetModal(for: window) { returnCode in
 			NSApp.stopModal(withCode: returnCode)
