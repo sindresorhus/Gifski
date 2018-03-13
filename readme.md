@@ -29,12 +29,11 @@ Requires macOS 10.13 or later.
 
 ## Building from source
 
-To build the app in Xcode you need to have [Rust](https://www.rust-lang.org), GCC 7 and [Carthage](https://github.com/Carthage/Carthage) installed first:
+To build the app in Xcode, you need to have [Rust](https://www.rust-lang.org) and GCC 7 installed first:
 
 ```sh
 curl https://sh.rustup.rs -sSf | sh
-brew install gcc carthage SwiftLint
-carthage bootstrap
+brew install gcc SwiftLint
 ```
 
 

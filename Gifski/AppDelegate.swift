@@ -1,5 +1,4 @@
 import Cocoa
-import DockProgress
 
 extension NSColor {
 	static let appTheme = NSColor(named: NSColor.Name("Theme"))!

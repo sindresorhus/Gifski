@@ -87,7 +87,13 @@ public final class CircularProgress: NSView {
 }
 
 
-extension CALayer {
+
+
+///
+/// util.swift
+///
+
+private extension CALayer {
 	static func animate(
 		duration: TimeInterval = 1,
 		delay: TimeInterval = 0,
@@ -109,17 +115,20 @@ extension CALayer {
 	}
 }
 
-extension NSFont {
+
+private extension NSFont {
 	static let helveticaNeueLight = NSFont(name: "HelveticaNeue-Light", size: 0)
 }
 
-extension NSColor {
+
+private extension NSColor {
 	func with(alpha: Double) -> NSColor {
 		return withAlphaComponent(CGFloat(alpha))
 	}
 }
 
-extension NSBezierPath {
+
+private extension NSBezierPath {
 	static func circle(radius: Double, center: CGPoint) -> NSBezierPath {
 		let path = NSBezierPath()
 		path.appendArc(
@@ -146,7 +155,8 @@ extension NSBezierPath {
 	}
 }
 
-extension CAShapeLayer {
+
+private extension CAShapeLayer {
 	static func circle(radius: Double, center: CGPoint) -> CAShapeLayer {
 		return CAShapeLayer(path: NSBezierPath.circle(radius: radius, center: center))
 	}
@@ -157,7 +167,8 @@ extension CAShapeLayer {
 	}
 }
 
-extension CATextLayer {
+
+private extension CATextLayer {
 	/// Initializer with better defaults
 	convenience init(text: String, fontSize: Double? = nil, color: NSColor? = nil) {
 		self.init()
@@ -183,7 +194,8 @@ extension CATextLayer {
 	}
 }
 
-final class ProgressCircleShapeLayer: CAShapeLayer {
+
+private final class ProgressCircleShapeLayer: CAShapeLayer {
 	convenience init(radius: Double, center: CGPoint) {
 		self.init()
 		fillColor = nil

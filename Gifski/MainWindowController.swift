@@ -1,5 +1,4 @@
 import Cocoa
-import DockProgress
 
 extension NSNib.Name {
 	static let mainWindowController = NSNib.Name("MainWindowController")
