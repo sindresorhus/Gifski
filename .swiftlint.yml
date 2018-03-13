@@ -19,7 +19,6 @@ opt_in_rules:
   - explicit_init
   - switch_case_on_newline
   - number_separator
-  - object_literal
   - extension_access_modifier
   - closure_end_indentation
   - closure_spacing
