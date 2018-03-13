@@ -19,6 +19,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			"NSFullScreenMenuItemEverywhere": false,
 			"outputQuality": 1
 		])
+
+		NSAppearance.app = .dark
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
@@ -38,7 +40,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 
 		guard urls.count == 1 else {
-			Misc.alert(title: "Max one file", text: "You can only convert a single file at the time")
+			NSAlert.showModal(
+				for: mainWindowController.window,
+				title: "Max one file",
+				message: "You can only convert a single file at the time"
+			)
 			return
 		}
 

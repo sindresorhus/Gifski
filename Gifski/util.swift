@@ -46,16 +46,6 @@ struct Meta {
 }
 
 
-struct Misc {
-	static func alert(title: String, text: String) {
-		let alert = NSAlert()
-		alert.messageText = title
-		alert.informativeText = text
-		alert.runModal()
-	}
-}
-
-
 /// This is useful as `awakeFromNib` is not called for programatically created views
 class SSView: NSView {
 	var didAppearWasCalled = false
@@ -70,6 +60,189 @@ class SSView: NSView {
 			didAppearWasCalled = true
 			didAppear()
 		}
+	}
+}
+
+
+extension NSWindow {
+	var toolbarView: NSView? {
+		return standardWindowButton(.closeButton)?.superview
+	}
+
+	var titlebarView: NSView? {
+		return toolbarView?.superview
+	}
+
+	var titlebarHeight: Double {
+		return Double(titlebarView?.bounds.height ?? 0)
+	}
+}
+
+
+extension NSWindowController: NSWindowDelegate {
+	public func window(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
+		// Adjust sheet position so it goes below the traffic lights
+		if window.styleMask.contains(.fullSizeContentView) {
+			return rect.offsetBy(dx: 0, dy: CGFloat(-window.titlebarHeight))
+		}
+
+		return rect
+	}
+}
+
+
+extension NSAppearance {
+	static let aqua = NSAppearance(named: .aqua)!
+	static let light = NSAppearance(named: .vibrantLight)!
+	static let dark = NSAppearance(named: .vibrantDark)!
+
+	static var system: NSAppearance {
+		let isDark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
+		return NSAppearance(named: isDark ? .vibrantDark : .vibrantLight)!
+	}
+}
+
+
+extension NSAppearance {
+	private struct AssociatedKeys {
+		static let app = AssociatedObject<NSAppearance>()
+	}
+
+	/// The chosen appearance for the app
+	/// We're not using `.current` as it doesn't work across threads
+	static var app: NSAppearance {
+		get {
+			return AssociatedKeys.app[self] ?? .aqua
+		}
+		set {
+			current = newValue
+			AssociatedKeys.app[self] = newValue
+		}
+	}
+}
+
+
+extension NSColor {
+	/// Get the complementary color of the current color
+	var complementary: NSColor {
+		guard let ciColor = CIColor(color: self) else {
+			return self
+		}
+
+		let compRed = 1 - ciColor.red
+		let compGreen = 1 - ciColor.green
+		let compBlue = 1 - ciColor.blue
+
+		return NSColor(red: compRed, green: compGreen, blue: compBlue, alpha: alphaComponent)
+	}
+}
+
+
+extension NSView {
+	/**
+	Iterate through subviews of a specific type and change properties on them
+
+	```
+	view.forEachSubview(ofType: NSTextField.self) {
+		$0.textColor = .white
+	}
+	```
+	*/
+	func forEachSubview<T>(ofType type: T.Type, deep: Bool = true, closure: (T) -> Void) {
+		for view in subviews {
+			if let view = view as? T {
+				closure(view)
+			} else if deep {
+				view.forEachSubview(ofType: type, deep: deep, closure: closure)
+			}
+		}
+	}
+
+	func invertTextColorOnTextFieldsIfDark() {
+		guard NSAppearance.app == .dark else {
+			return
+		}
+
+		forEachSubview(ofType: NSTextField.self) {
+			$0.textColor = $0.textColor?.complementary
+		}
+	}
+}
+
+
+extension NSAlert {
+	/// Show a modal alert sheet on a window
+	/// If the window is nil, it will be a app-modal alert
+	@discardableResult
+	static func showModal(
+		for window: NSWindow?,
+		title: String,
+		message: String? = nil,
+		style: NSAlert.Style = .critical
+	) -> NSApplication.ModalResponse {
+		guard let window = window else {
+			return NSAlert(
+				title: title,
+				message: message,
+				style: style
+			).runModal()
+		}
+
+		return NSAlert(
+			title: title,
+			message: message,
+			style: style
+		).runModal(for: window)
+	}
+
+	/// Show a app-modal (window indepedendent) alert
+	@discardableResult
+	static func showModal(
+		title: String,
+		message: String? = nil,
+		style: NSAlert.Style = .critical
+	) -> NSApplication.ModalResponse {
+		return NSAlert(
+			title: title,
+			message: message,
+			style: style
+		).runModal()
+	}
+
+	convenience init(
+		title: String,
+		message: String? = nil,
+		style: NSAlert.Style = .critical
+	) {
+		self.init()
+		self.messageText = title
+		self.alertStyle = style
+
+		if let message = message {
+			self.informativeText = message
+		}
+
+		// Adhere to the current app appearance
+		self.appearance = .app
+	}
+
+	var appearance: NSAppearance {
+		get {
+			return window.appearance ?? .aqua
+		}
+		set {
+			window.appearance = newValue
+		}
+	}
+
+	/// Runs the alert as a window-modal sheel
+	@discardableResult
+	func runModal(for window: NSWindow) -> NSApplication.ModalResponse {
+		beginSheetModal(for: window) { returnCode in
+			NSApp.stopModal(withCode: returnCode)
+		}
+
+		return NSApp.runModal(for: window)
 	}
 }
 
