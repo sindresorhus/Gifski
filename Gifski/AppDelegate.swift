@@ -8,7 +8,7 @@ extension NSColor {
 
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
-	var mainWindowController = MainWindowController()
+	let mainWindowController = MainWindowController()
 
 	var hasFinishedLaunching = false
 	var urlsToConvertOnLaunch: URL!

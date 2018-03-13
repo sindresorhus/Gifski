@@ -3,3 +3,4 @@
 *.pdf binary
 *.ai binary
 *.psd binary
+gifski-api/* linguist-vendored

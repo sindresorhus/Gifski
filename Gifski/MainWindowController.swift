@@ -7,7 +7,6 @@ extension NSNib.Name {
 }
 
 class MainWindowController: NSWindowController {
-
 	private var progressObserver: NSKeyValueObservation?
 
 	private lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
