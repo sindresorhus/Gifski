@@ -123,6 +123,11 @@ extension NSAppearance {
 
 
 extension NSColor {
+	static let textColorDarkMode = NSColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1)
+}
+
+
+extension NSColor {
 	/// Get the complementary color of the current color
 	var complementary: NSColor {
 		guard let ciColor = CIColor(color: self) else {
@@ -134,6 +139,37 @@ extension NSColor {
 		let compBlue = 1 - ciColor.blue
 
 		return NSColor(red: compRed, green: compGreen, blue: compBlue, alpha: alphaComponent)
+	}
+}
+
+
+extension NSColor {
+	typealias HSBAColor = (hue: Double, saturation: Double, brightness: Double, alpha: Double)
+	var hsba: HSBAColor {
+		var hue: CGFloat = 0
+		var saturation: CGFloat = 0
+		var brightness: CGFloat = 0
+		var alpha: CGFloat = 0
+		getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+		return HSBAColor(Double(hue), Double(saturation), Double(brightness), Double(alpha))
+	}
+
+	private func colorWithBrightness(factor: Double) -> NSColor {
+		let x = hsba
+		return NSColor(
+			hue: CGFloat(x.hue),
+			saturation: CGFloat(x.saturation),
+			brightness: CGFloat(x.brightness * factor),
+			alpha: CGFloat(x.alpha)
+		)
+	}
+
+	func lightening(by percent: Double) -> NSColor {
+		return colorWithBrightness(factor: 1 + percent)
+	}
+
+	func darkening(by percent: Double) -> NSColor {
+		return colorWithBrightness(factor: 1 - percent)
 	}
 }
 
@@ -164,7 +200,8 @@ extension NSView {
 		}
 
 		forEachSubview(ofType: NSTextField.self) {
-			$0.textColor = $0.textColor?.complementary
+			/// It's darkened to match the system dark text color
+			$0.textColor = $0.textColor?.complementary.darkening(by: 0.1)
 		}
 	}
 }
@@ -810,7 +847,7 @@ extension NSView {
 	static func animate(
 		duration: TimeInterval = 1,
 		delay: TimeInterval = 0,
-		timingFunction: CAMediaTimingFunction = .easeInOut,
+		timingFunction: CAMediaTimingFunction = .default,
 		animations: @escaping (() -> Void),
 		completion: (() -> Void)? = nil
 	) {

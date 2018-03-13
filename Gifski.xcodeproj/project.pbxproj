@@ -11,10 +11,8 @@
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
 		C2AFA91E204FFEFD00FC5A7F /* MainWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = C2AFA91C204FFEFD00FC5A7F /* MainWindowController.xib */; };
+		E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF122057E24700A80A18 /* CircularProgress.swift */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
-		E34798D01F882FB3003F9142 /* ProgressKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E34798CF1F882FB3003F9142 /* ProgressKit.framework */; };
-		E34798D11F882FB3003F9142 /* ProgressKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E34798CF1F882FB3003F9142 /* ProgressKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		E34798D51F882FEE003F9142 /* ProgressKit.framework.dSYM in Carthage */ = {isa = PBXBuildFile; fileRef = E34798D41F882FEE003F9142 /* ProgressKit.framework.dSYM */; };
 		E392EC5B2048982C00AB7097 /* DockProgress.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = E392EC562048982C00AB7097 /* DockProgress.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		E392EC5D2048983F00AB7097 /* DockProgress.framework.dSYM in Carthage */ = {isa = PBXBuildFile; fileRef = E392EC5C2048983F00AB7097 /* DockProgress.framework.dSYM */; };
 		E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3AE62861E5CD2F300035A2F /* AppDelegate.swift */; };
@@ -60,7 +58,6 @@
 			dstSubfolderSpec = 10;
 			files = (
 				E392EC5B2048982C00AB7097 /* DockProgress.framework in Embed Frameworks */,
-				E34798D11F882FB3003F9142 /* ProgressKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -72,7 +69,6 @@
 			dstSubfolderSpec = 16;
 			files = (
 				E392EC5D2048983F00AB7097 /* DockProgress.framework.dSYM in Carthage */,
-				E34798D51F882FEE003F9142 /* ProgressKit.framework.dSYM in Carthage */,
 			);
 			name = Carthage;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -83,6 +79,7 @@
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91C204FFEFD00FC5A7F /* MainWindowController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MainWindowController.xib; sourceTree = "<group>"; };
+		E317FF122057E24700A80A18 /* CircularProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgress.swift; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E34798CF1F882FB3003F9142 /* ProgressKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ProgressKit.framework; path = Carthage/Build/Mac/ProgressKit.framework; sourceTree = "<group>"; };
 		E34798D41F882FEE003F9142 /* ProgressKit.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = ProgressKit.framework.dSYM; path = Carthage/Build/Mac/ProgressKit.framework.dSYM; sourceTree = "<group>"; };
@@ -112,7 +109,6 @@
 			files = (
 				E3FDC26D203F32DA00C00409 /* libresolv.tbd in Frameworks */,
 				5A1FDC6F203F0B050065E0F5 /* libgifski.a in Frameworks */,
-				E34798D01F882FB3003F9142 /* ProgressKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,6 +126,14 @@
 				E392EC5C2048983F00AB7097 /* DockProgress.framework.dSYM */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E317FF182057E25400A80A18 /* Vendor */ = {
+			isa = PBXGroup;
+			children = (
+				E317FF122057E24700A80A18 /* CircularProgress.swift */,
+			);
+			path = Vendor;
 			sourceTree = "<group>";
 		};
 		E3AE627A1E5CD2F300035A2F = {
@@ -169,6 +173,7 @@
 				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
 				E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */,
 				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
+				E317FF182057E25400A80A18 /* Vendor */,
 			);
 			path = Gifski;
 			sourceTree = "<group>";
@@ -317,6 +322,7 @@
 				E339F011203820ED003B78FB /* Gifski.swift in Sources */,
 				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
+				E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
 				E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */,

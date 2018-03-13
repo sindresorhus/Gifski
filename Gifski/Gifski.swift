@@ -2,7 +2,6 @@ import Foundation
 import AVFoundation
 
 final class Gifski {
-
 	enum Error: LocalizedError {
 		case invalidSettings
 		case generateFrameFailed

@@ -1,5 +1,4 @@
 import Cocoa
-import ProgressKit
 import DockProgress
 
 extension NSColor {
@@ -9,7 +8,6 @@ extension NSColor {
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	let mainWindowController = MainWindowController()
-
 	var hasFinishedLaunching = false
 	var urlsToConvertOnLaunch: URL!
 

@@ -1,5 +1,4 @@
 import Cocoa
-import ProgressKit
 import DockProgress
 
 extension NSNib.Name {
@@ -9,12 +8,9 @@ extension NSNib.Name {
 class MainWindowController: NSWindowController {
 	private var progressObserver: NSKeyValueObservation?
 
-	private lazy var circularProgress = with(CircularProgressView(frame: CGRect(widthHeight: 160))) {
-		$0.foreground = .appTheme
-		$0.strokeWidth = 2
-		$0.percentLabelLayer.setAutomaticContentsScale()
-		$0.percentLabelLayer.implicitAnimations = false
-		$0.layer?.backgroundColor = .clear
+	/// TODO: Find a way to set the `frame` after init
+	private lazy var circularProgress = with(CircularProgress(frame: CGRect(widthHeight: 160))) {
+		$0.color = .appTheme
 		$0.isHidden = true
 		$0.centerInWindow(window)
 	}
@@ -27,7 +23,7 @@ class MainWindowController: NSWindowController {
 		}
 	}
 
-	private var choosenDimensions: CGSize = .zero
+	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
 
 	var isRunning: Bool = false {
@@ -61,7 +57,10 @@ class MainWindowController: NSWindowController {
 		view.addSubview(circularProgress)
 		view.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
-		window!.makeKeyAndOrderFront(nil) /// TODO: This is dirty, find a better way
+		window!.makeKeyAndOrderFront(nil)
+		NSApp.activate(ignoringOtherApps: true)
+
+		DockProgress.style = .circle(radius: 55, color: .appTheme)
 	}
 
 	override var windowNibName: NSNib.Name? {
@@ -112,13 +111,12 @@ class MainWindowController: NSWindowController {
 			return
 		}
 
+		circularProgress.resetProgress()
 		isRunning = true
 
-		circularProgress.animated = false
-		circularProgress.progress = 0
-		circularProgress.animated = true
-
 		let progress = Progress(totalUnitCount: 1)
+		circularProgress.progress = progress
+		DockProgress.progress = progress
 
 		progress.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
@@ -128,28 +126,20 @@ class MainWindowController: NSWindowController {
 				dimensions: self.choosenDimensions,
 				frameRate: self.choosenFrameRate
 			)
+
 			Gifski.run(conversion) { error in
 				DispatchQueue.main.async {
 					if let error = error {
 						fatalError(error.localizedDescription)
 					}
-					self.circularProgress.percentLabelLayer.string = "✔"
+
 					self.circularProgress.fadeOut(delay: 1) {
 						self.isRunning = false
 					}
 				}
 			}
 		}
-
-		progressObserver = progress.observe(\.fractionCompleted) { progress, _ in
-			self.circularProgress.progress = CGFloat(progress.fractionCompleted)
-		}
-
-		DockProgress.progress = progress
-		DockProgress.style = .circle(radius: 55, color: .appTheme)
 	}
-
-	// MARK: -
 
 	@objc
 	func open(_ sender: AnyObject) {

@@ -9,12 +9,10 @@ class DropView: SSView {
 		}
 	}
 
-	lazy private var dropLabel: Label = {
-		let label = Label()
-		label.textColor = .systemGray
-		label.font = .systemFont(ofSize: 14, weight: .light)
-		return label
-	}()
+	lazy private var dropLabel = with(Label()) {
+		$0.textColor = .textColorDarkMode
+		$0.font = .systemFont(ofSize: 14, weight: .light)
+	}
 
 	var highlightColor: NSColor {
 		return .selectedControlColor
@@ -27,7 +25,7 @@ class DropView: SSView {
 	private var isDraggingHighlighted: Bool = false {
 		didSet {
 			needsDisplay = true
-			dropLabel.animateTextColor(to: isDraggingHighlighted ? highlightColor : .disabledControlTextColor, duration: 0.3)
+			dropLabel.animateTextColor(to: isDraggingHighlighted ? highlightColor : .textColorDarkMode, duration: 0.3)
 		}
 	}
 
