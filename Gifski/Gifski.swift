@@ -34,10 +34,10 @@ final class Gifski {
 		let input: URL
 		let output: URL
 		let quality: Double
-		let dimensions: CGSize
+		let dimensions: CGSize?
 		let frameRate: Int?
 
-		init(input: URL, output: URL, quality: Double = 1, dimensions: CGSize = .zero, frameRate: Int? = nil) {
+		init(input: URL, output: URL, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil) {
 			self.input = input
 			self.output = output
 			self.quality = quality
@@ -48,8 +48,8 @@ final class Gifski {
 
 	static func run(_ conversion: Conversion, completionHandler: ((Error?) -> Void)?) {
 		let settings = GifskiSettings(
-			width: UInt32(conversion.dimensions.width),
-			height: UInt32(conversion.dimensions.height),
+			width: UInt32(conversion.dimensions?.width ?? 0),
+			height: UInt32(conversion.dimensions?.height ?? 0),
 			quality: UInt8(conversion.quality * 100),
 			once: false,
 			fast: false
