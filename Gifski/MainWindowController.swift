@@ -1,9 +1,5 @@
 import Cocoa
 
-extension NSNib.Name {
-	static let mainWindowController = NSNib.Name("MainWindowController")
-}
-
 class MainWindowController: NSWindowController {
 	private var progressObserver: NSKeyValueObservation?
 
@@ -37,33 +33,40 @@ class MainWindowController: NSWindowController {
 		}
 	}
 
-	override func windowDidLoad() {
-		with(window!) {
+	convenience init() {
+		let rect = CGRect(
+			origin: NSScreen.main?.frame.center ?? .zero,
+			width: 360,
+			height: 240
+		)
+		let window = NSWindow(
+			contentRect: rect,
+			styleMask: [.titled, .closable, .fullSizeContentView],
+			backing: .buffered,
+			defer: false
+		)
+		window.contentView = NSView(frame: rect)
+
+		self.init(window: window)
+
+		with(window) {
 			$0.delegate = self
 			$0.appearance = .app
 			$0.titleVisibility = .hidden
 			$0.tabbingMode = .disallowed
 			$0.titlebarAppearsTransparent = true
 			$0.isMovableByWindowBackground = true
-			$0.styleMask.remove([.resizable, .fullScreen])
-			$0.styleMask.insert(.fullSizeContentView)
 			$0.isRestorable = false
-			$0.setFrame(CGRect(width: 360, height: 240), display: true)
-			$0.center()
 		}
 
-		let view = window!.contentView!
+		let view = window.contentView!
 		view.addSubview(circularProgress)
 		view.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
-		window!.makeKeyAndOrderFront(nil)
+		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: true)
 
 		DockProgress.style = .circle(radius: 55, color: .appTheme)
-	}
-
-	override var windowNibName: NSNib.Name? {
-		return .mainWindowController
 	}
 
 	func convert(_ inputUrl: URL) {
