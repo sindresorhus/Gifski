@@ -41,11 +41,10 @@ class MainWindowController: NSWindowController {
 		)
 		let window = NSWindow(
 			contentRect: rect,
-			styleMask: [.titled, .closable, .fullSizeContentView],
+			styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
 			backing: .buffered,
 			defer: false
 		)
-		window.contentView = NSView(frame: rect)
 
 		self.init(window: window)
 
@@ -57,6 +56,7 @@ class MainWindowController: NSWindowController {
 			$0.titlebarAppearsTransparent = true
 			$0.isMovableByWindowBackground = true
 			$0.isRestorable = false
+			$0.center()
 		}
 
 		let view = window.contentView!
