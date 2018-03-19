@@ -6,7 +6,7 @@ extension NSColor {
 
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
-	let mainWindowController = MainWindowController()
+	lazy var mainWindowController = MainWindowController()
 	var hasFinishedLaunching = false
 	var urlsToConvertOnLaunch: URL!
 
