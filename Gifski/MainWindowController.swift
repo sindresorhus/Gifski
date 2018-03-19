@@ -1,6 +1,6 @@
 import Cocoa
 
-class MainWindowController: NSWindowController {
+final class MainWindowController: NSWindowController {
 	private var progressObserver: NSKeyValueObservation?
 
 	/// TODO: Find a way to set the `frame` after init
@@ -34,34 +34,20 @@ class MainWindowController: NSWindowController {
 	}
 
 	convenience init() {
-		let rect = CGRect(
-			origin: NSScreen.main?.frame.center ?? .zero,
-			width: 360,
-			height: 240
-		)
-		let window = NSWindow(
-			contentRect: rect,
-			styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
-			backing: .buffered,
-			defer: false
-		)
-
+		let window = NSWindow.centeredWindow(size: CGSize(width: 360, height: 240))
 		self.init(window: window)
 
 		with(window) {
-			$0.delegate = self
-			$0.appearance = .app
 			$0.titleVisibility = .hidden
+			$0.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
 			$0.tabbingMode = .disallowed
 			$0.titlebarAppearsTransparent = true
 			$0.isMovableByWindowBackground = true
 			$0.isRestorable = false
-			$0.center()
 		}
 
-		let view = window.contentView!
-		view.addSubview(circularProgress)
-		view.addSubview(videoDropView, positioned: .above, relativeTo: nil)
+		view?.addSubview(circularProgress)
+		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: true)
@@ -161,7 +147,7 @@ class MainWindowController: NSWindowController {
 	@objc
 	override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
 		switch menuItem.action {
-		case #selector(open(_:))?:
+		case #selector(open)?:
 			return !isRunning
 		default:
 			return super.validateMenuItem(menuItem)
