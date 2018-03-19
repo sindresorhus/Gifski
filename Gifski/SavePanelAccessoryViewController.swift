@@ -53,9 +53,12 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		// Set initial defaults
+		if metadata.dimensions.width >= 640 {
+			scaleSlider.doubleValue = 0.5
+		}
 		scaleSlider.triggerAction()
 		frameRateSlider.maxValue = Double(frameRate)
-		frameRateSlider.integerValue = frameRate
+		frameRateSlider.integerValue = frameRate < 24 ? frameRate : frameRate / 2
 		frameRateSlider.triggerAction()
 		qualitySlider.doubleValue = defaults["outputQuality"] as! Double
 		qualitySlider.triggerAction()
