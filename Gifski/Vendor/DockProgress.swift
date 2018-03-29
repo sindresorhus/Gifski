@@ -214,4 +214,3 @@ private extension NSColor {
 //		self.init(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
 //	}
 //}
-

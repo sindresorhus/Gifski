@@ -821,7 +821,8 @@ extension NSMenuItem {
 
 
 extension UserDefaults {
-	@nonobjc subscript(key: String) -> Any? {
+	@nonobjc
+	subscript(key: String) -> Any? {
 		get {
 			return object(forKey: key)
 		}
@@ -1107,8 +1108,7 @@ extension CGSize {
 	}
 
 	init(widthHeight: CGFloat) {
-		self.width = widthHeight
-		self.height = widthHeight
+		self.init(width: widthHeight, height: widthHeight)
 	}
 
 	var cgRect: CGRect {
@@ -1118,11 +1118,11 @@ extension CGSize {
 
 extension CGRect {
 	init(origin: CGPoint = .zero, width: CGFloat, height: CGFloat) {
-		self.origin = origin
-		self.size = CGSize(width: width, height: height)
+		self.init(origin: origin, size: CGSize(width: width, height: height))
 	}
 
 	init(widthHeight: CGFloat) {
+		self.init()
 		self.origin = .zero
 		self.size = CGSize(widthHeight: widthHeight)
 	}
