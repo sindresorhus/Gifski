@@ -2,9 +2,6 @@ import Cocoa
 import AVFoundation
 
 
-let defaults = UserDefaults.standard
-
-
 /**
 Convenience function for initializing an object and modifying its properties
 
