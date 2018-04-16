@@ -1,14 +1,16 @@
 // Vendored from: https://github.com/sindresorhus/Defaults
-import Cocoa
+import Foundation
 
 public final class Defaults {
-	public class Keys {}
+	public class Keys {
+		fileprivate init() {}
+	}
 
 	public final class Key<T: Codable>: Keys {
 		fileprivate let name: String
 		fileprivate let defaultValue: T
 
-		init(_ key: String, default defaultValue: T) {
+		public init(_ key: String, default defaultValue: T) {
 			self.name = key
 			self.defaultValue = defaultValue
 		}
@@ -17,7 +19,7 @@ public final class Defaults {
 	public final class OptionalKey<T: Codable>: Keys {
 		fileprivate let name: String
 
-		init(_ key: String) {
+		public init(_ key: String) {
 			self.name = key
 		}
 	}
@@ -115,7 +117,8 @@ public extension UserDefaults {
 			 is Int.Type,
 			 is Double.Type,
 			 is Float.Type,
-			 is Date.Type:
+			 is Date.Type,
+			 is Data.Type:
 			return true
 		default:
 			return false
