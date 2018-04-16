@@ -30,7 +30,6 @@ opt_in_rules:
   - trailing_closure
   - block_based_kvo
   - discouraged_direct_init
-  - strict_fileprivate
   - joined_default_parameter
   - pattern_matching_keywords
   - contains_over_first_not_nil
@@ -42,6 +41,9 @@ opt_in_rules:
   - yoda_condition
   - required_enum_case
   - discouraged_optional_boolean
+  - empty_string
+  - untyped_error_in_catch
+  - discouraged_optional_collection
 force_cast: warning
 force_unwrapping: warning
 number_separator:

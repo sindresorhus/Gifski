@@ -110,7 +110,7 @@ final class MainWindowController: NSWindowController {
 			let conversion = Gifski.Conversion(
 				input: inputUrl,
 				output: outputUrl,
-				quality: defaults["outputQuality"] as! Double,
+				quality: defaults[.outputQuality],
 				dimensions: self.choosenDimensions,
 				frameRate: self.choosenFrameRate
 			)

@@ -4,6 +4,10 @@ extension NSColor {
 	static let appTheme = NSColor(named: NSColor.Name("Theme"))!
 }
 
+extension Defaults.Keys {
+	static let outputQuality = Defaults.Key<Double>("outputQuality", default: 1)
+}
+
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
@@ -11,10 +15,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	var urlsToConvertOnLaunch: URL!
 
 	func applicationWillFinishLaunching(_ notification: Notification) {
-		defaults.register(defaults: [
+		UserDefaults.standard.register(defaults: [
 			"NSApplicationCrashOnExceptions": true,
-			"NSFullScreenMenuItemEverywhere": false,
-			"outputQuality": 1
+			"NSFullScreenMenuItemEverywhere": false
 		])
 
 		NSAppearance.app = .dark
