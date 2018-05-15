@@ -3,13 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		5A1FDC6F203F0B050065E0F5 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD619F201BD29E0087160A /* libgifski.a */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
+		E30557F0207E521F003401A1 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30557EF207E521F003401A1 /* Defaults.swift */; };
 		E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF122057E24700A80A18 /* CircularProgress.swift */; };
 		E317FF1C20583E9800A80A18 /* DockProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF1B20583E9800A80A18 /* DockProgress.swift */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
@@ -64,6 +65,7 @@
 /* Begin PBXFileReference section */
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E30557EF207E521F003401A1 /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		E317FF122057E24700A80A18 /* CircularProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgress.swift; sourceTree = "<group>"; };
 		E317FF1B20583E9800A80A18 /* DockProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockProgress.swift; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -111,6 +113,7 @@
 			children = (
 				E317FF122057E24700A80A18 /* CircularProgress.swift */,
 				E317FF1B20583E9800A80A18 /* DockProgress.swift */,
+				E30557EF207E521F003401A1 /* Defaults.swift */,
 			);
 			path = Vendor;
 			sourceTree = "<group>";
@@ -195,7 +198,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0820;
-				LastUpgradeCheck = 0910;
+				LastUpgradeCheck = 0930;
 				ORGANIZATIONNAME = "Sindre Sorhus";
 				TargetAttributes = {
 					E3AE62821E5CD2F300035A2F = {
@@ -212,7 +215,7 @@
 				};
 			};
 			buildConfigurationList = E3AE627E1E5CD2F300035A2F /* Build configuration list for PBXProject "Gifski" */;
-			compatibilityVersion = "Xcode 8.0";
+			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -295,15 +298,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E339F011203820ED003B78FB /* Gifski.swift in Sources */,
-				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
-				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
-				E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */,
-				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
-				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
-				E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */,
+				E30557F0207E521F003401A1 /* Defaults.swift in Sources */,
 				E317FF1C20583E9800A80A18 /* DockProgress.swift in Sources */,
+				E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */,
+				E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */,
+				E339F011203820ED003B78FB /* Gifski.swift in Sources */,
+				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
+				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
 				E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */,
+				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
+				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -334,6 +338,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -341,6 +346,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -372,6 +378,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				VALID_ARCHS = x86_64;
 			};
@@ -390,6 +397,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -397,6 +405,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -420,7 +429,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALID_ARCHS = x86_64;
 			};
 			name = Release;
@@ -440,13 +450,17 @@
 				);
 				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = "$(SRCROOT)/Gifski/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/opt/gcc/lib/gcc/7,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OBJC_BRIDGING_HEADER = "Gifski/Gifski-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
@@ -470,7 +484,10 @@
 				);
 				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = "$(SRCROOT)/Gifski/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/opt/gcc/lib/gcc/7,

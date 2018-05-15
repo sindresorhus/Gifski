@@ -48,7 +48,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		qualitySlider.onAction = { _ in
-			defaults["outputQuality"] = self.qualitySlider.doubleValue
+			defaults[.outputQuality] = self.qualitySlider.doubleValue
 			estimateFileSize()
 		}
 
@@ -60,7 +60,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		frameRateSlider.maxValue = Double(frameRate)
 		frameRateSlider.integerValue = frameRate < 24 ? frameRate : frameRate / 2
 		frameRateSlider.triggerAction()
-		qualitySlider.doubleValue = defaults["outputQuality"] as! Double
+		qualitySlider.doubleValue = defaults[.outputQuality]
 		qualitySlider.triggerAction()
 	}
 }

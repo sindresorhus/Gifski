@@ -2,9 +2,6 @@ import Cocoa
 import AVFoundation
 
 
-let defaults = UserDefaults.standard
-
-
 /**
 Convenience function for initializing an object and modifying its properties
 
@@ -60,6 +57,60 @@ class SSView: NSView {
 			didAppearWasCalled = true
 			didAppear()
 		}
+	}
+}
+
+
+extension NSWindow {
+	// Helper
+	private static func centeredOnScreen(rect: CGRect) -> CGRect {
+		guard let screen = NSScreen.main else {
+			return rect
+		}
+
+		// Looks better than perfectly centered
+		let yOffset = 0.12
+
+		return rect.centered(in: screen.visibleFrame, yOffsetPercent: yOffset)
+	}
+
+	static let defaultContentSize = CGSize(width: 480, height: 300)
+
+	/// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/gifski-app/pull/30#discussion_r175337064
+	static var defaultContentRect: CGRect {
+		return centeredOnScreen(rect: defaultContentSize.cgRect)
+	}
+
+	static let defaultStyleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
+
+	static func centeredWindow(size: CGSize = defaultContentSize) -> NSWindow {
+		let window = NSWindow()
+		window.setContentSize(size)
+		window.centerNatural()
+		return window
+	}
+
+	@nonobjc
+	convenience override init() {
+		self.init(contentRect: NSWindow.defaultContentRect)
+		appearance = .app
+	}
+
+	convenience init(contentRect: CGRect) {
+		self.init(contentRect: contentRect, styleMask: NSWindow.defaultStyleMask, backing: .buffered, defer: true)
+		appearance = .app
+	}
+
+	/// Moves the window to the center of the screen, slightly more in the center than `window#center()`
+	func centerNatural() {
+		setFrame(NSWindow.centeredOnScreen(rect: frame), display: true)
+	}
+}
+
+extension NSWindowController {
+	/// Expose the `view` like in NSViewController
+	var view: NSView? {
+		return window?.contentView
 	}
 }
 
@@ -767,7 +818,8 @@ extension NSMenuItem {
 
 
 extension UserDefaults {
-	@nonobjc subscript(key: String) -> Any? {
+	@nonobjc
+	subscript(key: String) -> Any? {
 		get {
 			return object(forKey: key)
 		}
@@ -1053,18 +1105,21 @@ extension CGSize {
 	}
 
 	init(widthHeight: CGFloat) {
-		self.width = widthHeight
-		self.height = widthHeight
+		self.init(width: widthHeight, height: widthHeight)
+	}
+
+	var cgRect: CGRect {
+		return CGRect(origin: .zero, size: self)
 	}
 }
 
 extension CGRect {
 	init(origin: CGPoint = .zero, width: CGFloat, height: CGFloat) {
-		self.origin = origin
-		self.size = CGSize(width: width, height: height)
+		self.init(origin: origin, size: CGSize(width: width, height: height))
 	}
 
 	init(widthHeight: CGFloat) {
+		self.init()
 		self.origin = .zero
 		self.size = CGSize(widthHeight: widthHeight)
 	}
@@ -1197,10 +1252,29 @@ extension CGRect {
 		}
 	}
 
-	// Returns a rect of `size` centered in this rect
-	func centered(size: CGSize) -> CGRect {
-		let dx = width - size.width
-		let dy = height - size.height
-		return CGRect(x: x + dx * 0.5, y: y + dy * 0.5, width: size.width, height: size.height)
+	/**
+	Returns a CGRect where `self` is centered in `rect`
+	*/
+	func centered(in rect: CGRect, xOffset: Double = 0, yOffset: Double = 0) -> CGRect {
+		return CGRect(
+			x: ((rect.width - size.width) / 2) + CGFloat(xOffset),
+			y: ((rect.height - size.height) / 2) + CGFloat(yOffset),
+			width: size.width,
+			height: size.height
+		)
+	}
+
+	/**
+	Returns a CGRect where `self` is centered in `rect`
+
+	- Parameters:
+		- xOffsetPercent: The offset in percentage of `rect.width`
+	*/
+	func centered(in rect: CGRect, xOffsetPercent: Double = 0, yOffsetPercent: Double = 0) -> CGRect {
+		return centered(
+			in: rect,
+			xOffset: Double(rect.width) * xOffsetPercent,
+			yOffset: Double(rect.height) * yOffsetPercent
+		)
 	}
 }
