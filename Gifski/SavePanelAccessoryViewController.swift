@@ -1,4 +1,5 @@
 import Cocoa
+import AVFoundation
 
 final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private weak var estimatedSizeLabel: NSTextField!
@@ -11,6 +12,23 @@ final class SavePanelAccessoryViewController: NSViewController {
 	var onDimensionChange: ((CGSize) -> Void)?
 	var onFramerateChange: ((Int) -> Void)?
 
+	var metadata: AVURLAsset.VideoMetadata {
+		return inputUrl.videoMetadata!
+	}
+
+	var frameRate: Int {
+		return Int(metadata.frameRate)
+	}
+
+	var maxFrameRate: Double {
+		return Double(frameRate.clamped(to: 5...30))
+	}
+
+	var defaultFrameRate: Int {
+		let defaultFrameRate = frameRate < 24 ? frameRate : frameRate / 2
+		return defaultFrameRate.clamped(to: 5...30)
+	}
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
@@ -21,9 +39,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 		formatter.zeroPadsFractionDigits = true
 
 		/// TODO: Use KVO here
-
-		let metadata = inputUrl.videoMetadata!
-		let frameRate = Int(metadata.frameRate).clamped(to: 5...30)
 		var currentDimensions = metadata.dimensions
 
 		func estimateFileSize() {
@@ -34,7 +49,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		scaleSlider.onAction = { _ in
-			currentDimensions = metadata.dimensions * self.scaleSlider.doubleValue
+			currentDimensions = self.metadata.dimensions * self.scaleSlider.doubleValue
 			self.scaleLabel.stringValue = "\(Int(currentDimensions.width))×\(Int(currentDimensions.height))"
 			estimateFileSize()
 			self.onDimensionChange?(currentDimensions)
@@ -57,8 +72,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 			scaleSlider.doubleValue = 0.5
 		}
 		scaleSlider.triggerAction()
-		frameRateSlider.maxValue = Double(frameRate)
-		frameRateSlider.integerValue = frameRate < 24 ? frameRate : frameRate / 2
+		frameRateSlider.maxValue = maxFrameRate
+		frameRateSlider.integerValue = defaultFrameRate
 		frameRateSlider.triggerAction()
 		qualitySlider.doubleValue = defaults[.outputQuality]
 		qualitySlider.triggerAction()
