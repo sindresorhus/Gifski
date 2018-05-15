@@ -23,7 +23,7 @@ public final class DockProgress {
 
 	public static var progressValue: Double = 0 {
 		didSet {
-			if previousProgressValue == 0 || (progressValue - previousProgressValue).magnitude > 0.001 {
+			if previousProgressValue == 0 || (progressValue - previousProgressValue).magnitude > 0.01 {
 				previousProgressValue = progressValue
 				updateDockIcon()
 			}
@@ -41,14 +41,12 @@ public final class DockProgress {
 
 	/// TODO: Make the progress smoother by also animating the steps between each call to `updateDockIcon()`
 	private static func updateDockIcon() {
-		DispatchQueue.global(qos: .utility).async {
-			/// TODO: If the `progressValue` is 1, draw the full circle, then schedule another draw in n milliseconds to hide it
-			let icon = (0..<1).contains(self.progressValue) ? self.draw() : appIcon
-			DispatchQueue.main.async {
-				/// TODO: Make this better by drawing in the `contentView` directly instead of using an image
-				dockImageView.image = icon
-				NSApp.dockTile.display()
-			}
+		/// TODO: If the `progressValue` is 1, draw the full circle, then schedule another draw in n milliseconds to hide it
+		let icon = (0..<1).contains(self.progressValue) ? self.draw() : appIcon
+		DispatchQueue.main.async {
+			/// TODO: Make this better by drawing in the `contentView` directly instead of using an image
+			dockImageView.image = icon
+			NSApp.dockTile.display()
 		}
 	}
 

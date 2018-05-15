@@ -104,9 +104,12 @@ public extension UserDefaults {
 			return _get(key.name)
 		}
 		set {
-			if let value = newValue {
-				_set(key.name, to: value)
+			guard let value = newValue else {
+				set(nil, forKey: key.name)
+				return
 			}
+
+			_set(key.name, to: value)
 		}
 	}
 
