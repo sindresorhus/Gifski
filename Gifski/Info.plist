@@ -19,6 +19,10 @@
 				<string>com.apple.m4v-video</string>
 				<string>com.apple.quicktime-movie</string>
 			</array>
+			<key>NSExportableTypes</key>
+			<array>
+				<string>com.compuserve.gif</string>
+			</array>
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
