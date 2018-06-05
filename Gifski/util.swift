@@ -93,12 +93,10 @@ extension NSWindow {
 	@nonobjc
 	convenience override init() {
 		self.init(contentRect: NSWindow.defaultContentRect)
-		appearance = .app
 	}
 
 	convenience init(contentRect: CGRect) {
 		self.init(contentRect: contentRect, styleMask: NSWindow.defaultStyleMask, backing: .buffered, defer: true)
-		appearance = .app
 	}
 
 	/// Moves the window to the center of the screen, slightly more in the center than `window#center()`
@@ -150,25 +148,6 @@ extension NSAppearance {
 	static var system: NSAppearance {
 		let isDark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
 		return NSAppearance(named: isDark ? .vibrantDark : .vibrantLight)!
-	}
-}
-
-
-extension NSAppearance {
-	private struct AssociatedKeys {
-		static let app = AssociatedObject<NSAppearance>()
-	}
-
-	/// The chosen appearance for the app
-	/// We're not using `.current` as it doesn't work across threads
-	static var app: NSAppearance {
-		get {
-			return AssociatedKeys.app[self] ?? .aqua
-		}
-		set {
-			current = newValue
-			AssociatedKeys.app[self] = newValue
-		}
 	}
 }
 
@@ -244,17 +223,6 @@ extension NSView {
 			}
 		}
 	}
-
-	func invertTextColorOnTextFieldsIfDark() {
-		guard NSAppearance.app == .dark else {
-			return
-		}
-
-		forEachSubview(ofType: NSTextField.self) {
-			/// It's darkened to match the system dark text color
-			$0.textColor = $0.textColor?.complementary.darkening(by: 0.1)
-		}
-	}
 }
 
 
@@ -308,18 +276,6 @@ extension NSAlert {
 
 		if let message = message {
 			self.informativeText = message
-		}
-
-		// Adhere to the current app appearance
-		self.appearance = .app
-	}
-
-	var appearance: NSAppearance {
-		get {
-			return window.appearance ?? .aqua
-		}
-		set {
-			window.appearance = newValue
 		}
 	}
 

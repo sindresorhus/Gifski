@@ -38,6 +38,7 @@ final class MainWindowController: NSWindowController {
 		self.init(window: window)
 
 		with(window) {
+			$0.appearance = .dark
 			$0.titleVisibility = .hidden
 			$0.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
 			$0.tabbingMode = .disallowed
@@ -67,7 +68,6 @@ final class MainWindowController: NSWindowController {
 		}
 
 		let panel = NSSavePanel()
-		panel.appearance = .app
 		panel.canCreateDirectories = true
 		panel.directoryURL = inputUrl.directoryURL
 		panel.nameFieldStringValue = inputUrl.changingFileExtension(to: "gif").filename
@@ -132,7 +132,6 @@ final class MainWindowController: NSWindowController {
 	@objc
 	func open(_ sender: AnyObject) {
 		let panel = NSOpenPanel()
-		panel.appearance = .app
 		panel.canChooseDirectories = false
 		panel.canCreateDirectories = false
 		panel.allowedFileTypes = System.supportedVideoTypes

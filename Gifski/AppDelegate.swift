@@ -19,8 +19,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			"NSApplicationCrashOnExceptions": true,
 			"NSFullScreenMenuItemEverywhere": false
 		])
-
-		NSAppearance.app = .dark
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {

@@ -14,9 +14,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
-		/// TODO: Find a way to create a `NSTextField` extension that adheres to `NSAppearance.app`
-		view.invertTextColorOnTextFieldsIfDark()
-
 		let formatter = ByteCountFormatter()
 		formatter.zeroPadsFractionDigits = true
 
