@@ -1,5 +1,4 @@
 import Cocoa
-import AVFoundation
 
 final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private weak var estimatedSizeLabel: NSTextField!
@@ -12,23 +11,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 	var onDimensionChange: ((CGSize) -> Void)?
 	var onFramerateChange: ((Int) -> Void)?
 
-	var metadata: AVURLAsset.VideoMetadata {
-		return inputUrl.videoMetadata!
-	}
-
-	var frameRate: Int {
-		return Int(metadata.frameRate)
-	}
-
-	var maxFrameRate: Double {
-		return Double(frameRate.clamped(to: 5...30))
-	}
-
-	var defaultFrameRate: Int {
-		let defaultFrameRate = frameRate < 24 ? frameRate : frameRate / 2
-		return defaultFrameRate.clamped(to: 5...30)
-	}
-
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
@@ -39,6 +21,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 		formatter.zeroPadsFractionDigits = true
 
 		/// TODO: Use KVO here
+
+		let metadata = inputUrl.videoMetadata!
 		var currentDimensions = metadata.dimensions
 
 		func estimateFileSize() {
@@ -49,7 +33,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		scaleSlider.onAction = { _ in
-			currentDimensions = self.metadata.dimensions * self.scaleSlider.doubleValue
+			currentDimensions = metadata.dimensions * self.scaleSlider.doubleValue
 			self.scaleLabel.stringValue = "\(Int(currentDimensions.width))×\(Int(currentDimensions.height))"
 			estimateFileSize()
 			self.onDimensionChange?(currentDimensions)
@@ -68,13 +52,36 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		// Set initial defaults
-		if metadata.dimensions.width >= 640 {
+		configureScaleSlider(inputDimensions: metadata.dimensions)
+		configureFramerateSlider(inputFrameRate: metadata.frameRate)
+		configureQualitySlider()
+	}
+
+	private func configureScaleSlider(inputDimensions dimensions: CGSize) {
+		if dimensions.width >= 640 {
 			scaleSlider.doubleValue = 0.5
 		}
+		scaleSlider.minValue = minimumScale(inputDimensions: dimensions)
 		scaleSlider.triggerAction()
-		frameRateSlider.maxValue = maxFrameRate
-		frameRateSlider.integerValue = defaultFrameRate
+	}
+
+	private func minimumScale(inputDimensions dimensions: CGSize) -> Double {
+		let shortestSide = min(dimensions.width, dimensions.height)
+		return 10 / Double(shortestSide)
+	}
+
+	private func configureFramerateSlider(inputFrameRate frameRate: Double) {
+		frameRateSlider.maxValue = frameRate.clamped(to: 5...30)
+		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
 		frameRateSlider.triggerAction()
+	}
+
+	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
+		let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
+		return defaultFrameRate.clamped(to: 5...30)
+	}
+
+	private func configureQualitySlider() {
 		qualitySlider.doubleValue = defaults[.outputQuality]
 		qualitySlider.triggerAction()
 	}
