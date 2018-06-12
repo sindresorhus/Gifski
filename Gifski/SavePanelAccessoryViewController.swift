@@ -20,7 +20,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 		/// TODO: Use KVO here
 
 		let metadata = inputUrl.videoMetadata!
-		let frameRate = Int(metadata.frameRate).clamped(to: 5...30)
 		var currentDimensions = metadata.dimensions
 
 		func estimateFileSize() {
@@ -50,10 +49,36 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		// Set initial defaults
+		configureScaleSlider(inputDimensions: metadata.dimensions)
+		configureFramerateSlider(inputFrameRate: metadata.frameRate)
+		configureQualitySlider()
+	}
+
+	private func configureScaleSlider(inputDimensions dimensions: CGSize) {
+		if dimensions.width >= 640 {
+			scaleSlider.doubleValue = 0.5
+		}
+		scaleSlider.minValue = minimumScale(inputDimensions: dimensions)
 		scaleSlider.triggerAction()
-		frameRateSlider.maxValue = Double(frameRate)
-		frameRateSlider.integerValue = frameRate
+	}
+
+	private func minimumScale(inputDimensions dimensions: CGSize) -> Double {
+		let shortestSide = min(dimensions.width, dimensions.height)
+		return 10 / Double(shortestSide)
+	}
+
+	private func configureFramerateSlider(inputFrameRate frameRate: Double) {
+		frameRateSlider.maxValue = frameRate.clamped(to: 5...30)
+		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
 		frameRateSlider.triggerAction()
+	}
+
+	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
+		let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
+		return defaultFrameRate.clamped(to: 5...30)
+	}
+
+	private func configureQualitySlider() {
 		qualitySlider.doubleValue = defaults[.outputQuality]
 		qualitySlider.triggerAction()
 	}
