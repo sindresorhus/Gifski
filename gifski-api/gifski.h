@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct gifski;
 typedef struct gifski gifski;
 
@@ -193,3 +198,7 @@ GifskiError gifski_write(gifski *handle, const char *destination);
  * Call to free all memory
  */
 void gifski_drop(gifski *g);
+
+#ifdef __cplusplus
+}
+#endif

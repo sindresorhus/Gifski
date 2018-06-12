@@ -6,15 +6,15 @@ Highest-quality GIF encoder based on [pngquant](https://pngquant.org).
 
 ![(CC) Blender Foundation | gooseberry.blender.org](https://gif.ski/demo.gif)
 
-It's a CLI tool, but it can also be compiled [as a library](https://docs.rs/gifski) for seamelss use in other apps.
+It's a CLI tool, but it can also be compiled [as a C library](https://docs.rs/gifski) for seamless use in other apps.
 
 ## Download and install
 
 See [releases](https://github.com/ImageOptim/gifski/releases) page for executables.
 
-If you have [Rust](https://www.rust-lang.org/install.html), you can also get it with `cargo install gifski`. Run `cargo build --release --features=openmp` to build from source.
+If you have [Rust](https://www.rust-lang.org/install.html), you can also get it with [`cargo install gifski`](https://crates.rs/crates/gifski). Run `cargo build --release --features=openmp` to build from source.
 
-If you have [Homebrew](https://brew.sh/), you can also get it with `brew install gifski`.
+If you have [Homebrew](https://brew.sh/), you can also get it with `brew install gifski`. Add the `--with-openmp` to make it run faster.
 
 ## Usage
 
@@ -34,16 +34,6 @@ You can also resize frames (with `-W <width in pixels>` option). If the input wa
 
 See `gifski -h` for more options.
 
-The tool optionally supports decoding video directly. Note that pre-built binaries distributed from the website don't support video. It's only enabled if you compile it with `--features=video`:
-
-```sh
-gifski -o out.gif video.mp4
-```
-
-## License
-
-AGPL 3 or later. Let [me](https://kornel.ski/contact) know if you'd like to use it in a product incompatible with this license. I can offer alternative licensing options.
-
 ## Building
 
 1. [Install Rust](https://www.rust-lang.org/en-US/install.html)
@@ -52,17 +42,9 @@ AGPL 3 or later. Let [me](https://kornel.ski/contact) know if you'd like to use 
 
 Enable OpenMP by adding `--features=openmp` to Cargo build flags (supported on macOS and Linux with GCC). It makes encoding more than twice as fast.
 
-### With built-in video support
-
-Install `ffmpeg` and its dependencies (probably `libavformat-dev`, `libavfilter-dev`, `libavdevice-dev`, `libclang-dev`, `clang`).
-
-Compile with `cargo build --release --features=video,openmp`.
-
-When compiled with video support [ffmpeg licenses](https://www.ffmpeg.org/legal.html) apply. You may need to have a patent license to use H.264/H.265 video (I recommend using VP9/WebM instead).
-
 ### Using from C
 
-See `gifski.h` for [the API](https://docs.rs/gifski). To build, run:
+[See `gifski.h` for the API](https://docs.rs/gifski). To build the library, run:
 
 ```sh
 cargo build --release
@@ -70,3 +52,20 @@ cargo build --release
 
 and link with `target/release/libgifski.a`. Please observe the [LICENSE](LICENSE).
 
+## License
+
+AGPL 3 or later. Let [me](https://kornel.ski/contact) know if you'd like to use it in a product incompatible with this license. I can offer alternative licensing options, including [commercial licenses](https://supso.org/projects/pngquant).
+
+### With built-in video support
+
+The tool optionally supports decoding video directly, but unfortunately it relies on ffmpeg 3.x, which may be *very hard* to get working, so it's not enabled by default.
+
+You must have `ffmpeg` and `libclang` installed, both with their C headers intalled in default system include paths. Details depend on the platform and version, but you usually need to install packages such as `libavformat-dev`, `libavfilter-dev`, `libavdevice-dev`, `libclang-dev`, `clang`. Please note that installation of these dependencies may be quite difficult. Especially on macOS and Windows it takes *expert knowledge* to just get them installed without wasting several hours on endless stupid installation and compilation errors, which I can't help with.
+
+Once you have dependencies installed, compile with `cargo build --release --features=video,openmp`.
+
+When compiled with video support [ffmpeg licenses](https://www.ffmpeg.org/legal.html) apply. You may need to have a patent license to use H.264/H.265 video (I recommend using VP9/WebM instead).
+
+```sh
+gifski -o out.gif video.mp4
+```
