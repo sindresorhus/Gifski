@@ -22,6 +22,8 @@
 
 use super::*;
 use std::os::raw::{c_char, c_int, c_void};
+use std::io;
+use std::fs;
 use std::ptr;
 use std::mem;
 use std::slice;
@@ -86,26 +88,32 @@ pub enum GifskiError {
 impl From<CatResult<()>> for GifskiError {
     fn from(res: CatResult<()>) -> Self {
         use error::ErrorKind::*;
-        use std::io::ErrorKind as EK;
         match res {
             Ok(_) => GifskiError::OK,
             Err(err) => match *err.kind() {
                 Quant(_) => GifskiError::QUANT,
                 Pal(_) => GifskiError::GIF,
                 ThreadSend => GifskiError::THREAD_LOST,
-                Io(ref err) => match err.kind() {
-                    EK::NotFound => GifskiError::NOT_FOUND,
-                    EK::PermissionDenied => GifskiError::PERMISSION_DENIED,
-                    EK::AlreadyExists => GifskiError::ALREADY_EXISTS,
-                    EK::InvalidInput | EK::InvalidData => GifskiError::INVALID_INPUT,
-                    EK::TimedOut => GifskiError::TIMED_OUT,
-                    EK::WriteZero => GifskiError::WRITE_ZERO,
-                    EK::Interrupted => GifskiError::INTERRUPTED,
-                    EK::UnexpectedEof => GifskiError::UNEXPECTED_EOF,
-                    _ => GifskiError::OTHER,
-                },
+                Io(ref err) => err.kind().into(),
                 _ => GifskiError::OTHER,
             },
+        }
+    }
+}
+
+impl From<io::ErrorKind> for GifskiError {
+    fn from(res: io::ErrorKind) -> Self {
+        use std::io::ErrorKind as EK;
+        match res {
+            EK::NotFound => GifskiError::NOT_FOUND,
+            EK::PermissionDenied => GifskiError::PERMISSION_DENIED,
+            EK::AlreadyExists => GifskiError::ALREADY_EXISTS,
+            EK::InvalidInput | EK::InvalidData => GifskiError::INVALID_INPUT,
+            EK::TimedOut => GifskiError::TIMED_OUT,
+            EK::WriteZero => GifskiError::WRITE_ZERO,
+            EK::Interrupted => GifskiError::INTERRUPTED,
+            EK::UnexpectedEof => GifskiError::UNEXPECTED_EOF,
+            _ => GifskiError::OTHER,
         }
     }
 }
@@ -276,20 +284,38 @@ pub extern "C" fn gifski_write(handle: *mut GifskiHandle, destination: *const c_
     if destination.is_null() {
         return GifskiError::NULL_ARG;
     }
-    let g = unsafe {handle.as_mut().unwrap()};
-    let path = Path::new(unsafe {
-        CStr::from_ptr(destination).to_str().unwrap()
-    });
-    if let Ok(file) = File::create(path) {
-        if let Some(writer) = g.writer.take() {
-            let mut progress: &mut ProgressReporter = &mut NoProgress {};
-            if let Some(cb) = g.progress.as_mut() {
-                progress = cb;
+    let g = if handle.is_null() {
+        return GifskiError::NULL_ARG;
+    } else {
+        unsafe {&mut *handle}
+    };
+    let path = if let Ok(s) = unsafe { CStr::from_ptr(destination).to_str() } {
+        Path::new(s)
+    } else {
+        return GifskiError::INVALID_INPUT;
+    };
+
+    match File::create(path) {
+        Ok(file) => {
+            if let Some(writer) = g.writer.take() {
+                let mut progress: &mut ProgressReporter = &mut NoProgress {};
+                if let Some(cb) = g.progress.as_mut() {
+                    progress = cb;
+                }
+                match writer.write(file, progress).into() {
+                    res @ GifskiError::OK |
+                    res @ GifskiError::ALREADY_EXISTS => res,
+                    err => {
+                        let _ = fs::remove_file(path); // clean up unfinished file
+                        err
+                    },
+                }
+            } else {
+                GifskiError::INVALID_STATE
             }
-            return writer.write(file, progress).into();
-        }
+        },
+        Err(err) => err.kind().into()
     }
-    GifskiError::INVALID_STATE
 }
 
 /// Call to free all memory

@@ -1,3 +1,14 @@
+#![cfg_attr(feature = "malloc", feature(alloc_system, global_allocator, allocator_api))]
+
+#[cfg(feature = "malloc")]
+extern crate alloc_system;
+#[cfg(feature = "malloc")]
+use alloc_system::System;
+
+#[cfg(feature = "malloc")]
+#[cfg_attr(feature = "malloc", global_allocator)]
+static A: System = System;
+
 extern crate gifski;
 #[macro_use] extern crate clap;
 #[macro_use] extern crate error_chain;
