@@ -29,11 +29,11 @@ Requires macOS 10.13 or later.
 
 ## Building from source
 
-To build the app in Xcode, you need to have [Rust](https://www.rust-lang.org) and GCC 7 installed first:
+To build the app in Xcode, you need to have [Rust](https://www.rust-lang.org) and GCC 8 installed first:
 
 ```sh
 curl https://sh.rustup.rs -sSf | sh
-brew install gcc SwiftLint
+brew install gcc@8 SwiftLint
 ```
 
 
