@@ -43,6 +43,18 @@ struct Meta {
 }
 
 
+/// macOS 10.14 polyfills
+extension NSColor {
+	static let controlAccent: NSColor = {
+		if #available(macOS 10.14, *) {
+			return NSColor.controlAccent
+		} else {
+			return NSColor(red: 0.10, green: 0.47, blue: 0.98, alpha: 1)
+		}
+	}()
+}
+
+
 /// This is useful as `awakeFromNib` is not called for programatically created views
 class SSView: NSView {
 	var didAppearWasCalled = false
@@ -113,6 +125,23 @@ extension NSWindowController {
 }
 
 
+extension NSView {
+	@discardableResult
+	func insertVibrancyView(
+		withAppearance appearance: NSAppearance.Name = .vibrantLight,
+		material: NSVisualEffectView.Material = .appearanceBased
+	) -> NSVisualEffectView {
+		let view = NSVisualEffectView(frame: bounds)
+		view.autoresizingMask = [.width, .height]
+		view.blendingMode = .behindWindow
+		view.appearance = NSAppearance(named: appearance)
+		view.material = material
+		addSubview(view, positioned: .below, relativeTo: nil)
+		return view
+	}
+}
+
+
 extension NSWindow {
 	var toolbarView: NSView? {
 		return standardWindowButton(.closeButton)?.superview
@@ -136,92 +165,6 @@ extension NSWindowController: NSWindowDelegate {
 		}
 
 		return rect
-	}
-}
-
-
-extension NSAppearance {
-	static let aqua = NSAppearance(named: .aqua)!
-	static let light = NSAppearance(named: .vibrantLight)!
-	static let dark = NSAppearance(named: .vibrantDark)!
-
-	static var system: NSAppearance {
-		let isDark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
-		return NSAppearance(named: isDark ? .vibrantDark : .vibrantLight)!
-	}
-}
-
-
-extension NSColor {
-	static let textColorDarkMode = NSColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1)
-}
-
-
-extension NSColor {
-	/// Get the complementary color of the current color
-	var complementary: NSColor {
-		guard let ciColor = CIColor(color: self) else {
-			return self
-		}
-
-		let compRed = 1 - ciColor.red
-		let compGreen = 1 - ciColor.green
-		let compBlue = 1 - ciColor.blue
-
-		return NSColor(red: compRed, green: compGreen, blue: compBlue, alpha: alphaComponent)
-	}
-}
-
-
-extension NSColor {
-	typealias HSBAColor = (hue: Double, saturation: Double, brightness: Double, alpha: Double)
-	var hsba: HSBAColor {
-		var hue: CGFloat = 0
-		var saturation: CGFloat = 0
-		var brightness: CGFloat = 0
-		var alpha: CGFloat = 0
-		getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
-		return HSBAColor(Double(hue), Double(saturation), Double(brightness), Double(alpha))
-	}
-
-	private func colorWithBrightness(factor: Double) -> NSColor {
-		let x = hsba
-		return NSColor(
-			hue: CGFloat(x.hue),
-			saturation: CGFloat(x.saturation),
-			brightness: CGFloat(x.brightness * factor),
-			alpha: CGFloat(x.alpha)
-		)
-	}
-
-	func lightening(by percent: Double) -> NSColor {
-		return colorWithBrightness(factor: 1 + percent)
-	}
-
-	func darkening(by percent: Double) -> NSColor {
-		return colorWithBrightness(factor: 1 - percent)
-	}
-}
-
-
-extension NSView {
-	/**
-	Iterate through subviews of a specific type and change properties on them
-
-	```
-	view.forEachSubview(ofType: NSTextField.self) {
-		$0.textColor = .white
-	}
-	```
-	*/
-	func forEachSubview<T>(ofType type: T.Type, deep: Bool = true, closure: (T) -> Void) {
-		for view in subviews {
-			if let view = view as? T {
-				closure(view)
-			} else if deep {
-				view.forEachSubview(ofType: type, deep: deep, closure: closure)
-			}
-		}
 	}
 }
 
@@ -369,7 +312,7 @@ extension AVAssetImageGenerator {
 	}
 }
 
-
+/// TODO: Remove this when targeting macOS 10.14
 extension CMTime {
 	static var zero: CMTime = kCMTimeZero
 	static var invalid: CMTime = kCMTimeInvalid
@@ -553,7 +496,6 @@ extension CALayer {
 extension CALayer {
 	/// This is required for CALayers that are created independently of a view
 	func setAutomaticContentsScale() {
-		/// TODO: This should ideally use the screen the layer is currently on. I think we need to first find the window the layer is positioned and then the screen from that.
 		contentsScale = NSScreen.main?.backingScaleFactor ?? 2
 	}
 }
@@ -679,24 +621,22 @@ func unimplemented(function: StaticString = #function, file: String = #file, lin
 }
 
 
-extension NSDraggingInfo {
+extension NSPasteboard {
 	/// Get the file URLs from dragged and dropped files
-	func fileURLs(types: [String] = ["public.item"]) -> [URL] {
-		guard draggingPasteboard().types?.contains(.fileURL) == true else {
+	func fileURLs(types: [String] = []) -> [URL] {
+		var options: [NSPasteboard.ReadingOptionKey: Any] = [
+			.urlReadingFileURLsOnly: true
+		]
+
+		if !types.isEmpty {
+			options[.urlReadingContentsConformToTypes] = types
+		}
+
+		guard let urls = readObjects(forClasses: [NSURL.self], options: options) as? [URL] else {
 			return []
 		}
 
-		if let urls = draggingPasteboard().readObjects(
-			forClasses: [NSURL.self],
-			options: [
-				.urlReadingFileURLsOnly: true,
-				.urlReadingContentsConformToTypes: types
-			]
-			) as? [URL] {
-			return urls
-		}
-
-		return []
+		return urls
 	}
 }
 
@@ -768,19 +708,6 @@ extension NSMenuItem {
 			AssociatedKeys.onActionClosure[self] = newValue
 			action = #selector(callClosure)
 			target = self
-		}
-	}
-}
-
-
-extension UserDefaults {
-	@nonobjc
-	subscript(key: String) -> Any? {
-		get {
-			return object(forKey: key)
-		}
-		set {
-			set(newValue, forKey: key)
 		}
 	}
 }

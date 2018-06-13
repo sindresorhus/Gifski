@@ -10,12 +10,12 @@ class DropView: SSView {
 	}
 
 	lazy private var dropLabel = with(Label()) {
-		$0.textColor = .textColorDarkMode
-		$0.font = .systemFont(ofSize: 14, weight: .light)
+		$0.textColor = .disabledControlTextColor
+		$0.font = .systemFont(ofSize: 14, weight: .regular)
 	}
 
 	var highlightColor: NSColor {
-		return .selectedControlColor
+		return .controlAccent
 	}
 
 	var acceptedTypes: [NSPasteboard.PasteboardType] {
@@ -25,7 +25,7 @@ class DropView: SSView {
 	private var isDraggingHighlighted: Bool = false {
 		didSet {
 			needsDisplay = true
-			dropLabel.animateTextColor(to: isDraggingHighlighted ? highlightColor : .textColorDarkMode, duration: 0.3)
+			dropLabel.animateTextColor(to: isDraggingHighlighted ? highlightColor : .disabledControlTextColor, duration: 0.2)
 		}
 	}
 
@@ -94,11 +94,11 @@ final class VideoDropView: DropView {
 	}
 
 	override func onEntered(_ sender: NSDraggingInfo) -> Bool {
-		return sender.fileURLs(types: System.supportedVideoTypes).count == 1
+		return sender.draggingPasteboard().fileURLs(types: System.supportedVideoTypes).count == 1
 	}
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {
-		if let url = sender.fileURLs(types: System.supportedVideoTypes).first {
+		if let url = sender.draggingPasteboard().fileURLs(types: System.supportedVideoTypes).first {
 			onComplete?([url])
 			return true
 		}

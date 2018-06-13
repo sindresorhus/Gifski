@@ -1,7 +1,7 @@
 import Cocoa
 
 extension NSColor {
-	static let appTheme = NSColor(named: NSColor.Name("Theme"))!
+	static let appTheme = NSColor.controlAccent
 }
 
 extension Defaults.Keys {
