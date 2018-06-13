@@ -11,8 +11,6 @@ class DropView: SSView {
 
 	lazy private var dropLabel = with(Label()) {
 		$0.textColor = .controlAccent
-		$0.font = .systemFont(ofSize: 14, weight: .regular)
-		$0.pulsateScale(duration: 1.3)
 	}
 
 	var highlightColor: NSColor {
@@ -31,6 +29,7 @@ class DropView: SSView {
 
 	override func didAppear() {
 		addSubviewToCenter(dropLabel)
+		dropLabel.pulsateScale(duration: 1.3)
 	}
 
 	override init(frame: NSRect) {

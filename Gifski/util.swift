@@ -72,7 +72,7 @@ extension NSView {
 	func pulsateScale(duration: TimeInterval = 2) {
 		pulsate(duration: duration)
 
-		let multiplier: CGFloat = 1.05
+		let multiplier: CGFloat = 1.1
 
 		var tr = CATransform3DIdentity
 		tr = CATransform3DTranslate(tr, bounds.size.width / 2, bounds.size.height / 2, 0)
@@ -474,6 +474,14 @@ class Label: NSTextField {
 
 	convenience init(attributedText: NSAttributedString) {
 		self.init(labelWithAttributedString: attributedText)
+	}
+
+	override func viewDidMoveToSuperview() {
+		guard superview != nil else {
+			return
+		}
+
+		sizeToFit()
 	}
 }
 
