@@ -430,12 +430,27 @@ extension DispatchQueue {
 }
 
 
+extension NSFont {
+	var size: CGFloat {
+		return fontDescriptor.object(forKey: .size) as! CGFloat
+	}
+
+	var traits: [NSFontDescriptor.TraitKey: AnyObject] {
+		return fontDescriptor.object(forKey: .traits) as! [NSFontDescriptor.TraitKey: AnyObject]
+	}
+
+	var weight: NSFont.Weight {
+		return NSFont.Weight(traits[.weight] as! CGFloat)
+	}
+}
+
+
 /**
 ```
 let foo = Label(text: "Foo")
 ```
 */
-final class Label: NSTextField {
+class Label: NSTextField {
 	var text: String {
 		get {
 			return stringValue
@@ -463,6 +478,25 @@ final class Label: NSTextField {
 
 	convenience init(attributedText: NSAttributedString) {
 		self.init(labelWithAttributedString: attributedText)
+	}
+}
+
+/// Use it in Interface Builder as a class or programmatically
+final class MonospacedLabel: Label {
+	override init(frame: NSRect) {
+		super.init(frame: frame)
+		setup()
+	}
+
+	required init?(coder: NSCoder) {
+		super.init(coder: coder)
+		setup()
+	}
+
+	private func setup() {
+		if let font = self.font {
+			self.font = NSFont.monospacedDigitSystemFont(ofSize: font.size, weight: font.weight)
+		}
 	}
 }
 
