@@ -275,36 +275,6 @@ extension NSTextField {
 }
 
 
-extension NSBezierPath {
-	/// UIKit polyfill
-	var cgPath: CGPath {
-		let path = CGMutablePath()
-		var points = [CGPoint](repeating: .zero, count: 3)
-
-		for i in 0..<elementCount {
-			let type = element(at: i, associatedPoints: &points)
-			switch type {
-			case .moveToBezierPathElement:
-				path.move(to: points[0])
-			case .lineToBezierPathElement:
-				path.addLine(to: points[0])
-			case .curveToBezierPathElement:
-				path.addCurve(to: points[2], control1: points[0], control2: points[1])
-			case .closePathBezierPathElement:
-				path.closeSubpath()
-			}
-		}
-
-		return path
-	}
-
-	/// UIKit polyfill
-	convenience init(roundedRect rect: CGRect, cornerRadius: CGFloat) {
-		self.init(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
-	}
-}
-
-
 extension AVAssetImageGenerator {
 	func generateCGImagesAsynchronously(forTimePoints timePoints: [CMTime], completionHandler: @escaping AVAssetImageGeneratorCompletionHandler) {
 		let times = timePoints.map { NSValue(time: $0) }
@@ -312,7 +282,7 @@ extension AVAssetImageGenerator {
 	}
 }
 
-/// TODO: Remove this when targeting macOS 10.14
+/// Remove this when targeting macOS 10.14
 extension CMTime {
 	static var zero: CMTime = kCMTimeZero
 	static var invalid: CMTime = kCMTimeInvalid
@@ -376,13 +346,6 @@ extension Strideable where Stride: SignedInteger {
 }
 
 
-extension NSViewController {
-	var appDelegate: AppDelegate {
-		return NSApp.delegate as! AppDelegate
-	}
-}
-
-
 extension AVAsset {
 	var isVideoDecodable: Bool {
 		guard isReadable,
@@ -391,15 +354,6 @@ extension AVAsset {
 			}
 
 		return firstVideoTrack.isDecodable
-	}
-
-	var isAudioDecodable: Bool {
-		guard isReadable,
-			let firstAudioTrack = tracks(withMediaType: .audio).first else {
-				return false
-			}
-
-		return firstAudioTrack.isDecodable
 	}
 }
 /// Video metadata
@@ -433,70 +387,6 @@ extension URL {
 
 	var isVideoDecodable: Bool {
 		return AVAsset(url: self).isVideoDecodable
-	}
-
-	var isAudioDecodable: Bool {
-		return AVAsset(url: self).isAudioDecodable
-	}
-}
-
-
-extension CALayer {
-	/**
-	Set CALayer properties without the implicit animation
-
-	```
-	CALayer.withoutImplicitAnimations {
-		view.layer?.opacity = 0.4
-	}
-	```
-	*/
-	static func withoutImplicitAnimations(closure: () -> Void) {
-		CATransaction.begin()
-		CATransaction.setDisableActions(true)
-		closure()
-		CATransaction.commit()
-	}
-
-	/**
-	Set CALayer properties with the implicit animation
-	This is the default, but instances might have manually turned it off
-
-	```
-	CALayer.withImplicitAnimations {
-		view.layer?.opacity = 0.4
-	}
-	```
-	*/
-	static func withImplicitAnimations(closure: () -> Void) {
-		CATransaction.begin()
-		CATransaction.setDisableActions(false)
-		closure()
-		CATransaction.commit()
-	}
-
-	/**
-	Toggle the implicit CALayer animation
-	Can be useful for text layers
-	*/
-	var implicitAnimations: Bool {
-		get {
-			return actions == nil
-		}
-		set {
-			if newValue {
-				actions = nil
-			} else {
-				actions = ["contents": NSNull()]
-			}
-		}
-	}
-}
-
-extension CALayer {
-	/// This is required for CALayers that are created independently of a view
-	func setAutomaticContentsScale() {
-		contentsScale = NSScreen.main?.backingScaleFactor ?? 2
 	}
 }
 
