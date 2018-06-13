@@ -10,8 +10,9 @@ class DropView: SSView {
 	}
 
 	lazy private var dropLabel = with(Label()) {
-		$0.textColor = .disabledControlTextColor
+		$0.textColor = .controlAccent
 		$0.font = .systemFont(ofSize: 14, weight: .regular)
+		$0.pulsateScale(duration: 1.3)
 	}
 
 	var highlightColor: NSColor {
@@ -25,7 +26,6 @@ class DropView: SSView {
 	private var isDraggingHighlighted: Bool = false {
 		didSet {
 			needsDisplay = true
-			dropLabel.animateTextColor(to: isDraggingHighlighted ? highlightColor : .disabledControlTextColor, duration: 0.2)
 		}
 	}
 
