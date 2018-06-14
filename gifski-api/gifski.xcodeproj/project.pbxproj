@@ -31,7 +31,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		5A571EEB201613A0006FC323 /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gifski.h; sourceTree = "<group>"; };
 		ADDEDBA66A6E1 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
 		CA602A3EF80C27F69BFA602F /* libgifski.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgifski.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA602FC434891560C496C677 /* libgifski.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libgifski.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -145,7 +144,7 @@
 				};
 			};
 			buildConfigurationList = CA60D65B99E9EB53EDC7413E /* Build configuration list for PBXAggregateTarget "Cargo" */;
-			compatibilityVersion = "Xcode 8.0";
+			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -170,14 +169,10 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"$(SRCROOT)/Cargo.toml",
 			);
 			name = "Cargo build";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -189,14 +184,10 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"$(CARGO_XCODE_PRODUCTS_DIR)/libgifski.dylib",
 			);
 			name = "Copy files (libgifski.dylib)";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(BUILT_PRODUCTS_DIR)/libgifski.dylib",
 			);
@@ -209,14 +200,10 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"$(CARGO_XCODE_PRODUCTS_DIR)/libgifski.a",
 			);
 			name = "Copy files (libgifski.a)";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(BUILT_PRODUCTS_DIR)/libgifski.a",
 			);
@@ -229,14 +216,10 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"$(CARGO_XCODE_PRODUCTS_DIR)/gifski",
 			);
 			name = "Copy files (gifski)";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(BUILT_PRODUCTS_DIR)/gifski",
 			);
@@ -307,6 +290,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OPENMP_STATIC = 1;
+				PRODUCT_NAME = gifski;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -329,8 +313,8 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CARGO_FLAGS = "";
 				CARGO_TARGET_DIR = "$(BUILD_DIR)/cargo-target";
-				CC = "gcc-8";
 				CARGO_XCODE_PRODUCTS_DIR = "$(BUILD_DIR)/cargo-target/debug";
+				CC = "gcc-8";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -360,6 +344,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OPENMP_STATIC = 1;
+				PRODUCT_NAME = gifski;
 				SDKROOT = macosx;
 			};
 			name = Debug;
