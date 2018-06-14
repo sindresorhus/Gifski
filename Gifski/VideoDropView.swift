@@ -10,8 +10,7 @@ class DropView: SSView {
 	}
 
 	lazy private var dropLabel = with(Label()) {
-		$0.textColor = .disabledControlTextColor
-		$0.font = .systemFont(ofSize: 14, weight: .regular)
+		$0.textColor = .controlAccent
 	}
 
 	var highlightColor: NSColor {
@@ -25,12 +24,12 @@ class DropView: SSView {
 	private var isDraggingHighlighted: Bool = false {
 		didSet {
 			needsDisplay = true
-			dropLabel.animateTextColor(to: isDraggingHighlighted ? highlightColor : .disabledControlTextColor, duration: 0.2)
 		}
 	}
 
 	override func didAppear() {
 		addSubviewToCenter(dropLabel)
+		dropLabel.pulsateScale(duration: 1.3)
 	}
 
 	override init(frame: NSRect) {

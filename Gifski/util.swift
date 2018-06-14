@@ -55,6 +55,43 @@ extension NSColor {
 }
 
 
+extension NSView {
+	func pulsate(duration: TimeInterval = 2) {
+		let animation = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
+		animation.duration = duration
+		animation.fromValue = 1
+		animation.toValue = 0.9
+		animation.timingFunction = .easeInOut
+		animation.autoreverses = true
+		animation.repeatCount = .infinity
+
+		wantsLayer = true
+		layer?.add(animation, forKey: nil)
+	}
+
+	func pulsateScale(duration: TimeInterval = 2) {
+		pulsate(duration: duration)
+
+		let multiplier: CGFloat = 1.1
+
+		var tr = CATransform3DIdentity
+		tr = CATransform3DTranslate(tr, bounds.size.width / 2, bounds.size.height / 2, 0)
+		tr = CATransform3DScale(tr, multiplier, multiplier, 1)
+		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
+
+		let animation = CABasicAnimation(keyPath: #keyPath(CALayer.transform))
+		animation.toValue = NSValue(caTransform3D: tr)
+		animation.duration = duration
+		animation.timingFunction = .easeInOut
+		animation.autoreverses = true
+		animation.repeatCount = .infinity
+
+		wantsLayer = true
+		layer?.add(animation, forKey: nil)
+	}
+}
+
+
 /// This is useful as `awakeFromNib` is not called for programatically created views
 class SSView: NSView {
 	var didAppearWasCalled = false
@@ -230,47 +267,6 @@ extension NSAlert {
 		}
 
 		return NSApp.runModal(for: window)
-	}
-}
-
-
-extension NSView {
-	func copyView<T: NSView>() -> T {
-		return NSKeyedUnarchiver.unarchiveObject(with: NSKeyedArchiver.archivedData(withRootObject: self)) as! T
-	}
-
-	/**
-	Animate by placing a copy of the view above it, changing properties on the view, and then fading out the copy.
-	Can be useful for properties that cannot normally be animated.
-	*/
-	func animateCrossFade(
-		duration: TimeInterval = 1,
-		delay: TimeInterval = 0,
-		animations: @escaping (() -> Void),
-		completion: (() -> Void)? = nil
-	) {
-		let fadeView = copyView()
-		superview?.addSubview(fadeView, positioned: .above, relativeTo: nil)
-		animations()
-		fadeView.fadeOut(duration: duration, delay: delay, completion: completion)
-	}
-}
-
-
-extension NSTextField {
-	/**
-	Animate the text color.
-	We cannot use `NSView.animate()` here as the property is not animatable.
-	*/
-	func animateTextColor(
-		to color: NSColor,
-		duration: TimeInterval = 0.5,
-		delay: TimeInterval = 0,
-		completion: (() -> Void)? = nil
-	) {
-		animateCrossFade(duration: duration, delay: delay, animations: {
-			self.textColor = color
-		}, completion: completion)
 	}
 }
 
@@ -478,6 +474,14 @@ class Label: NSTextField {
 
 	convenience init(attributedText: NSAttributedString) {
 		self.init(labelWithAttributedString: attributedText)
+	}
+
+	override func viewDidMoveToSuperview() {
+		guard superview != nil else {
+			return
+		}
+
+		sizeToFit()
 	}
 }
 
