@@ -140,7 +140,7 @@ extension NSWindow {
 	}
 
 	@nonobjc
-	convenience override init() {
+	override convenience init() {
 		self.init(contentRect: NSWindow.defaultContentRect)
 	}
 
@@ -288,10 +288,10 @@ extension CMTime {
 extension CMTimeScale {
 	/**
 	```
-	CMTime(seconds: (1 / fps) * Double(i), preferredTimescale: .video)
+	CMTime(seconds: 1 / fps, preferredTimescale: .video)
 	```
 	*/
-	static var video: Int32 = 600 // This is what Apple recommends
+	static var video: CMTimeScale = 600 // This is what Apple recommends
 }
 
 
@@ -544,6 +544,7 @@ foo()
 //=> "foo() in main.swift:1 has not been implemented"
 ```
 */
+// swiftlint:disable:next unavailable_function
 func unimplemented(function: StaticString = #function, file: String = #file, line: UInt = #line) -> Never {
 	fatalError("\(function) in \(file.nsString.lastPathComponent):\(line) has not been implemented")
 }

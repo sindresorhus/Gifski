@@ -11,7 +11,6 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private lazy var videoDropView = with(VideoDropView()) {
-		$0.frame = window!.contentView!.frame
 		$0.dropText = "Drop a Video to Convert to GIF"
 		$0.onComplete = { url in
 			self.convert(url.first!)

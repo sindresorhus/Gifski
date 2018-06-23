@@ -65,7 +65,7 @@ public final class CircularProgress: NSView {
 		commonInit()
 	}
 
-	required public init?(coder: NSCoder) {
+	public required init?(coder: NSCoder) {
 		super.init(coder: coder)
 		commonInit()
 	}

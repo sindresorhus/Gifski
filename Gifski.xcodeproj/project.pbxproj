@@ -131,10 +131,10 @@
 		E3AE627A1E5CD2F300035A2F = {
 			isa = PBXGroup;
 			children = (
-				5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */,
 				E3AE62851E5CD2F300035A2F /* Gifski */,
 				E3AE62841E5CD2F300035A2F /* Products */,
 				E317EE121F88305800359C57 /* Frameworks */,
+				5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */,
 			);
 			sourceTree = "<group>";
 			usesTabs = 1;

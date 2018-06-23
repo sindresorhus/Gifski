@@ -9,7 +9,7 @@ class DropView: SSView {
 		}
 	}
 
-	lazy private var dropLabel = with(Label()) {
+	private let dropLabel = with(Label()) {
 		$0.textColor = .controlAccent
 	}
 
@@ -27,19 +27,28 @@ class DropView: SSView {
 		}
 	}
 
-	override func didAppear() {
-		addSubviewToCenter(dropLabel)
-		dropLabel.pulsateScale(duration: 1.3)
-	}
-
 	override init(frame: NSRect) {
 		super.init(frame: frame)
 		autoresizingMask = [.width, .height]
 		registerForDraggedTypes(acceptedTypes)
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
+	}
+
+	override func didAppear() {
+		addSubviewToCenter(dropLabel)
+		dropLabel.pulsateScale(duration: 1.3)
+	}
+
+	override func layout() {
+		super.layout()
+
+		if let bounds = superview?.bounds {
+			frame = bounds
+		}
 	}
 
 	override func draw(_ dirtyRect: NSRect) {
