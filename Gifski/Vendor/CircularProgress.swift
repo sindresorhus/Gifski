@@ -165,11 +165,11 @@ private extension NSFont {
 }
 
 
-private extension NSColor {
-	func with(alpha: Double) -> NSColor {
-		return withAlphaComponent(CGFloat(alpha))
-	}
-}
+//private extension NSColor {
+//	func with(alpha: Double) -> NSColor {
+//		return withAlphaComponent(CGFloat(alpha))
+//	}
+//}
 
 
 private extension NSBezierPath {

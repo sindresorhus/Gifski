@@ -162,11 +162,11 @@ private final class ProgressCircleShapeLayer: CAShapeLayer {
 }
 
 
-private extension NSColor {
-	func with(alpha: Double) -> NSColor {
-		return withAlphaComponent(CGFloat(alpha))
-	}
-}
+//private extension NSColor {
+//	func with(alpha: Double) -> NSColor {
+//		return withAlphaComponent(CGFloat(alpha))
+//	}
+//}
 
 
 //private extension CGRect {

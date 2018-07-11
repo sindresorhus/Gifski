@@ -55,6 +55,13 @@ extension NSColor {
 }
 
 
+extension NSColor {
+	func with(alpha: Double) -> NSColor {
+		return withAlphaComponent(CGFloat(alpha))
+	}
+}
+
+
 extension NSView {
 	func pulsate(duration: TimeInterval = 2) {
 		let animation = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
@@ -69,10 +76,10 @@ extension NSView {
 		layer?.add(animation, forKey: nil)
 	}
 
-	func pulsateScale(duration: TimeInterval = 2) {
+	func pulsateScale(duration: TimeInterval = 1.5, scale: Double = 1.05) {
 		pulsate(duration: duration)
 
-		let multiplier: CGFloat = 1.1
+		let multiplier = CGFloat(scale)
 
 		var tr = CATransform3DIdentity
 		tr = CATransform3DTranslate(tr, bounds.size.width / 2, bounds.size.height / 2, 0)
