@@ -10,7 +10,7 @@
 			<key>CFBundleTypeName</key>
 			<string>Video</string>
 			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
+			<string>Viewer</string>
 			<key>LSHandlerRank</key>
 			<string>Alternate</string>
 			<key>LSItemContentTypes</key>
