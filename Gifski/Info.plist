@@ -40,7 +40,7 @@
 	<key>CFBundleVersion</key>
 	<string>6</string>
 	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.photography</string>
+	<string>public.app-category.video</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>MDItemKeywords</key>
