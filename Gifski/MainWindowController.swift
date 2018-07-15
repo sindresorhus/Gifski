@@ -37,6 +37,7 @@ final class MainWindowController: NSWindowController {
 		self.init(window: window)
 
 		with(window) {
+			$0.delegate = self
 			$0.appearance = NSAppearance(named: .vibrantLight)
 			$0.titleVisibility = .hidden
 			$0.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
