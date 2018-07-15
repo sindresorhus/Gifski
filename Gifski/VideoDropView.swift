@@ -14,7 +14,7 @@ class DropView: SSView {
 	}
 
 	var highlightColor: NSColor {
-		return .controlAccent
+		return .controlAccentPolyfill
 	}
 
 	var acceptedTypes: [NSPasteboard.PasteboardType] {

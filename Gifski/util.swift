@@ -45,9 +45,11 @@ struct Meta {
 
 /// macOS 10.14 polyfills
 extension NSColor {
-	static let controlAccent: NSColor = {
+	static let controlAccentPolyfill: NSColor = {
 		if #available(macOS 10.14, *) {
-			return NSColor.controlAccent
+			/// TODO: Enable this again when using the 10.14 SDK
+			// return NSColor.controlAccent
+			return NSColor(red: 0.10, green: 0.47, blue: 0.98, alpha: 1)
 		} else {
 			return NSColor(red: 0.10, green: 0.47, blue: 0.98, alpha: 1)
 		}

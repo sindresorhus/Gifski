@@ -1,7 +1,7 @@
 import Cocoa
 
 extension NSColor {
-	static let appTheme = NSColor.controlAccent
+	static let appTheme = NSColor.controlAccentPolyfill
 }
 
 extension Defaults.Keys {
