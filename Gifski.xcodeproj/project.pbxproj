@@ -128,6 +128,17 @@
 			path = Vendor;
 			sourceTree = "<group>";
 		};
+		E356A15D21028942000148AD /* Other */ = {
+			isa = PBXGroup;
+			children = (
+				E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */,
+				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
+				E3AE628D1E5CD2F300035A2F /* Info.plist */,
+				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
+			);
+			name = Other;
+			sourceTree = "<group>";
+		};
 		E3AE627A1E5CD2F300035A2F = {
 			isa = PBXGroup;
 			children = (
@@ -160,10 +171,7 @@
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
-				E3AE628D1E5CD2F300035A2F /* Info.plist */,
-				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
-				E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */,
-				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
+				E356A15D21028942000148AD /* Other */,
 				E317FF182057E25400A80A18 /* Vendor */,
 			);
 			path = Gifski;

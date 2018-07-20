@@ -1,5 +1,4 @@
-* text=auto
-*.swift text eol=lf
+* text=auto eol=lf
 *.pdf binary
 *.ai binary
 *.psd binary
