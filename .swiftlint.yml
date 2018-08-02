@@ -50,6 +50,9 @@ opt_in_rules:
   - multiline_function_chains
   - redundant_set_access_control
   - empty_xctest_method
+  - multiline_arguments
+  - anyobject_protocol
+  - redundant_type_annotation
 force_cast: warning
 force_unwrapping: warning
 number_separator:

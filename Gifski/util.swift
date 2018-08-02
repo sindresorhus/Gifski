@@ -737,21 +737,31 @@ extension NSView {
 	func fadeIn(duration: TimeInterval = 1, delay: TimeInterval = 0, completion: (() -> Void)? = nil) {
 		isHidden = true
 
-		NSView.animate(duration: duration, delay: delay, animations: {
-			self.isHidden = false
-		}, completion: completion)
+		NSView.animate(
+			duration: duration,
+			delay: delay,
+			animations: {
+				self.isHidden = false
+			},
+			completion: completion
+		)
 	}
 
 	func fadeOut(duration: TimeInterval = 1, delay: TimeInterval = 0, completion: (() -> Void)? = nil) {
 		isHidden = false
 
-		NSView.animate(duration: duration, delay: delay, animations: {
-			self.alphaValue = 0
-		}, completion: {
-			self.isHidden = true
-			self.alphaValue = 1
-			completion?()
-		})
+		NSView.animate(
+			duration: duration,
+			delay: delay,
+			animations: {
+				self.alphaValue = 0
+			},
+			completion: {
+				self.isHidden = true
+				self.alphaValue = 1
+				completion?()
+			}
+		)
 	}
 }
 
