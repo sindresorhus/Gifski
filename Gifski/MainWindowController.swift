@@ -1,8 +1,6 @@
 import Cocoa
 
 final class MainWindowController: NSWindowController {
-	private var progressObserver: NSKeyValueObservation?
-
 	/// TODO: Find a way to set the `frame` after init
 	private lazy var circularProgress = with(CircularProgress(frame: CGRect(widthHeight: 160))) {
 		$0.color = .appTheme
