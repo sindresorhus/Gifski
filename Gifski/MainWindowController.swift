@@ -36,16 +36,19 @@ final class MainWindowController: NSWindowController {
 
 		with(window) {
 			$0.delegate = self
-			$0.appearance = NSAppearance(named: .vibrantLight)
 			$0.titleVisibility = .hidden
-			$0.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+			$0.styleMask = [
+				.titled,
+				.closable,
+				.miniaturizable,
+				.fullSizeContentView
+			]
 			$0.tabbingMode = .disallowed
+			$0.collectionBehavior = .fullScreenNone
 			$0.titlebarAppearsTransparent = true
 			$0.isMovableByWindowBackground = true
 			$0.isRestorable = false
-
-			let vibrancyView = $0.contentView?.insertVibrancyView()
-			vibrancyView?.state = .active
+			$0.makeVibrant()
 		}
 
 		view?.addSubview(circularProgress)

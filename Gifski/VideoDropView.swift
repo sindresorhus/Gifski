@@ -10,7 +10,7 @@ class DropView: SSView {
 	}
 
 	private let dropLabel = with(Label()) {
-		$0.textColor = NSColor.textColor.with(alpha: 0.5)
+		$0.textColor = NSColor.secondaryLabelColor
 	}
 
 	var highlightColor: NSColor {

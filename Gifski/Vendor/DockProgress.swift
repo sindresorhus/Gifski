@@ -127,39 +127,39 @@ let label = with(NSTextField()) {
 //}
 
 
-private extension NSBezierPath {
-	static func progressCircle(radius: Double, center: CGPoint) -> NSBezierPath {
-		let startAngle: CGFloat = 90
-		let path = NSBezierPath()
-		path.appendArc(
-			withCenter: center,
-			radius: CGFloat(radius),
-			startAngle: startAngle,
-			endAngle: startAngle - 360,
-			clockwise: true
-		)
-		return path
-	}
-}
+//extension NSBezierPath {
+//	static func progressCircle(radius: Double, center: CGPoint) -> NSBezierPath {
+//		let startAngle: CGFloat = 90
+//		let path = NSBezierPath()
+//		path.appendArc(
+//			withCenter: center,
+//			radius: CGFloat(radius),
+//			startAngle: startAngle,
+//			endAngle: startAngle - 360,
+//			clockwise: true
+//		)
+//		return path
+//	}
+//}
 
 
-private final class ProgressCircleShapeLayer: CAShapeLayer {
-	convenience init(radius: Double, center: CGPoint) {
-		self.init()
-		fillColor = nil
-		lineCap = .round
-		path = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
-	}
-
-	var progress: Double {
-		get {
-			return Double(strokeEnd)
-		}
-		set {
-			strokeEnd = CGFloat(newValue)
-		}
-	}
-}
+//final class ProgressCircleShapeLayer: CAShapeLayer {
+//	convenience init(radius: Double, center: CGPoint) {
+//		self.init()
+//		fillColor = nil
+//		lineCap = .round
+//		path = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
+//	}
+//
+//	var progress: Double {
+//		get {
+//			return Double(strokeEnd)
+//		}
+//		set {
+//			strokeEnd = CGFloat(newValue)
+//		}
+//	}
+//}
 
 
 //private extension NSColor {

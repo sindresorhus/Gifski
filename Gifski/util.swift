@@ -161,6 +161,7 @@ extension NSWindow {
 	}
 }
 
+
 extension NSWindowController {
 	/// Expose the `view` like in NSViewController
 	var view: NSView? {
@@ -172,16 +173,31 @@ extension NSWindowController {
 extension NSView {
 	@discardableResult
 	func insertVibrancyView(
-		withAppearance appearance: NSAppearance.Name = .vibrantLight,
-		material: NSVisualEffectView.Material = .appearanceBased
+		material: NSVisualEffectView.Material = .appearanceBased,
+		blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
+		appearanceName: NSAppearance.Name? = nil
 	) -> NSVisualEffectView {
 		let view = NSVisualEffectView(frame: bounds)
 		view.autoresizingMask = [.width, .height]
-		view.blendingMode = .behindWindow
-		view.appearance = NSAppearance(named: appearance)
 		view.material = material
+		view.blendingMode = blendingMode
+
+		if let appearanceName = appearanceName {
+			view.appearance = NSAppearance(named: appearanceName)
+		}
+
 		addSubview(view, positioned: .below, relativeTo: nil)
+
 		return view
+	}
+}
+
+
+extension NSWindow {
+	func makeVibrant() {
+		if #available(OSX 10.14, *) {
+			contentView?.insertVibrancyView(material: .underWindowBackground)
+		}
 	}
 }
 

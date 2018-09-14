@@ -2,12 +2,14 @@ disabled_rules:
   - file_length
   - line_length
   - identifier_name
+  - todo # Enabled this again!
   - vertical_whitespace
   - force_cast
   - force_try
   - large_tuple
   - function_body_length
   - nesting # Disabled because of https://github.com/realm/SwiftLint/issues/1151
+  - type_body_length
 opt_in_rules:
   - empty_count
   - prohibited_super_call
@@ -20,7 +22,6 @@ opt_in_rules:
   - explicit_init
   - switch_case_on_newline
   - number_separator
-  - extension_access_modifier
   - closure_end_indentation
   - closure_spacing
   - operator_usage_whitespace
@@ -53,6 +54,7 @@ opt_in_rules:
   - multiline_arguments
   - anyobject_protocol
   - redundant_type_annotation
+  - no_extension_access_modifier
 force_cast: warning
 force_unwrapping: warning
 number_separator:

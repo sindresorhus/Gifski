@@ -30,9 +30,7 @@ public final class CircularProgress: NSView {
 
 	@IBInspectable public var color: NSColor = .systemBlue {
 		didSet {
-			backgroundCircle.strokeColor = color.with(alpha: 0.5).cgColor
-			progressCircle.strokeColor = color.cgColor
-			progressLabel.foregroundColor = color.cgColor
+			needsDisplay = true
 		}
 	}
 
@@ -70,6 +68,12 @@ public final class CircularProgress: NSView {
 		commonInit()
 	}
 
+	override public func updateLayer() {
+		backgroundCircle.strokeColor = color.with(alpha: 0.5).cgColor
+		progressCircle.strokeColor = color.cgColor
+		progressLabel.foregroundColor = color.cgColor
+	}
+
 	private func commonInit() {
 		wantsLayer = true
 		layer?.addSublayer(backgroundCircle)
@@ -93,7 +97,7 @@ public final class CircularProgress: NSView {
 /// util.swift
 ///
 
-private extension CALayer {
+extension CALayer {
 	static func animate(
 		duration: TimeInterval = 1,
 		delay: TimeInterval = 0,
@@ -160,7 +164,7 @@ extension CALayer {
 }
 
 
-private extension NSFont {
+extension NSFont {
 	static let helveticaNeueLight = NSFont(name: "HelveticaNeue-Light", size: 0)
 }
 
@@ -172,7 +176,7 @@ private extension NSFont {
 //}
 
 
-private extension NSBezierPath {
+extension NSBezierPath {
 	static func circle(radius: Double, center: CGPoint) -> NSBezierPath {
 		let path = NSBezierPath()
 		path.appendArc(
@@ -200,7 +204,7 @@ private extension NSBezierPath {
 }
 
 
-private extension CAShapeLayer {
+extension CAShapeLayer {
 	static func circle(radius: Double, center: CGPoint) -> CAShapeLayer {
 		return CAShapeLayer(path: NSBezierPath.circle(radius: radius, center: center))
 	}
@@ -212,7 +216,7 @@ private extension CAShapeLayer {
 }
 
 
-private extension CATextLayer {
+extension CATextLayer {
 	/// Initializer with better defaults
 	convenience init(text: String, fontSize: Double? = nil, color: NSColor? = nil) {
 		self.init()
@@ -239,7 +243,7 @@ private extension CATextLayer {
 }
 
 
-private final class ProgressCircleShapeLayer: CAShapeLayer {
+final class ProgressCircleShapeLayer: CAShapeLayer {
 	convenience init(radius: Double, center: CGPoint) {
 		self.init()
 		fillColor = nil
