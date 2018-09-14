@@ -143,14 +143,15 @@ final class MainWindowController: NSWindowController {
 			}
 		}
 	}
+}
 
-	@objc
-	override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+extension MainWindowController: NSMenuItemValidation {
+	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
 		switch menuItem.action {
 		case #selector(open)?:
 			return !isRunning
 		default:
-			return super.validateMenuItem(menuItem)
+			return validateMenuItem(menuItem)
 		}
 	}
 }

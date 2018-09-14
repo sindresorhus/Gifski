@@ -24,7 +24,7 @@ public final class CircularProgress: NSView {
 		$0.frame = bounds
 		$0.fontSize = bounds.width * 0.2
 		$0.position.y = bounds.midY * 0.25
-		$0.alignmentMode = kCAAlignmentCenter
+		$0.alignmentMode = .center
 		$0.font = NSFont.helveticaNeueLight // Not using the system font as it has too much number width variance
 	}
 
@@ -243,7 +243,7 @@ private final class ProgressCircleShapeLayer: CAShapeLayer {
 	convenience init(radius: Double, center: CGPoint) {
 		self.init()
 		fillColor = nil
-		lineCap = kCALineCapRound
+		lineCap = .round
 		path = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
 	}
 
@@ -267,13 +267,13 @@ extension NSBezierPath {
 		for i in 0..<elementCount {
 			let type = element(at: i, associatedPoints: &points)
 			switch type {
-			case .moveToBezierPathElement:
+			case .moveTo:
 				path.move(to: points[0])
-			case .lineToBezierPathElement:
+			case .lineTo:
 				path.addLine(to: points[0])
-			case .curveToBezierPathElement:
+			case .curveTo:
 				path.addCurve(to: points[2], control1: points[0], control2: points[1])
-			case .closePathBezierPathElement:
+			case .closePath:
 				path.closeSubpath()
 			}
 		}

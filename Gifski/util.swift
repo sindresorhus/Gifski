@@ -45,11 +45,9 @@ struct Meta {
 
 /// macOS 10.14 polyfills
 extension NSColor {
-	static let controlAccentPolyfill: NSColor = {
+	static let controlAccentColorPolyfill: NSColor = {
 		if #available(macOS 10.14, *) {
-			/// TODO: Enable this again when using the 10.14 SDK
-			// return NSColor.controlAccent
-			return NSColor(red: 0.10, green: 0.47, blue: 0.98, alpha: 1)
+			return NSColor.controlAccentColor
 		} else {
 			return NSColor(red: 0.10, green: 0.47, blue: 0.98, alpha: 1)
 		}
@@ -287,12 +285,6 @@ extension AVAssetImageGenerator {
 	}
 }
 
-/// Remove this when targeting macOS 10.14
-extension CMTime {
-	static var zero: CMTime = kCMTimeZero
-	static var invalid: CMTime = kCMTimeInvalid
-}
-
 
 extension CMTimeScale {
 	/**
@@ -378,7 +370,7 @@ extension AVURLAsset {
 		let dimensions = track.naturalSize.applying(track.preferredTransform)
 
 		return VideoMetadata(
-			dimensions: CGSize(width: fabs(dimensions.width), height: fabs(dimensions.height)),
+			dimensions: CGSize(width: abs(dimensions.width), height: abs(dimensions.height)),
 			duration: duration.seconds,
 			frameRate: Double(track.nominalFrameRate),
 			fileSize: url.fileSize
@@ -688,11 +680,11 @@ extension NSControl {
 
 
 extension CAMediaTimingFunction {
-	static let `default` = CAMediaTimingFunction(name: kCAMediaTimingFunctionDefault)
-	static let linear = CAMediaTimingFunction(name: kCAMediaTimingFunctionLinear)
-	static let easeIn = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseIn)
-	static let easeOut = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseOut)
-	static let easeInOut = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
+	static let `default` = CAMediaTimingFunction(name: .default)
+	static let linear = CAMediaTimingFunction(name: .linear)
+	static let easeIn = CAMediaTimingFunction(name: .easeIn)
+	static let easeOut = CAMediaTimingFunction(name: .easeOut)
+	static let easeInOut = CAMediaTimingFunction(name: .easeInEaseOut)
 }
 
 

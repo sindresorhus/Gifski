@@ -14,7 +14,7 @@ class DropView: SSView {
 	}
 
 	var highlightColor: NSColor {
-		return .controlAccentPolyfill
+		return .controlAccentColorPolyfill
 	}
 
 	var acceptedTypes: [NSPasteboard.PasteboardType] {
@@ -63,7 +63,7 @@ class DropView: SSView {
 	}
 
 	override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-		if sender.draggingSourceOperationMask().contains(.copy) && onEntered(sender) {
+		if sender.draggingSourceOperationMask.contains(.copy) && onEntered(sender) {
 			isDraggingHighlighted = true
 			return .copy
 		} else {
@@ -102,11 +102,11 @@ final class VideoDropView: DropView {
 	}
 
 	override func onEntered(_ sender: NSDraggingInfo) -> Bool {
-		return sender.draggingPasteboard().fileURLs(types: System.supportedVideoTypes).count == 1
+		return sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).count == 1
 	}
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {
-		if let url = sender.draggingPasteboard().fileURLs(types: System.supportedVideoTypes).first {
+		if let url = sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).first {
 			onComplete?([url])
 			return true
 		}

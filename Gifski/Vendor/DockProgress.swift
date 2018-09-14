@@ -147,7 +147,7 @@ private final class ProgressCircleShapeLayer: CAShapeLayer {
 	convenience init(radius: Double, center: CGPoint) {
 		self.init()
 		fillColor = nil
-		lineCap = kCALineCapRound
+		lineCap = .round
 		path = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
 	}
 
