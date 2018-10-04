@@ -1,12 +1,12 @@
 import Cocoa
 
 final class SavePanelAccessoryViewController: NSViewController {
-	@IBOutlet private weak var estimatedSizeLabel: NSTextField!
-	@IBOutlet private weak var scaleSlider: NSSlider!
-	@IBOutlet private weak var scaleLabel: NSTextField!
-	@IBOutlet private weak var frameRateSlider: NSSlider!
-	@IBOutlet private weak var frameRateLabel: NSTextField!
-	@IBOutlet private weak var qualitySlider: NSSlider!
+	@IBOutlet private var estimatedSizeLabel: NSTextField!
+	@IBOutlet private var scaleSlider: NSSlider!
+	@IBOutlet private var scaleLabel: NSTextField!
+	@IBOutlet private var frameRateSlider: NSSlider!
+	@IBOutlet private var frameRateLabel: NSTextField!
+	@IBOutlet private var qualitySlider: NSSlider!
 	var inputUrl: URL!
 	var onDimensionChange: ((CGSize) -> Void)?
 	var onFramerateChange: ((Int) -> Void)?
