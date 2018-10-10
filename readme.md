@@ -37,6 +37,14 @@ brew install gcc@8 SwiftLint
 ```
 
 
+## Built with
+
+- [gifski library](https://github.com/ImageOptim/gifski) - High-quality GIF encoder
+- [Defaults](https://github.com/sindresorhus/Defaults/blob/master/readme.md) - Swifty and modern UserDefaults
+- [DockProgress](https://github.com/sindresorhus/DockProgress) - Show progress in your app's Dock icon
+- [More packages…](https://github.com/search?q=user%3Asindresorhus+language%3Aswift)
+
+
 ## Maintainers
 
 - [Sindre Sorhus](https://github.com/sindresorhus)
