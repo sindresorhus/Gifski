@@ -34,6 +34,7 @@ To build the app in Xcode, you need to have [Rust](https://www.rust-lang.org) an
 ```sh
 curl https://sh.rustup.rs -sSf | sh
 brew install gcc@8 SwiftLint
+xcode-select --install
 ```
 
 
