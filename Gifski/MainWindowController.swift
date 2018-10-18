@@ -1,8 +1,7 @@
 import Cocoa
 
 final class MainWindowController: NSWindowController {
-	/// TODO: Find a way to set the `frame` after init
-	private lazy var circularProgress = with(CircularProgress(frame: CGRect(widthHeight: 160))) {
+	private lazy var circularProgress = with(CircularProgress(size: 160)) {
 		$0.color = .appTheme
 		$0.isHidden = true
 		$0.centerInWindow(window)
@@ -107,7 +106,7 @@ final class MainWindowController: NSWindowController {
 		isRunning = true
 
 		let progress = Progress(totalUnitCount: 1)
-		circularProgress.progress = progress
+		circularProgress.progressInstance = progress
 		DockProgress.progress = progress
 
 		progress.performAsCurrent(withPendingUnitCount: 1) {

@@ -1,11 +1,11 @@
+// Vendored from: https://github.com/sindresorhus/CircularProgress
 import Cocoa
-
-/// TODO(sindresorhus): I plan to extract this into a separate package soon
 
 @IBDesignable
 public final class CircularProgress: NSView {
 	private var lineWidth: Double = 2
-	lazy var radius = bounds.midX * 0.8
+	private lazy var radius = bounds.midX * 0.8
+	private var _progress: Double = 0
 	private var progressObserver: NSKeyValueObservation?
 
 	private lazy var backgroundCircle = with(CAShapeLayer.circle(radius: Double(radius), center: bounds.center)) {
@@ -28,31 +28,54 @@ public final class CircularProgress: NSView {
 		$0.font = NSFont.helveticaNeueLight // Not using the system font as it has too much number width variance
 	}
 
-	@IBInspectable public var color: NSColor = .systemBlue {
+	/**
+	Color of the circular progress view.
+
+	Defaults to the user's accent color. For High Sierra and below it uses a fallback color.
+	*/
+	@IBInspectable public var color: NSColor = .controlAccentColorPolyfill {
 		didSet {
 			needsDisplay = true
 		}
 	}
 
-	@IBInspectable public var progressValue: Double = 0 {
-		didSet {
+	/**
+	Show `✔` instead `100%`.
+	*/
+	@IBInspectable public var showCheckmarkAtHundredPercent: Bool = true
+
+	/**
+	The progress value in the range `0...1`.
+
+	- Note: The value will be clamped to `0...1`.
+	*/
+	@IBInspectable public var progress: Double {
+		get {
+			return _progress
+		}
+		set {
+			_progress = newValue.clamped(to: 0...1)
+
 			// swiftlint:disable:next trailing_closure
-			CALayer.animate(duration: 1, timingFunction: .easeOut, animations: {
-				self.progressCircle.progress = self.progressValue
+			CALayer.animate(duration: 0.5, timingFunction: .easeOut, animations: {
+				self.progressCircle.progress = self._progress
 			})
 
-			progressLabel.string = progressValue == 1 ? "✔" : "\(Int(progressValue * 100))%"
+			progressLabel.string = showCheckmarkAtHundredPercent && _progress == 1 ? "✔" : "\(Int(_progress * 100))%"
 
-			// TODO: Figure out why I need to flush here to get the label to update
+			// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
 			CATransaction.flush()
 		}
 	}
 
-	public var progress: Progress? {
+	/**
+	Let a `Progress` instance update the `progress` for you.
+	*/
+	public var progressInstance: Progress? {
 		didSet {
-			if let progress = progress {
-				progressObserver = progress.observe(\.fractionCompleted) { sender, _ in
-					self.progressValue = sender.fractionCompleted
+			if let progressInstance = progressInstance {
+				progressObserver = progressInstance.observe(\.fractionCompleted) { sender, _ in
+					self.progress = sender.fractionCompleted
 				}
 			}
 		}
@@ -68,6 +91,13 @@ public final class CircularProgress: NSView {
 		commonInit()
 	}
 
+	/**
+	Initialize the progress view with a width/height of the given `size`.
+	*/
+	public convenience init(size: Double) {
+		self.init(frame: CGRect(origin: .zero, size: CGSize(width: size, height: size)))
+	}
+
 	override public func updateLayer() {
 		backgroundCircle.strokeColor = color.with(alpha: 0.5).cgColor
 		progressCircle.strokeColor = color.cgColor
@@ -81,11 +111,12 @@ public final class CircularProgress: NSView {
 		layer?.addSublayer(progressLabel)
 	}
 
+	/**
+	Reset the progress back to zero without animating.
+	*/
 	public func resetProgress() {
-		CALayer.withoutImplicitAnimations {
-			progressCircle.progress = 0
-		}
-
+		_progress = 0
+		progressCircle.resetProgress()
 		progressLabel.string = "0%"
 	}
 }
@@ -93,9 +124,12 @@ public final class CircularProgress: NSView {
 
 
 
+
+
 ///
 /// util.swift
 ///
+
 
 extension CALayer {
 	static func animate(
@@ -249,6 +283,7 @@ final class ProgressCircleShapeLayer: CAShapeLayer {
 		fillColor = nil
 		lineCap = .round
 		path = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
+		strokeEnd = 0
 	}
 
 	var progress: Double {
@@ -257,6 +292,12 @@ final class ProgressCircleShapeLayer: CAShapeLayer {
 		}
 		set {
 			strokeEnd = CGFloat(newValue)
+		}
+	}
+
+	func resetProgress() {
+		CALayer.withoutImplicitAnimations {
+			strokeEnd = 0
 		}
 	}
 }
