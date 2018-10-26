@@ -1,4 +1,6 @@
 import Cocoa
+import Fabric
+import Crashlytics
 
 extension NSColor {
 	static let appTheme = NSColor.controlAccentColorPolyfill
@@ -22,6 +24,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
+		Fabric.with([Crashlytics.self])
+
 		mainWindowController.showWindow(self)
 
 		hasFinishedLaunching = true
