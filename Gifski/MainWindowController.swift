@@ -9,9 +9,22 @@ final class MainWindowController: NSWindowController {
 
 	private lazy var videoDropView = with(VideoDropView()) {
 		$0.dropText = "Drop a Video to Convert to GIF"
+
+		let this = $0
 		$0.onComplete = { url in
 			self.convert(url.first!)
+			this.dropText = nil
 		}
+	}
+
+	private lazy var showInFinderButton = with(CustomButton()) {
+		$0.title = "Show in Finder"
+		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 30)
+		$0.textColor = .appTheme
+		$0.backgroundColor = .clear
+		$0.borderWidth = 1
+		$0.isHidden = true
+		$0.centerInWindow(window)
 	}
 
 	private var choosenDimensions: CGSize?
@@ -21,8 +34,10 @@ final class MainWindowController: NSWindowController {
 		didSet {
 			if isRunning {
 				videoDropView.isHidden = true
+				showInFinderButton.isHidden = true
 			} else {
-				videoDropView.fadeIn()
+				videoDropView.isHidden = false
+				showInFinderButton.fadeIn()
 			}
 
 			circularProgress.isHidden = !isRunning
@@ -52,6 +67,7 @@ final class MainWindowController: NSWindowController {
 
 		view?.addSubview(circularProgress)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
+		view?.addSubview(showInFinderButton)
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: true)
@@ -100,6 +116,10 @@ final class MainWindowController: NSWindowController {
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
 			return
+		}
+
+		showInFinderButton.onAction = { _ in
+			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
 		}
 
 		circularProgress.resetProgress()

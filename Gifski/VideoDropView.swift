@@ -4,7 +4,10 @@ class DropView: SSView {
 	var dropText: String? {
 		didSet {
 			if let text = dropText {
+				dropLabel.isHidden = false
 				dropLabel.text = text
+			} else {
+				dropLabel.isHidden = true
 			}
 		}
 	}
