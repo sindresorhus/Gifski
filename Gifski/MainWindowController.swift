@@ -54,7 +54,7 @@ final class MainWindowController: NSWindowController {
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil)
-		NSApp.activate(ignoringOtherApps: true)
+		NSApp.activate(ignoringOtherApps: false)
 
 		DockProgress.style = .circle(radius: 55, color: .appTheme)
 	}
