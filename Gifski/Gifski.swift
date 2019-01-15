@@ -4,7 +4,7 @@ import AVFoundation
 final class Gifski {
 	enum Error: LocalizedError {
 		case invalidSettings
-		case generateFrameFailed
+		case generateFrameFailed(Swift.Error)
 		case addFrameFailed(GifskiWrapperError)
 		case endAddingFramesFailed(GifskiWrapperError)
 		case writeFailed(GifskiWrapperError)
@@ -13,8 +13,8 @@ final class Gifski {
 			switch self {
 			case .invalidSettings:
 				return "Invalid settings"
-			case .generateFrameFailed:
-				return "Failed to generate frame"
+			case .generateFrameFailed(let error):
+				return "Failed to generate frame: \(error.localizedDescription)"
 			case .addFrameFailed(let error):
 				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
 			case .endAddingFramesFailed(let error):
@@ -87,19 +87,25 @@ final class Gifski {
 				frameForTimes.append(CMTime(seconds: (1 / fps) * Double(i), preferredTimescale: .video))
 			}
 
-			var frameIndex = 0
-			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { _, image, _, _, error in
-				guard let image = image,
+			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
+				if case .failure(let error) = result {
+					completionHandler?(.generateFrameFailed(error))
+					return
+				}
+
+				guard
+					case let .success(result) = result,
+					let image = result.image,
 					let data = image.dataProvider?.data,
 					let buffer = CFDataGetBytePtr(data)
 				else {
-					completionHandler?(.generateFrameFailed)
+					completionHandler?(.generateFrameFailed("Unknown reason"))
 					return
 				}
 
 				do {
 					try g.addFrameARGB(
-						index: UInt32(frameIndex),
+						index: UInt32(result.completedCount),
 						width: UInt32(image.width),
 						bytesPerRow: UInt32(image.bytesPerRow),
 						height: UInt32(image.height),
@@ -111,15 +117,13 @@ final class Gifski {
 					return
 				}
 
-				frameIndex += 1
-
-				do {
-					if frameIndex == frameForTimes.count {
+				if result.isFinished {
+					do {
 						try g.endAddingFrames()
+					} catch {
+						completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
+						return
 					}
-				} catch {
-					completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
-					return
 				}
 			}
 
