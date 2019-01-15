@@ -119,11 +119,11 @@ final class MainWindowController: NSWindowController {
 			)
 
 			Gifski.run(conversion) { error in
-				DispatchQueue.main.async {
-					if let error = error {
-						fatalError(error.localizedDescription)
-					}
+				if let error = error {
+					fatalError(error.localizedDescription)
+				}
 
+				DispatchQueue.main.async {
 					self.circularProgress.fadeOut(delay: 1) {
 						self.isRunning = false
 					}
