@@ -102,7 +102,6 @@ final class MainWindowController: NSWindowController {
 			return
 		}
 
-		circularProgress.resetProgress()
 		isRunning = true
 
 		let progress = Progress(totalUnitCount: 1)
@@ -123,8 +122,12 @@ final class MainWindowController: NSWindowController {
 					fatalError(error.localizedDescription)
 				}
 
+				// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
+				progress.completedUnitCount = 0
+
 				DispatchQueue.main.async {
 					self.circularProgress.fadeOut(delay: 1) {
+						self.circularProgress.resetProgress()
 						self.isRunning = false
 					}
 				}
