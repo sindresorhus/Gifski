@@ -300,7 +300,7 @@ extension NSAlert {
 
 extension AVAssetImageGenerator {
 	struct CompletionHandlerResult {
-		let image: CGImage?
+		let image: CGImage
 		let requestedTime: CMTime
 		let actualTime: CMTime
 		let completedCount: Int
@@ -309,8 +309,14 @@ extension AVAssetImageGenerator {
 		let isFinished: Bool
 	}
 
-	/// TODO: Remove this when using Swift 5
-	enum Error: Swift.Error {}
+	/// TODO: Remove this when using Swift 5 and use `CancellationError` in the cancellation case
+	enum Error: CancellableError {
+		case cancelled
+
+		var isCancelled: Bool {
+			return self == .cancelled
+		}
+	}
 
 	func generateCGImagesAsynchronously(
 		forTimePoints timePoints: [CMTime],
@@ -328,7 +334,7 @@ extension AVAssetImageGenerator {
 				completionHandler(
 					.success(
 						CompletionHandlerResult(
-							image: image,
+							image: image!,
 							requestedTime: requestedTime,
 							actualTime: actualTime,
 							completedCount: completedCount,
@@ -341,19 +347,7 @@ extension AVAssetImageGenerator {
 			case .failed:
 				completionHandler(.failure(error! as! Error))
 			case .cancelled:
-				completionHandler(
-					.success(
-						CompletionHandlerResult(
-							image: image,
-							requestedTime: requestedTime,
-							actualTime: actualTime,
-							completedCount: completedCount,
-							totalCount: totalCount,
-							isCancelled: true,
-							isFinished: completedCount == totalCount
-						)
-					)
-				)
+				completionHandler(.failure(.cancelled))
 			}
 		}
 	}
@@ -1324,3 +1318,57 @@ extension Result: Hashable where Success: Hashable, Failure: Hashable {}
 // To be able to use it in places that already have a local result
 // TODO: Remove this when using Swift 5
 typealias CoreResult = Result
+
+
+public protocol CancellableError: Error {
+    /// Returns true if this Error represents a cancelled condition
+	var isCancelled: Bool { get }
+}
+
+public struct CancellationError: CancellableError {
+	public var isCancelled = true
+}
+
+extension Error {
+    public var isCancelled: Bool {
+        do {
+            throw self
+        } catch let error as CancellableError {
+            return error.isCancelled
+        } catch URLError.cancelled {
+            return true
+        } catch CocoaError.userCancelled {
+            return true
+        } catch {
+        #if os(macOS) || os(iOS) || os(tvOS)
+            let pair = { ($0.domain, $0.code) }(error as NSError)
+            return pair == ("SKErrorDomain", 2)
+        #else
+            return false
+        #endif
+        }
+    }
+}
+
+extension Result {
+	/**
+	```
+	switch result {
+	case .success(let value):
+		print(value)
+	case .failure where result.isCancelled:
+		print("Cancelled")
+	case .failure(let error):
+		print(error)
+	}
+	```
+	*/
+    public var isCancelled: Bool {
+        do {
+            _ = try get()
+			return false
+        } catch {
+            return error.isCancelled
+		}
+    }
+}

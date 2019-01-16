@@ -88,42 +88,44 @@ final class Gifski {
 			}
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
-				if case .failure(let error) = result {
-					completionHandler?(.generateFrameFailed(error))
-					return
-				}
+				switch result {
+				case .success(let result):
+					let image = result.image
 
-				guard
-					case let .success(result) = result,
-					let image = result.image,
-					let data = image.dataProvider?.data,
-					let buffer = CFDataGetBytePtr(data)
-				else {
-					completionHandler?(.generateFrameFailed("Unknown reason"))
-					return
-				}
-
-				do {
-					try g.addFrameARGB(
-						index: UInt32(result.completedCount),
-						width: UInt32(image.width),
-						bytesPerRow: UInt32(image.bytesPerRow),
-						height: UInt32(image.height),
-						pixels: buffer,
-						delay: UInt16(100 / fps)
-					)
-				} catch {
-					completionHandler?(.addFrameFailed(error as! GifskiWrapperError))
-					return
-				}
-
-				if result.isFinished {
-					do {
-						try g.endAddingFrames()
-					} catch {
-						completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
+					guard
+						let data = image.dataProvider?.data,
+						let buffer = CFDataGetBytePtr(data)
+					else {
+						completionHandler?(.generateFrameFailed("Could not get byte pointer of image data provider"))
 						return
 					}
+
+					do {
+						try g.addFrameARGB(
+							index: UInt32(result.completedCount),
+							width: UInt32(image.width),
+							bytesPerRow: UInt32(image.bytesPerRow),
+							height: UInt32(image.height),
+							pixels: buffer,
+							delay: UInt16(100 / fps)
+						)
+					} catch {
+						completionHandler?(.addFrameFailed(error as! GifskiWrapperError))
+						return
+					}
+
+					if result.isFinished {
+						do {
+							try g.endAddingFrames()
+						} catch {
+							completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
+						}
+					}
+				case .failure where result.isCancelled:
+					// TODO: Handle cancellation
+					print("Cancelled")
+				case .failure(let error):
+					completionHandler?(.generateFrameFailed(error))
 				}
 			}
 
