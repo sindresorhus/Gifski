@@ -49,6 +49,7 @@ extension NSColor {
 		if #available(macOS 10.14, *) {
 			return NSColor.controlAccentColor
 		} else {
+			// swiftlint:disable:next object_literal
 			return NSColor(red: 0.10, green: 0.47, blue: 0.98, alpha: 1)
 		}
 	}()
