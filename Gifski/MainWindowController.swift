@@ -1,4 +1,5 @@
 import Cocoa
+import Carbon.HIToolbox
 
 final class MainWindowController: NSWindowController {
 	private lazy var circularProgress = with(CircularProgress(size: 160)) {
@@ -24,6 +25,9 @@ final class MainWindowController: NSWindowController {
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
 		$0.isHidden = true
+    }
+    
+	private lazy var cancelView = with(CancelView(size: 160)) {
 		$0.centerInWindow(window)
 	}
 
@@ -66,8 +70,12 @@ final class MainWindowController: NSWindowController {
 		}
 
 		view?.addSubview(circularProgress)
+		view?.addSubview(cancelView)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(showInFinderButton)
+
+		NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: keyDownHandler)
+		NSEvent.addLocalMonitorForEvents(matching: .keyUp, handler: keyUpHandler)
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
@@ -167,6 +175,22 @@ final class MainWindowController: NSWindowController {
 				self.convert(panel.url!)
 			}
 		}
+	}
+
+	private let keyDownHandler: (NSEvent) -> NSEvent? = {
+		guard Int($0.keyCode) == kVK_Escape else {
+			return $0
+		}
+
+		return nil
+	}
+
+	private let keyUpHandler: (NSEvent) -> NSEvent? = {
+		guard Int($0.keyCode) == kVK_Escape else {
+			return $0
+		}
+
+		return nil
 	}
 }
 
