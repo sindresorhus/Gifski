@@ -24,10 +24,12 @@ final class MainWindowController: NSWindowController {
 		$0.textColor = .appTheme
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
-		$0.isHidden = true
-    }
-    
+//		$0.isHidden = true
+		$0.centerInWindow(window)
+	}
+
 	private lazy var cancelView = with(CancelView(size: 160)) {
+		$0.timeout = cancelTimeout
 		$0.centerInWindow(window)
 	}
 
@@ -74,8 +76,24 @@ final class MainWindowController: NSWindowController {
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(showInFinderButton)
 
-		NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: keyDownHandler)
-		NSEvent.addLocalMonitorForEvents(matching: .keyUp, handler: keyUpHandler)
+		NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
+			guard Int($0.keyCode) == kVK_Escape && !self.cancelButtonPressed else {
+				return $0
+			}
+			self.cancelButtonPressed = true
+			self.cancelView.grow()
+			self.startCancelTimer()
+			return nil
+		}
+		NSEvent.addLocalMonitorForEvents(matching: .keyUp) {
+			guard Int($0.keyCode) == kVK_Escape && self.cancelButtonPressed else {
+				return $0
+			}
+			self.cancelButtonPressed = false
+			self.cancelView.shrink()
+			self.invalidateCancelTimer()
+			return nil
+		}
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
@@ -163,6 +181,12 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
+	func cancelConversion() {
+		guard isRunning else {
+			return
+		}
+	}
+
 	@objc
 	func open(_ sender: AnyObject) {
 		let panel = NSOpenPanel()
@@ -177,20 +201,22 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	private let keyDownHandler: (NSEvent) -> NSEvent? = {
-		guard Int($0.keyCode) == kVK_Escape else {
-			return $0
-		}
+	private let cancelTimeout: TimeInterval = 2
+	private var cancelButtonPressed = false
+	private var cancelTimer: Timer?
 
-		return nil
+	private func startCancelTimer() {
+		cancelTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: false) {
+			guard $0.isValid else {
+				return
+			}
+
+			self.cancelConversion()
+		}
 	}
 
-	private let keyUpHandler: (NSEvent) -> NSEvent? = {
-		guard Int($0.keyCode) == kVK_Escape else {
-			return $0
-		}
-
-		return nil
+	private func invalidateCancelTimer() {
+		cancelTimer?.invalidate()
 	}
 }
 

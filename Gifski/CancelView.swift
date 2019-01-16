@@ -19,8 +19,10 @@ public final class CancelView: NSView {
 		commonInit()
 	}
 
+	var timeout: TimeInterval = 2
+
 	/**
-	Initialize the progress view with a width/height of the given `size`.
+	Initialize the cancel view with a width/height of the given `size` and the provided `timeout`.
 	*/
 	public convenience init(size: Double) {
 		self.init(frame: CGRect(origin: .zero, size: CGSize(width: size, height: size)))
@@ -43,6 +45,45 @@ public final class CancelView: NSView {
 
 	private func commonInit() {
 		wantsLayer = true
+		backgroundCircle.transform = CATransform3DMakeScale(0, 0, 1)
 		layer?.addSublayer(backgroundCircle)
+	}
+
+	private enum AnimationState {
+		case idle, growing, shrinking
+	}
+
+	private var animationState: AnimationState = .idle
+
+	func grow() {
+		guard [.idle, .shrinking].contains(animationState) else {
+			return
+		}
+		animationState = .growing
+
+		CALayer.animate(duration: timeout,
+						timingFunction: .easeIn,
+						animations: {
+							self.backgroundCircle.transform = CATransform3DMakeScale(1, 1, 1)
+						}, completion: {
+							self.animationState = .idle
+						}
+		)
+	}
+
+	func shrink() {
+		guard [.idle, .growing].contains(animationState) else {
+			return
+		}
+		animationState = .shrinking
+
+		CALayer.animate(duration: 0.1,
+						timingFunction: .easeIn,
+						animations: {
+							self.backgroundCircle.transform = CATransform3DMakeScale(0, 0, 1)
+						}, completion: {
+							self.animationState = .idle
+						}
+		)
 	}
 }
