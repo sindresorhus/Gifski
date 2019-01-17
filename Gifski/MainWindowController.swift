@@ -28,7 +28,13 @@ final class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
-	private lazy var cancelView = with(CancelView(size: 140)) {
+	private lazy var cancelButton = with(CustomButton()) {
+		$0.title = "Cancel"
+		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 30)
+		$0.textColor = .appTheme
+		$0.backgroundColor = .clear
+		$0.borderWidth = 1
+		$0.isHidden = true
 		$0.centerInWindow(window)
 	}
 
@@ -71,15 +77,15 @@ final class MainWindowController: NSWindowController {
 		}
 
 		view?.addSubview(circularProgress)
-		view?.addSubview(cancelView)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(showInFinderButton)
+		view?.addSubview(cancelButton)
 
 		NSEvent.addLocalMonitorForEvents(matching: .keyUp) {
 			guard Int($0.keyCode) == kVK_Escape else {
 				return $0
 			}
-			self.cancelConversion()
+			self.cancelConversion(nil)
 			return nil
 		}
 
@@ -136,6 +142,8 @@ final class MainWindowController: NSWindowController {
 			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
 		}
 
+		cancelButton.onAction = cancelConversion
+
 		isRunning = true
 
 		let progress = Progress(totalUnitCount: 1)
@@ -169,7 +177,7 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	private func cancelConversion() {
+	private func cancelConversion(_: NSControl?) {
 	}
 
 	@objc
