@@ -1203,14 +1203,14 @@ public enum Result<Success, Failure: Swift.Error> {
   /// - Returns: A `Result` instance with the result of evaluating `transform`
   ///   as the new success value if this instance represents a success.
   public func map<NewSuccess>(
-    _ transform: (Success) -> NewSuccess
+	_ transform: (Success) -> NewSuccess
   ) -> Result<NewSuccess, Failure> {
-    switch self {
-    case let .success(success):
-      return .success(transform(success))
-    case let .failure(failure):
-      return .failure(failure)
-    }
+	switch self {
+	case let .success(success):
+	  return .success(transform(success))
+	case let .failure(failure):
+	  return .failure(failure)
+	}
   }
 
   /// Returns a new result, mapping any failure value using the given
@@ -1240,14 +1240,14 @@ public enum Result<Success, Failure: Swift.Error> {
   /// - Returns: A `Result` instance with the result of evaluating `transform`
   ///   as the new failure value if this instance represents a failure.
   public func mapError<NewFailure>(
-    _ transform: (Failure) -> NewFailure
+	_ transform: (Failure) -> NewFailure
   ) -> Result<Success, NewFailure> {
-    switch self {
-    case let .success(success):
-      return .success(success)
-    case let .failure(failure):
-      return .failure(transform(failure))
-    }
+	switch self {
+	case let .success(success):
+	  return .success(success)
+	case let .failure(failure):
+	  return .failure(transform(failure))
+	}
   }
 
   /// Returns a new result, mapping any success value using the given
@@ -1258,14 +1258,14 @@ public enum Result<Success, Failure: Swift.Error> {
   /// - Returns: A `Result` instance with the result of evaluating `transform`
   ///   as the new failure value if this instance represents a failure.
   public func flatMap<NewSuccess>(
-    _ transform: (Success) -> Result<NewSuccess, Failure>
+	_ transform: (Success) -> Result<NewSuccess, Failure>
   ) -> Result<NewSuccess, Failure> {
-    switch self {
-    case let .success(success):
-      return transform(success)
-    case let .failure(failure):
-      return .failure(failure)
-    }
+	switch self {
+	case let .success(success):
+	  return transform(success)
+	case let .failure(failure):
+	  return .failure(failure)
+	}
   }
 
   /// Returns a new result, mapping any failure value using the given
@@ -1276,14 +1276,14 @@ public enum Result<Success, Failure: Swift.Error> {
   /// - Returns: A `Result` instance, either from the closure or the previous
   ///   `.success`.
   public func flatMapError<NewFailure>(
-    _ transform: (Failure) -> Result<Success, NewFailure>
+	_ transform: (Failure) -> Result<Success, NewFailure>
   ) -> Result<Success, NewFailure> {
-    switch self {
-    case let .success(success):
-      return .success(success)
-    case let .failure(failure):
-      return transform(failure)
-    }
+	switch self {
+	case let .success(success):
+	  return .success(success)
+	case let .failure(failure):
+	  return transform(failure)
+	}
   }
 
   /// Returns the success value as a throwing expression.
@@ -1303,12 +1303,12 @@ public enum Result<Success, Failure: Swift.Error> {
   /// - Returns: The success value, if the instance represent a success.
   /// - Throws: The failure value, if the instance represents a failure.
   public func get() throws -> Success {
-    switch self {
-    case let .success(success):
-      return success
-    case let .failure(failure):
-      throw failure
-    }
+	switch self {
+	case let .success(success):
+	  return success
+	case let .failure(failure):
+	  throw failure
+	}
   }
 }
 
@@ -1321,7 +1321,7 @@ typealias CoreResult = Result
 
 
 public protocol CancellableError: Error {
-    /// Returns true if this Error represents a cancelled condition
+	/// Returns true if this Error represents a cancelled condition
 	var isCancelled: Bool { get }
 }
 
@@ -1330,24 +1330,24 @@ public struct CancellationError: CancellableError {
 }
 
 extension Error {
-    public var isCancelled: Bool {
-        do {
-            throw self
-        } catch let error as CancellableError {
-            return error.isCancelled
-        } catch URLError.cancelled {
-            return true
-        } catch CocoaError.userCancelled {
-            return true
-        } catch {
-        #if os(macOS) || os(iOS) || os(tvOS)
-            let pair = { ($0.domain, $0.code) }(error as NSError)
-            return pair == ("SKErrorDomain", 2)
-        #else
-            return false
-        #endif
-        }
-    }
+	public var isCancelled: Bool {
+		do {
+			throw self
+		} catch let error as CancellableError {
+			return error.isCancelled
+		} catch URLError.cancelled {
+			return true
+		} catch CocoaError.userCancelled {
+			return true
+		} catch {
+		#if os(macOS) || os(iOS) || os(tvOS)
+			let pair = { ($0.domain, $0.code) }(error as NSError)
+			return pair == ("SKErrorDomain", 2)
+		#else
+			return false
+		#endif
+		}
+	}
 }
 
 extension Result {
@@ -1363,12 +1363,12 @@ extension Result {
 	}
 	```
 	*/
-    public var isCancelled: Bool {
-        do {
-            _ = try get()
+	public var isCancelled: Bool {
+		do {
+			_ = try get()
 			return false
-        } catch {
-            return error.isCancelled
+		} catch {
+			return error.isCancelled
 		}
-    }
+	}
 }
