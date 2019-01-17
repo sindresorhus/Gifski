@@ -38,7 +38,7 @@ final class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
-	private lazy var hoverView = with(HoverView(size: 160)) {
+	private lazy var hoverView = with(HoverView(size: CGSize(width: 160, height: 70))) {
 		$0.centerInWindow(window)
 	}
 
@@ -47,18 +47,21 @@ final class MainWindowController: NSWindowController {
 
 	var isRunning: Bool = false {
 		didSet {
-			if isRunning {
-				hoverView.onHover = onHover
-				videoDropView.isHidden = true
-				showInFinderButton.isHidden = true
-			} else {
-				hoverView.onHover = nil
-				videoDropView.isHidden = false
-				showInFinderButton.fadeIn()
-				cancelButton.isHidden = true
-			}
+			videoDropView.isHidden = isRunning
+			hoverView.onHover = isRunning ? onHover : nil
+			cancelButton.isHidden = true
 
-			circularProgress.isHidden = !isRunning
+			if !isRunning && progress?.isFinished ?? false {
+				circularProgress.fadeOut(delay: 1) {
+					self.circularProgress.resetProgress()
+					self.showInFinderButton.fadeIn()
+
+					// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
+					self.progress?.completedUnitCount = 0
+				}
+			} else {
+				circularProgress.isHidden = false
+			}
 		}
 	}
 
@@ -141,6 +144,8 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
+	private var progress: Progress?
+
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
 			return
@@ -154,11 +159,11 @@ final class MainWindowController: NSWindowController {
 
 		isRunning = true
 
-		let progress = Progress(totalUnitCount: 1)
+		progress = Progress(totalUnitCount: 1)
 		circularProgress.progressInstance = progress
 		DockProgress.progress = progress
 
-		progress.performAsCurrent(withPendingUnitCount: 1) {
+		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
 				input: inputUrl,
 				output: outputUrl,
@@ -168,18 +173,19 @@ final class MainWindowController: NSWindowController {
 			)
 
 			Gifski.run(conversion) { error in
-				if let error = error {
-					fatalError(error.localizedDescription)
+				DispatchQueue.main.async {
+					self.isRunning = false
 				}
 
-				// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
-				progress.completedUnitCount = 0
+				guard let error = error else {
+					return
+				}
 
-				DispatchQueue.main.async {
-					self.circularProgress.fadeOut(delay: 1) {
-						self.circularProgress.resetProgress()
-						self.isRunning = false
-					}
+				switch error {
+				case .cancelled:
+					break
+				default:
+					fatalError(error.localizedDescription)
 				}
 			}
 		}
@@ -197,6 +203,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private func cancelConversion(_: NSControl?) {
+		progress?.cancel()
 	}
 
 	@objc
