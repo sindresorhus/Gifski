@@ -132,7 +132,7 @@ extension NSWindow {
 		// Looks better than perfectly centered
 		let yOffset = 0.12
 
-		return rect.centered(in: screen.visibleFrame, yOffsetPercent: yOffset)
+		return rect.centered(in: screen.visibleFrame, xOffsetPercent: 0, yOffsetPercent: yOffset)
 	}
 
 	static let defaultContentSize = CGSize(width: 480, height: 300)
@@ -1162,7 +1162,7 @@ extension CGRect {
 	- Parameters:
 		- xOffsetPercent: The offset in percentage of `rect.width`
 	*/
-	func centered(in rect: CGRect, xOffsetPercent: Double = 0, yOffsetPercent: Double = 0) -> CGRect {
+	func centered(in rect: CGRect, xOffsetPercent: Double, yOffsetPercent: Double) -> CGRect {
 		return centered(
 			in: rect,
 			xOffset: Double(rect.width) * xOffsetPercent,
