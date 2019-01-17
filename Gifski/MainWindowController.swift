@@ -38,17 +38,24 @@ final class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
+	private lazy var hoverView = with(HoverView(size: 160)) {
+		$0.centerInWindow(window)
+	}
+
 	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
 
 	var isRunning: Bool = false {
 		didSet {
 			if isRunning {
+				hoverView.onHover = onHover
 				videoDropView.isHidden = true
 				showInFinderButton.isHidden = true
 			} else {
+				hoverView.onHover = nil
 				videoDropView.isHidden = false
 				showInFinderButton.fadeIn()
+				cancelButton.isHidden = true
 			}
 
 			circularProgress.isHidden = !isRunning
@@ -80,6 +87,7 @@ final class MainWindowController: NSWindowController {
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(showInFinderButton)
 		view?.addSubview(cancelButton)
+		view?.addSubview(hoverView)
 
 		NSEvent.addLocalMonitorForEvents(matching: .keyUp) {
 			guard Int($0.keyCode) == kVK_Escape else {
@@ -174,6 +182,17 @@ final class MainWindowController: NSWindowController {
 					}
 				}
 			}
+		}
+	}
+
+	private func onHover(_ event: HoverView.Event) {
+		switch event {
+		case .entered:
+			circularProgress.isHidden = true
+			cancelButton.isHidden = false
+		case .exited:
+			circularProgress.isHidden = false
+			cancelButton.isHidden = true
 		}
 	}
 
