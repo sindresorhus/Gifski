@@ -24,12 +24,11 @@ final class MainWindowController: NSWindowController {
 		$0.textColor = .appTheme
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
-//		$0.isHidden = true
+		$0.isHidden = true
 		$0.centerInWindow(window)
 	}
 
-	private lazy var cancelView = with(CancelView(size: 160)) {
-		$0.timeout = cancelTimeout
+	private lazy var cancelView = with(CancelView(size: 140)) {
 		$0.centerInWindow(window)
 	}
 
@@ -76,22 +75,11 @@ final class MainWindowController: NSWindowController {
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(showInFinderButton)
 
-		NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
-			guard Int($0.keyCode) == kVK_Escape && !self.cancelButtonPressed else {
-				return $0
-			}
-			self.cancelButtonPressed = true
-			self.cancelView.grow()
-			self.startCancelTimer()
-			return nil
-		}
 		NSEvent.addLocalMonitorForEvents(matching: .keyUp) {
-			guard Int($0.keyCode) == kVK_Escape && self.cancelButtonPressed else {
+			guard Int($0.keyCode) == kVK_Escape else {
 				return $0
 			}
-			self.cancelButtonPressed = false
-			self.cancelView.shrink()
-			self.invalidateCancelTimer()
+			self.cancelConversion()
 			return nil
 		}
 
@@ -181,10 +169,7 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	func cancelConversion() {
-		guard isRunning else {
-			return
-		}
+	private func cancelConversion() {
 	}
 
 	@objc
@@ -199,24 +184,6 @@ final class MainWindowController: NSWindowController {
 				self.convert(panel.url!)
 			}
 		}
-	}
-
-	private let cancelTimeout: TimeInterval = 2
-	private var cancelButtonPressed = false
-	private var cancelTimer: Timer?
-
-	private func startCancelTimer() {
-		cancelTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: false) {
-			guard $0.isValid else {
-				return
-			}
-
-			self.cancelConversion()
-		}
-	}
-
-	private func invalidateCancelTimer() {
-		cancelTimer?.invalidate()
 	}
 }
 
