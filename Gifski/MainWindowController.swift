@@ -70,7 +70,7 @@ final class MainWindowController: NSWindowController {
 		view?.addSubview(showInFinderButton)
 
 		window.makeKeyAndOrderFront(nil)
-		NSApp.activate(ignoringOtherApps: true)
+		NSApp.activate(ignoringOtherApps: false)
 
 		DockProgress.style = .circle(radius: 55, color: .appTheme)
 	}
@@ -122,7 +122,6 @@ final class MainWindowController: NSWindowController {
 			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
 		}
 
-		circularProgress.resetProgress()
 		isRunning = true
 
 		let progress = Progress(totalUnitCount: 1)
@@ -139,12 +138,16 @@ final class MainWindowController: NSWindowController {
 			)
 
 			Gifski.run(conversion) { error in
-				DispatchQueue.main.async {
-					if let error = error {
-						fatalError(error.localizedDescription)
-					}
+				if let error = error {
+					fatalError(error.localizedDescription)
+				}
 
+				// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
+				progress.completedUnitCount = 0
+
+				DispatchQueue.main.async {
 					self.circularProgress.fadeOut(delay: 1) {
+						self.circularProgress.resetProgress()
 						self.isRunning = false
 					}
 				}

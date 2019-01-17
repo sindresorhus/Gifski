@@ -4,7 +4,7 @@ import AVFoundation
 final class Gifski {
 	enum Error: LocalizedError {
 		case invalidSettings
-		case generateFrameFailed
+		case generateFrameFailed(Swift.Error)
 		case addFrameFailed(GifskiWrapperError)
 		case endAddingFramesFailed(GifskiWrapperError)
 		case writeFailed(GifskiWrapperError)
@@ -13,8 +13,8 @@ final class Gifski {
 			switch self {
 			case .invalidSettings:
 				return "Invalid settings"
-			case .generateFrameFailed:
-				return "Failed to generate frame"
+			case .generateFrameFailed(let error):
+				return "Failed to generate frame: \(error.localizedDescription)"
 			case .addFrameFailed(let error):
 				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
 			case .endAddingFramesFailed(let error):
@@ -87,39 +87,45 @@ final class Gifski {
 				frameForTimes.append(CMTime(seconds: (1 / fps) * Double(i), preferredTimescale: .video))
 			}
 
-			var frameIndex = 0
-			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { _, image, _, _, error in
-				guard let image = image,
-					let data = image.dataProvider?.data,
-					let buffer = CFDataGetBytePtr(data)
-				else {
-					completionHandler?(.generateFrameFailed)
-					return
-				}
+			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
+				switch result {
+				case .success(let result):
+					let image = result.image
 
-				do {
-					try g.addFrameARGB(
-						index: UInt32(frameIndex),
-						width: UInt32(image.width),
-						bytesPerRow: UInt32(image.bytesPerRow),
-						height: UInt32(image.height),
-						pixels: buffer,
-						delay: UInt16(100 / fps)
-					)
-				} catch {
-					completionHandler?(.addFrameFailed(error as! GifskiWrapperError))
-					return
-				}
-
-				frameIndex += 1
-
-				do {
-					if frameIndex == frameForTimes.count {
-						try g.endAddingFrames()
+					guard
+						let data = image.dataProvider?.data,
+						let buffer = CFDataGetBytePtr(data)
+					else {
+						completionHandler?(.generateFrameFailed("Could not get byte pointer of image data provider"))
+						return
 					}
-				} catch {
-					completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
-					return
+
+					do {
+						try g.addFrameARGB(
+							index: UInt32(result.completedCount),
+							width: UInt32(image.width),
+							bytesPerRow: UInt32(image.bytesPerRow),
+							height: UInt32(image.height),
+							pixels: buffer,
+							delay: UInt16(100 / fps)
+						)
+					} catch {
+						completionHandler?(.addFrameFailed(error as! GifskiWrapperError))
+						return
+					}
+
+					if result.isFinished {
+						do {
+							try g.endAddingFrames()
+						} catch {
+							completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
+						}
+					}
+				case .failure where result.isCancelled:
+					// TODO: Handle cancellation
+					print("Cancelled")
+				case .failure(let error):
+					completionHandler?(.generateFrameFailed(error))
 				}
 			}
 

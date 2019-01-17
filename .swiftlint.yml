@@ -8,7 +8,7 @@ disabled_rules:
   - force_try
   - large_tuple
   - function_body_length
-  - nesting # Disabled because of https://github.com/realm/SwiftLint/issues/1151
+  - nesting
   - type_body_length
 opt_in_rules:
   - empty_count
@@ -55,7 +55,27 @@ opt_in_rules:
   - anyobject_protocol
   - redundant_type_annotation
   - no_extension_access_modifier
+  - legacy_random
+  - toggle_bool
+  - identical_operands
+  - collection_alignment
+  - static_operator
+  - multiline_literal_brackets
+  - multiline_parameters_brackets
+  - vertical_whitespace_opening_braces
+  - vertical_whitespace_closing_braces
+  - legacy_hashing
+  - object_literal
+  - last_where
+  - unused_control_flow_label
+analyzer_rules:
+  - unused_import
+  - unused_private_declaration
 force_cast: warning
 force_unwrapping: warning
 number_separator:
   minimum_length: 5
+object_literal:
+  image_literal: false # Because image literals are practically unusable
+discouraged_object_literal:
+  color_literal: false
