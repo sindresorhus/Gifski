@@ -14,7 +14,6 @@ final class MainWindowController: NSWindowController {
 		let this = $0
 		$0.onComplete = { url in
 			self.convert(url.first!)
-			this.dropText = nil
 		}
 	}
 
@@ -35,10 +34,11 @@ final class MainWindowController: NSWindowController {
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
 		$0.isHidden = true
-		$0.centerInWindow(window)
+		$0.placeInWindow(window, edge: .minY, padding: 24)
 	}
 
-	private lazy var hoverView = with(HoverView(size: CGSize(width: 160, height: 70))) {
+	private lazy var hoverView = with(HoverView()) {
+		$0.frame = window?.contentView?.bounds ?? .zero
 		$0.centerInWindow(window)
 	}
 
@@ -47,14 +47,20 @@ final class MainWindowController: NSWindowController {
 
 	var isRunning: Bool = false {
 		didSet {
-			videoDropView.isHidden = isRunning
+			videoDropView.isHidden = true
 			hoverView.onHover = isRunning ? onHover : nil
 			cancelButton.isHidden = true
 
-			if !isRunning && progress?.isFinished ?? false {
+			if let progress = progress, !isRunning {
+				circularProgress.layer?.transform = CATransform3DMakeTranslation(0, 0, 0)
 				circularProgress.fadeOut(delay: 1) {
 					self.circularProgress.resetProgress()
-					self.showInFinderButton.fadeIn()
+
+					if progress.isFinished {
+						self.showInFinderButton.fadeIn()
+					} else if progress.isCancelled {
+						self.videoDropView.isHidden = false
+					}
 
 					// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
 					self.progress?.completedUnitCount = 0
@@ -194,10 +200,10 @@ final class MainWindowController: NSWindowController {
 	private func onHover(_ event: HoverView.Event) {
 		switch event {
 		case .entered:
-			circularProgress.isHidden = true
-			cancelButton.isHidden = false
+			circularProgress.layer?.transform = CATransform3DMakeTranslation(0, 20, 0)
+			cancelButton.fadeIn()
 		case .exited:
-			circularProgress.isHidden = false
+			circularProgress.layer?.transform = CATransform3DMakeTranslation(0, 0, 0)
 			cancelButton.isHidden = true
 		}
 	}

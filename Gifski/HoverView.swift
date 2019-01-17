@@ -7,13 +7,6 @@ public final class HoverView: NSView {
 
 	typealias HoverClosure = ((Event) -> Void)
 
-	/**
-	Initialize the progress view with a width/height of the given `size`.
-	*/
-	public convenience init(size: CGSize) {
-		self.init(frame: CGRect(origin: .zero, size: size))
-	}
-
 	private var trackingArea: NSTrackingArea?
 
 	override public func updateTrackingAreas() {

@@ -599,6 +599,27 @@ extension NSView {
 
 		centerInRect(view.bounds)
 	}
+
+	func placeInWindow(_ window: NSWindow? = nil, edge: NSRectEdge, padding: CGFloat = 20) {
+		guard let view = (window ?? self.window)?.contentView else {
+			return
+		}
+		let rect = view.bounds
+		let size = bounds.size
+		var x = rect.midX
+		var y = rect.midY
+		switch edge {
+		case .minX:
+			x = rect.minX + (size.width / 2) + padding
+		case .maxX:
+			x = rect.maxX - (size.width / 2) - padding
+		case .minY:
+			y = rect.minY + (size.height / 2) + padding
+		case .maxY:
+			y = rect.maxY - (size.height / 2) - padding
+		}
+		center = CGPoint(x: x, y: y)
+	}
 }
 
 
