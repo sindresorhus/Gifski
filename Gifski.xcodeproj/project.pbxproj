@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		32462DE121F02D1600CA538C /* SavePanelLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32462DDC21F02D1600CA538C /* SavePanelLockView.swift */; };
 		5A7524BA20D0862200F12C99 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A7524B520D085FB00F12C99 /* libgifski.a */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
@@ -67,7 +66,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		32462DDC21F02D1600CA538C /* SavePanelLockView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SavePanelLockView.swift; sourceTree = "<group>"; };
 		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -175,7 +173,6 @@
 			children = (
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
 				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
-				32462DDC21F02D1600CA538C /* SavePanelLockView.swift */,
 				E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */,
 				E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */,
 				E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */,
@@ -346,7 +343,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				E30557F0207E521F003401A1 /* Defaults.swift in Sources */,
-				32462DE121F02D1600CA538C /* SavePanelLockView.swift in Sources */,
 				E317FF1C20583E9800A80A18 /* DockProgress.swift in Sources */,
 				E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */,
 				E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */,

@@ -3,7 +3,6 @@ import AVKit
 
 final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDelegate {
     @IBOutlet private var estimatedSizeLabel: NSTextField!
-    @IBOutlet private var scaleLabel: NSTextField!
     @IBOutlet private var frameRateSlider: NSSlider!
     @IBOutlet private var frameRateLabel: NSTextField!
     @IBOutlet private var qualitySlider: NSSlider!
@@ -12,9 +11,7 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
     @IBOutlet private var widthTextField: NSTextField!
     @IBOutlet private var heightTextField: NSTextField!
     @IBOutlet private var widthHeightTypeDropdown: NSPopUpButton!
-    @IBOutlet private var proportionalScaleCheckbox: NSButton!
     @IBOutlet private var proportionalScaleAffordanceButton: NSButton!
-    @IBOutlet private var lockView: SavePanelLockView!
 
     var inputUrl: URL!
     var onDimensionChange: ((CGSize) -> Void)?
@@ -26,6 +23,8 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
     private var scaleYMinDoubleValue: Double = 0.0
     var fileDimensions = CGSize(width: 0, height: 0)
     var currentDimensions = CGSize(width: 0, height: 0)
+	var shouldRevertX = false
+	var shouldRevertY = false
 
     let formatter = ByteCountFormatter()
     var metadata: AVURLAsset.VideoMetadata!
@@ -48,16 +47,6 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
         qualitySlider.onAction = { _ in
             defaults[.outputQuality] = self.qualitySlider.doubleValue
             self.estimateFileSize()
-        }
-
-        // Custom dimension controls
-        proportionalScaleAffordanceButton.onAction = {_ in
-            self.lockView.locked.toggle()
-            self.proportionalScaleCheckbox.state = self.lockView.locked ? .on : .off
-        }
-
-        proportionalScaleCheckbox.onAction = {_ in
-            self.lockView.locked.toggle()
         }
 
         predefinedSizesDropdown.onAction = {_ in
@@ -135,19 +124,17 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
             } else {
                 currentScaleXDoubleValue = width / Double(fileDimensions.width)
             }
-            if !validateScaleDoubleValue(currentScaleXDoubleValue, pendingX: currentScaleXDoubleValue, pendingY: self.scaleYDoubleValue) {
+            if !validateScaleDoubleValue(currentScaleXDoubleValue, pendingX: false, pendingY: true) {
                 return
             }
             self.scaleXDoubleValue = currentScaleXDoubleValue
             self.predefinedSizesDropdown.selectItem(at: 0)
-            if self.lockView.locked {
-                self.scaleYDoubleValue = self.scaleXDoubleValue
-                if percentageMode {
-                    self.heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
-                } else {
-                    self.heightTextField.stringValue = "\(Int(Double(fileDimensions.height) * self.scaleYDoubleValue))"
-                }
-            }
+			self.scaleYDoubleValue = self.scaleXDoubleValue
+			if percentageMode {
+				self.heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
+			} else {
+				self.heightTextField.stringValue = "\(Int(Double(fileDimensions.height) * self.scaleYDoubleValue))"
+			}
             self.recalculateCurrentDimensions()
         } else if textField == heightTextField {
             guard let height = Double(self.heightTextField.stringValue) else {
@@ -159,38 +146,25 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
             } else {
                 currentScaleYDoubleValue = height / Double(fileDimensions.height)
             }
-            if !validateScaleDoubleValue(currentScaleYDoubleValue, pendingX: self.scaleXMinDoubleValue, pendingY: currentScaleYDoubleValue) {
+            if !validateScaleDoubleValue(currentScaleYDoubleValue, pendingX: false, pendingY: true) {
                 return
             }
             self.scaleYDoubleValue = currentScaleYDoubleValue
             self.predefinedSizesDropdown.selectItem(at: 0)
-            if self.lockView.locked {
-                self.scaleXDoubleValue = self.scaleYDoubleValue
-                if percentageMode {
-                    self.widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
-                } else {
-                    self.widthTextField.stringValue = "\(Int(Double(fileDimensions.width) * self.scaleXDoubleValue))"
-                }
-            }
+			self.scaleXDoubleValue = self.scaleYDoubleValue
+			if percentageMode {
+				self.widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
+			} else {
+				self.widthTextField.stringValue = "\(Int(Double(fileDimensions.width) * self.scaleXDoubleValue))"
+			}
             self.recalculateCurrentDimensions()
         }
     }
 
-    private func validateScaleDoubleValue(_ scaleValue: Double, pendingX: Double, pendingY: Double) -> Bool {
-        if scaleValue <= 0.001 || scaleValue > 1 {
-            let alert = NSAlert()
-            if percentageMode {
-                alert.messageText = "The GIF dimension \(Int(100 * CGFloat(pendingX)))% × \(Int(100 * CGFloat(pendingY)))% is invalid."
-                alert.informativeText = "Please provide a valid value between 1% × 1% to 100% × 100%."
-            } else {
-                alert.messageText = "The GIF dimension \(Int(metadata.dimensions.width * CGFloat(pendingX))) × \(Int(metadata.dimensions.height * CGFloat(pendingY))) px is invalid."
-                alert.informativeText = "Please provide a valid value between \(Int(metadata.dimensions.width * CGFloat(scaleXMinDoubleValue))) × \(Int(metadata.dimensions.height * CGFloat(scaleYMinDoubleValue))) px to \(Int(fileDimensions.width)) × \(Int(fileDimensions.height)) px."
-            }
-            alert.addButton(withTitle: "Discard Change")
-            alert.runModal()
-            updateTextFieldsFromPopup(asPercentage: percentageMode)
-            return false
-        } else {
+    private func validateScaleDoubleValue(_ scaleValue: Double, pendingX: Bool, pendingY: Bool) -> Bool {
+		if scaleValue <= 0.001 || scaleValue > 1 {
+			return false
+		} else {
             return true
         }
     }
@@ -204,7 +178,7 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
             if divisor != 1 {
                 percentageString = "\(Int(round(dimensionRatio * 100.0)))%"
             }
-            predefinedSizesDropdown.addItem(withTitle: "⭐ \(Int(dimensions.width / divisorFloat)) × \(Int(dimensions.height / divisorFloat)) (\(percentageString))")
+            predefinedSizesDropdown.addItem(withTitle: " \(Int(dimensions.width / divisorFloat)) × \(Int(dimensions.height / divisorFloat)) (\(percentageString))")
         }
         predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
         dimensionRatios.append(1)
