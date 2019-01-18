@@ -26,7 +26,7 @@ final class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
-	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", size: 46)) {
+	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", size: 160)) {
 		$0.textColor = .appTheme
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
