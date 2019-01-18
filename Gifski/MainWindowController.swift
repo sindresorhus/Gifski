@@ -1,5 +1,4 @@
 import Cocoa
-import Carbon.HIToolbox
 
 final class MainWindowController: NSWindowController {
 	private lazy var circularProgress = with(CircularProgress(size: 160)) {
@@ -98,18 +97,15 @@ final class MainWindowController: NSWindowController {
 		view?.addSubview(cancelButton)
 		view?.addSubview(hoverView)
 
-		NSEvent.addLocalMonitorForEvents(matching: .keyUp) {
-			guard Int($0.keyCode) == kVK_Escape else {
-				return $0
-			}
-			self.cancelConversion(nil)
-			return nil
-		}
-
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
 
 		DockProgress.style = .circle(radius: 55, color: .appTheme)
+	}
+
+	@objc
+	func cancel(_ sender: Any?) {
+		cancelConversion(nil)
 	}
 
 	func convert(_ inputUrl: URL) {
