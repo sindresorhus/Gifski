@@ -32,6 +32,7 @@ public final class DockProgress {
 
 	public static func resetProgress() {
 		progressValue = 0
+		previousProgressValue = 0
 		updateDockIcon()
 	}
 
