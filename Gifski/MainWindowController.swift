@@ -26,10 +26,10 @@ final class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
-	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", size: 160)) {
+	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", size: 130)) {
 		$0.textColor = .appTheme
-		$0.backgroundColor = .clear
-		$0.borderWidth = 1
+		$0.backgroundColor = NSColor.appTheme.with(alpha: 0.1)
+		$0.borderWidth = 0
 		$0.isHidden = true
 		$0.centerInWindow(window)
 	}
@@ -89,9 +89,9 @@ final class MainWindowController: NSWindowController {
 			$0.makeVibrant()
 		}
 
+		view?.addSubview(cancelButton)
 		view?.addSubview(circularProgress)
 		view?.addSubview(showInFinderButton)
-		view?.addSubview(cancelButton)
 		view?.addSubview(hoverView)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
