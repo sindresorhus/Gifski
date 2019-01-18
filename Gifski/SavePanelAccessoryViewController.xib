@@ -36,13 +36,16 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aVG-zO-Cd7" userLabel="widthHeightPopUp">
-                                <rect key="frame" x="246" y="62" width="73" height="25"/>
+                                <rect key="frame" x="246" y="62" width="85" height="25"/>
                                 <popUpButtonCell key="cell" type="push" title="pixels" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="7ml-rS-kJf" id="Emv-9m-sNX">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="menu"/>
                                     <menu key="menu" id="jJ1-Si-IIN">
                                         <items>
                                             <menuItem title="pixels" state="on" id="7ml-rS-kJf"/>
+                                            <menuItem title="percent" id="sbv-L8-TU7">
+                                                <modifierMask key="keyEquivalentModifierMask"/>
+                                            </menuItem>
                                         </items>
                                     </menu>
                                 </popUpButtonCell>
@@ -229,6 +232,9 @@
                         <subviews>
                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="iFf-bP-MLi">
                                 <rect key="frame" x="18" y="42" width="51" height="17"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="47" id="CLR-lg-xRA"/>
+                                </constraints>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Quality:" id="K0X-2I-A0y">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -256,6 +262,9 @@
                             </textField>
                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="Fxs-GY-NUz">
                                 <rect key="frame" x="18" y="67" width="51" height="17"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="47" id="cId-2P-ZHU"/>
+                                </constraints>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="FPS:" id="O3d-Ep-9VJ">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
