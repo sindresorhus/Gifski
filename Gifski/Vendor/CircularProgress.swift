@@ -28,6 +28,12 @@ public final class CircularProgress: NSView {
 		$0.font = NSFont.helveticaNeueLight // Not using the system font as it has too much number width variance
 	}
 
+	var isProgressLabelHidden = false {
+		didSet {
+			progressLabel.isHidden = isProgressLabelHidden
+		}
+	}
+
 	/**
 	Color of the circular progress view.
 
