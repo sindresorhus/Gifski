@@ -80,6 +80,9 @@ final class Gifski {
 			generator.requestedTimeToleranceAfter = .zero
 			generator.requestedTimeToleranceBefore = .zero
 			generator.appliesPreferredTrackTransform = true
+			progress.cancellationHandler = {
+				generator.cancelAllCGImageGeneration()
+			}
 
 			let fps = (conversion.frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
 			let frameCount = Int(asset.duration.seconds * fps)
