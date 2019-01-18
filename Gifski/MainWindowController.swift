@@ -90,10 +90,10 @@ final class MainWindowController: NSWindowController {
 		}
 
 		view?.addSubview(circularProgress)
-		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(showInFinderButton)
 		view?.addSubview(cancelButton)
 		view?.addSubview(hoverView)
+		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
