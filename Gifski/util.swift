@@ -600,7 +600,14 @@ extension NSView {
 		centerInRect(view.bounds)
 	}
 
-	func placeInWindow(_ window: NSWindow? = nil, edge: NSRectEdge, padding: CGFloat = 20) {
+	/// Places the element along the specified edge of the provided window.
+	/// A padding can be specified to offset it from the edge.
+	///
+	/// - Parameters:
+	///   - window: Passing in a window can be useful when the view is not yet added to a window.
+	///   - edge: The edge along which to place the view.
+	///   - padding: The offset from the edge.
+	func placeInWindow(_ window: NSWindow? = nil, edge: NSRectEdge, padding: Double = 20) {
 		guard let view = (window ?? self.window)?.contentView else {
 			return
 		}
@@ -612,13 +619,13 @@ extension NSView {
 
 		switch edge {
 		case .minX:
-			x = rect.minX + (size.width / 2) + padding
+			x = rect.minX + (size.width / 2) + CGFloat(padding)
 		case .maxX:
-			x = rect.maxX - (size.width / 2) - padding
+			x = rect.maxX - (size.width / 2) - CGFloat(padding)
 		case .minY:
-			y = rect.minY + (size.height / 2) + padding
+			y = rect.minY + (size.height / 2) + CGFloat(padding)
 		case .maxY:
-			y = rect.maxY - (size.height / 2) - padding
+			y = rect.maxY - (size.height / 2) - CGFloat(padding)
 		}
 
 		center = CGPoint(x: x, y: y)
