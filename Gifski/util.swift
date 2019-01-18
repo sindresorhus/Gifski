@@ -604,10 +604,12 @@ extension NSView {
 		guard let view = (window ?? self.window)?.contentView else {
 			return
 		}
+
 		let rect = view.bounds
 		let size = bounds.size
 		var x = rect.midX
 		var y = rect.midY
+
 		switch edge {
 		case .minX:
 			x = rect.minX + (size.width / 2) + padding
@@ -618,6 +620,7 @@ extension NSView {
 		case .maxY:
 			y = rect.maxY - (size.height / 2) - padding
 		}
+
 		center = CGPoint(x: x, y: y)
 	}
 }
