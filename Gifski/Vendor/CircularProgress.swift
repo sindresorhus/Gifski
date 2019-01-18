@@ -68,7 +68,7 @@ public final class CircularProgress: NSView {
 			})
 
 			if !progressLabel.isHidden {
-				progressLabel.string = showCheckmarkAtHundredPercent && _progress == 1 ? "✔" : "\(Int(_progress * 100))%"
+				progressLabel.string = showCheckmarkAtHundredPercent && _progress == 1 ? "✓" : "\(Int(_progress * 100))%"
 			}
 
 			// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
