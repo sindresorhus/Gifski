@@ -54,6 +54,7 @@ final class MainWindowController: NSWindowController {
 				circularProgress.layer?.transform = CATransform3DMakeTranslation(0, 0, 0)
 				circularProgress.fadeOut(delay: 1) {
 					self.circularProgress.resetProgress()
+					DockProgress.resetProgress()
 
 					if progress.isFinished {
 						self.showInFinderButton.fadeIn()
