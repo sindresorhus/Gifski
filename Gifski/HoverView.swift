@@ -1,11 +1,12 @@
 import Cocoa
 
 public final class HoverView: NSView {
-	enum Event {
-		case entered, exited
+	public enum Event {
+		case entered
+		case exited
 	}
 
-	typealias HoverClosure = ((Event) -> Void)
+	public typealias HoverClosure = ((Event) -> Void)
 
 	private var trackingArea: NSTrackingArea?
 
@@ -13,15 +14,26 @@ public final class HoverView: NSView {
 		if let oldTrackingArea = trackingArea {
 			removeTrackingArea(oldTrackingArea)
 		}
+
 		guard onHover != nil else {
 			return
 		}
-		let newTrackingArea = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeInActiveApp], owner: self, userInfo: nil)
+
+		let newTrackingArea = NSTrackingArea(
+			rect: bounds,
+			options: [
+				.mouseEnteredAndExited,
+				.activeInActiveApp
+			],
+			owner: self,
+			userInfo: nil
+		)
+
 		addTrackingArea(newTrackingArea)
-		self.trackingArea = newTrackingArea
+		trackingArea = newTrackingArea
 	}
 
-	var onHover: HoverClosure? {
+	public var onHover: HoverClosure? {
 		didSet {
 			updateTrackingAreas()
 		}
