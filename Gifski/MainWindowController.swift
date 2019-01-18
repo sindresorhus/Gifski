@@ -26,18 +26,16 @@ final class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
-	private lazy var cancelButton = with(CustomButton()) {
-		$0.title = "Cancel"
-		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 30)
+	private lazy var cancelButton = with(CustomButton.circularButton(title: "X", size: 56)) {
 		$0.textColor = .appTheme
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
 		$0.isHidden = true
-		$0.placeInWindow(window, edge: .minY, padding: 24)
+		$0.centerInWindow(window)
 	}
 
 	private lazy var hoverView = with(HoverView()) {
-		$0.frame = window?.contentView?.bounds ?? .zero
+		$0.frame = CGRect(x: 0, y: 0, width: 130, height: 130)
 		$0.centerInWindow(window)
 	}
 
@@ -51,7 +49,6 @@ final class MainWindowController: NSWindowController {
 			cancelButton.isHidden = true
 
 			if let progress = progress, !isRunning {
-				circularProgress.layer?.transform = CATransform3DMakeTranslation(0, 0, 0)
 				circularProgress.fadeOut(delay: 1) {
 					self.circularProgress.resetProgress()
 					DockProgress.resetProgress()
@@ -197,10 +194,10 @@ final class MainWindowController: NSWindowController {
 	private func onHover(_ event: HoverView.Event) {
 		switch event {
 		case .entered:
-			circularProgress.layer?.transform = CATransform3DMakeTranslation(0, 20, 0)
+			circularProgress.isProgressLabelHidden = true
 			cancelButton.fadeIn()
 		case .exited:
-			circularProgress.layer?.transform = CATransform3DMakeTranslation(0, 0, 0)
+			circularProgress.isProgressLabelHidden = false
 			cancelButton.isHidden = true
 		}
 	}
