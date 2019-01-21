@@ -44,7 +44,7 @@ final class MainWindowController: NSWindowController {
 
 	var isRunning: Bool = false {
 		didSet {
-			videoDropView.isHidden = true
+			videoDropView.isHidden = isRunning
 			hoverView.onHover = isRunning ? onHover : nil
 			cancelButton.isHidden = true
 
@@ -55,8 +55,10 @@ final class MainWindowController: NSWindowController {
 
 					if progress.isFinished {
 						self.showInFinderButton.fadeIn()
+						self.videoDropView.isDropLabelHidden = true
 					} else if progress.isCancelled {
 						self.videoDropView.isHidden = false
+						self.videoDropView.fadeInVideoDropLabel()
 					}
 
 					// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
@@ -64,6 +66,8 @@ final class MainWindowController: NSWindowController {
 				}
 			} else {
 				circularProgress.isHidden = false
+				videoDropView.isDropLabelHidden = true
+				showInFinderButton.isHidden = true
 			}
 		}
 	}
