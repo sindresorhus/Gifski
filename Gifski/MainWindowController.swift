@@ -105,6 +105,8 @@ final class MainWindowController: NSWindowController {
 		DockProgress.style = .circle(radius: 55, color: .appTheme)
 	}
 
+	/// Gets called when the Esc key is pressed.
+	/// Reference: https://stackoverflow.com/a/42440020
 	@objc
 	func cancel(_ sender: Any?) {
 		cancelConversion()
