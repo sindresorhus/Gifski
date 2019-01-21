@@ -229,6 +229,14 @@ open class CustomButton: NSButton {
 
 	private var colorGenerators = [KeyPath<CustomButton, NSColor>: ColorGenerationHandler]()
 
+	/// Provides a way to re-generate a color on layer update.
+	/// Especially useful for applying alpha values to accent color changes that can be triggered outside of the app.
+	///
+	/// Note: should not be used for returning regular colors.
+	///
+	/// - Parameters:
+	///   - keyPath: The key path to the color to generate.
+	///   - handler: The handler that returns the proper `NSColor`.
 	public func setColorGenerator(for keyPath: KeyPath<CustomButton, NSColor>, handler: @escaping ColorGenerationHandler) {
 		colorGenerators[keyPath] = handler
 	}
