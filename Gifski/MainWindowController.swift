@@ -107,7 +107,7 @@ final class MainWindowController: NSWindowController {
 
 	@objc
 	func cancel(_ sender: Any?) {
-		cancelConversion(nil)
+		cancelConversion()
 	}
 
 	func convert(_ inputUrl: URL) {
@@ -159,7 +159,9 @@ final class MainWindowController: NSWindowController {
 			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
 		}
 
-		cancelButton.onAction = cancelConversion
+		cancelButton.onAction = { _ in
+			self.cancelConversion()
+		}
 
 		isRunning = true
 
@@ -206,7 +208,7 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	private func cancelConversion(_: NSControl?) {
+	private func cancelConversion() {
 		progress?.cancel()
 	}
 
