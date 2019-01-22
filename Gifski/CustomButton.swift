@@ -237,12 +237,8 @@ open class CustomButton: NSButton {
 	/// - Parameters:
 	///   - keyPath: The key path to the color to generate.
 	///   - handler: The handler that returns the proper `NSColor`.
-	public func setColorGenerator(for keyPath: KeyPath<CustomButton, NSColor>, handler: @escaping ColorGenerationHandler) {
+	public func setColorGenerator(for keyPath: KeyPath<CustomButton, NSColor>, _ handler: ColorGenerationHandler?) {
 		colorGenerators[keyPath] = handler
-	}
-
-	public func removeColorGenerator(for keyPath: KeyPath<CustomButton, NSColor>) {
-		colorGenerators[keyPath] = nil
 	}
 
 	private func color(for keyPath: KeyPath<CustomButton, NSColor>) -> NSColor {
