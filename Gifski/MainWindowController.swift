@@ -13,7 +13,6 @@ final class MainWindowController: NSWindowController {
 		let this = $0
 		$0.onComplete = { url in
 			self.convert(url.first!)
-			this.dropText = nil
 		}
 	}
 
@@ -27,20 +26,51 @@ final class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
+	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", size: 130)) {
+		$0.textColor = .appTheme
+		$0.setColorGenerator(for: \.backgroundColor) {
+			NSColor.appTheme.with(alpha: 0.1)
+		}
+		$0.borderWidth = 0
+		$0.isHidden = true
+		$0.centerInWindow(window)
+	}
+
+	private lazy var hoverView = with(HoverView()) {
+		$0.frame = CGRect(x: 0, y: 0, width: 130, height: 130)
+		$0.centerInWindow(window)
+	}
+
 	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
 
 	var isRunning: Bool = false {
 		didSet {
-			if isRunning {
-				videoDropView.isHidden = true
-				showInFinderButton.isHidden = true
-			} else {
-				videoDropView.isHidden = false
-				showInFinderButton.fadeIn()
-			}
+			videoDropView.isHidden = isRunning
+			hoverView.onHover = isRunning ? onHover : nil
+			cancelButton.isHidden = true
 
-			circularProgress.isHidden = !isRunning
+			if let progress = progress, !isRunning {
+				circularProgress.fadeOut(delay: 1) {
+					self.circularProgress.resetProgress()
+					DockProgress.resetProgress()
+
+					if progress.isFinished {
+						self.showInFinderButton.fadeIn()
+						self.videoDropView.isDropLabelHidden = true
+					} else if progress.isCancelled {
+						self.videoDropView.isHidden = false
+						self.videoDropView.fadeInVideoDropLabel()
+					}
+
+					// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
+					self.progress?.completedUnitCount = 0
+				}
+			} else {
+				circularProgress.isHidden = false
+				videoDropView.isDropLabelHidden = true
+				showInFinderButton.isHidden = true
+			}
 		}
 	}
 
@@ -65,14 +95,23 @@ final class MainWindowController: NSWindowController {
 			$0.makeVibrant()
 		}
 
+		view?.addSubview(cancelButton)
 		view?.addSubview(circularProgress)
-		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(showInFinderButton)
+		view?.addSubview(hoverView)
+		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
 
 		DockProgress.style = .circle(radius: 55, color: .appTheme)
+	}
+
+	/// Gets called when the Esc key is pressed.
+	/// Reference: https://stackoverflow.com/a/42440020
+	@objc
+	func cancel(_ sender: Any?) {
+		cancelConversion()
 	}
 
 	func convert(_ inputUrl: URL) {
@@ -113,6 +152,8 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
+	private var progress: Progress?
+
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
 			return
@@ -122,13 +163,17 @@ final class MainWindowController: NSWindowController {
 			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
 		}
 
+		cancelButton.onAction = { _ in
+			self.cancelConversion()
+		}
+
 		isRunning = true
 
-		let progress = Progress(totalUnitCount: 1)
+		progress = Progress(totalUnitCount: 1)
 		circularProgress.progressInstance = progress
 		DockProgress.progress = progress
 
-		progress.performAsCurrent(withPendingUnitCount: 1) {
+		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
 				input: inputUrl,
 				output: outputUrl,
@@ -138,21 +183,37 @@ final class MainWindowController: NSWindowController {
 			)
 
 			Gifski.run(conversion) { error in
-				if let error = error {
-					fatalError(error.localizedDescription)
+				DispatchQueue.main.async {
+					self.isRunning = false
 				}
 
-				// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
-				progress.completedUnitCount = 0
+				guard let error = error else {
+					return
+				}
 
-				DispatchQueue.main.async {
-					self.circularProgress.fadeOut(delay: 1) {
-						self.circularProgress.resetProgress()
-						self.isRunning = false
-					}
+				switch error {
+				case .cancelled:
+					break
+				default:
+					fatalError(error.localizedDescription)
 				}
 			}
 		}
+	}
+
+	private func onHover(_ event: HoverView.Event) {
+		switch event {
+		case .entered:
+			circularProgress.isProgressLabelHidden = true
+			cancelButton.fadeIn()
+		case .exited:
+			circularProgress.isProgressLabelHidden = false
+			cancelButton.isHidden = true
+		}
+	}
+
+	private func cancelConversion() {
+		progress?.cancel()
 	}
 
 	@objc

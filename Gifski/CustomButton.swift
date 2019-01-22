@@ -53,6 +53,15 @@ open class CustomButton: NSButton {
 	private let titleLayer = CATextLayer()
 	private var isMouseDown = false
 
+	static func circularButton(title: String, size: Double) -> CustomButton {
+		return with(CustomButton()) {
+			$0.title = title
+			$0.frame = CGRect(x: 0, y: 0, width: size, height: size)
+			$0.cornerRadius = size / 2
+			$0.font = NSFont.systemFont(ofSize: CGFloat(size / 3))
+		}
+	}
+
 	override open var wantsUpdateLayer: Bool {
 		return true
 	}
@@ -216,6 +225,30 @@ open class CustomButton: NSButton {
 		needsDisplay = true
 	}
 
+	public typealias ColorGenerationHandler = () -> NSColor
+
+	private var colorGenerators = [KeyPath<CustomButton, NSColor>: ColorGenerationHandler]()
+
+	/// Provides a way to re-generate a color on layer update.
+	/// Especially useful for applying alpha values to accent color changes that can be triggered outside of the app.
+	///
+	/// Note: should not be used for returning regular colors.
+	///
+	/// - Parameters:
+	///   - keyPath: The key path to the color to generate.
+	///   - handler: The handler that returns the proper `NSColor`.
+	public func setColorGenerator(for keyPath: KeyPath<CustomButton, NSColor>, handler: @escaping ColorGenerationHandler) {
+		colorGenerators[keyPath] = handler
+	}
+
+	public func removeColorGenerator(for keyPath: KeyPath<CustomButton, NSColor>) {
+		colorGenerators[keyPath] = nil
+	}
+
+	private func color(for keyPath: KeyPath<CustomButton, NSColor>) -> NSColor {
+		return colorGenerators[keyPath]?() ?? self[keyPath: keyPath]
+	}
+
 	override open func updateLayer() {
 		let isOn = state == .on
 		layer?.cornerRadius = CGFloat(cornerRadius)
@@ -244,10 +277,10 @@ open class CustomButton: NSButton {
 	private func animateColor() {
 		let isOn = state == .on
 		let duration = isOn ? 0.2 : 0.1
-		let backgroundColor = isOn ? activeBackgroundColor : self.backgroundColor
-		let textColor = isOn ? activeTextColor : self.textColor
-		let borderColor = isOn ? activeBorderColor : self.borderColor
-		let shadowColor = isOn ? (activeShadowColor ?? self.shadowColor) : self.shadowColor
+		let backgroundColor = isOn ? color(for: \.activeBackgroundColor) : color(for: \.backgroundColor)
+		let textColor = isOn ? color(for: \.activeTextColor) : color(for: \.textColor)
+		let borderColor = isOn ? color(for: \.activeBorderColor) : color(for: \.borderColor)
+		let shadowColor = isOn ? (activeShadowColor ?? color(for: \.shadowColor)) : color(for: \.shadowColor)
 
 		layer?.animate(color: backgroundColor.cgColor, keyPath: #keyPath(CALayer.backgroundColor), duration: duration)
 		layer?.animate(color: borderColor.cgColor, keyPath: #keyPath(CALayer.borderColor), duration: duration)

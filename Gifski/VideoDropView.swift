@@ -20,6 +20,16 @@ class DropView: SSView {
 		return .controlAccentColorPolyfill
 	}
 
+	var isDropLabelHidden: Bool = false {
+		didSet {
+			dropLabel.isHidden = isDropLabelHidden
+		}
+	}
+
+	func fadeInVideoDropLabel() {
+		dropLabel.fadeIn()
+	}
+
 	var acceptedTypes: [NSPasteboard.PasteboardType] {
 		unimplemented()
 	}

@@ -8,6 +8,7 @@ final class Gifski {
 		case addFrameFailed(GifskiWrapperError)
 		case endAddingFramesFailed(GifskiWrapperError)
 		case writeFailed(GifskiWrapperError)
+		case cancelled
 
 		var errorDescription: String? {
 			switch self {
@@ -21,6 +22,8 @@ final class Gifski {
 				return "Failed to end adding frames, with underlying error: \(error.localizedDescription)"
 			case .writeFailed(let error):
 				return "Failed to write to output, with underlying error: \(error.localizedDescription)"
+			case .cancelled:
+				return "The conversion was cancelled"
 			}
 		}
 	}
@@ -77,6 +80,9 @@ final class Gifski {
 			generator.requestedTimeToleranceAfter = .zero
 			generator.requestedTimeToleranceBefore = .zero
 			generator.appliesPreferredTrackTransform = true
+			progress.cancellationHandler = {
+				generator.cancelAllCGImageGeneration()
+			}
 
 			let fps = (conversion.frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
 			let frameCount = Int(asset.duration.seconds * fps)
@@ -122,8 +128,7 @@ final class Gifski {
 						}
 					}
 				case .failure where result.isCancelled:
-					// TODO: Handle cancellation
-					print("Cancelled")
+					completionHandler?(.cancelled)
 				case .failure(let error):
 					completionHandler?(.generateFrameFailed(error))
 				}
@@ -133,7 +138,12 @@ final class Gifski {
 				try g.write(path: conversion.output.path)
 				completionHandler?(nil)
 			} catch {
-				completionHandler?(.writeFailed(error as! GifskiWrapperError))
+				// TODO: Figure out how to not get a write error when the process was simply cancelled
+				if progress.isCancelled {
+					completionHandler?(.cancelled)
+				} else {
+					completionHandler?(.writeFailed(error as! GifskiWrapperError))
+				}
 			}
 		}
 	}

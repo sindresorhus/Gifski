@@ -28,6 +28,12 @@ public final class CircularProgress: NSView {
 		$0.font = NSFont.helveticaNeueLight // Not using the system font as it has too much number width variance
 	}
 
+	var isProgressLabelHidden = false {
+		didSet {
+			progressLabel.isHidden = isProgressLabelHidden
+		}
+	}
+
 	/**
 	Color of the circular progress view.
 
@@ -61,7 +67,9 @@ public final class CircularProgress: NSView {
 				self.progressCircle.progress = self._progress
 			})
 
-			progressLabel.string = showCheckmarkAtHundredPercent && _progress == 1 ? "✔" : "\(Int(_progress * 100))%"
+			if !progressLabel.isHidden {
+				progressLabel.string = showCheckmarkAtHundredPercent && _progress == 1 ? "✓" : "\(Int(_progress * 100))%"
+			}
 
 			// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
 			CATransaction.flush()
