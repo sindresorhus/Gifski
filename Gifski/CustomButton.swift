@@ -225,20 +225,20 @@ open class CustomButton: NSButton {
 		needsDisplay = true
 	}
 
-	public typealias ColorGenerationHandler = () -> NSColor
+	public typealias ColorGenerator = () -> NSColor
 
-	private var colorGenerators = [KeyPath<CustomButton, NSColor>: ColorGenerationHandler]()
+	private var colorGenerators = [KeyPath<CustomButton, NSColor>: ColorGenerator]()
 
-	/// Provides a way to re-generate a color on layer update.
-	/// Especially useful for applying alpha values to accent color changes that can be triggered outside of the app.
+	/// Gets or sets the color generation closure for the provided key path.
 	///
-	/// Note: should not be used for returning regular colors.
-	///
-	/// - Parameters:
-	///   - keyPath: The key path to the color to generate.
-	///   - handler: The handler that returns the proper `NSColor`.
-	public func setColorGenerator(for keyPath: KeyPath<CustomButton, NSColor>, _ handler: ColorGenerationHandler?) {
-		colorGenerators[keyPath] = handler
+	/// - Parameter keyPath: The key path that specifies the color related property.
+	subscript (colorGenerator keyPath: KeyPath<CustomButton, NSColor>) -> ColorGenerator? {
+		get {
+			return colorGenerators[keyPath]
+		}
+		set {
+			colorGenerators[keyPath] = newValue
+		}
 	}
 
 	private func color(for keyPath: KeyPath<CustomButton, NSColor>) -> NSColor {
