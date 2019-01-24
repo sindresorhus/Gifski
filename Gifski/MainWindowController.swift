@@ -28,7 +28,7 @@ final class MainWindowController: NSWindowController {
 
 	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", size: 130)) {
 		$0.textColor = .appTheme
-		$0.setColorGenerator(for: \.backgroundColor) {
+		$0[colorGenerator: \.backgroundColor] = {
 			NSColor.appTheme.with(alpha: 0.1)
 		}
 		$0.borderWidth = 0
