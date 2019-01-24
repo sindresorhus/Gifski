@@ -22,7 +22,7 @@ public final class DockProgress {
 					progressValue = object.fractionCompleted
 				}
 				finishedObserver = progress.observe(\.isFinished) { object, _ in
-					guard object.isFinished else {
+					guard !object.isCancelled && object.isFinished else {
 						return
 					}
 					progressValue = 1
