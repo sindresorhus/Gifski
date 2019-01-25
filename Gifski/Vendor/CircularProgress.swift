@@ -290,8 +290,12 @@ final class ProgressCircleShapeLayer: CAShapeLayer {
 		self.init()
 		fillColor = nil
 		lineCap = .round
-		path = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
+		position = center
 		strokeEnd = 0
+
+		let cgPath = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
+		path = cgPath
+		bounds = cgPath.boundingBox
 	}
 
 	var progress: Double {
