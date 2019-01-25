@@ -15,16 +15,19 @@ public final class DockProgress {
 	public static var progress: Progress? {
 		didSet {
 			if let progress = progress {
-				progressObserver = progress.observe(\.fractionCompleted) { object, _ in
-					guard !object.isCancelled && !object.isFinished else {
+				progressObserver = progress.observe(\.fractionCompleted) { sender, _ in
+					guard !sender.isCancelled && !sender.isFinished else {
 						return
 					}
-					progressValue = object.fractionCompleted
+
+					progressValue = sender.fractionCompleted
 				}
-				finishedObserver = progress.observe(\.isFinished) { object, _ in
-					guard !object.isCancelled && object.isFinished else {
+
+				finishedObserver = progress.observe(\.isFinished) { sender, _ in
+					guard !sender.isCancelled && sender.isFinished else {
 						return
 					}
+
 					progressValue = 1
 				}
 			}
