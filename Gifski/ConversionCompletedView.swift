@@ -13,7 +13,7 @@ class ConversionCompletedView: SSView {
 		}
 	}
 	
-	var fileName: String = "xd" {
+	var fileName: String = "" {
 		didSet {
 			fileNameLabel.text = fileName
 			fileNameLabel.sizeToFit()
@@ -45,10 +45,6 @@ class ConversionCompletedView: SSView {
 		$0.textColor = .appTheme
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
-	}
-
-	var highlightColor: NSColor {
-		return .controlAccentColorPolyfill
 	}
 
 	override init(frame: NSRect) {
