@@ -97,7 +97,8 @@ class ConversionCompletedView: SSView {
 	override func didAppear() {
 		appendView(fileSizeLabel, 16)
 		
-		draggableFile.frame = CGRect(x: frame.size.width / 2 - 64 / 2, y: 0, width: 64, height: 64)
+		draggableFile.frame = CGRect(x: 0, y: 0, width: 64, height: 64)
+		draggableFile.frame.origin.x = frame.size.width / 2 - draggableFile.frame.size.width / 2
 		appendView(draggableFile, 8)
 		
 		appendView(fileNameLabel, 16)
