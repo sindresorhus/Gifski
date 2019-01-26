@@ -16,16 +16,14 @@ class ConversionCompletedView: SSView {
 	var fileName: String = "" {
 		didSet {
 			fileNameLabel.text = fileName
-			fileNameLabel.sizeToFit()
-			fileNameLabel.frame.origin.x = frame.size.width / 2 - fileNameLabel.frame.size.width / 2
+			updateLabel(fileNameLabel)
 		}
 	}
 
 	var fileSize: String = "" {
 		didSet {
 			fileSizeLabel.text = fileSize
-			fileSizeLabel.sizeToFit()
-			fileSizeLabel.frame.origin.x = frame.size.width / 2 - fileSizeLabel.frame.size.width / 2
+			updateLabel(fileSizeLabel)
 		}
 	}
 	
@@ -56,7 +54,12 @@ class ConversionCompletedView: SSView {
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
 	}
-	
+
+	private func updateLabel(_ label: Label) {
+		label.sizeToFit()
+		label.frame.origin.x = frame.size.width / 2 - label.frame.size.width / 2
+	}
+
 	public func updateFileSize() {
 		let formatter = ByteCountFormatter()
 		formatter.zeroPadsFractionDigits = true
