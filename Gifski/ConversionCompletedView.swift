@@ -2,17 +2,21 @@ import Cocoa
 
 class ConversionCompletedView: SSView {
 	var margins = [CGFloat]()
-	
+
 	var fileUrl: URL? {
 		didSet {
 			draggableFile.fileUrl = fileUrl
 			if let url = fileUrl {
 				draggableFile.image = NSWorkspace.shared.icon(forFile: url.path)
 				fileName = url.lastPathComponent
+
+				showInFinderButton.onAction = { _ in
+					NSWorkspace.shared.activateFileViewerSelecting([url])
+				}
 			}
 		}
 	}
-	
+
 	var fileName: String = "" {
 		didSet {
 			fileNameLabel.text = fileName
@@ -26,7 +30,7 @@ class ConversionCompletedView: SSView {
 			updateLabel(fileSizeLabel)
 		}
 	}
-	
+
 	private let fileNameLabel = with(Label()) {
 		$0.textColor = NSColor.secondaryLabelColor
 	}
@@ -34,7 +38,7 @@ class ConversionCompletedView: SSView {
 	private let fileSizeLabel = with(Label()) {
 		$0.textColor = NSColor.secondaryLabelColor
 	}
-	
+
 	public let draggableFile = DraggableFile()
 
 	lazy var showInFinderButton = with(CustomButton()) {
@@ -63,9 +67,9 @@ class ConversionCompletedView: SSView {
 	public func updateFileSize() {
 		let formatter = ByteCountFormatter()
 		formatter.zeroPadsFractionDigits = true
-		
+
 		var size : UInt64 = 0
-		
+
 		do {
 			let attr = try FileManager.default.attributesOfItem(atPath: fileUrl!.path)
 			let dict = attr as NSDictionary
@@ -73,7 +77,7 @@ class ConversionCompletedView: SSView {
 		} catch {
 			print("Error: \(error)")
 		}
-		
+
 		fileSize = formatter.string(fromByteCount: Int64(size))
 	}
 
@@ -96,14 +100,14 @@ class ConversionCompletedView: SSView {
 
 	override func didAppear() {
 		appendView(fileSizeLabel, 16)
-		
+
 		draggableFile.frame = CGRect(x: 0, y: 0, width: 64, height: 64)
 		draggableFile.frame.origin.x = frame.size.width / 2 - draggableFile.frame.size.width / 2
 		appendView(draggableFile, 8)
-		
+
 		appendView(fileNameLabel, 16)
 		appendView(showInFinderButton)
-		
+
 		layoutSubviews()
 
 		frame.centerY = superview!.frame.centerY

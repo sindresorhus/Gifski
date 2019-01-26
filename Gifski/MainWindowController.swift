@@ -161,10 +161,6 @@ final class MainWindowController: NSWindowController {
 
 		conversionCompletedView.fileUrl = outputUrl
 
-		conversionCompletedView.showInFinderButton.onAction = { _ in
-			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
-		}
-
 		cancelButton.onAction = { _ in
 			self.cancelConversion()
 		}

@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		5A7524BA20D0862200F12C99 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A7524B520D085FB00F12C99 /* libgifski.a */; };
+		6D86840D21FB96280044F6FE /* ConversionCompletedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86840C21FB96280044F6FE /* ConversionCompletedView.swift */; };
+		6D86840F21FBB4EA0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86840E21FBB4EA0044F6FE /* DraggableFile.swift */; };
 		B597328421F0D87E00FBC405 /* HoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B597328321F0D87E00FBC405 /* HoverView.swift */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
@@ -68,6 +70,8 @@
 
 /* Begin PBXFileReference section */
 		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
+		6D86840C21FB96280044F6FE /* ConversionCompletedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversionCompletedView.swift; sourceTree = "<group>"; };
+		6D86840E21FBB4EA0044F6FE /* DraggableFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggableFile.swift; sourceTree = "<group>"; };
 		B597328321F0D87E00FBC405 /* HoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverView.swift; sourceTree = "<group>"; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -184,6 +188,8 @@
 				B597328321F0D87E00FBC405 /* HoverView.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
+				6D86840C21FB96280044F6FE /* ConversionCompletedView.swift */,
+				6D86840E21FBB4EA0044F6FE /* DraggableFile.swift */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
 				E356A15D21028942000148AD /* Other */,
 				E317FF182057E25400A80A18 /* Vendor */,
@@ -226,9 +232,7 @@
 				TargetAttributes = {
 					E3AE62821E5CD2F300035A2F = {
 						CreatedOnToolsVersion = 8.2.1;
-						DevelopmentTeam = YG56YK5RN5;
 						LastSwiftMigration = 1000;
-						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.HardenedRuntime = {
 								enabled = 1;
@@ -354,7 +358,9 @@
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
 				E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */,
 				E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */,
+				6D86840D21FB96280044F6FE /* ConversionCompletedView.swift in Sources */,
 				B597328421F0D87E00FBC405 /* HoverView.swift in Sources */,
+				6D86840F21FBB4EA0044F6FE /* DraggableFile.swift in Sources */,
 				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
 			);
@@ -491,8 +497,9 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Gifski/Gifski.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = X3F3ACZNQ7;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -511,6 +518,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OBJC_BRIDGING_HEADER = "Gifski/Gifski-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -526,8 +534,9 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Gifski/Gifski.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = X3F3ACZNQ7;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -546,6 +555,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Gifski/Gifski-Bridging-Header.h";
 				SWIFT_VERSION = 4.2;
 				USER_HEADER_SEARCH_PATHS = "";
