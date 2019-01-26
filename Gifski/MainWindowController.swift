@@ -16,14 +16,10 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	private lazy var showInFinderButton = with(CustomButton()) {
-		$0.title = "Show in Finder"
-		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 30)
-		$0.textColor = .appTheme
-		$0.backgroundColor = .clear
-		$0.borderWidth = 1
-		$0.isHidden = true
+	private lazy var conversionCompletedView = with(ConversionCompletedView()) {
+		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 0)
 		$0.centerInWindow(window)
+		$0.isHidden = true
 	}
 
 	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", size: 130)) {
@@ -56,7 +52,11 @@ final class MainWindowController: NSWindowController {
 					DockProgress.resetProgress()
 
 					if progress.isFinished {
-						self.showInFinderButton.fadeIn()
+						self.conversionCompletedView.fadeIn()
+
+						self.conversionCompletedView.updateFileSize()
+						self.conversionCompletedView.draggableFile.becomeFirstResponder()
+
 						self.videoDropView.isDropLabelHidden = true
 					} else if progress.isCancelled {
 						self.videoDropView.isHidden = false
@@ -69,7 +69,7 @@ final class MainWindowController: NSWindowController {
 			} else {
 				circularProgress.isHidden = false
 				videoDropView.isDropLabelHidden = true
-				showInFinderButton.isHidden = true
+				conversionCompletedView.isHidden = true
 			}
 		}
 	}
@@ -97,9 +97,9 @@ final class MainWindowController: NSWindowController {
 
 		view?.addSubview(cancelButton)
 		view?.addSubview(circularProgress)
-		view?.addSubview(showInFinderButton)
 		view?.addSubview(hoverView)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
+		view?.addSubview(conversionCompletedView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
@@ -159,7 +159,9 @@ final class MainWindowController: NSWindowController {
 			return
 		}
 
-		showInFinderButton.onAction = { _ in
+		conversionCompletedView.fileUrl = outputUrl
+
+		conversionCompletedView.showInFinderButton.onAction = { _ in
 			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
 		}
 
