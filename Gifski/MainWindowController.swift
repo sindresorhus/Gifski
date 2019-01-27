@@ -17,8 +17,6 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private lazy var conversionCompletedView = with(ConversionCompletedView()) {
-		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 0)
-		$0.centerInWindow(window)
 		$0.isHidden = true
 	}
 

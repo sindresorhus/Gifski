@@ -1,8 +1,6 @@
 import Cocoa
 
 class ConversionCompletedView: SSView {
-	var margins = [CGFloat]()
-
 	var fileUrl: URL? {
 		didSet {
 			draggableFile.fileUrl = fileUrl
@@ -20,14 +18,12 @@ class ConversionCompletedView: SSView {
 	var fileName: String = "" {
 		didSet {
 			fileNameLabel.text = fileName
-			updateLabel(fileNameLabel)
 		}
 	}
 
 	var fileSize: String = "" {
 		didSet {
 			fileSizeLabel.text = fileSize
-			updateLabel(fileSizeLabel)
 		}
 	}
 
@@ -43,7 +39,6 @@ class ConversionCompletedView: SSView {
 
 	lazy var showInFinderButton = with(CustomButton()) {
 		$0.title = "Show in Finder"
-		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 30)
 		$0.textColor = .appTheme
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
@@ -51,7 +46,6 @@ class ConversionCompletedView: SSView {
 
 	override init(frame: NSRect) {
 		super.init(frame: frame)
-		autoresizingMask = [.width, .height]
 	}
 
 	@available(*, unavailable)
@@ -59,16 +53,11 @@ class ConversionCompletedView: SSView {
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	private func updateLabel(_ label: Label) {
-		label.sizeToFit()
-		label.frame.origin.x = frame.size.width / 2 - label.frame.size.width / 2
-	}
-
 	public func updateFileSize() {
 		let formatter = ByteCountFormatter()
 		formatter.zeroPadsFractionDigits = true
 
-		var size : UInt64 = 0
+		var size: UInt64 = 0
 
 		do {
 			let attr = try FileManager.default.attributesOfItem(atPath: fileUrl!.path)
@@ -81,36 +70,42 @@ class ConversionCompletedView: SSView {
 		fileSize = formatter.string(fromByteCount: Int64(size))
 	}
 
-	func layoutSubviews() {
-		var height: CGFloat = 0
-
-		for i in (0 ... subviews.count - 1).reversed() {
-			let view = subviews[i]
-			view.frame.origin.y = height + margins[i]
-			height += view.frame.height + margins[i]
-		}
-
-		frame.size.height = height
-	}
-	
-	func appendView(_ view: NSView, _ marginBottom: CGFloat = 0) {
-		margins.append(marginBottom)
-		addSubview(view)
-	}
-
 	override func didAppear() {
-		appendView(fileSizeLabel, 16)
-
-		draggableFile.frame = CGRect(x: 0, y: 0, width: 64, height: 64)
-		draggableFile.frame.origin.x = frame.size.width / 2 - draggableFile.frame.size.width / 2
-		appendView(draggableFile, 8)
-
-		appendView(fileNameLabel, 16)
-		appendView(showInFinderButton)
-
-		layoutSubviews()
-
-		frame.centerY = superview!.frame.centerY
+		translatesAutoresizingMaskIntoConstraints = false
+		
+		addSubview(fileNameLabel)
+		fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
+		
+		addSubview(fileSizeLabel)
+		fileSizeLabel.translatesAutoresizingMaskIntoConstraints = false
+		
+		draggableFile.translatesAutoresizingMaskIntoConstraints = false
+		addSubview(draggableFile)
+		
+		showInFinderButton.translatesAutoresizingMaskIntoConstraints = false
+		addSubview(showInFinderButton)
+		
+		NSLayoutConstraint.activate([
+			bottomAnchor.constraint(equalTo: showInFinderButton.bottomAnchor),
+			widthAnchor.constraint(equalToConstant: 110),
+			centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
+			centerYAnchor.constraint(equalTo: superview!.centerYAnchor),
+			
+			fileSizeLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+			fileSizeLabel.topAnchor.constraint(equalTo: topAnchor),
+			
+			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
+			draggableFile.topAnchor.constraint(equalTo: fileSizeLabel.bottomAnchor, constant: 24),
+			draggableFile.heightAnchor.constraint(equalToConstant: 64),
+			draggableFile.widthAnchor.constraint(equalToConstant: 64),
+			
+			fileNameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 8),
+			
+			showInFinderButton.heightAnchor.constraint(equalToConstant: 30),
+			showInFinderButton.widthAnchor.constraint(equalToConstant: 110),
+			showInFinderButton.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor, constant: 24)
+		])
 	}
 
 	override func layout() {
