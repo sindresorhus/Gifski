@@ -14,9 +14,8 @@ public final class DockProgress {
 	public static var progress: Progress? {
 		didSet {
 			if let progress = progress {
-				progressObserver = progress.observe(\.fractionCompleted) { object, _ in
-					print("progress", object.fractionCompleted, object.isFinished, object.completedUnitCount, object.totalUnitCount)
-					progressValue = object.fractionCompleted
+				progressObserver = progress.observe(\.fractionCompleted) { sender, _ in
+					progressValue = sender.fractionCompleted
 				}
 			}
 		}
