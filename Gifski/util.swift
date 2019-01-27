@@ -1385,5 +1385,88 @@ extension NSImage {
 		})
 
 		return image
+
+final class Once {
+	private var lock = os_unfair_lock()
+	private var hasRun = false
+	private var value: Any?
+
+	/**
+	Executes the given closure only once. (Thread-safe)
+
+	Returns the value that the called closure returns the first (and only) time it's called.
+
+	```
+	final class Foo {
+		private let once = Once()
+
+		func bar() {
+			once.run {
+				print("Called only once")
+			}
+		}
+	}
+
+	let foo = Foo()
+	foo.bar()
+	foo.bar()
+	```
+
+	```
+	func process(_ text: String) -> String {
+		return text
+	}
+
+	let a = once.run {
+		process("a")
+	}
+
+	let b = once.run {
+		process("b")
+	}
+
+	print(a, b)
+	//=> "a a"
+	```
+	*/
+	func run<T>(_ closure: () throws -> T) rethrows -> T {
+		os_unfair_lock_lock(&lock)
+		defer {
+			os_unfair_lock_unlock(&lock)
+		}
+
+		guard !hasRun else {
+			return value as! T
+		}
+
+		hasRun = true
+
+		let returnValue = try closure()
+		value = returnValue
+		return returnValue
+	}
+
+	// TODO: Make it support `rethrows` so that if the input `function` is `throws` then the wrapped function becomes throwing too.
+	// TODO: Support any number of arguments when Swift supports variadics.
+	// Wraps a single-argument function.
+	func wrap<T, U>(_ function: @escaping ((T) -> U)) -> ((T) -> U) {
+		return { parameter in
+			self.run {
+				function(parameter)
+			}
+		}
+	}
+
+	// Wraps an optional single-argument function.
+	func wrap<T, U>(_ function: ((T) -> U)?) -> ((T) -> U)? {
+		guard let function = function else {
+			return nil
+		}
+
+		return { parameter in
+			self.run {
+				function(parameter)
+			}
+		}
 	}
 }
