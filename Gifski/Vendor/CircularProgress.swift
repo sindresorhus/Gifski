@@ -4,9 +4,11 @@ import Cocoa
 @IBDesignable
 public final class CircularProgress: NSView {
 	private var lineWidth: Double = 2
-	private lazy var radius = bounds.midX * 0.8
+	private lazy var radius = bounds.width < bounds.height ? bounds.midX * 0.8 : bounds.midY * 0.8
 	private var _progress: Double = 0
 	private var progressObserver: NSKeyValueObservation?
+	private var finishedObserver: NSKeyValueObservation?
+	private var cancelledObserver: NSKeyValueObservation?
 
 	private lazy var backgroundCircle = with(CAShapeLayer.circle(radius: Double(radius), center: bounds.center)) {
 		$0.frame = bounds
@@ -21,16 +23,22 @@ public final class CircularProgress: NSView {
 
 	private lazy var progressLabel = with(CATextLayer(text: "0%")) {
 		$0.color = color
-		$0.frame = bounds
-		$0.fontSize = bounds.width * 0.2
-		$0.position.y = bounds.midY * 0.25
+		$0.fontSize = bounds.width < bounds.height ? bounds.width * 0.2 : bounds.height * 0.2
+		$0.frame = CGRect(x: 0, y: 0, width: bounds.width, height: $0.preferredFrameSize().height)
+		$0.position = CGPoint(x: bounds.midX, y: bounds.midY)
+		$0.anchorPoint = CGPoint(x: 0.5, y: 0.5)
 		$0.alignmentMode = .center
 		$0.font = NSFont.helveticaNeueLight // Not using the system font as it has too much number width variance
 	}
 
-	var isProgressLabelHidden = false {
-		didSet {
-			progressLabel.isHidden = isProgressLabelHidden
+	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", radius: Double(radius), center: bounds.center)) {
+		$0.textColor = color
+		$0.backgroundColor = color.with(alpha: 0.1)
+		$0.activeBackgroundColor = color
+		$0.borderWidth = 0
+		$0.isHidden = true
+		$0.onAction = { _ in
+			self.cancelProgress()
 		}
 	}
 
@@ -68,11 +76,36 @@ public final class CircularProgress: NSView {
 			})
 
 			if !progressLabel.isHidden {
-				progressLabel.string = showCheckmarkAtHundredPercent && _progress == 1 ? "✓" : "\(Int(_progress * 100))%"
+				progressLabel.string = "\(Int(_progress * 100))%"
+			}
+
+			if _progress == 1 {
+				isFinished = true
 			}
 
 			// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
 			CATransaction.flush()
+		}
+	}
+
+	private var _isFinished = false
+	/**
+	Returns whether the progress is finished.
+	*/
+	@IBInspectable public private(set) var isFinished: Bool {
+		get {
+			if let progressInstance = progressInstance {
+				return progressInstance.isFinished
+			}
+
+			return _isFinished
+		}
+		set {
+			_isFinished = newValue
+
+			if _isFinished && showCheckmarkAtHundredPercent {
+				progressLabel.string = "✓"
+			}
 		}
 	}
 
@@ -83,8 +116,26 @@ public final class CircularProgress: NSView {
 		didSet {
 			if let progressInstance = progressInstance {
 				progressObserver = progressInstance.observe(\.fractionCompleted) { sender, _ in
+					guard !self.isCancelled && !sender.isFinished else {
+						return
+					}
+
 					self.progress = sender.fractionCompleted
 				}
+
+				finishedObserver = progressInstance.observe(\.isFinished) { sender, _ in
+					guard !self.isCancelled && sender.isFinished else {
+						return
+					}
+
+					self.progress = 1
+				}
+
+				cancelledObserver = progressInstance.observe(\.isCancelled) { sender, _ in
+					self.isCancelled = sender.isCancelled
+				}
+
+				isCancellable = progressInstance.isCancellable
 			}
 		}
 	}
@@ -99,6 +150,12 @@ public final class CircularProgress: NSView {
 		commonInit()
 	}
 
+	override public func prepareForInterfaceBuilder() {
+		super.prepareForInterfaceBuilder()
+		commonInit()
+		progressCircle.progress = _progress
+	}
+
 	/**
 	Initialize the progress view with a width/height of the given `size`.
 	*/
@@ -110,6 +167,10 @@ public final class CircularProgress: NSView {
 		backgroundCircle.strokeColor = color.with(alpha: 0.5).cgColor
 		progressCircle.strokeColor = color.cgColor
 		progressLabel.foregroundColor = color.cgColor
+
+		cancelButton.textColor = color
+		cancelButton.backgroundColor = color.with(alpha: 0.1)
+		cancelButton.activeBackgroundColor = color
 	}
 
 	private func commonInit() {
@@ -117,6 +178,8 @@ public final class CircularProgress: NSView {
 		layer?.addSublayer(backgroundCircle)
 		layer?.addSublayer(progressCircle)
 		layer?.addSublayer(progressLabel)
+
+		addSubview(cancelButton)
 	}
 
 	/**
@@ -124,43 +187,167 @@ public final class CircularProgress: NSView {
 	*/
 	public func resetProgress() {
 		_progress = 0
+		_isFinished = false
+		_isCancelled = false
 		progressCircle.resetProgress()
 		progressLabel.string = "0%"
 	}
-}
 
+	/**
+	Cancels `Progress` if it's set and prevents further updates.
+	*/
+	public func cancelProgress() {
+		guard isCancellable else {
+			return
+		}
 
+		guard let progressInstance = progressInstance else {
+			isCancelled = true
+			return
+		}
 
+		progressInstance.cancel()
+	}
 
+	/**
+	Triggers when the progress was cancelled succesfully.
+	*/
+	public var onCancelled: (() -> Void)?
 
-
-///
-/// util.swift
-///
-
-
-extension CALayer {
-	static func animate(
-		duration: TimeInterval = 1,
-		delay: TimeInterval = 0,
-		timingFunction: CAMediaTimingFunction = .default,
-		animations: @escaping (() -> Void),
-		completion: (() -> Void)? = nil
-	) {
-		DispatchQueue.main.asyncAfter(duration: delay) {
-			CATransaction.begin()
-			CATransaction.setAnimationDuration(duration)
-
-			if let completion = completion {
-				CATransaction.setCompletionBlock(completion)
+	public var _isCancellable = false
+	/**
+	If the progress view is cancellable it shows the cancel button.
+	*/
+	@IBInspectable public var isCancellable: Bool {
+		get {
+			if let progressInstance = progressInstance {
+				return progressInstance.isCancellable
 			}
 
-			animations()
-			CATransaction.commit()
+			return _isCancellable
 		}
+		set {
+			_isCancellable = newValue
+			updateTrackingAreas()
+		}
+	}
+
+	private var _isCancelled = false
+	/**
+	Returns whether the progress has been cancelled.
+	*/
+	@IBInspectable public private(set) var isCancelled: Bool {
+		get {
+			if let progressInstance = progressInstance {
+				return progressInstance.isCancelled
+			}
+
+			return _isCancelled
+		}
+		set {
+			_isCancelled = newValue
+
+			if newValue {
+				onCancelled?()
+			}
+		}
+	}
+
+	private var trackingArea: NSTrackingArea?
+
+	override public func updateTrackingAreas() {
+		if let oldTrackingArea = trackingArea {
+			removeTrackingArea(oldTrackingArea)
+		}
+
+		guard isCancellable else {
+			return
+		}
+
+		let newTrackingArea = NSTrackingArea(
+			rect: cancelButton.frame,
+			options: [
+				.mouseEnteredAndExited,
+				.activeInActiveApp
+			],
+			owner: self,
+			userInfo: nil
+		)
+
+		addTrackingArea(newTrackingArea)
+		trackingArea = newTrackingArea
+	}
+
+	override public func mouseEntered(with event: NSEvent) {
+		guard isCancellable else {
+			super.mouseEntered(with: event)
+			return
+		}
+
+		progressLabel.isHidden = true
+		cancelButton.fadeIn()
+	}
+
+	override public func mouseExited(with event: NSEvent) {
+		guard isCancellable else {
+			super.mouseExited(with: event)
+			return
+		}
+
+		progressLabel.isHidden = false
+		cancelButton.isHidden = true
 	}
 }
 
+extension NSBezierPath {
+	static func circle(radius: Double, center: CGPoint) -> NSBezierPath {
+		let path = NSBezierPath()
+		path.appendArc(
+			withCenter: center,
+			radius: CGFloat(radius),
+			startAngle: 0,
+			endAngle: 360
+		)
+		return path
+	}
+}
+
+extension CAShapeLayer {
+	static func circle(radius: Double, center: CGPoint) -> CAShapeLayer {
+		return CAShapeLayer(path: NSBezierPath.circle(radius: radius, center: center))
+	}
+
+	convenience init(path: NSBezierPath) {
+		self.init()
+		self.path = path.cgPath
+	}
+}
+
+extension CATextLayer {
+	/// Initializer with better defaults
+	convenience init(text: String, fontSize: Double? = nil, color: NSColor? = nil) {
+		self.init()
+		string = text
+		if let fontSize = fontSize {
+			self.fontSize = CGFloat(fontSize)
+		}
+		self.color = color
+		implicitAnimations = false
+		setAutomaticContentsScale()
+	}
+
+	var color: NSColor? {
+		get {
+			guard let color = foregroundColor else {
+				return nil
+			}
+			return NSColor(cgColor: color)
+		}
+		set {
+			foregroundColor = newValue?.cgColor
+		}
+	}
+}
 
 extension CALayer {
 	/**
@@ -168,7 +355,7 @@ extension CALayer {
 
 	```
 	CALayer.withoutImplicitAnimations {
-		view.layer?.opacity = 0.4
+	view.layer?.opacity = 0.4
 	}
 	```
 	*/
@@ -205,141 +392,28 @@ extension CALayer {
 	}
 }
 
-
 extension NSFont {
 	static let helveticaNeueLight = NSFont(name: "HelveticaNeue-Light", size: 0)
 }
 
+extension CALayer {
+	static func animate(
+		duration: TimeInterval = 1,
+		delay: TimeInterval = 0,
+		timingFunction: CAMediaTimingFunction = .default,
+		animations: @escaping (() -> Void),
+		completion: (() -> Void)? = nil
+		) {
+		DispatchQueue.main.asyncAfter(duration: delay) {
+			CATransaction.begin()
+			CATransaction.setAnimationDuration(duration)
 
-//private extension NSColor {
-//	func with(alpha: Double) -> NSColor {
-//		return withAlphaComponent(CGFloat(alpha))
-//	}
-//}
-
-
-extension NSBezierPath {
-	static func circle(radius: Double, center: CGPoint) -> NSBezierPath {
-		let path = NSBezierPath()
-		path.appendArc(
-			withCenter: center,
-			radius: CGFloat(radius),
-			startAngle: 0,
-			endAngle: 360
-		)
-		return path
-	}
-
-	/// For making a circle progress indicator
-	static func progressCircle(radius: Double, center: CGPoint) -> NSBezierPath {
-		let startAngle: CGFloat = 90
-		let path = NSBezierPath()
-		path.appendArc(
-			withCenter: center,
-			radius: CGFloat(radius),
-			startAngle: startAngle,
-			endAngle: startAngle - 360,
-			clockwise: true
-		)
-		return path
-	}
-}
-
-
-extension CAShapeLayer {
-	static func circle(radius: Double, center: CGPoint) -> CAShapeLayer {
-		return CAShapeLayer(path: NSBezierPath.circle(radius: radius, center: center))
-	}
-
-	convenience init(path: NSBezierPath) {
-		self.init()
-		self.path = path.cgPath
-	}
-}
-
-
-extension CATextLayer {
-	/// Initializer with better defaults
-	convenience init(text: String, fontSize: Double? = nil, color: NSColor? = nil) {
-		self.init()
-		string = text
-		if let fontSize = fontSize {
-			self.fontSize = CGFloat(fontSize)
-		}
-		self.color = color
-		implicitAnimations = false
-		setAutomaticContentsScale()
-	}
-
-	var color: NSColor? {
-		get {
-			guard let color = foregroundColor else {
-				return nil
+			if let completion = completion {
+				CATransaction.setCompletionBlock(completion)
 			}
-			return NSColor(cgColor: color)
+
+			animations()
+			CATransaction.commit()
 		}
-		set {
-			foregroundColor = newValue?.cgColor
-		}
-	}
-}
-
-
-final class ProgressCircleShapeLayer: CAShapeLayer {
-	convenience init(radius: Double, center: CGPoint) {
-		self.init()
-		fillColor = nil
-		lineCap = .round
-		position = center
-		strokeEnd = 0
-
-		let cgPath = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
-		path = cgPath
-		bounds = cgPath.boundingBox
-	}
-
-	var progress: Double {
-		get {
-			return Double(strokeEnd)
-		}
-		set {
-			strokeEnd = CGFloat(newValue)
-		}
-	}
-
-	func resetProgress() {
-		CALayer.withoutImplicitAnimations {
-			strokeEnd = 0
-		}
-	}
-}
-
-
-extension NSBezierPath {
-	/// UIKit polyfill
-	var cgPath: CGPath {
-		let path = CGMutablePath()
-		var points = [CGPoint](repeating: .zero, count: 3)
-
-		for i in 0..<elementCount {
-			let type = element(at: i, associatedPoints: &points)
-			switch type {
-			case .moveTo:
-				path.move(to: points[0])
-			case .lineTo:
-				path.addLine(to: points[0])
-			case .curveTo:
-				path.addCurve(to: points[2], control1: points[0], control2: points[1])
-			case .closePath:
-				path.closeSubpath()
-			}
-		}
-
-		return path
-	}
-
-	/// UIKit polyfill
-	convenience init(roundedRect rect: CGRect, cornerRadius: CGFloat) {
-		self.init(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
 	}
 }
