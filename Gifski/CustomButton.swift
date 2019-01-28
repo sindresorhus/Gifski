@@ -56,7 +56,7 @@ open class CustomButton: NSButton {
 	static func circularButton(title: String, radius: Double, center: CGPoint) -> CustomButton {
 		return with(CustomButton()) {
 			$0.title = title
-			$0.frame = NSRect(x: Double(center.x) - radius, y: Double(center.y) - radius, width: radius * 2, height: radius * 2)
+			$0.frame = CGRect(x: Double(center.x) - radius, y: Double(center.y) - radius, width: radius * 2, height: radius * 2)
 			$0.cornerRadius = radius
 			$0.font = NSFont.systemFont(ofSize: CGFloat(radius * 2 / 3))
 		}
@@ -195,7 +195,7 @@ open class CustomButton: NSButton {
 	}
 
 	// Ensure the button doesn't draw its default contents
-	override open func draw(_ dirtyRect: NSRect) {}
+	override open func draw(_ dirtyRect: CGRect) {}
 	override open func drawFocusRingMask() {}
 
 	override open func layout() {
