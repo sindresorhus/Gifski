@@ -403,7 +403,7 @@ extension CALayer {
 		timingFunction: CAMediaTimingFunction = .default,
 		animations: @escaping (() -> Void),
 		completion: (() -> Void)? = nil
-		) {
+	) {
 		DispatchQueue.main.asyncAfter(duration: delay) {
 			CATransaction.begin()
 			CATransaction.setAnimationDuration(duration)
