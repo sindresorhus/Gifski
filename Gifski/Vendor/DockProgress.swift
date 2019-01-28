@@ -6,6 +6,7 @@ public final class DockProgress {
 	private static let appIcon = NSApp.applicationIconImage!
 	private static var previousProgressValue: Double = 0
 	private static var progressObserver: NSKeyValueObservation?
+	private static var finishedObserver: NSKeyValueObservation?
 
 	private static var dockImageView = with(NSImageView()) {
 		NSApp.dockTile.contentView = $0
@@ -15,7 +16,19 @@ public final class DockProgress {
 		didSet {
 			if let progress = progress {
 				progressObserver = progress.observe(\.fractionCompleted) { sender, _ in
+					guard !sender.isCancelled && !sender.isFinished else {
+						return
+					}
+
 					progressValue = sender.fractionCompleted
+				}
+
+				finishedObserver = progress.observe(\.isFinished) { sender, _ in
+					guard !sender.isCancelled && sender.isFinished else {
+						return
+					}
+
+					progressValue = 1
 				}
 			}
 		}
