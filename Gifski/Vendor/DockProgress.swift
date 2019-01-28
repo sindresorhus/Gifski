@@ -1,5 +1,5 @@
 // Vendored from: https://github.com/sindresorhus/DockProgress
-/// TODO: Use Carthage and frameworks again when targeting Swift 5 as it should be ABI stable
+// TODO: Use Carthage and frameworks again when targeting Swift 5 as it should be ABI stable
 import Cocoa
 
 public final class DockProgress {

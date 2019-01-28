@@ -103,7 +103,7 @@ class DropView: SSView {
 }
 
 final class VideoDropView: DropView {
-	/// TODO: Any way to make this generic so we can have it in DropView instead?
+	// TODO: Any way to make this generic so we can have it in DropView instead?
 	var onComplete: (([URL]) -> Void)?
 
 	override var highlightColor: NSColor {

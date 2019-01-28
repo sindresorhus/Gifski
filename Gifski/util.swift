@@ -1171,10 +1171,9 @@ extension CGRect {
 	}
 }
 
-
+// TODO: Remove when using Swift 5
 /// Polyfill for Swift 5
 /// https://github.com/moiseev/swift/blob/47740c012943020aa89df93129b4fc2f33618c00/stdlib/public/core/Result.swift
-/// TODO: Remove when using Swift 5
 ///
 /// A value that represents either a success or a failure, including an
 /// associated value in each case.
@@ -1374,7 +1373,7 @@ extension Result {
 	}
 }
 
-
+// TODO: Find a way to reduce the number of overloads for `wrap()`.
 final class Once {
 	private var lock = os_unfair_lock()
 	private var hasRun = false
@@ -1435,9 +1434,8 @@ final class Once {
 		return returnValue
 	}
 
-	// TODO: Make it support `rethrows` so that if the input `function` is `throws` then the wrapped function becomes throwing too.
 	// TODO: Support any number of arguments when Swift supports variadics.
-	// Wraps a single-argument function.
+	/// Wraps a single-argument function.
 	func wrap<T, U>(_ function: @escaping ((T) -> U)) -> ((T) -> U) {
 		return { parameter in
 			self.run {
@@ -1446,7 +1444,7 @@ final class Once {
 		}
 	}
 
-	// Wraps an optional single-argument function.
+	/// Wraps an optional single-argument function.
 	func wrap<T, U>(_ function: ((T) -> U)?) -> ((T) -> U)? {
 		guard let function = function else {
 			return nil
@@ -1455,6 +1453,28 @@ final class Once {
 		return { parameter in
 			self.run {
 				function(parameter)
+			}
+		}
+	}
+
+	/// Wraps a single-argument throwing function.
+	func wrap<T, U>(_ function: @escaping ((T) throws -> U)) -> ((T) throws -> U) {
+		return { parameter in
+			try self.run {
+				try function(parameter)
+			}
+		}
+	}
+
+	/// Wraps an optional single-argument throwing function.
+	func wrap<T, U>(_ function: ((T) throws -> U)?) -> ((T) throws -> U)? {
+		guard let function = function else {
+			return nil
+		}
+
+		return { parameter in
+			try self.run {
+				try function(parameter)
 			}
 		}
 	}
