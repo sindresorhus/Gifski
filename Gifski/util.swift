@@ -849,7 +849,7 @@ extension URL {
 		NSWorkspace.shared.open(self)
 	}
 
-	func getFileSize() -> String {
+	func formattedFileSize() -> String {
 		let formatter = ByteCountFormatter()
 		formatter.zeroPadsFractionDigits = true
 
