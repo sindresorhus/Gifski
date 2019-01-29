@@ -1865,3 +1865,187 @@ extension BinaryFloatingPoint {
 		return (self * divisor).rounded(rule) / divisor
 	}
 }
+
+/// Since errors in Swift can be any type, there's no easy way to store context info, so we use this struct for that and pass it around.
+struct ErrorContext {
+	/**
+	Stores all the error contexts.
+
+	We're using a `NSMutableDictionary` here as we can't use associated objects with `Error` as it's a generic protocol. We can't use `NSMapTable`, which would be perfect for this, as it requires the type AnyObject. Storing it like this means we retain the error forever, but it should not really have much impact on memory usage.
+	*/
+	static let store = NSMutableDictionary()
+
+	static func get(from error: Error) -> ErrorContext? {
+		return store[error] as? ErrorContext
+	}
+
+	let originalError: Error
+	let function: String
+	let file: String
+	let line: Int
+	let column: Int
+	let stack: String
+
+	init(
+		error originalError: Error,
+		function: String = #function,
+		file: String = #file,
+		line: Int = #line,
+		column: Int = #column
+	) {
+		self.originalError = originalError
+		self.function = function
+		self.file = file.nsString.deletingPathExtension.nsString.lastPathComponent
+		self.line = line
+		self.column = column
+		/// TODO: Need to find a way to demangle the symbols
+		self.stack = Thread.callStackSymbols.joined(separator: "\n")
+	}
+}
+
+/// Wrapper error to store more information about the original error
+struct SoftError {
+	private let message: String
+
+	/// Create a new soft error
+	init(
+		_ message: String,
+		function: String = #function,
+		file: String = #file,
+		line: Int = #line,
+		column: Int = #column
+	) {
+		self.message = message
+
+		ErrorContext.store[self] = ErrorContext(
+			error: self,
+			function: function,
+			file: file,
+			line: line,
+			column: column
+		)
+	}
+
+	/// Wrap an existing error to give it more context
+	init(
+		_ error: Error,
+		function: String = #function,
+		file: String = #file,
+		line: Int = #line,
+		column: Int = #column
+	) {
+		// Prevent double-wrapping
+		if let error = error as? SoftError {
+			self = error
+			return
+		}
+
+		self.message = error.localizedDescription
+
+		ErrorContext.store[self] = ErrorContext(
+			error: error,
+			function: function,
+			file: file,
+			line: line,
+			column: column
+		)
+	}
+}
+
+extension SoftError: LocalizedError {
+	var errorDescription: String? {
+		return message
+	}
+}
+
+extension SoftError: GithubReportableError {}
+
+protocol GithubReportableError: RecoverableError {}
+
+extension GithubReportableError {
+	private func createMessage() -> String {
+		var message =
+			"""
+
+
+
+			<!--
+			Include any additional information above. For example, steps to reproduce the issue.
+
+			If you don't have a GitHub account, you can report this issue at https://sindresorhus.com/feedback/?product=Gifski
+			-->
+
+			-------------------------------------------
+
+			###### Error
+			> \(localizedDescription)
+			"""
+
+		if let context = ErrorContext.get(from: self) {
+			message +=
+				"""
+
+
+				###### Type
+				> `\(String(describing: context.originalError))`
+
+				###### Location
+				> `\(context.function)` at \(context.file):\(context.line)
+				"""
+
+			if context.originalError.isNsError {
+				let nsError = context.originalError as NSError
+
+				message +=
+					"""
+
+
+					###### Domain
+					> \(nsError.domain)
+
+					###### Code
+					> \(nsError.code)
+					"""
+
+				if !nsError.userInfo.isEmpty {
+					message +=
+						"""
+
+
+						###### User Info
+						```
+						\(nsError.userInfo)
+						```
+						"""
+				}
+			}
+
+			message +=
+				"""
+
+
+				###### Stack Trace
+				```
+				\(context.stack)
+				```
+				"""
+		}
+
+		return message
+	}
+
+	public var recoveryOptions: [String] {
+		return [
+			"Report…",
+			"Ignore" // We also need a way to make an error not soft, and show a `Quit` button here instead, and also quit when the `Report` button is clicked
+		]
+	}
+
+	public func attemptRecovery(optionIndex recoveryOptionIndex: Int) -> Bool {
+		if recoveryOptionIndex == 0 {
+			Meta.openSubmitFeedbackPage(message: createMessage())
+		}
+
+		return false
+	}
+}
