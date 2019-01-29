@@ -12,6 +12,7 @@ final class MainWindowController: NSWindowController {
 
 		let this = $0
 		$0.onComplete = { url in
+			NSApp.activate(ignoringOtherApps: true)
 			self.convert(url.first!)
 		}
 	}
