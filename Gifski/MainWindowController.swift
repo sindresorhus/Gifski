@@ -60,9 +60,6 @@ final class MainWindowController: NSWindowController {
 						self.videoDropView.isHidden = false
 						self.videoDropView.fadeInVideoDropLabel()
 					}
-
-					// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
-					self.progress?.completedUnitCount = 0
 				}
 			} else {
 				circularProgress.isHidden = false

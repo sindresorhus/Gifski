@@ -49,6 +49,8 @@ final class Gifski {
 	}
 
 	static func run(_ conversion: Conversion, completionHandler: ((Error?) -> Void)?) {
+		let completionHandlerOnce = Once().wrap(completionHandler)
+
 		let settings = GifskiSettings(
 			width: UInt32(conversion.dimensions?.width ?? 0),
 			height: UInt32(conversion.dimensions?.height ?? 0),
@@ -58,7 +60,7 @@ final class Gifski {
 		)
 
 		guard let g = GifskiWrapper(settings: settings) else {
-			completionHandler?(.invalidSettings)
+			completionHandlerOnce?(.invalidSettings)
 			return
 		}
 
@@ -94,6 +96,11 @@ final class Gifski {
 			}
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
+				guard !progress.isCancelled else {
+					completionHandlerOnce?(.cancelled)
+					return
+				}
+
 				switch result {
 				case .success(let result):
 					let image = result.image
@@ -102,13 +109,13 @@ final class Gifski {
 						let data = image.dataProvider?.data,
 						let buffer = CFDataGetBytePtr(data)
 					else {
-						completionHandler?(.generateFrameFailed("Could not get byte pointer of image data provider"))
+						completionHandlerOnce?(.generateFrameFailed("Could not get byte pointer of image data provider"))
 						return
 					}
 
 					do {
 						try g.addFrameARGB(
-							index: UInt32(result.completedCount),
+							index: UInt32(result.completedCount - 1),
 							width: UInt32(image.width),
 							bytesPerRow: UInt32(image.bytesPerRow),
 							height: UInt32(image.height),
@@ -116,7 +123,7 @@ final class Gifski {
 							delay: UInt16(100 / fps)
 						)
 					} catch {
-						completionHandler?(.addFrameFailed(error as! GifskiWrapperError))
+						completionHandlerOnce?(.addFrameFailed(error as! GifskiWrapperError))
 						return
 					}
 
@@ -124,26 +131,21 @@ final class Gifski {
 						do {
 							try g.endAddingFrames()
 						} catch {
-							completionHandler?(.endAddingFramesFailed(error as! GifskiWrapperError))
+							completionHandlerOnce?(.endAddingFramesFailed(error as! GifskiWrapperError))
 						}
 					}
 				case .failure where result.isCancelled:
-					completionHandler?(.cancelled)
+					completionHandlerOnce?(.cancelled)
 				case .failure(let error):
-					completionHandler?(.generateFrameFailed(error))
+					completionHandlerOnce?(.generateFrameFailed(error))
 				}
 			}
 
 			do {
 				try g.write(path: conversion.output.path)
-				completionHandler?(nil)
+				completionHandlerOnce?(nil)
 			} catch {
-				// TODO: Figure out how to not get a write error when the process was simply cancelled
-				if progress.isCancelled {
-					completionHandler?(.cancelled)
-				} else {
-					completionHandler?(.writeFailed(error as! GifskiWrapperError))
-				}
+				completionHandlerOnce?(.writeFailed(error as! GifskiWrapperError))
 			}
 		}
 	}

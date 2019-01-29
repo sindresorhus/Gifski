@@ -14,8 +14,8 @@ public final class DockProgress {
 	public static var progress: Progress? {
 		didSet {
 			if let progress = progress {
-				progressObserver = progress.observe(\.fractionCompleted) { object, _ in
-					progressValue = object.fractionCompleted
+				progressObserver = progress.observe(\.fractionCompleted) { sender, _ in
+					progressValue = sender.fractionCompleted
 				}
 			}
 		}
@@ -40,6 +40,7 @@ public final class DockProgress {
 		case bar
 		/// TODO: Make `color` optional when https://github.com/apple/swift-evolution/blob/master/proposals/0155-normalize-enum-case-representation.md is shipping in Swift
 		case circle(radius: Double, color: NSColor)
+		case badge(color: NSColor, badgeValue: () -> Int)
 		case custom(drawHandler: (_ rect: CGRect) -> Void)
 	}
 
@@ -66,6 +67,8 @@ public final class DockProgress {
 				self.drawProgressBar(dstRect)
 			case let .circle(radius, color):
 				self.drawProgressCircle(dstRect, radius: radius, color: color)
+			case let .badge(color, badgeValue):
+				self.drawProgressBadge(dstRect, color: color, badgeLabel: badgeValue())
 			case let .custom(drawingHandler):
 				drawingHandler(dstRect)
 			}
@@ -105,6 +108,86 @@ public final class DockProgress {
 		progressCircle.progress = progressValue
 		progressCircle.render(in: cgContext)
 	}
+
+	private static func drawProgressBadge(_ dstRect: CGRect, color: NSColor, badgeLabel: Int) {
+		guard let cgContext = NSGraphicsContext.current?.cgContext else {
+			return
+		}
+
+		let radius = dstRect.width / 4.8
+		let newCenter = CGPoint(x: dstRect.maxX - radius - 4, y: dstRect.minY + radius + 4)
+
+		// Background
+		let badge = ProgressCircleShapeLayer(radius: Double(radius), center: newCenter)
+		badge.fillColor = CGColor(red: 0.94, green: 0.96, blue: 1, alpha: 1)
+		badge.shadowColor = .black
+		badge.shadowOpacity = 0.3
+		badge.masksToBounds = false
+		badge.shadowOffset = CGSize(width: -1, height: 1)
+		badge.shadowPath = badge.path
+
+		// Progress circle
+		let lineWidth: CGFloat = 6
+		let innerRadius = radius - lineWidth / 2
+		let progressCircle = ProgressCircleShapeLayer(radius: Double(innerRadius), center: newCenter)
+		progressCircle.strokeColor = color.cgColor
+		progressCircle.lineWidth = lineWidth
+		progressCircle.lineCap = .butt
+		progressCircle.progress = progressValue
+
+		// Label
+		let dimension = badge.bounds.height - 5
+		let rect = CGRect(origin: progressCircle.bounds.origin, size: CGSize(width: dimension, height: dimension))
+		let textLayer = VerticallyCenteredTextLayer(frame: rect, center: newCenter)
+		let badgeText = kiloShortStringFromInt(number: badgeLabel)
+		textLayer.foregroundColor = CGColor(red: 0.23, green: 0.23, blue: 0.24, alpha: 1)
+		textLayer.string = badgeText
+		textLayer.fontSize = scaledBadgeFontSize(text: badgeText)
+		textLayer.font = NSFont.helveticaNeueBold
+		textLayer.alignmentMode = .center
+		textLayer.truncationMode = .end
+
+		badge.addSublayer(textLayer)
+		badge.addSublayer(progressCircle)
+		badge.render(in: cgContext)
+	}
+
+	/**
+	```
+	999 => 999
+	1000 => 1K
+	1100 => 1K
+	2000 => 2K
+	10000 => 9K+
+	```
+	*/
+	private static func kiloShortStringFromInt(number: Int) -> String {
+		let sign = number.signum()
+		let absNumber = abs(number)
+
+		if absNumber < 1000 {
+			return "\(number)"
+		} else if absNumber < 10_000 {
+			return "\(sign * Int(absNumber / 1000))k"
+		} else {
+			return "\(sign * 9)k+"
+		}
+	}
+
+	private static func scaledBadgeFontSize(text: String) -> CGFloat {
+		switch text.count {
+		case 1:
+			return 30
+		case 2:
+			return 23
+		case 3:
+			return 19
+		case 4:
+			return 15
+		default:
+			return 0
+		}
+	}
 }
 
 
@@ -113,6 +196,33 @@ public final class DockProgress {
 ///
 /// util.swift
 ///
+
+extension NSFont {
+	static let helveticaNeueBold = NSFont(name: "HelveticaNeue-Bold", size: 0)
+}
+
+
+/// Fixes the vertical alignment issue of the `CATextLayer` class.
+final class VerticallyCenteredTextLayer: CATextLayer {
+	convenience init(frame rect: CGRect, center: CGPoint) {
+		self.init()
+		frame = rect
+		frame.center = center
+		contentsScale = NSScreen.main?.backingScaleFactor ?? 2
+	}
+
+	// From https://stackoverflow.com/a/44055040/6863743
+	override func draw(in context: CGContext) {
+		let height = bounds.size.height
+		let deltaY = ((height - fontSize) / 2 - fontSize / 10) * -1
+
+		context.saveGState()
+		context.translateBy(x: 0, y: deltaY)
+		super.draw(in: context)
+		context.restoreGState()
+	}
+}
+
 
 /**
 Convenience function for initializing an object and modifying its properties
@@ -154,7 +264,12 @@ let label = with(NSTextField()) {
 //		self.init()
 //		fillColor = nil
 //		lineCap = .round
-//		path = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
+//		position = center
+//		strokeEnd = 0
+//
+//		let cgPath = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
+//		path = cgPath
+//		bounds = cgPath.boundingBox
 //	}
 //
 //	var progress: Double {
