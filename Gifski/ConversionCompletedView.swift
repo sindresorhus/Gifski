@@ -1,6 +1,6 @@
 import Cocoa
 
-class ConversionCompletedView: SSView {
+final class ConversionCompletedView: SSView {
 	var fileUrl: URL? {
 		didSet {
 			draggableFile.fileUrl = fileUrl

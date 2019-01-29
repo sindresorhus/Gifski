@@ -1,6 +1,6 @@
 import Cocoa
 
-class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderDelegate {
+final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderDelegate {
 	var mouseDownEvent: NSEvent?
 
 	var fileUrl: URL?
