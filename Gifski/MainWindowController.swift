@@ -26,29 +26,12 @@ final class MainWindowController: NSWindowController {
 		$0.centerInWindow(window)
 	}
 
-	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", size: 130)) {
-		$0.textColor = .appTheme
-		$0[colorGenerator: \.backgroundColor] = {
-			NSColor.appTheme.with(alpha: 0.1)
-		}
-		$0.borderWidth = 0
-		$0.isHidden = true
-		$0.centerInWindow(window)
-	}
-
-	private lazy var hoverView = with(HoverView()) {
-		$0.frame = CGRect(x: 0, y: 0, width: 130, height: 130)
-		$0.centerInWindow(window)
-	}
-
 	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
 
 	var isRunning: Bool = false {
 		didSet {
 			videoDropView.isHidden = isRunning
-			hoverView.onHover = isRunning ? onHover : nil
-			cancelButton.isHidden = true
 
 			if let progress = progress, !isRunning {
 				circularProgress.fadeOut(delay: 1) {
@@ -92,10 +75,8 @@ final class MainWindowController: NSWindowController {
 			$0.makeVibrant()
 		}
 
-		view?.addSubview(cancelButton)
 		view?.addSubview(circularProgress)
 		view?.addSubview(showInFinderButton)
-		view?.addSubview(hoverView)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil)
@@ -160,10 +141,6 @@ final class MainWindowController: NSWindowController {
 			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
 		}
 
-		cancelButton.onAction = { _ in
-			self.cancelConversion()
-		}
-
 		isRunning = true
 
 		progress = Progress(totalUnitCount: 1)
@@ -195,17 +172,6 @@ final class MainWindowController: NSWindowController {
 					fatalError(error.localizedDescription)
 				}
 			}
-		}
-	}
-
-	private func onHover(_ event: HoverView.Event) {
-		switch event {
-		case .entered:
-			circularProgress.isProgressLabelHidden = true
-			cancelButton.fadeIn()
-		case .exited:
-			circularProgress.isProgressLabelHidden = false
-			cancelButton.isHidden = true
 		}
 	}
 
