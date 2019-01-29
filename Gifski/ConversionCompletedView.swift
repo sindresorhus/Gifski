@@ -3,9 +3,8 @@ import Cocoa
 final class ConversionCompletedView: SSView {
 	var fileUrl: URL? {
 		didSet {
-			draggableFile.fileUrl = fileUrl
 			if let url = fileUrl {
-				draggableFile.image = NSWorkspace.shared.icon(forFile: url.path)
+				draggableFile.fileUrl = fileUrl
 				fileName = url.lastPathComponent
 
 				showInFinderButton.onAction = { _ in

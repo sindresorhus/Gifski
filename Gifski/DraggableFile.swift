@@ -3,7 +3,13 @@ import Cocoa
 final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderDelegate {
 	var mouseDownEvent: NSEvent?
 
-	var fileUrl: URL?
+	var fileUrl: URL? {
+		didSet {
+			if let url = fileUrl {
+				image = NSWorkspace.shared.icon(forFile: url.path)
+			}
+		}
+	}
 
 	public func filePromiseProvider(_ filePromiseProvider: NSFilePromiseProvider, fileNameForType fileType: String) -> String {
 		return fileUrl!.lastPathComponent
