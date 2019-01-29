@@ -65,7 +65,7 @@ final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderD
 			return
 		}
 
-		let draggingItem = NSDraggingItem(pasteboardWriter: NSFilePromiseProvider(fileType: "public.data", delegate: self))
+		let draggingItem = NSDraggingItem(pasteboardWriter: NSFilePromiseProvider(fileType: String(kUTTypeGIF), delegate: self))
 		let draggingFrameOrigin = convert(mouseDown, from: nil)
 		let draggingFrame = NSRect(origin: draggingFrameOrigin, size: image.size).offsetBy(dx: -image.size.width / 2, dy: -image.size.height / 2)
 		
