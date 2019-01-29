@@ -26,14 +26,16 @@ func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
 
 
 struct Meta {
-	static func openSubmitFeedbackPage() {
+	static func openSubmitFeedbackPage(message: String? = nil) {
+		let defaultMessage = "<!-- Provide your feedback here. Include as many details as possible. -->"
+
 		let body =
 		"""
-		<!-- Provide your feedback here. Include as many details as possible. -->
+		\(message ?? defaultMessage)
 
 
 		---
-		\(App.name) \(App.version) (\(App.build))
+		\(App.name) \(App.versionWithBuild)
 		macOS \(System.osVersion)
 		\(System.hardwareModel)
 		"""
@@ -840,6 +842,7 @@ struct App {
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
 	static let build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
+	static let versionWithBuild = "\(version) (\(build))"
 }
 
 
