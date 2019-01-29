@@ -1,6 +1,6 @@
 import Cocoa
 
-final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderDelegate {
+final class DraggableFile: NSImageView, NSDraggingSource {
 	var mouseDownEvent: NSEvent?
 
 	var fileUrl: URL? {
@@ -8,21 +8,6 @@ final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderD
 			if let url = fileUrl {
 				image = NSWorkspace.shared.icon(forFile: url.path)
 			}
-		}
-	}
-
-	public func filePromiseProvider(_ filePromiseProvider: NSFilePromiseProvider, fileNameForType fileType: String) -> String {
-		return fileUrl!.lastPathComponent
-	}
-
-	public func filePromiseProvider(_ filePromiseProvider: NSFilePromiseProvider, writePromiseTo url: URL, completionHandler: @escaping (Error?) -> Void) {
-
-		do {
-			try FileManager.default.copyItem(at: fileUrl!, to: url)
-			completionHandler(nil)
-		} catch let error {
-			print(error)
-			completionHandler(error)
 		}
 	}
 
@@ -45,9 +30,6 @@ final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderD
 		return .copy
 	}
 
-	func draggingSession(_: NSDraggingSession, endedAt _: NSPoint, operation: NSDragOperation) {
-	}
-
 	override func mouseDown(with theEvent: NSEvent) {
 		mouseDownEvent = theEvent
 	}
@@ -65,7 +47,7 @@ final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderD
 			return
 		}
 
-		let draggingItem = NSDraggingItem(pasteboardWriter: NSFilePromiseProvider(fileType: String(kUTTypeGIF), delegate: self))
+		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl! as NSURL)
 		let draggingFrameOrigin = convert(mouseDown, from: nil)
 		let draggingFrame = NSRect(origin: draggingFrameOrigin, size: image.size).offsetBy(dx: -image.size.width / 2, dy: -image.size.height / 2)
 		
