@@ -47,27 +47,15 @@ final class ConversionCompletedView: SSView {
 	override init(frame: NSRect) {
 		super.init(frame: frame)
 	}
+	
+	public func show() {
+		fileSize = fileUrl!.getFileSize()
+		fadeIn()
+	}
 
 	@available(*, unavailable)
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
-	}
-
-	public func updateFileSize() {
-		let formatter = ByteCountFormatter()
-		formatter.zeroPadsFractionDigits = true
-
-		var size: UInt64 = 0
-
-		do {
-			let attr = try FileManager.default.attributesOfItem(atPath: fileUrl!.path)
-			let dict = attr as NSDictionary
-			size = dict.fileSize()
-		} catch {
-			print("Error: \(error)")
-		}
-
-		fileSize = formatter.string(fromByteCount: Int64(size))
 	}
 
 	override func didAppear() {

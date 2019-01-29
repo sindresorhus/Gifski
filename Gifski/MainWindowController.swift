@@ -50,11 +50,7 @@ final class MainWindowController: NSWindowController {
 					DockProgress.resetProgress()
 
 					if progress.isFinished {
-						self.conversionCompletedView.fadeIn()
-
-						self.conversionCompletedView.updateFileSize()
-						self.conversionCompletedView.draggableFile.becomeFirstResponder()
-
+						self.conversionCompletedView.show()
 						self.videoDropView.isDropLabelHidden = true
 					} else if progress.isCancelled {
 						self.videoDropView.isHidden = false

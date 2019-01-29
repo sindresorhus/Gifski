@@ -848,6 +848,23 @@ extension URL {
 	func open() {
 		NSWorkspace.shared.open(self)
 	}
+
+	func getFileSize() -> String {
+		let formatter = ByteCountFormatter()
+		formatter.zeroPadsFractionDigits = true
+
+		var size: UInt64 = 0
+
+		do {
+			let attr = try FileManager.default.attributesOfItem(atPath: self.path)
+			let dict = attr as NSDictionary
+			size = dict.fileSize()
+		} catch {
+			print("Error: \(error)")
+		}
+
+		return formatter.string(fromByteCount: Int64(size))
+	}
 }
 extension String {
 	/*
