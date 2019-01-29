@@ -34,6 +34,7 @@ final class ConversionCompletedView: SSView {
 
 	private let fileSizeLabel = with(Label()) {
 		$0.textColor = NSColor.secondaryLabelColor
+		$0.font = NSFont.systemFont(ofSize: 12.0)
 	}
 
 	public let draggableFile = DraggableFile()
@@ -50,7 +51,7 @@ final class ConversionCompletedView: SSView {
 	}
 	
 	public func show() {
-		fileSize = fileUrl!.getFileSize()
+		fileSize = fileUrl!.formattedFileSize()
 		fadeIn()
 	}
 
