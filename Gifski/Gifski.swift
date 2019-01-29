@@ -28,10 +28,6 @@ final class Gifski {
 		}
 	}
 
-	/**
-	- parameters:
-	- frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
-	*/
 	struct Conversion {
 		let input: URL
 		let output: URL
@@ -39,6 +35,9 @@ final class Gifski {
 		let dimensions: CGSize?
 		let frameRate: Int?
 
+		/**
+		- Parameter frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
+		*/
 		init(input: URL, output: URL, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil) {
 			self.input = input
 			self.output = output
@@ -48,8 +47,17 @@ final class Gifski {
 		}
 	}
 
+	/**
+	Converts a movie to GIF
+
+	- Parameter completionHandler: Guaranteed to be called on the main thread
+	*/
 	static func run(_ conversion: Conversion, completionHandler: ((Error?) -> Void)?) {
-		let completionHandlerOnce = Once().wrap(completionHandler)
+		let completionHandlerOnce = Once().wrap { error in
+			DispatchQueue.main.async {
+				completionHandler?(error)
+			}
+		}
 
 		let settings = GifskiSettings(
 			width: UInt32(conversion.dimensions?.width ?? 0),
@@ -60,7 +68,7 @@ final class Gifski {
 		)
 
 		guard let g = GifskiWrapper(settings: settings) else {
-			completionHandlerOnce?(.invalidSettings)
+			completionHandlerOnce(.invalidSettings)
 			return
 		}
 
@@ -97,7 +105,7 @@ final class Gifski {
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
 				guard !progress.isCancelled else {
-					completionHandlerOnce?(.cancelled)
+					completionHandlerOnce(.cancelled)
 					return
 				}
 
@@ -109,7 +117,7 @@ final class Gifski {
 						let data = image.dataProvider?.data,
 						let buffer = CFDataGetBytePtr(data)
 					else {
-						completionHandlerOnce?(.generateFrameFailed("Could not get byte pointer of image data provider"))
+						completionHandlerOnce(.generateFrameFailed("Could not get byte pointer of image data provider"))
 						return
 					}
 
@@ -123,7 +131,7 @@ final class Gifski {
 							delay: UInt16(100 / fps)
 						)
 					} catch {
-						completionHandlerOnce?(.addFrameFailed(error as! GifskiWrapperError))
+						completionHandlerOnce(.addFrameFailed(error as! GifskiWrapperError))
 						return
 					}
 
@@ -131,28 +139,28 @@ final class Gifski {
 						do {
 							try g.endAddingFrames()
 						} catch {
-							completionHandlerOnce?(.endAddingFramesFailed(error as! GifskiWrapperError))
+							completionHandlerOnce(.endAddingFramesFailed(error as! GifskiWrapperError))
 						}
 					}
 				case .failure where result.isCancelled:
-					completionHandlerOnce?(.cancelled)
+					completionHandlerOnce(.cancelled)
 				case .failure(let error):
-					completionHandlerOnce?(.generateFrameFailed(error))
+					completionHandlerOnce(.generateFrameFailed(error))
 				}
 			}
 
 			do {
 				try g.write(path: conversion.output.path)
-				completionHandlerOnce?(nil)
+				completionHandlerOnce(nil)
 			} catch {
 				// TODO: Figure out how to not get a write error when the process was simply cancelled.
 				// To reproduce, remove the guard-statement, and try cancelling at 80-95%.
 				guard !progress.isCancelled else {
-					completionHandlerOnce?(.cancelled)
+					completionHandlerOnce(.cancelled)
 					return
 				}
 
-				completionHandlerOnce?(.writeFailed(error as! GifskiWrapperError))
+				completionHandlerOnce(.writeFailed(error as! GifskiWrapperError))
 			}
 		}
 	}

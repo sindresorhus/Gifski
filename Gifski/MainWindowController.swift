@@ -157,9 +157,7 @@ final class MainWindowController: NSWindowController {
 			)
 
 			Gifski.run(conversion) { error in
-				DispatchQueue.main.async {
-					self.isRunning = false
-				}
+				self.isRunning = false
 
 				guard let error = error else {
 					return
