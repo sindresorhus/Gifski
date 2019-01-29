@@ -1385,6 +1385,8 @@ extension NSImage {
 		})
 
 		return image
+	}
+}
 
 final class Once {
 	private var lock = os_unfair_lock()

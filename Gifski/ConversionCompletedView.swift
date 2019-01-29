@@ -107,12 +107,4 @@ final class ConversionCompletedView: SSView {
 			showInFinderButton.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor, constant: 24)
 		])
 	}
-
-	override func layout() {
-		super.layout()
-	}
-
-	override func draw(_ dirtyRect: NSRect) {
-		super.draw(dirtyRect)
-	}
 }
