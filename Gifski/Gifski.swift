@@ -145,6 +145,13 @@ final class Gifski {
 				try g.write(path: conversion.output.path)
 				completionHandlerOnce?(nil)
 			} catch {
+				// TODO: Figure out how to not get a write error when the process was simply cancelled.
+				// To reproduce, remove the guard-statement, and try cancelling at 80-95%.
+				guard !progress.isCancelled else {
+					completionHandlerOnce?(.cancelled)
+					return
+				}
+
 				completionHandlerOnce?(.writeFailed(error as! GifskiWrapperError))
 			}
 		}
