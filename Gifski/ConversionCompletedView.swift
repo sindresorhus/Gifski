@@ -29,6 +29,7 @@ final class ConversionCompletedView: SSView {
 
 	private let fileNameLabel = with(Label()) {
 		$0.textColor = NSColor.secondaryLabelColor
+		$0.font = NSFont.boldSystemFont(ofSize: 14.0)
 	}
 
 	private let fileSizeLabel = with(Label()) {
@@ -79,20 +80,20 @@ final class ConversionCompletedView: SSView {
 			centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
 			centerYAnchor.constraint(equalTo: superview!.centerYAnchor),
 			
-			fileSizeLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-			fileSizeLabel.topAnchor.constraint(equalTo: topAnchor),
-			
 			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
-			draggableFile.topAnchor.constraint(equalTo: fileSizeLabel.bottomAnchor, constant: 24),
+			draggableFile.topAnchor.constraint(equalTo: topAnchor),
 			draggableFile.heightAnchor.constraint(equalToConstant: 64),
 			draggableFile.widthAnchor.constraint(equalToConstant: 64),
 			
 			fileNameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
 			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 8),
 			
+			fileSizeLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+			fileSizeLabel.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor),
+			
 			showInFinderButton.heightAnchor.constraint(equalToConstant: 30),
 			showInFinderButton.widthAnchor.constraint(equalToConstant: 110),
-			showInFinderButton.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor, constant: 24)
+			showInFinderButton.topAnchor.constraint(equalTo: fileSizeLabel.bottomAnchor, constant: 16)
 		])
 	}
 }
