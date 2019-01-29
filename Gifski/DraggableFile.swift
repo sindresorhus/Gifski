@@ -6,7 +6,8 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 	var fileUrl: URL? {
 		didSet {
 			if let url = fileUrl {
-				image = NSWorkspace.shared.icon(forFile: url.path)
+				image = NSImage(byReferencing: url)
+				image?.resizingMode = .stretch
 			}
 		}
 	}
@@ -46,21 +47,26 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 		guard let image = self.image else {
 			return
 		}
-
-		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl! as NSURL)
-		let draggingFrameOrigin = convert(mouseDown, from: nil)
-		let draggingFrame = NSRect(origin: draggingFrameOrigin, size: image.size).offsetBy(dx: -image.size.width / 2, dy: -image.size.height / 2)
 		
-		draggingItem.draggingFrame = draggingFrame
+		let size = NSSize(width: 64, height: 64 * (image.size.height / image.size.width))
 		
-		draggingItem.imageComponentsProvider = {
-			let component = NSDraggingImageComponent(key: NSDraggingItem.ImageComponentKey.icon)
+		if let draggingImage = image.resize(withSize: size) {
+			let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl! as NSURL)
+			let draggingFrameOrigin = convert(mouseDown, from: nil)
+			let draggingFrame = NSRect(origin: draggingFrameOrigin, size: draggingImage.size)
+				.offsetBy(dx: -draggingImage.size.width / 2, dy: -draggingImage.size.height / 2)
 			
-			component.contents = image
-			component.frame = NSRect(origin: NSPoint(), size: draggingFrame.size)
-			return [component]
+			draggingItem.draggingFrame = draggingFrame
+			
+			draggingItem.imageComponentsProvider = {
+				let component = NSDraggingImageComponent(key: NSDraggingItem.ImageComponentKey.icon)
+				
+				component.contents = image
+				component.frame = NSRect(origin: NSPoint(), size: draggingFrame.size)
+				return [component]
+			}
+			
+			beginDraggingSession(with: [draggingItem], event: mouseDownEvent!, source: self)
 		}
-		
-		beginDraggingSession(with: [draggingItem], event: mouseDownEvent!, source: self)
 	}
 }
