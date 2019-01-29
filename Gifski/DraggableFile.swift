@@ -58,25 +58,20 @@ final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderD
 			return
 		}
 
-		let size = NSSize(width: log10(image.size.width) * 30, height: log10(image.size.height) * 30)
-
-		if let draggingImage = image.resize(withSize: size) {
-			let draggingItem = NSDraggingItem(pasteboardWriter: NSFilePromiseProvider(fileType: "public.data", delegate: self))
-			let draggingFrameOrigin = convert(mouseDown, from: nil)
-			let draggingFrame = NSRect(origin: draggingFrameOrigin, size: draggingImage.size)
-				.offsetBy(dx: -draggingImage.size.width / 2, dy: -draggingImage.size.height / 2)
-
-			draggingItem.draggingFrame = draggingFrame
-
-			draggingItem.imageComponentsProvider = {
-				let component = NSDraggingImageComponent(key: NSDraggingItem.ImageComponentKey.icon)
-
-				component.contents = image
-				component.frame = NSRect(origin: NSPoint(), size: draggingFrame.size)
-				return [component]
-			}
-
-			beginDraggingSession(with: [draggingItem], event: mouseDownEvent!, source: self)
+		let draggingItem = NSDraggingItem(pasteboardWriter: NSFilePromiseProvider(fileType: "public.data", delegate: self))
+		let draggingFrameOrigin = convert(mouseDown, from: nil)
+		let draggingFrame = NSRect(origin: draggingFrameOrigin, size: image.size).offsetBy(dx: -image.size.width / 2, dy: -image.size.height / 2)
+		
+		draggingItem.draggingFrame = draggingFrame
+		
+		draggingItem.imageComponentsProvider = {
+			let component = NSDraggingImageComponent(key: NSDraggingItem.ImageComponentKey.icon)
+			
+			component.contents = image
+			component.frame = NSRect(origin: NSPoint(), size: draggingFrame.size)
+			return [component]
 		}
+		
+		beginDraggingSession(with: [draggingItem], event: mouseDownEvent!, source: self)
 	}
 }
