@@ -22,12 +22,16 @@ final class DraggableFile: NSImageView, NSDraggingSource, NSFilePromiseProviderD
 
 	override init(frame frameRect: NSRect) {
 		super.init(frame: frameRect)
-		isEditable = true
+		isEditable = false
+		
+		unregisterDraggedTypes()
 	}
 
 	required init?(coder: NSCoder) {
 		super.init(coder: coder)
-		isEditable = true
+		isEditable = false
+		
+		unregisterDraggedTypes()
 	}
 
 	override func draw(_ dirtyRect: NSRect) {
