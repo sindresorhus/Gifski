@@ -1482,3 +1482,15 @@ final class Once {
 		}
 	}
 }
+
+extension NSResponder {
+	/// Presents the error in the given window if it's not nil, otherwise falls back to an app-modal dialog.
+	open func presentError(_ error: Error, modalFor window: NSWindow?) {
+		guard let window = window else {
+			presentError(error)
+			return
+		}
+
+		presentError(error, modalFor: window, delegate: nil, didPresent: nil, contextInfo: nil)
+	}
+}

@@ -67,4 +67,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
 		return true
 	}
+
+	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
+		#if !DEBUG
+		Crashlytics.sharedInstance().recordError(error)
+		#endif
+
+		return error
+	}
 }
