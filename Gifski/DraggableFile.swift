@@ -1,7 +1,7 @@
 import Cocoa
 
 final class DraggableFile: NSImageView, NSDraggingSource {
-	private var mouseDownEvent: NSEvent?
+	private var mouseDownEvent: NSEvent!
 
 	var fileUrl: URL! {
 		didSet {
@@ -29,7 +29,7 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 	}
 
 	override func mouseDragged(with event: NSEvent) {
-		let mouseDownPoint = mouseDownEvent!.locationInWindow
+		let mouseDownPoint = mouseDownEvent.locationInWindow
 		let dragPoint = event.locationInWindow
 		let dragDistance = hypot(mouseDownPoint.x - dragPoint.x, mouseDownPoint.y - dragPoint.y)
 
@@ -61,6 +61,6 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 			return [component]
 		}
 
-		beginDraggingSession(with: [draggingItem], event: mouseDownEvent!, source: self)
+		beginDraggingSession(with: [draggingItem], event: mouseDownEvent, source: self)
 	}
 }
