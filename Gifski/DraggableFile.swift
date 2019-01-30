@@ -43,12 +43,9 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 
 		let size = CGSize(width: 64, height: 64 * (image.size.height / image.size.width))
 
-		guard let draggingImage = image.resize(withSize: size) else {
-			return
-		}
-
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrameOrigin = convert(mouseDownPoint, from: nil)
+		let draggingImage = image.resizing(to: size)
 		let draggingFrame = CGRect(origin: draggingFrameOrigin, size: draggingImage.size)
 			.offsetBy(dx: -draggingImage.size.width / 2, dy: -draggingImage.size.height / 2)
 
