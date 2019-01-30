@@ -3,12 +3,9 @@ import Cocoa
 final class DraggableFile: NSImageView, NSDraggingSource {
 	private var mouseDownEvent: NSEvent?
 
-	var fileUrl: URL? {
+	var fileUrl: URL! {
 		didSet {
-			if let url = fileUrl {
-				image = NSImage(byReferencing: url)
-				image?.resizingMode = .stretch
-			}
+			image = NSImage(byReferencing: fileUrl)
 		}
 	}
 
@@ -50,7 +47,7 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 			return
 		}
 
-		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl! as NSURL)
+		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrameOrigin = convert(mouseDownPoint, from: nil)
 		let draggingFrame = CGRect(origin: draggingFrameOrigin, size: draggingImage.size)
 			.offsetBy(dx: -draggingImage.size.width / 2, dy: -draggingImage.size.height / 2)
