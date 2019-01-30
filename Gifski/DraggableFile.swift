@@ -1,6 +1,6 @@
 import Cocoa
 
-final class DraggableFile: NSImageView, NSDraggingSource {
+final class DraggableFile: NSImageView {
 	private var mouseDownEvent: NSEvent!
 
 	var fileUrl: URL! {
@@ -20,22 +20,12 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-		return .copy
-	}
-
 	override func mouseDown(with event: NSEvent) {
 		mouseDownEvent = event
 	}
 
 	override func mouseDragged(with event: NSEvent) {
 		let mouseDownPoint = mouseDownEvent.locationInWindow
-		let dragPoint = event.locationInWindow
-		let dragDistance = hypot(mouseDownPoint.x - dragPoint.x, mouseDownPoint.y - dragPoint.y)
-
-		if dragDistance < 3 {
-			return
-		}
 
 		guard let image = self.image else {
 			return
@@ -59,5 +49,11 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 		}
 
 		beginDraggingSession(with: [draggingItem], event: mouseDownEvent, source: self)
+	}
+}
+
+extension DraggableFile: NSDraggingSource {
+	func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+		return .copy
 	}
 }
