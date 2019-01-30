@@ -1,96 +1,74 @@
 import Cocoa
 
 final class ConversionCompletedView: SSView {
-	var fileUrl: URL? {
-		didSet {
-			if let url = fileUrl {
-				draggableFile.fileUrl = fileUrl
-				fileName = url.lastPathComponent
-
-				showInFinderButton.onAction = { _ in
-					NSWorkspace.shared.activateFileViewerSelecting([url])
-				}
-			}
-		}
-	}
-
-	var fileName: String = "" {
-		didSet {
-			fileNameLabel.text = fileName
-		}
-	}
-
-	var fileSize: String = "" {
-		didSet {
-			fileSizeLabel.text = fileSize
-		}
-	}
+	private let draggableFile = DraggableFile()
 
 	private let fileNameLabel = with(Label()) {
-		$0.textColor = NSColor.secondaryLabelColor
-		$0.font = NSFont.boldSystemFont(ofSize: 14.0)
+		$0.textColor = .secondaryLabelColor
+		$0.font = .boldSystemFont(ofSize: 14)
 	}
 
 	private let fileSizeLabel = with(Label()) {
-		$0.textColor = NSColor.secondaryLabelColor
-		$0.font = NSFont.systemFont(ofSize: 12.0)
+		$0.textColor = .secondaryLabelColor
+		$0.font = .systemFont(ofSize: 12)
 	}
 
-	public let draggableFile = DraggableFile()
-
-	lazy var showInFinderButton = with(CustomButton()) {
+	private lazy var showInFinderButton = with(CustomButton()) {
 		$0.title = "Show in Finder"
 		$0.textColor = .appTheme
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
 	}
 
-	override init(frame: NSRect) {
-		super.init(frame: frame)
-	}
-	
-	public func show() {
-		fileSize = fileUrl!.formattedFileSize()
-		fadeIn()
+	var fileUrl: URL! {
+		didSet {
+			let url = fileUrl!
+			draggableFile.fileUrl = url
+			fileNameLabel.text = url.lastPathComponent
+			fileSizeLabel.text = url.formattedFileSize()
+
+			showInFinderButton.onAction = { _ in
+				NSWorkspace.shared.activateFileViewerSelecting([url])
+			}
+		}
 	}
 
-	@available(*, unavailable)
-	required init?(coder: NSCoder) {
-		fatalError("init(coder:) has not been implemented")
+	func show() {
+		fadeIn()
 	}
 
 	override func didAppear() {
 		translatesAutoresizingMaskIntoConstraints = false
-		
-		addSubview(fileNameLabel)
+
 		fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
-		
-		addSubview(fileSizeLabel)
+		addSubview(fileNameLabel)
+
 		fileSizeLabel.translatesAutoresizingMaskIntoConstraints = false
-		
+		addSubview(fileSizeLabel)
+
 		draggableFile.translatesAutoresizingMaskIntoConstraints = false
 		addSubview(draggableFile)
-		
+
 		showInFinderButton.translatesAutoresizingMaskIntoConstraints = false
 		addSubview(showInFinderButton)
-		
+
 		NSLayoutConstraint.activate([
 			bottomAnchor.constraint(equalTo: showInFinderButton.bottomAnchor),
 			widthAnchor.constraint(equalToConstant: 110),
 			centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
 			centerYAnchor.constraint(equalTo: superview!.centerYAnchor),
-			
+
 			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
 			draggableFile.topAnchor.constraint(equalTo: topAnchor),
 			draggableFile.heightAnchor.constraint(equalToConstant: 64),
 			draggableFile.widthAnchor.constraint(equalToConstant: 64),
-			
+
 			fileNameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
 			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 8),
-			
+
 			fileSizeLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
 			fileSizeLabel.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor),
-			
+
 			showInFinderButton.heightAnchor.constraint(equalToConstant: 30),
 			showInFinderButton.widthAnchor.constraint(equalToConstant: 110),
 			showInFinderButton.topAnchor.constraint(equalTo: fileSizeLabel.bottomAnchor, constant: 16)
