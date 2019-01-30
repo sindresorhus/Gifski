@@ -23,6 +23,8 @@ final class MainWindowController: NSWindowController {
 
 	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
+	
+	private var outUrl: URL!
 
 	var isRunning: Bool = false {
 		didSet {
@@ -34,6 +36,7 @@ final class MainWindowController: NSWindowController {
 					DockProgress.resetProgress()
 
 					if progress.isFinished {
+						self.conversionCompletedView.fileUrl = self.outUrl
 						self.conversionCompletedView.show()
 						self.videoDropView.isDropLabelHidden = true
 					} else if progress.isCancelled {
@@ -132,7 +135,7 @@ final class MainWindowController: NSWindowController {
 			return
 		}
 
-		conversionCompletedView.fileUrl = outputUrl
+		outUrl = outputUrl
 
 		isRunning = true
 
