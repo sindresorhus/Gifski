@@ -26,14 +26,16 @@ func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
 
 
 struct Meta {
-	static func openSubmitFeedbackPage() {
+	static func openSubmitFeedbackPage(message: String? = nil) {
+		let defaultMessage = "<!-- Provide your feedback here. Include as many details as possible. -->"
+
 		let body =
 		"""
-		<!-- Provide your feedback here. Include as many details as possible. -->
+		\(message ?? defaultMessage)
 
 
 		---
-		\(App.name) \(App.version) (\(App.build))
+		\(App.name) \(App.versionWithBuild)
 		macOS \(System.osVersion)
 		\(System.hardwareModel)
 		"""
@@ -840,6 +842,7 @@ struct App {
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
 	static let build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
+	static let versionWithBuild = "\(version) (\(build))"
 }
 
 
@@ -1188,10 +1191,9 @@ extension CGRect {
 	}
 }
 
-
+// TODO: Remove when using Swift 5
 /// Polyfill for Swift 5
 /// https://github.com/moiseev/swift/blob/47740c012943020aa89df93129b4fc2f33618c00/stdlib/public/core/Result.swift
-/// TODO: Remove when using Swift 5
 ///
 /// A value that represents either a success or a failure, including an
 /// associated value in each case.
@@ -1451,9 +1453,8 @@ final class Once {
 		return returnValue
 	}
 
-	// TODO: Make it support `rethrows` so that if the input `function` is `throws` then the wrapped function becomes throwing too.
 	// TODO: Support any number of arguments when Swift supports variadics.
-	// Wraps a single-argument function.
+	/// Wraps a single-argument function.
 	func wrap<T, U>(_ function: @escaping ((T) -> U)) -> ((T) -> U) {
 		return { parameter in
 			self.run {
@@ -1462,7 +1463,7 @@ final class Once {
 		}
 	}
 
-	// Wraps an optional single-argument function.
+	/// Wraps an optional single-argument function.
 	func wrap<T, U>(_ function: ((T) -> U)?) -> ((T) -> U)? {
 		guard let function = function else {
 			return nil
@@ -1473,6 +1474,40 @@ final class Once {
 				function(parameter)
 			}
 		}
+	}
+
+	/// Wraps a single-argument throwing function.
+	func wrap<T, U>(_ function: @escaping ((T) throws -> U)) -> ((T) throws -> U) {
+		return { parameter in
+			try self.run {
+				try function(parameter)
+			}
+		}
+	}
+
+	/// Wraps an optional single-argument throwing function.
+	func wrap<T, U>(_ function: ((T) throws -> U)?) -> ((T) throws -> U)? {
+		guard let function = function else {
+			return nil
+		}
+
+		return { parameter in
+			try self.run {
+				try function(parameter)
+			}
+		}
+	}
+}
+
+extension NSResponder {
+	/// Presents the error in the given window if it's not nil, otherwise falls back to an app-modal dialog.
+	open func presentError(_ error: Error, modalFor window: NSWindow?) {
+		guard let window = window else {
+			presentError(error)
+			return
+		}
+
+		presentError(error, modalFor: window, delegate: nil, didPresent: nil, contextInfo: nil)
 	}
 }
 

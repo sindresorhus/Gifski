@@ -187,7 +187,6 @@
 				E339F010203820ED003B78FB /* Gifski.swift */,
 				C2040B8820435871004EE259 /* GifskiWrapper.swift */,
 				E3A940112182DCE5006981D5 /* CustomButton.swift */,
-				B597328321F0D87E00FBC405 /* HoverView.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
