@@ -18,12 +18,9 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 		unregisterDraggedTypes()
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder) {
-		super.init(coder: coder)
-	}
-
-	override func draw(_ dirtyRect: CGRect) {
-		super.draw(dirtyRect)
+		fatalError("init(coder:) has not been implemented")
 	}
 
 	func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
