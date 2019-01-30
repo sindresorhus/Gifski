@@ -41,7 +41,7 @@ final class DraggableFile: NSImageView, NSDraggingSource {
 			return
 		}
 
-		let size = CGSize(width: 64, height: 64 * (image.size.height / image.size.width))
+		let size = CGSize(width: 96, height: 96 * (image.size.height / image.size.width))
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrameOrigin = convert(mouseDownPoint, from: nil)

@@ -10,7 +10,6 @@
 		5A7524BA20D0862200F12C99 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A7524B520D085FB00F12C99 /* libgifski.a */; };
 		6D86841721FD283B0044F6FE /* ConversionCompletedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */; };
 		6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841621FD283B0044F6FE /* DraggableFile.swift */; };
-		B597328421F0D87E00FBC405 /* HoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B597328321F0D87E00FBC405 /* HoverView.swift */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
 		E30557F0207E521F003401A1 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30557EF207E521F003401A1 /* Defaults.swift */; };
@@ -72,7 +71,6 @@
 		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
 		6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConversionCompletedView.swift; sourceTree = "<group>"; };
 		6D86841621FD283B0044F6FE /* DraggableFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DraggableFile.swift; sourceTree = "<group>"; };
-		B597328321F0D87E00FBC405 /* HoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverView.swift; sourceTree = "<group>"; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E30557EF207E521F003401A1 /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
@@ -359,7 +357,6 @@
 				E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */,
 				E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */,
 				6D86841721FD283B0044F6FE /* ConversionCompletedView.swift in Sources */,
-				B597328421F0D87E00FBC405 /* HoverView.swift in Sources */,
 				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
 				6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */,

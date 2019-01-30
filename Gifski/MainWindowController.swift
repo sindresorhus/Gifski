@@ -71,7 +71,6 @@ final class MainWindowController: NSWindowController {
 		}
 
 		view?.addSubview(circularProgress)
-		view?.addSubview(hoverView)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(conversionCompletedView, positioned: .above, relativeTo: nil)
 
