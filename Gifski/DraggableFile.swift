@@ -6,7 +6,8 @@ final class DraggableFile: NSImageView {
 	var fileUrl: URL! {
 		didSet {
 			image = NSImage(byReferencing: fileUrl)
-			animate()
+			animateY()
+			animateScale()
 		}
 	}
 
@@ -34,7 +35,7 @@ final class DraggableFile: NSImageView {
 		mouseDownEvent = event
 	}
 
-	func animate() {
+	func animateY() {
 		let springAnimation = CASpringAnimation(keyPath: "position")
 
 		springAnimation.damping = 15
@@ -49,6 +50,19 @@ final class DraggableFile: NSImageView {
 		springAnimation.toValue = pos
 
 		self.layer?.add(springAnimation, forKey: "position")
+	}
+	
+	func animateScale() {
+		let springAnimation = CASpringAnimation(keyPath: "transform.scale")
+		
+		springAnimation.damping = 14
+		springAnimation.initialVelocity = 1.0
+		springAnimation.duration = springAnimation.settlingDuration
+		
+		springAnimation.fromValue = 5.0
+		springAnimation.toValue = 1.0
+		
+		self.layer?.add(springAnimation, forKey: "scale")
 	}
 
 	
