@@ -13,8 +13,17 @@ final class DraggableFile: NSImageView {
 		super.init(frame: frame)
 		isEditable = false
 		unregisterDraggedTypes()
+		
+		superview?.wantsLayer = true
+		wantsLayer = true
+		
+		let sh = NSShadow()
+		sh.shadowBlurRadius = 5.0
+		sh.shadowOffset = CGSize(width: 0, height: 0)
+		sh.shadowColor = NSColor(red: 0, green: 0, blue: 0, alpha: 0.5)
+		shadow = sh
 	}
-
+	
 	@available(*, unavailable)
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
@@ -37,7 +46,6 @@ final class DraggableFile: NSImageView {
 		let draggingFrameOrigin = convert(mouseDownPoint, from: nil)
 		let draggingImage = image.resizing(to: size)
 		let draggingFrame = CGRect(origin: draggingFrameOrigin, size: draggingImage.size)
-			.offsetBy(dx: -draggingImage.size.width / 2, dy: -draggingImage.size.height / 2)
 
 		draggingItem.draggingFrame = draggingFrame
 
