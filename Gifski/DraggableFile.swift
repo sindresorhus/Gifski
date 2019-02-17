@@ -6,6 +6,7 @@ final class DraggableFile: NSImageView {
 	var fileUrl: URL! {
 		didSet {
 			image = NSImage(byReferencing: fileUrl)
+			animate()
 		}
 	}
 
@@ -33,6 +34,24 @@ final class DraggableFile: NSImageView {
 		mouseDownEvent = event
 	}
 
+	func animate() {
+		let springAnimation = CASpringAnimation(keyPath: "position")
+
+		springAnimation.damping = 15
+		springAnimation.initialVelocity = 1.0
+		springAnimation.duration = springAnimation.settlingDuration
+
+		guard let pos = self.layer?.position else {
+			return
+		}
+
+		springAnimation.fromValue = CGPoint(x: pos.x, y: superview!.superview!.frame.height + frame.size.height)
+		springAnimation.toValue = pos
+
+		self.layer?.add(springAnimation, forKey: "position")
+	}
+
+	
 	override func mouseDragged(with event: NSEvent) {
 		guard let image = self.image else {
 			return
