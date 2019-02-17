@@ -13,14 +13,14 @@ final class DraggableFile: NSImageView {
 		super.init(frame: frame)
 		isEditable = false
 		unregisterDraggedTypes()
-		
+
 		superview?.wantsLayer = true
 		wantsLayer = true
-		
+
 		let sh = NSShadow()
 		sh.shadowBlurRadius = 5.0
 		sh.shadowOffset = CGSize(width: 0, height: 0)
-		sh.shadowColor = NSColor(red: 0, green: 0, blue: 0, alpha: 0.5)
+		sh.shadowColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.5)
 		shadow = sh
 	}
 	
@@ -34,8 +34,6 @@ final class DraggableFile: NSImageView {
 	}
 
 	override func mouseDragged(with event: NSEvent) {
-		let mouseDownPoint = mouseDownEvent.locationInWindow
-
 		guard let image = self.image else {
 			return
 		}
@@ -43,10 +41,7 @@ final class DraggableFile: NSImageView {
 		let size = CGSize(width: 96, height: 96 * (image.size.height / image.size.width))
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
-		let draggingFrameOrigin = convert(mouseDownPoint, from: nil)
-		let draggingImage = image.resizing(to: size)
-		let draggingFrame = CGRect(origin: draggingFrameOrigin, size: draggingImage.size)
-
+		let draggingFrame = CGRect(origin: NSPoint(x: 0, y: (frame.size.height - size.height) / 2), size: size)
 		draggingItem.draggingFrame = draggingFrame
 
 		draggingItem.imageComponentsProvider = {
