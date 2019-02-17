@@ -19,6 +19,13 @@ final class ConversionCompletedView: SSView {
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
 	}
+	
+	private lazy var shareButton = with(CustomButton()) {
+		$0.title = "Share"
+		$0.textColor = .appTheme
+		$0.backgroundColor = .clear
+		$0.borderWidth = 1
+	}
 
 	var fileUrl: URL! {
 		didSet {
@@ -29,6 +36,10 @@ final class ConversionCompletedView: SSView {
 
 			showInFinderButton.onAction = { _ in
 				NSWorkspace.shared.activateFileViewerSelecting([url])
+			}
+			
+			shareButton.onAction = { _ in
+				NSSharingService.shareContent(content: [url] as [AnyObject], button: self.shareButton)
 			}
 		}
 	}
@@ -53,20 +64,23 @@ final class ConversionCompletedView: SSView {
 
 		showInFinderButton.translatesAutoresizingMaskIntoConstraints = false
 		addSubview(showInFinderButton)
+		
+		shareButton.translatesAutoresizingMaskIntoConstraints = false
+		addSubview(shareButton)
 
 		NSLayoutConstraint.activate([
 			bottomAnchor.constraint(equalTo: showInFinderButton.bottomAnchor),
-			widthAnchor.constraint(equalToConstant: 110),
+			leadingAnchor.constraint(equalTo: showInFinderButton.leadingAnchor),
+			trailingAnchor.constraint(equalTo: shareButton.trailingAnchor),
 			centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
 			centerYAnchor.constraint(equalTo: superview!.centerYAnchor),
 
 			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
 			draggableFile.topAnchor.constraint(equalTo: topAnchor),
-			draggableFile.heightAnchor.constraint(equalToConstant: 96),
 			draggableFile.widthAnchor.constraint(equalToConstant: 96),
 
 			fileNameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 8),
+			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 16),
 			fileNameLabel.widthAnchor.constraint(equalTo: widthAnchor),
 
 			fileSizeLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
@@ -74,7 +88,11 @@ final class ConversionCompletedView: SSView {
 
 			showInFinderButton.heightAnchor.constraint(equalToConstant: 30),
 			showInFinderButton.widthAnchor.constraint(equalToConstant: 110),
-			showInFinderButton.topAnchor.constraint(equalTo: fileSizeLabel.bottomAnchor, constant: 16)
+			showInFinderButton.topAnchor.constraint(equalTo: fileSizeLabel.bottomAnchor, constant: 16),
+			
+			shareButton.leadingAnchor.constraint(equalTo: showInFinderButton.trailingAnchor, constant: 8),
+			shareButton.heightAnchor.constraint(equalToConstant: 30),
+			shareButton.widthAnchor.constraint(equalToConstant: 56)
 		])
 	}
 }
