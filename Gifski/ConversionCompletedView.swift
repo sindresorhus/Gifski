@@ -41,6 +41,8 @@ final class ConversionCompletedView: SSView {
 		translatesAutoresizingMaskIntoConstraints = false
 
 		fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
+		fileNameLabel.maximumNumberOfLines = 1
+		fileNameLabel.cell?.lineBreakMode = .byTruncatingTail
 		addSubview(fileNameLabel)
 
 		fileSizeLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -65,6 +67,7 @@ final class ConversionCompletedView: SSView {
 
 			fileNameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
 			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 8),
+			fileNameLabel.widthAnchor.constraint(equalTo: widthAnchor),
 
 			fileSizeLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
 			fileSizeLabel.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor),
