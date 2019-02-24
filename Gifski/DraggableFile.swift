@@ -39,6 +39,7 @@ final class DraggableFile: NSImageView {
 		let springAnimation = CASpringAnimation(keyPath: "position")
 
 		springAnimation.damping = 15
+		springAnimation.mass = 0.2
 		springAnimation.initialVelocity = 1.0
 		springAnimation.duration = springAnimation.settlingDuration
 
@@ -55,7 +56,8 @@ final class DraggableFile: NSImageView {
 	func animateScale() {
 		let springAnimation = CASpringAnimation(keyPath: "transform.scale")
 		
-		springAnimation.damping = 14
+		springAnimation.damping = 15
+		springAnimation.mass = 0.9
 		springAnimation.initialVelocity = 1.0
 		springAnimation.duration = springAnimation.settlingDuration
 		
