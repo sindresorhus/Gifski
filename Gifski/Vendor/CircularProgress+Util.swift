@@ -1,11 +1,3 @@
-//
-//  CircularProgress+Utils.swift
-//  Gifski
-//
-//  Created by Boy van Amstel on 01/03/2019.
-//  Copyright © 2019 Sindre Sorhus. All rights reserved.
-//
-
 import AppKit
 
 extension NSBezierPath {
