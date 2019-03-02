@@ -23,7 +23,7 @@ final class MainWindowController: NSWindowController {
 
 	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
-	
+
 	private var outUrl: URL!
 
 	var isRunning: Bool = false {

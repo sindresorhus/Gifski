@@ -25,7 +25,7 @@ final class DraggableFile: NSImageView {
 		sh.shadowColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.5)
 		shadow = sh
 	}
-	
+
 	@available(*, unavailable)
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
@@ -51,21 +51,20 @@ final class DraggableFile: NSImageView {
 
 		self.layer?.add(springAnimation, forKey: "position")
 	}
-	
+
 	func animateScale() {
 		let springAnimation = CASpringAnimation(keyPath: "transform.scale")
-		
+
 		springAnimation.damping = 14
 		springAnimation.initialVelocity = 1.0
 		springAnimation.duration = springAnimation.settlingDuration
-		
+
 		springAnimation.fromValue = 5.0
 		springAnimation.toValue = 1.0
-		
+
 		self.layer?.add(springAnimation, forKey: "scale")
 	}
 
-	
 	override func mouseDragged(with event: NSEvent) {
 		guard let image = self.image else {
 			return

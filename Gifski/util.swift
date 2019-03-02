@@ -1523,7 +1523,7 @@ extension NSImage {
 extension NSSharingService {
 	class func shareContent (content: [AnyObject], button: NSButton) {
 		let sharingServicePicker = NSSharingServicePicker (items: content )
-		
+
 		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.maxX)
 	}
 }

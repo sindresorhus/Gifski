@@ -19,7 +19,7 @@ final class ConversionCompletedView: SSView {
 		$0.backgroundColor = .clear
 		$0.borderWidth = 1
 	}
-	
+
 	private lazy var shareButton = with(CustomButton()) {
 		$0.title = "Share"
 		$0.textColor = .appTheme
@@ -37,7 +37,7 @@ final class ConversionCompletedView: SSView {
 			showInFinderButton.onAction = { _ in
 				NSWorkspace.shared.activateFileViewerSelecting([url])
 			}
-			
+
 			shareButton.onAction = { _ in
 				NSSharingService.shareContent(content: [url] as [AnyObject], button: self.shareButton)
 			}
@@ -64,7 +64,7 @@ final class ConversionCompletedView: SSView {
 
 		showInFinderButton.translatesAutoresizingMaskIntoConstraints = false
 		addSubview(showInFinderButton)
-		
+
 		shareButton.translatesAutoresizingMaskIntoConstraints = false
 		addSubview(shareButton)
 
@@ -89,7 +89,7 @@ final class ConversionCompletedView: SSView {
 			showInFinderButton.heightAnchor.constraint(equalToConstant: 30),
 			showInFinderButton.widthAnchor.constraint(equalToConstant: 110),
 			showInFinderButton.topAnchor.constraint(equalTo: fileSizeLabel.bottomAnchor, constant: 16),
-			
+
 			shareButton.leadingAnchor.constraint(equalTo: showInFinderButton.trailingAnchor, constant: 8),
 			shareButton.heightAnchor.constraint(equalToConstant: 30),
 			shareButton.widthAnchor.constraint(equalToConstant: 56)
