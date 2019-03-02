@@ -6,6 +6,7 @@ final class ConversionCompletedView: SSView {
 	private let fileNameLabel = with(Label()) {
 		$0.textColor = .secondaryLabelColor
 		$0.font = .boldSystemFont(ofSize: 14)
+		$0.alignment = .center
 	}
 
 	private let fileSizeLabel = with(Label()) {
@@ -78,8 +79,8 @@ final class ConversionCompletedView: SSView {
 			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
 			draggableFile.topAnchor.constraint(equalTo: topAnchor),
 			draggableFile.widthAnchor.constraint(equalToConstant: 96),
+			draggableFile.heightAnchor.constraint(equalToConstant: 96),
 
-			fileNameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
 			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 16),
 			fileNameLabel.widthAnchor.constraint(equalTo: widthAnchor),
 
@@ -92,7 +93,7 @@ final class ConversionCompletedView: SSView {
 
 			shareButton.leadingAnchor.constraint(equalTo: showInFinderButton.trailingAnchor, constant: 8),
 			shareButton.heightAnchor.constraint(equalToConstant: 30),
-			shareButton.widthAnchor.constraint(equalToConstant: 56)
+			shareButton.widthAnchor.constraint(equalToConstant: 110)
 		])
 	}
 }

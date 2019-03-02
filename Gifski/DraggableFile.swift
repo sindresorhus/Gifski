@@ -16,7 +16,6 @@ final class DraggableFile: NSImageView {
 		isEditable = false
 		unregisterDraggedTypes()
 
-		superview?.wantsLayer = true
 		wantsLayer = true
 
 		let sh = NSShadow()
@@ -55,7 +54,7 @@ final class DraggableFile: NSImageView {
 
 	func animateScale() {
 		let springAnimation = CASpringAnimation(keyPath: "transform.scale")
-		
+
 		springAnimation.damping = 15
 		springAnimation.mass = 0.9
 		springAnimation.initialVelocity = 1.0
@@ -75,7 +74,7 @@ final class DraggableFile: NSImageView {
 		let size = CGSize(width: 96, height: 96 * (image.size.height / image.size.width))
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
-		let draggingFrame = CGRect(origin: NSPoint(x: 0, y: (frame.size.height - size.height) / 2), size: size)
+		let draggingFrame = CGRect(origin: CGPoint(x: 0, y: (frame.size.height - size.height) / 2), size: size)
 		draggingItem.draggingFrame = draggingFrame
 
 		draggingItem.imageComponentsProvider = {
