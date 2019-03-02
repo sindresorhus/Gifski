@@ -18,10 +18,12 @@ final class DraggableFile: NSImageView {
 
 		wantsLayer = true
 
-		let sh = NSShadow()
-		sh.shadowBlurRadius = 5.0
-		sh.shadowOffset = CGSize(width: 0, height: 0)
-		sh.shadowColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0.5)
+		let sh = with(NSShadow()) {
+			$0.shadowBlurRadius = 5.0
+			$0.shadowColor = NSColor(named: NSColor.Name("ShadowColor"))
+			$0.shadowOffset = CGSize(width: 0, height: 0)
+		}
+
 		shadow = sh
 	}
 
