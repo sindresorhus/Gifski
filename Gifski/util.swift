@@ -1030,7 +1030,13 @@ extension CGSize {
 
 	func aspectFit(to boundingSize: CGSize) -> CGSize {
 		let ratio = min(boundingSize.width / width, boundingSize.height / height)
-		return self * ratio
+
+		var size = self * ratio
+
+		size.width = min(self.width, size.width)
+		size.height = min(self.height, size.height)
+
+		return size
 	}
 }
 
