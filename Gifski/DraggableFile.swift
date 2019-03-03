@@ -11,7 +11,7 @@ final class DraggableFile: NSImageView {
 				heightAnchor.constraint(equalToConstant: min(96 * (image!.size.height / image!.size.width), 96))
 			])
 
-			animate()
+			self.layer?.animateScaleMove(fromScale: 3.0, fromY: superview!.superview!.frame.height + frame.size.height)
 		}
 	}
 
@@ -38,25 +38,6 @@ final class DraggableFile: NSImageView {
 
 	override func mouseDown(with event: NSEvent) {
 		mouseDownEvent = event
-	}
-
-	func animate() {
-		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
-
-		var tr = CATransform3DIdentity
-		tr = CATransform3DTranslate(tr, bounds.size.width / 2, superview!.superview!.frame.height + frame.size.height, 0)
-		tr = CATransform3DScale(tr, 3.0, 3.0, 1)
-		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
-
-		springAnimation.damping = 15
-		springAnimation.mass = 0.9
-		springAnimation.initialVelocity = 1.0
-		springAnimation.duration = springAnimation.settlingDuration
-
-		springAnimation.fromValue = NSValue(caTransform3D: tr)
-		springAnimation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
-
-		self.layer?.add(springAnimation, forKey: "")
 	}
 
 	override func mouseDragged(with event: NSEvent) {

@@ -1535,3 +1535,24 @@ extension NSSharingService {
 		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: .maxX)
 	}
 }
+
+extension CALayer {
+	func animateScaleMove(fromScale: CGFloat, fromY: CGFloat) {
+		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
+
+		var tr = CATransform3DIdentity
+		tr = CATransform3DTranslate(tr, bounds.size.width / 2, fromY, 0)
+		tr = CATransform3DScale(tr, fromScale, fromScale, 1)
+		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
+
+		springAnimation.damping = 15
+		springAnimation.mass = 0.9
+		springAnimation.initialVelocity = 1.0
+		springAnimation.duration = springAnimation.settlingDuration
+
+		springAnimation.fromValue = NSValue(caTransform3D: tr)
+		springAnimation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
+
+		self.add(springAnimation, forKey: "")
+	}
+}
