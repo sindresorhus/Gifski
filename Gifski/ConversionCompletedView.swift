@@ -12,6 +12,19 @@ final class ConversionCompletedView: SSView {
 	private let fileSizeLabel = with(Label()) {
 		$0.textColor = .secondaryLabelColor
 		$0.font = .systemFont(ofSize: 12)
+		$0.alignment = .center
+	}
+
+	private let infoContainer = with(NSStackView()) {
+		$0.orientation = .vertical
+	}
+
+	private let imageContainer = with(NSStackView()) {
+		$0.orientation = .vertical
+	}
+
+	private let buttonsContainer = with(NSStackView()) {
+		$0.orientation = .horizontal
 	}
 
 	private lazy var showInFinderButton = with(CustomButton()) {
@@ -52,46 +65,58 @@ final class ConversionCompletedView: SSView {
 	override func didAppear() {
 		translatesAutoresizingMaskIntoConstraints = false
 
+		infoContainer.translatesAutoresizingMaskIntoConstraints = false
+		imageContainer.translatesAutoresizingMaskIntoConstraints = false
+		draggableFile.translatesAutoresizingMaskIntoConstraints = false
 		fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
+		showInFinderButton.translatesAutoresizingMaskIntoConstraints = false
+		shareButton.translatesAutoresizingMaskIntoConstraints = false
+		fileSizeLabel.translatesAutoresizingMaskIntoConstraints = false
+		buttonsContainer.translatesAutoresizingMaskIntoConstraints = false
+
 		fileNameLabel.maximumNumberOfLines = 1
 		fileNameLabel.cell?.lineBreakMode = .byTruncatingTail
-		addSubview(fileNameLabel)
 
-		fileSizeLabel.translatesAutoresizingMaskIntoConstraints = false
-		addSubview(fileSizeLabel)
+		infoContainer.addArrangedSubview(fileNameLabel)
+		infoContainer.addArrangedSubview(fileSizeLabel)
 
-		draggableFile.translatesAutoresizingMaskIntoConstraints = false
-		addSubview(draggableFile)
+		imageContainer.addArrangedSubview(draggableFile)
+		imageContainer.addArrangedSubview(infoContainer)
 
-		showInFinderButton.translatesAutoresizingMaskIntoConstraints = false
-		addSubview(showInFinderButton)
+		buttonsContainer.addArrangedSubview(showInFinderButton)
+		buttonsContainer.addArrangedSubview(shareButton)
 
-		shareButton.translatesAutoresizingMaskIntoConstraints = false
-		addSubview(shareButton)
+		addSubview(imageContainer)
+		addSubview(buttonsContainer)
 
 		NSLayoutConstraint.activate([
-			bottomAnchor.constraint(equalTo: showInFinderButton.bottomAnchor),
-			leadingAnchor.constraint(equalTo: showInFinderButton.leadingAnchor),
-			trailingAnchor.constraint(equalTo: shareButton.trailingAnchor),
+			bottomAnchor.constraint(equalTo: buttonsContainer.bottomAnchor),
+			leadingAnchor.constraint(equalTo: buttonsContainer.leadingAnchor),
+			trailingAnchor.constraint(equalTo: buttonsContainer.trailingAnchor),
+
 			centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
 			centerYAnchor.constraint(equalTo: superview!.centerYAnchor),
 
+			imageContainer.topAnchor.constraint(equalTo: topAnchor),
+			imageContainer.widthAnchor.constraint(equalTo: widthAnchor),
+
+			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 16),
+			infoContainer.widthAnchor.constraint(equalTo: imageContainer.widthAnchor),
+
+			buttonsContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: 16),
+			buttonsContainer.heightAnchor.constraint(equalToConstant: 30),
+			buttonsContainer.widthAnchor.constraint(equalTo: widthAnchor),
+
 			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
-			draggableFile.topAnchor.constraint(equalTo: topAnchor),
 			draggableFile.widthAnchor.constraint(equalToConstant: 96),
 
-			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 16),
-			fileNameLabel.widthAnchor.constraint(equalTo: widthAnchor),
+			fileNameLabel.widthAnchor.constraint(equalTo: infoContainer.widthAnchor),
+			fileSizeLabel.widthAnchor.constraint(equalTo: infoContainer.widthAnchor),
 
-			fileSizeLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-			fileSizeLabel.topAnchor.constraint(equalTo: fileNameLabel.bottomAnchor),
-
-			showInFinderButton.heightAnchor.constraint(equalToConstant: 30),
+			showInFinderButton.heightAnchor.constraint(equalTo: buttonsContainer.heightAnchor),
 			showInFinderButton.widthAnchor.constraint(equalToConstant: 110),
-			showInFinderButton.topAnchor.constraint(equalTo: fileSizeLabel.bottomAnchor, constant: 16),
 
-			shareButton.leadingAnchor.constraint(equalTo: showInFinderButton.trailingAnchor, constant: 8),
-			shareButton.heightAnchor.constraint(equalToConstant: 30),
+			shareButton.heightAnchor.constraint(equalTo: buttonsContainer.heightAnchor),
 			shareButton.widthAnchor.constraint(equalToConstant: 110)
 		])
 	}
