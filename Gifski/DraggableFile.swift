@@ -55,17 +55,22 @@ final class DraggableFile: NSImageView {
 	}
 
 	func animateScale() {
-		let springAnimation = CASpringAnimation(keyPath: "transform.scale")
+		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
+
+		var tr = CATransform3DIdentity
+		tr = CATransform3DTranslate(tr, bounds.size.width / 2, bounds.size.height / 2, 0)
+		tr = CATransform3DScale(tr, 2.0, 2.0, 1)
+		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
 
 		springAnimation.damping = 15
 		springAnimation.mass = 0.9
 		springAnimation.initialVelocity = 1.0
 		springAnimation.duration = springAnimation.settlingDuration
 
-		springAnimation.fromValue = 5.0
-		springAnimation.toValue = 1.0
+		springAnimation.fromValue = NSValue(caTransform3D: tr)
+		springAnimation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
 
-		self.layer?.add(springAnimation, forKey: "scale")
+		self.layer?.add(springAnimation, forKey: "")
 	}
 
 	override func mouseDragged(with event: NSEvent) {
