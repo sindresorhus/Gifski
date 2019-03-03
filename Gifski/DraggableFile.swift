@@ -2,14 +2,14 @@ import Cocoa
 
 final class DraggableFile: NSImageView {
 	private var mouseDownEvent: NSEvent!
+	private var heightConstraint: NSLayoutConstraint!
 
 	var fileUrl: URL! {
 		didSet {
 			image = NSImage(byReferencing: fileUrl)
 
-			NSLayoutConstraint.activate([
-				heightAnchor.constraint(equalToConstant: min(96 * (image!.size.height / image!.size.width), 96))
-			])
+			heightConstraint.constant = min(96 * (image!.size.height / image!.size.width), 96)
+			updateConstraints()
 
 			self.layer?.animateScaleMove(fromScale: 3.0, fromY: superview!.superview!.frame.height + frame.size.height)
 		}
@@ -17,10 +17,16 @@ final class DraggableFile: NSImageView {
 
 	override init(frame: CGRect) {
 		super.init(frame: frame)
+		heightConstraint = heightAnchor.constraint(equalToConstant: 0)
+
 		isEditable = false
 		unregisterDraggedTypes()
 
 		wantsLayer = true
+
+		NSLayoutConstraint.activate([
+			heightConstraint
+		])
 
 		let sh = with(NSShadow()) {
 			$0.shadowBlurRadius = 5.0

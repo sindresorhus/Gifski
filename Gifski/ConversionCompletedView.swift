@@ -91,8 +91,7 @@ final class ConversionCompletedView: SSView {
 
 		NSLayoutConstraint.activate([
 			bottomAnchor.constraint(equalTo: buttonsContainer.bottomAnchor),
-			leadingAnchor.constraint(equalTo: buttonsContainer.leadingAnchor),
-			trailingAnchor.constraint(equalTo: buttonsContainer.trailingAnchor),
+			widthAnchor.constraint(equalTo: buttonsContainer.widthAnchor),
 
 			centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
 			centerYAnchor.constraint(equalTo: superview!.centerYAnchor),
@@ -105,7 +104,7 @@ final class ConversionCompletedView: SSView {
 
 			buttonsContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: 16),
 			buttonsContainer.heightAnchor.constraint(equalToConstant: 30),
-			buttonsContainer.widthAnchor.constraint(equalTo: widthAnchor),
+			buttonsContainer.widthAnchor.constraint(equalToConstant: 228),
 
 			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
 			draggableFile.widthAnchor.constraint(equalToConstant: 96),
