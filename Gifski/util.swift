@@ -1016,12 +1016,21 @@ extension CGSize {
 		return CGSize(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
 	}
 
+	static func * (lhs: CGSize, rhs: CGFloat) -> CGSize {
+		return CGSize(width: lhs.width * rhs, height: lhs.height * rhs)
+	}
+
 	init(widthHeight: CGFloat) {
 		self.init(width: widthHeight, height: widthHeight)
 	}
 
 	var cgRect: CGRect {
 		return CGRect(origin: .zero, size: self)
+	}
+
+	func aspectFit(to boundingSize: CGSize) -> CGSize {
+		let ratio = min(boundingSize.width / width, boundingSize.height / height)
+		return self * ratio
 	}
 }
 

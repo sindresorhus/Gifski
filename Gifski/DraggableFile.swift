@@ -8,7 +8,7 @@ final class DraggableFile: NSImageView {
 			image = NSImage(byReferencing: fileUrl)
 
 			NSLayoutConstraint.activate([
-				heightAnchor.constraint(equalToConstant: max(96 * (image!.size.height / image!.size.width), 96))
+				heightAnchor.constraint(equalToConstant: min(96 * (image!.size.height / image!.size.width), 96))
 			])
 
 			animate()
@@ -64,20 +64,7 @@ final class DraggableFile: NSImageView {
 			return
 		}
 
-		var width = image.size.width
-		var height = image.size.height
-
-		if width > 96 {
-			width = 96
-			height = 96 * (image.size.height / image.size.width)
-		}
-
-		if height > 96 {
-			height = 96
-			width = 96 * (image.size.width / image.size.height)
-		}
-
-		let size = CGSize(width: width, height: height)
+		let size = image.size.aspectFit(to: CGSize(width: 96, height: 96))
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrame = CGRect(origin: CGPoint(x: (frame.size.width - size.width) / 2, y: (frame.size.height - size.height) / 2), size: size)
