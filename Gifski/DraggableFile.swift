@@ -6,6 +6,11 @@ final class DraggableFile: NSImageView {
 	var fileUrl: URL! {
 		didSet {
 			image = NSImage(byReferencing: fileUrl)
+
+			NSLayoutConstraint.activate([
+				heightAnchor.constraint(equalToConstant: max(96 * (image!.size.height / image!.size.width), 96))
+			])
+
 			animate()
 		}
 	}
