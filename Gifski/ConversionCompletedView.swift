@@ -79,7 +79,7 @@ final class ConversionCompletedView: SSView {
 			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
 			draggableFile.topAnchor.constraint(equalTo: topAnchor),
 			draggableFile.widthAnchor.constraint(equalToConstant: 96),
-			draggableFile.heightAnchor.constraint(equalToConstant: 96),
+			draggableFile.heightAnchor.constraint(lessThanOrEqualToConstant: 96),
 
 			fileNameLabel.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 16),
 			fileNameLabel.widthAnchor.constraint(equalTo: widthAnchor),
