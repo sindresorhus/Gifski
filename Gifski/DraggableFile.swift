@@ -8,7 +8,7 @@ final class DraggableFile: NSImageView {
 		didSet {
 			image = NSImage(byReferencing: fileUrl)
 
-			heightConstraint.constant = image!.size.aspectFit(to: CGSize(width: 96, height: 96)).height
+			heightConstraint.constant = image!.size.aspectFit(to: 96).height
 			updateConstraints()
 
 			self.layer?.animateScaleMove(fromScale: 3.0, fromY: superview!.superview!.frame.height + frame.size.height)
@@ -51,7 +51,7 @@ final class DraggableFile: NSImageView {
 			return
 		}
 
-		let size = image.size.aspectFit(to: CGSize(width: 96, height: 96))
+		let size = image.size.aspectFit(to: 96)
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrame = CGRect(origin: CGPoint(x: (frame.size.width - size.width) / 2, y: (frame.size.height - size.height) / 2), size: size)
