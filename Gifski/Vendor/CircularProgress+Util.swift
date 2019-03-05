@@ -163,7 +163,7 @@ extension NSColor {
 		saturation: Double = 0,
 		brightness: Double = 0,
 		alpha: Double = 0
-		) -> NSColor {
+	) -> NSColor {
 		let color = hsba
 		return NSColor(
 			hue: CGFloat(color.hue * (hue + 1)),
