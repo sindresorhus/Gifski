@@ -68,7 +68,7 @@
 
 /* Begin PBXFileReference section */
 		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
-		B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CircularProgress+Util.swift"; sourceTree = "<group>"; };
+		B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+Util.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E30557EF207E521F003401A1 /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };

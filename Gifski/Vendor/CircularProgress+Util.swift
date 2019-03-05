@@ -24,7 +24,7 @@ extension CALayer {
 
 	```
 	CALayer.withoutImplicitAnimations {
-	view.layer?.opacity = 0.4
+		view.layer?.opacity = 0.4
 	}
 	```
 	*/
