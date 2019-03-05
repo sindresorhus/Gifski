@@ -48,13 +48,21 @@ public final class CircularProgress: NSView {
 		}
 	}
 
+	private var originalColor: NSColor = .controlAccentColorPolyfill
+	private var _color: NSColor = .controlAccentColorPolyfill
 	/**
 	Color of the circular progress view.
 
 	Defaults to the user's accent color. For High Sierra and below it uses a fallback color.
 	*/
-	@IBInspectable public var color: NSColor = .controlAccentColorPolyfill {
-		didSet {
+	@IBInspectable public var color: NSColor {
+		get {
+			return _color
+		}
+		set {
+			_color = newValue
+			originalColor = newValue
+
 			needsDisplay = true
 		}
 	}
@@ -68,6 +76,7 @@ public final class CircularProgress: NSView {
 	The progress value in the range `0...1`.
 
 	- Note: The value will be clamped to `0...1`.
+	- Note: Can be set from a background thread.
 	*/
 	@IBInspectable public var progress: Double {
 		get {
@@ -189,7 +198,6 @@ public final class CircularProgress: NSView {
 
 	private func updateColors() {
 		let duration = 0.2
-
 		backgroundCircle.animate(color: color.with(alpha: 0.5).cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
 
 		progressCircle.animate(color: color.cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
@@ -223,14 +231,19 @@ public final class CircularProgress: NSView {
 	Reset the progress back to zero without animating.
 	*/
 	public func resetProgress() {
+		alphaValue = 1
+
+		_color = originalColor
 		_progress = 0
+
 		_isFinished = false
 		_isCancelled = false
 		isIndeterminate = false
+
 		progressCircle.resetProgress()
 		progressLabel.string = "0%"
 
-		alphaValue = 1
+		needsDisplay = true
 	}
 
 	/**
@@ -254,7 +267,7 @@ public final class CircularProgress: NSView {
 	*/
 	public var onCancelled: (() -> Void)?
 
-	public var _isCancellable = false
+	private var _isCancellable = false
 	/**
 	If the progress view is cancellable it shows the cancel button.
 	*/
@@ -311,13 +324,13 @@ public final class CircularProgress: NSView {
 		}
 
 		if let colorHandler = cancelledStateColorHandler {
-			color = colorHandler(color)
+			_color = colorHandler(originalColor)
 		} else {
-			color = color.desaturating(by: 0.4, brightness: 0.8)
+			_color = originalColor.adjusting(saturation: -0.4, brightness: -0.2)
 			alphaValue = 0.7
 		}
 
-		updateColors()
+		needsDisplay = true
 	}
 
 	private var trackingArea: NSTrackingArea?

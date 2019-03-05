@@ -157,17 +157,19 @@ extension NSColor {
 		return HSBAColor(Double(hue), Double(saturation), Double(brightness), Double(alpha))
 	}
 
-	private func colorWithSaturation(ratio: Double, brightness: Double? = nil) -> NSColor {
+	/// Adjust color components by ratio.
+	func adjusting(
+		hue: Double = 0,
+		saturation: Double = 0,
+		brightness: Double = 0,
+		alpha: Double = 0
+		) -> NSColor {
 		let color = hsba
 		return NSColor(
-			hue: CGFloat(color.hue),
-			saturation: CGFloat(color.saturation * ratio),
-			brightness: CGFloat(brightness ?? color.brightness),
-			alpha: CGFloat(color.alpha)
+			hue: CGFloat(color.hue * (hue + 1)),
+			saturation: CGFloat(color.saturation * (saturation + 1)),
+			brightness: CGFloat(color.brightness * (brightness + 1)),
+			alpha: CGFloat(color.alpha * (alpha + 1))
 		)
-	}
-
-	func desaturating(by ratio: Double, brightness: Double? = nil) -> NSColor {
-		return colorWithSaturation(ratio: 1 - ratio, brightness: brightness)
 	}
 }
