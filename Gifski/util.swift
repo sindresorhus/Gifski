@@ -1033,13 +1033,17 @@ extension CGSize {
 		return self * ratio
 	}
 
-	func aspectFit(to scale: CGFloat) -> CGSize {
-		var size = aspectFit(to: CGSize(width: 96, height: 96))
+	func aspectFit(to widthHeight: CGFloat) -> CGSize {
+		return aspectFit(to: CGSize(width: widthHeight, height: widthHeight))
+	}
 
-		size.width = min(self.width, size.width)
-		size.height = min(self.height, size.height)
+	func maxSize(size: CGFloat) -> CGSize {
+		var newSize = aspectFit(to: size)
 
-		return size
+		newSize.width = min(self.width, newSize.width)
+		newSize.height = min(self.height, newSize.height)
+
+		return newSize
 	}
 }
 
