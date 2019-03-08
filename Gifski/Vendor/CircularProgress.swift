@@ -5,17 +5,17 @@ import Cocoa
 public final class CircularProgress: NSView {
 	private var lineWidth: Double = 2
 	// TODO: Remove the closure here when targeting Swift 5
-	private lazy var radius: CGFloat = { bounds.width < bounds.height ? bounds.midX * 0.8 : bounds.midY * 0.8 }()
+	private lazy var radius = { bounds.width < bounds.height ? bounds.midX * 0.8 : bounds.midY * 0.8 }()
 	private var _progress: Double = 0
 	private var progressObserver: NSKeyValueObservation?
 	private var finishedObserver: NSKeyValueObservation?
 	private var cancelledObserver: NSKeyValueObservation?
+	private var indeterminateObserver: NSKeyValueObservation?
 
 	private lazy var backgroundCircle = with(CAShapeLayer.circle(radius: Double(radius), center: bounds.center)) {
 		$0.frame = bounds
 		$0.fillColor = nil
 		$0.lineWidth = CGFloat(lineWidth) / 2
-		$0.strokeColor = color.with(alpha: 0.5).cgColor
 	}
 
 	private lazy var progressCircle = with(ProgressCircleShapeLayer(radius: Double(radius), center: bounds.center)) {
@@ -30,6 +30,11 @@ public final class CircularProgress: NSView {
 		$0.anchorPoint = CGPoint(x: 0.5, y: 0.5)
 		$0.alignmentMode = .center
 		$0.font = NSFont.helveticaNeueLight // Not using the system font as it has too much number width variance
+		$0.isHidden = true
+	}
+
+	internal lazy var indeterminateCircle = with(IndeterminateShapeLayer(radius: Double(radius), center: bounds.center)) {
+		$0.lineWidth = CGFloat(lineWidth)
 	}
 
 	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", radius: Double(radius), center: bounds.center)) {
@@ -43,13 +48,21 @@ public final class CircularProgress: NSView {
 		}
 	}
 
+	private var originalColor: NSColor = .controlAccentColorPolyfill
+	private var _color: NSColor = .controlAccentColorPolyfill
 	/**
 	Color of the circular progress view.
 
 	Defaults to the user's accent color. For High Sierra and below it uses a fallback color.
 	*/
-	@IBInspectable public var color: NSColor = .controlAccentColorPolyfill {
-		didSet {
+	@IBInspectable public var color: NSColor {
+		get {
+			return _color
+		}
+		set {
+			_color = newValue
+			originalColor = newValue
+
 			needsDisplay = true
 		}
 	}
@@ -63,6 +76,7 @@ public final class CircularProgress: NSView {
 	The progress value in the range `0...1`.
 
 	- Note: The value will be clamped to `0...1`.
+	- Note: Can be set from a background thread.
 	*/
 	@IBInspectable public var progress: Double {
 		get {
@@ -75,6 +89,10 @@ public final class CircularProgress: NSView {
 			CALayer.animate(duration: 0.5, timingFunction: .easeOut, animations: {
 				self.progressCircle.progress = self._progress
 			})
+
+			DispatchQueue.main.async {
+				self.progressLabel.isHidden = self.progress == 0 && self.isIndeterminate ? self.cancelButton.isHidden : !self.cancelButton.isHidden
+			}
 
 			if !progressLabel.isHidden {
 				progressLabel.string = "\(Int(_progress * 100))%"
@@ -104,8 +122,12 @@ public final class CircularProgress: NSView {
 		set {
 			_isFinished = newValue
 
-			if _isFinished && showCheckmarkAtHundredPercent {
-				progressLabel.string = "✓"
+			if _isFinished {
+				isIndeterminate = false
+
+				if showCheckmarkAtHundredPercent {
+					progressLabel.string = "✓"
+				}
 			}
 		}
 	}
@@ -136,7 +158,13 @@ public final class CircularProgress: NSView {
 					self.isCancelled = sender.isCancelled
 				}
 
+				indeterminateObserver = progressInstance.observe(\.isIndeterminate) { sender, _ in
+					self.isIndeterminate = sender.isIndeterminate
+				}
+
 				isCancellable = progressInstance.isCancellable
+
+				isIndeterminate = progressInstance.isIndeterminate
 			}
 		}
 	}
@@ -165,33 +193,57 @@ public final class CircularProgress: NSView {
 	}
 
 	override public func updateLayer() {
-		backgroundCircle.strokeColor = color.with(alpha: 0.5).cgColor
-		progressCircle.strokeColor = color.cgColor
-		progressLabel.foregroundColor = color.cgColor
+		updateColors()
+	}
+
+	private func updateColors() {
+		let duration = 0.2
+		backgroundCircle.animate(color: color.with(alpha: 0.5).cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
+
+		progressCircle.animate(color: color.cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
+		progressLabel.animate(color: color.cgColor, keyPath: #keyPath(CATextLayer.foregroundColor), duration: duration)
+
+		indeterminateCircle.animate(color: color.cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
 
 		cancelButton.textColor = color
 		cancelButton.backgroundColor = color.with(alpha: 0.1)
 		cancelButton.activeBackgroundColor = color
+
+		if indeterminateCircle.animation(forKey: "rotate") == nil {
+			indeterminateCircle.add(CABasicAnimation.rotate, forKey: "rotate")
+		}
 	}
 
 	private func commonInit() {
 		wantsLayer = true
 		layer?.addSublayer(backgroundCircle)
+		layer?.addSublayer(indeterminateCircle)
 		layer?.addSublayer(progressCircle)
 		layer?.addSublayer(progressLabel)
 
 		addSubview(cancelButton)
+
+		progressCircle.isHidden = isIndeterminate
+		indeterminateCircle.isHidden = !isIndeterminate
 	}
 
 	/**
 	Reset the progress back to zero without animating.
 	*/
 	public func resetProgress() {
+		alphaValue = 1
+
+		_color = originalColor
 		_progress = 0
+
 		_isFinished = false
 		_isCancelled = false
+		isIndeterminate = false
+
 		progressCircle.resetProgress()
 		progressLabel.string = "0%"
+
+		needsDisplay = true
 	}
 
 	/**
@@ -215,7 +267,7 @@ public final class CircularProgress: NSView {
 	*/
 	public var onCancelled: (() -> Void)?
 
-	public var _isCancellable = false
+	private var _isCancellable = false
 	/**
 	If the progress view is cancellable it shows the cancel button.
 	*/
@@ -250,8 +302,35 @@ public final class CircularProgress: NSView {
 
 			if newValue {
 				onCancelled?()
+				visualizeCancelledStateIfNecessary()
+				isIndeterminate = false
 			}
 		}
+	}
+
+	/**
+	Determines whether to visualize changing into the cancelled state.
+	*/
+	public var visualizeCancelledState: Bool = true
+
+	/**
+	Supply the base color to use for displaying the cancelled state.
+	*/
+	public var cancelledStateColorHandler: ((NSColor) -> NSColor)?
+
+	private func visualizeCancelledStateIfNecessary() {
+		guard visualizeCancelledState else {
+			return
+		}
+
+		if let colorHandler = cancelledStateColorHandler {
+			_color = colorHandler(originalColor)
+		} else {
+			_color = originalColor.adjusting(saturation: -0.4, brightness: -0.2)
+			alphaValue = 0.7
+		}
+
+		needsDisplay = true
 	}
 
 	private var trackingArea: NSTrackingArea?
@@ -295,126 +374,46 @@ public final class CircularProgress: NSView {
 			return
 		}
 
-		progressLabel.isHidden = false
+		progressLabel.isHidden = isIndeterminate && progress == 0
 		cancelButton.isHidden = true
 	}
-}
 
-extension NSBezierPath {
-	static func circle(radius: Double, center: CGPoint) -> NSBezierPath {
-		let path = NSBezierPath()
-		path.appendArc(
-			withCenter: center,
-			radius: CGFloat(radius),
-			startAngle: 0,
-			endAngle: 360
-		)
-		return path
-	}
-}
-
-extension CAShapeLayer {
-	static func circle(radius: Double, center: CGPoint) -> CAShapeLayer {
-		return CAShapeLayer(path: NSBezierPath.circle(radius: radius, center: center))
-	}
-
-	convenience init(path: NSBezierPath) {
-		self.init()
-		self.path = path.cgPath
-	}
-}
-
-extension CATextLayer {
-	/// Initializer with better defaults
-	convenience init(text: String, fontSize: Double? = nil, color: NSColor? = nil) {
-		self.init()
-		string = text
-		if let fontSize = fontSize {
-			self.fontSize = CGFloat(fontSize)
-		}
-		self.color = color
-		implicitAnimations = false
-		setAutomaticContentsScale()
-	}
-
-	var color: NSColor? {
+	private var _isIndeterminate = false
+	/**
+	Returns whether the progress is indeterminate.
+	*/
+	@IBInspectable public var isIndeterminate: Bool {
 		get {
-			guard let color = foregroundColor else {
-				return nil
+			if let progressInstance = progressInstance {
+				return progressInstance.isIndeterminate
 			}
-			return NSColor(cgColor: color)
+
+			return _isIndeterminate
 		}
 		set {
-			foregroundColor = newValue?.cgColor
-		}
-	}
-}
+			willChangeValue(for: \.isIndeterminate)
+			_isIndeterminate = newValue
+			didChangeValue(for: \.isIndeterminate)
 
-extension CALayer {
-	/**
-	Set CALayer properties without the implicit animation
-
-	```
-	CALayer.withoutImplicitAnimations {
-	view.layer?.opacity = 0.4
-	}
-	```
-	*/
-	static func withoutImplicitAnimations(closure: () -> Void) {
-		CATransaction.begin()
-		CATransaction.setDisableActions(true)
-		closure()
-		CATransaction.commit()
-	}
-
-	/**
-	Toggle the implicit CALayer animation
-	Can be useful for text layers
-	*/
-	var implicitAnimations: Bool {
-		get {
-			return actions == nil
-		}
-		set {
-			if newValue {
-				actions = nil
+			if _isIndeterminate {
+				startIndeterminateState()
 			} else {
-				actions = ["contents": NSNull()]
+				stopIndeterminateState()
 			}
 		}
 	}
-}
 
+	private func startIndeterminateState() {
+		progressCircle.isHidden = true
+		indeterminateCircle.isHidden = false
 
-extension CALayer {
-	/// This is required for CALayers that are created independently of a view
-	func setAutomaticContentsScale() {
-		contentsScale = NSScreen.main?.backingScaleFactor ?? 2
+		progressLabel.isHidden = progress == 0 && isIndeterminate && cancelButton.isHidden
 	}
-}
 
-extension NSFont {
-	static let helveticaNeueLight = NSFont(name: "HelveticaNeue-Light", size: 0)
-}
+	private func stopIndeterminateState() {
+		indeterminateCircle.isHidden = true
+		progressCircle.isHidden = false
 
-extension CALayer {
-	static func animate(
-		duration: TimeInterval = 1,
-		delay: TimeInterval = 0,
-		timingFunction: CAMediaTimingFunction = .default,
-		animations: @escaping (() -> Void),
-		completion: (() -> Void)? = nil
-	) {
-		DispatchQueue.main.asyncAfter(duration: delay) {
-			CATransaction.begin()
-			CATransaction.setAnimationDuration(duration)
-
-			if let completion = completion {
-				CATransaction.setCompletionBlock(completion)
-			}
-
-			animations()
-			CATransaction.commit()
-		}
+		progressLabel.isHidden = !cancelButton.isHidden
 	}
 }
