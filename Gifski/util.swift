@@ -851,6 +851,23 @@ extension URL {
 	func open() {
 		NSWorkspace.shared.open(self)
 	}
+
+	func formattedFileSize() -> String {
+		let formatter = ByteCountFormatter()
+		formatter.zeroPadsFractionDigits = true
+
+		var size: UInt64 = 0
+
+		do {
+			let attr = try FileManager.default.attributesOfItem(atPath: self.path)
+			let dict = attr as NSDictionary
+			size = dict.fileSize()
+		} catch {
+			print("Error: \(error)")
+		}
+
+		return formatter.string(fromByteCount: Int64(size))
+	}
 }
 extension String {
 	/*
@@ -999,12 +1016,34 @@ extension CGSize {
 		return CGSize(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
 	}
 
+	static func * (lhs: CGSize, rhs: CGFloat) -> CGSize {
+		return CGSize(width: lhs.width * rhs, height: lhs.height * rhs)
+	}
+
 	init(widthHeight: CGFloat) {
 		self.init(width: widthHeight, height: widthHeight)
 	}
 
 	var cgRect: CGRect {
 		return CGRect(origin: .zero, size: self)
+	}
+
+	func aspectFit(to boundingSize: CGSize) -> CGSize {
+		let ratio = min(boundingSize.width / width, boundingSize.height / height)
+		return self * ratio
+	}
+
+	func aspectFit(to widthHeight: CGFloat) -> CGSize {
+		return aspectFit(to: CGSize(width: widthHeight, height: widthHeight))
+	}
+
+	func maxSize(size: CGFloat) -> CGSize {
+		var newSize = aspectFit(to: size)
+
+		newSize.width = min(self.width, newSize.width)
+		newSize.height = min(self.height, newSize.height)
+
+		return newSize
 	}
 }
 
@@ -1376,7 +1415,6 @@ extension Result {
 	}
 }
 
-// TODO: Find a way to reduce the number of overloads for `wrap()`.
 final class Once {
 	private var lock = os_unfair_lock()
 	private var hasRun = false
@@ -1492,5 +1530,42 @@ extension NSResponder {
 		}
 
 		presentError(error, modalFor: window, delegate: nil, didPresent: nil, contextInfo: nil)
+	}
+}
+
+extension NSImage {
+	func resizing(to newSize: CGSize) -> NSImage {
+		return NSImage(size: newSize, flipped: false) {
+			self.draw(in: $0)
+			return true
+		}
+	}
+}
+
+extension NSSharingService {
+	class func shareContent(content: [AnyObject], button: NSButton) {
+		let sharingServicePicker = NSSharingServicePicker(items: content)
+		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: .maxX)
+	}
+}
+
+extension CALayer {
+	func animateScaleMove(fromScale: CGFloat, fromY: CGFloat) {
+		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
+
+		var tr = CATransform3DIdentity
+		tr = CATransform3DTranslate(tr, bounds.size.width / 2, fromY, 0)
+		tr = CATransform3DScale(tr, fromScale, fromScale, 1)
+		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
+
+		springAnimation.damping = 15
+		springAnimation.mass = 0.9
+		springAnimation.initialVelocity = 1.0
+		springAnimation.duration = springAnimation.settlingDuration
+
+		springAnimation.fromValue = NSValue(caTransform3D: tr)
+		springAnimation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
+
+		self.add(springAnimation, forKey: "")
 	}
 }

@@ -17,18 +17,14 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	private lazy var showInFinderButton = with(CustomButton()) {
-		$0.title = "Show in Finder"
-		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 30)
-		$0.textColor = .appTheme
-		$0.backgroundColor = .clear
-		$0.borderWidth = 1
+	private lazy var conversionCompletedView = with(ConversionCompletedView()) {
 		$0.isHidden = true
-		$0.centerInWindow(window)
 	}
 
 	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
+
+	private var outUrl: URL!
 
 	var isRunning: Bool = false {
 		didSet {
@@ -40,7 +36,8 @@ final class MainWindowController: NSWindowController {
 					DockProgress.resetProgress()
 
 					if progress.isFinished {
-						self.showInFinderButton.fadeIn()
+						self.conversionCompletedView.fileUrl = self.outUrl
+						self.conversionCompletedView.show()
 						self.videoDropView.isDropLabelHidden = true
 					} else if progress.isCancelled {
 						self.videoDropView.isHidden = false
@@ -50,7 +47,7 @@ final class MainWindowController: NSWindowController {
 			} else {
 				circularProgress.isHidden = false
 				videoDropView.isDropLabelHidden = true
-				showInFinderButton.isHidden = true
+				conversionCompletedView.isHidden = true
 			}
 		}
 	}
@@ -77,8 +74,8 @@ final class MainWindowController: NSWindowController {
 		}
 
 		view?.addSubview(circularProgress)
-		view?.addSubview(showInFinderButton)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
+		view?.addSubview(conversionCompletedView, positioned: .above, relativeTo: nil)
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
@@ -138,9 +135,7 @@ final class MainWindowController: NSWindowController {
 			return
 		}
 
-		showInFinderButton.onAction = { _ in
-			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
-		}
+		outUrl = outputUrl
 
 		isRunning = true
 
