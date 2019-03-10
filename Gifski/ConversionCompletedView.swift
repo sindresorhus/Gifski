@@ -46,14 +46,16 @@ final class ConversionCompletedView: SSView {
 			let url = fileUrl!
 			draggableFile.fileUrl = url
 			fileNameLabel.text = url.lastPathComponent
-			fileSizeLabel.text = url.formattedFileSize()
+			fileSizeLabel.text = url.fileSizeFormatted
 
 			showInFinderButton.onAction = { _ in
 				NSWorkspace.shared.activateFileViewerSelecting([url])
 			}
 
+			// TODO: CustomButton doesn't correctly respect `.sendAction()`
+			shareButton.sendAction(on: .leftMouseDown)
 			shareButton.onAction = { _ in
-				NSSharingService.shareContent(content: [url] as [AnyObject], button: self.shareButton)
+				NSSharingService.share(content: [url] as [AnyObject], from: self.shareButton)
 			}
 		}
 	}

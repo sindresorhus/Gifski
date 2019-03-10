@@ -25,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
 		#if !DEBUG
-		Fabric.with([Crashlytics.self])
+			Fabric.with([Crashlytics.self])
 		#endif
 
 		mainWindowController.showWindow(self)
@@ -54,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		let videoUrl = urls.first!
 
-		/// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
+		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
 		if hasFinishedLaunching {
 			mainWindowController.convert(videoUrl)
 		} else {
@@ -70,7 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
 		#if !DEBUG
-		Crashlytics.sharedInstance().recordError(error)
+			Crashlytics.sharedInstance().recordError(error)
 		#endif
 
 		return error

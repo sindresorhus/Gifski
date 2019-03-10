@@ -139,7 +139,7 @@ extension NSWindow {
 
 	static let defaultContentSize = CGSize(width: 480, height: 300)
 
-	/// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/gifski-app/pull/30#discussion_r175337064
+	// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/gifski-app/pull/30#discussion_r175337064
 	static var defaultContentRect: CGRect {
 		return centeredOnScreen(rect: defaultContentSize.cgRect)
 	}
@@ -312,7 +312,7 @@ extension AVAssetImageGenerator {
 		let isFinished: Bool
 	}
 
-	/// TODO: Remove this when using Swift 5 and use `CancellationError` in the cancellation case
+	// TODO: Remove this when using Swift 5 and use `CancellationError` in the cancellation case
 	enum Error: CancellableError {
 		case cancelled
 
@@ -851,23 +851,6 @@ extension URL {
 	func open() {
 		NSWorkspace.shared.open(self)
 	}
-
-	func formattedFileSize() -> String {
-		let formatter = ByteCountFormatter()
-		formatter.zeroPadsFractionDigits = true
-
-		var size: UInt64 = 0
-
-		do {
-			let attr = try FileManager.default.attributesOfItem(atPath: self.path)
-			let dict = attr as NSDictionary
-			size = dict.fileSize()
-		} catch {
-			print("Error: \(error)")
-		}
-
-		return formatter.string(fromByteCount: Int64(size))
-	}
 }
 extension String {
 	/*
@@ -1009,6 +992,10 @@ extension URL {
 	var fileSize: Int {
 		return resourceValue(forKey: .fileSizeKey) ?? 0
 	}
+
+	var fileSizeFormatted: String {
+		return ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
+	}
 }
 
 extension CGSize {
@@ -1037,11 +1024,12 @@ extension CGSize {
 		return aspectFit(to: CGSize(width: widthHeight, height: widthHeight))
 	}
 
+	// TODO: This one doesn't really make sense. `aspectFit(:widthHeight)` should do what this does already.
 	func maxSize(size: CGFloat) -> CGSize {
 		var newSize = aspectFit(to: size)
 
-		newSize.width = min(self.width, newSize.width)
-		newSize.height = min(self.height, newSize.height)
+		newSize.width = min(width, newSize.width)
+		newSize.height = min(height, newSize.height)
 
 		return newSize
 	}
@@ -1415,6 +1403,7 @@ extension Result {
 	}
 }
 
+// TODO: Find a way to reduce the number of overloads for `wrap()`.
 final class Once {
 	private var lock = os_unfair_lock()
 	private var hasRun = false
@@ -1543,13 +1532,14 @@ extension NSImage {
 }
 
 extension NSSharingService {
-	class func shareContent(content: [AnyObject], button: NSButton) {
+	class func share(content: [AnyObject], from button: NSButton, preferredEdge: NSRectEdge = .maxX) {
 		let sharingServicePicker = NSSharingServicePicker(items: content)
-		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: .maxX)
+		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: preferredEdge)
 	}
 }
 
 extension CALayer {
+	// TODO: Make this one more generic by accepting a `x` parameter too.
 	func animateScaleMove(fromScale: CGFloat, fromY: CGFloat) {
 		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
 
@@ -1560,12 +1550,12 @@ extension CALayer {
 
 		springAnimation.damping = 15
 		springAnimation.mass = 0.9
-		springAnimation.initialVelocity = 1.0
+		springAnimation.initialVelocity = 1
 		springAnimation.duration = springAnimation.settlingDuration
 
 		springAnimation.fromValue = NSValue(caTransform3D: tr)
 		springAnimation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
 
-		self.add(springAnimation, forKey: "")
+		add(springAnimation, forKey: "")
 	}
 }

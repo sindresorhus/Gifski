@@ -51,7 +51,7 @@ public final class DockProgress {
 
 	public enum ProgressStyle {
 		case bar
-		/// TODO: Make `color` optional when https://github.com/apple/swift-evolution/blob/master/proposals/0155-normalize-enum-case-representation.md is shipping in Swift
+		// TODO: Make `color` optional when https://github.com/apple/swift-evolution/blob/master/proposals/0155-normalize-enum-case-representation.md is shipping in Swift
 		case circle(radius: Double, color: NSColor)
 		case badge(color: NSColor, badgeValue: () -> Int)
 		case custom(drawHandler: (_ rect: CGRect) -> Void)
@@ -59,12 +59,12 @@ public final class DockProgress {
 
 	public static var style: ProgressStyle = .bar
 
-	/// TODO: Make the progress smoother by also animating the steps between each call to `updateDockIcon()`
+	// TODO: Make the progress smoother by also animating the steps between each call to `updateDockIcon()`
 	private static func updateDockIcon() {
-		/// TODO: If the `progressValue` is 1, draw the full circle, then schedule another draw in n milliseconds to hide it
-		let icon = (0..<1).contains(self.progressValue) ? self.draw() : appIcon
+		// TODO: If the `progressValue` is 1, draw the full circle, then schedule another draw in n milliseconds to hide it
+		let icon = (0..<1).contains(progressValue) ? draw() : appIcon
 		DispatchQueue.main.async {
-			/// TODO: Make this better by drawing in the `contentView` directly instead of using an image
+			// TODO: Make this better by drawing in the `contentView` directly instead of using an image
 			dockImageView.image = icon
 			NSApp.dockTile.display()
 		}

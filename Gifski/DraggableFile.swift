@@ -11,30 +11,28 @@ final class DraggableFile: NSImageView {
 			heightConstraint.constant = image!.size.maxSize(size: 96).height
 			updateConstraints()
 
-			self.layer?.animateScaleMove(fromScale: 3.0, fromY: superview!.superview!.frame.height + frame.size.height)
+			layer?.animateScaleMove(fromScale: 3, fromY: superview!.superview!.frame.height + frame.size.height)
 		}
 	}
 
 	override init(frame: CGRect) {
 		super.init(frame: frame)
-		heightConstraint = heightAnchor.constraint(equalToConstant: 0)
+
+		wantsLayer = true
 
 		isEditable = false
 		unregisterDraggedTypes()
 
-		wantsLayer = true
-
+		self.heightConstraint = heightAnchor.constraint(equalToConstant: 0)
 		NSLayoutConstraint.activate([
 			heightConstraint
 		])
 
-		let sh = with(NSShadow()) {
-			$0.shadowBlurRadius = 5.0
-			$0.shadowColor = NSColor(named: NSColor.Name("ShadowColor"))
+		shadow = with(NSShadow()) {
+			$0.shadowBlurRadius = 5
+			$0.shadowColor = NSColor(named: "ShadowColor")
 			$0.shadowOffset = CGSize(width: 0, height: 0)
 		}
-
-		shadow = sh
 	}
 
 	@available(*, unavailable)

@@ -17,7 +17,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		let formatter = ByteCountFormatter()
 		formatter.zeroPadsFractionDigits = true
 
-		/// TODO: Use KVO here
+		// TODO: Use KVO here
 
 		let metadata = inputUrl.videoMetadata!
 		var currentDimensions = metadata.dimensions

@@ -14,13 +14,13 @@ final class Gifski {
 			switch self {
 			case .invalidSettings:
 				return "Invalid settings"
-			case .generateFrameFailed(let error):
+			case let .generateFrameFailed(error):
 				return "Failed to generate frame: \(error.localizedDescription)"
-			case .addFrameFailed(let error):
+			case let .addFrameFailed(error):
 				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
-			case .endAddingFramesFailed(let error):
+			case let .endAddingFramesFailed(error):
 				return "Failed to end adding frames, with underlying error: \(error.localizedDescription)"
-			case .writeFailed(let error):
+			case let .writeFailed(error):
 				return "Failed to write to output, with underlying error: \(error.localizedDescription)"
 			case .cancelled:
 				return "The conversion was cancelled"
@@ -110,7 +110,7 @@ final class Gifski {
 				}
 
 				switch result {
-				case .success(let result):
+				case let .success(result):
 					let image = result.image
 
 					guard
@@ -144,7 +144,7 @@ final class Gifski {
 					}
 				case .failure where result.isCancelled:
 					completionHandlerOnce(.cancelled)
-				case .failure(let error):
+				case let .failure(error):
 					completionHandlerOnce(.generateFrameFailed(error))
 				}
 			}
