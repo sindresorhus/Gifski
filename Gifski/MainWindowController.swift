@@ -142,8 +142,7 @@ final class MainWindowController: NSWindowController {
 	private var progress: Progress?
 
 	private var progressObserver: NSKeyValueObservation?
-	private var indeterminateObserver: NSKeyValueObservation?
-	private var startTime = NSDate()
+	private var startTime = Date()
 
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
@@ -153,7 +152,7 @@ final class MainWindowController: NSWindowController {
 		outUrl = outputUrl
 
 		isRunning = true
-		startTime = NSDate()
+		startTime = Date()
 
 		progress = Progress(totalUnitCount: 1)
 		circularProgress.progressInstance = progress
@@ -165,13 +164,13 @@ final class MainWindowController: NSWindowController {
 			let secondsLeft = (secondsElapsed / percent) * (1 - percent)
 
 			DispatchQueue.main.async {
-				self.timeRemainingLabel.text = self.elapsedTimeFormatter.string(from: secondsLeft) ?? "Calculating time remaining…"
-			}
-		}
+				if let remainingText = self.formattedTimeRemaining(seconds: secondsLeft) {
+					if self.timeRemainingLabel.text.isEmpty {
+						self.timeRemainingLabel.fadeIn()
+					}
 
-		indeterminateObserver = progress?.observe(\.isIndeterminate) { _, _ in
-			DispatchQueue.main.async {
-				self.timeRemainingLabel.text = "Calculating time remaining…"
+					self.timeRemainingLabel.text = remainingText
+				}
 			}
 		}
 
@@ -232,11 +231,15 @@ final class MainWindowController: NSWindowController {
 		])
 	}
 
+	private func formattedTimeRemaining(seconds: TimeInterval) -> String? {
+		elapsedTimeFormatter.allowedUnits = seconds < 60 ? .second : .minute
+		return elapsedTimeFormatter.string(from: seconds)
+	}
+
 	private lazy var elapsedTimeFormatter = with(DateComponentsFormatter()) {
 		$0.unitsStyle = .full
 		$0.includesApproximationPhrase = true
 		$0.includesTimeRemainingPhrase = true
-		$0.allowedUnits = [.hour, .minute, .second]
 	}
 }
 
