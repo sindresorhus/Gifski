@@ -17,6 +17,12 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
+	private lazy var timeRemainingLabel = with(Label()) {
+		$0.isHidden = true
+		$0.textColor = NSColor.secondaryLabelColor
+		$0.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+	}
+
 	private lazy var conversionCompletedView = with(ConversionCompletedView()) {
 		$0.isHidden = true
 	}
@@ -31,6 +37,7 @@ final class MainWindowController: NSWindowController {
 			videoDropView.isHidden = isRunning
 
 			if let progress = progress, !isRunning {
+				timeRemainingLabel.fadeOut(delay: 1)
 				circularProgress.fadeOut(delay: 1) {
 					self.circularProgress.resetProgress()
 					DockProgress.resetProgress()
@@ -48,6 +55,7 @@ final class MainWindowController: NSWindowController {
 				circularProgress.isHidden = false
 				videoDropView.isDropLabelHidden = true
 				conversionCompletedView.isHidden = true
+				timeRemainingLabel.isHidden = false
 			}
 		}
 	}
@@ -74,8 +82,11 @@ final class MainWindowController: NSWindowController {
 		}
 
 		view?.addSubview(circularProgress)
+		view?.addSubview(timeRemainingLabel)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(conversionCompletedView, positioned: .above, relativeTo: nil)
+
+		setupTimeRemainingLabel()
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
@@ -130,6 +141,10 @@ final class MainWindowController: NSWindowController {
 
 	private var progress: Progress?
 
+	private var progressObserver: NSKeyValueObservation?
+	private var indeterminateObserver: NSKeyValueObservation?
+	private var startTime = NSDate()
+
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
 			return
@@ -138,10 +153,27 @@ final class MainWindowController: NSWindowController {
 		outUrl = outputUrl
 
 		isRunning = true
+		startTime = NSDate()
 
 		progress = Progress(totalUnitCount: 1)
 		circularProgress.progressInstance = progress
 		DockProgress.progress = progress
+
+		progressObserver = progress?.observe(\.fractionCompleted) { sender, _ in
+			let secondsElapsed = -self.startTime.timeIntervalSinceNow
+			let percent = sender.fractionCompleted
+			let secondsLeft = (secondsElapsed / percent) * (1 - percent)
+
+			DispatchQueue.main.async {
+				self.timeRemainingLabel.text = self.elapsedTimeFormatter.string(from: secondsLeft) ?? "Calculating time remaining…"
+			}
+		}
+
+		indeterminateObserver = progress?.observe(\.isIndeterminate) { _, _ in
+			DispatchQueue.main.async {
+				self.timeRemainingLabel.text = "Calculating time remaining…"
+			}
+		}
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
@@ -185,6 +217,26 @@ final class MainWindowController: NSWindowController {
 				self.convert(panel.url!)
 			}
 		}
+	}
+
+	private func setupTimeRemainingLabel() {
+		guard let view = view else {
+			return
+		}
+
+		timeRemainingLabel.translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			timeRemainingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			timeRemainingLabel.topAnchor.constraint(equalTo: circularProgress.bottomAnchor)
+		])
+	}
+
+	private lazy var elapsedTimeFormatter = with(DateComponentsFormatter()) {
+		$0.unitsStyle = .full
+		$0.includesApproximationPhrase = true
+		$0.includesTimeRemainingPhrase = true
+		$0.allowedUnits = [.hour, .minute, .second]
 	}
 }
 
