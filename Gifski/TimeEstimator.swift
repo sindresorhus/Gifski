@@ -15,6 +15,12 @@ final class TimeEstimator {
 			progressObserver = progress?.observe(\.fractionCompleted) { sender, _ in
 				self.percentComplete = sender.fractionCompleted
 			}
+
+			cancelObserver = progress?.observe(\.isCancelled) { sender, _ in
+				if sender.isCancelled {
+					self.state = .done
+				}
+			}
 		}
 	}
 
@@ -23,6 +29,7 @@ final class TimeEstimator {
 	}
 
 	func start() {
+		state = .buffering
 		startTime = Date()
 	}
 
@@ -85,6 +92,7 @@ final class TimeEstimator {
 	private var label: Label
 	private var startTime = Date()
 	private var progressObserver: NSKeyValueObservation?
+	private var cancelObserver: NSKeyValueObservation?
 
 	private lazy var elapsedTimeFormatter = with(DateComponentsFormatter()) {
 		$0.unitsStyle = .full
