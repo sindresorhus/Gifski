@@ -37,7 +37,6 @@ final class MainWindowController: NSWindowController {
 			videoDropView.isHidden = isRunning
 
 			if let progress = progress, !isRunning {
-				timeRemainingLabel.fadeOut(delay: 1)
 				circularProgress.fadeOut(delay: 1) {
 					self.circularProgress.resetProgress()
 					DockProgress.resetProgress()
@@ -55,7 +54,6 @@ final class MainWindowController: NSWindowController {
 				circularProgress.isHidden = false
 				videoDropView.isDropLabelHidden = true
 				conversionCompletedView.isHidden = true
-				timeRemainingLabel.isHidden = false
 			}
 		}
 	}
@@ -140,9 +138,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private var progress: Progress?
-
-	private var progressObserver: NSKeyValueObservation?
-	private var startTime = Date()
+	private lazy var timeEstimator = TimeEstimator(label: timeRemainingLabel)
 
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
@@ -152,27 +148,12 @@ final class MainWindowController: NSWindowController {
 		outUrl = outputUrl
 
 		isRunning = true
-		startTime = Date()
 
 		progress = Progress(totalUnitCount: 1)
 		circularProgress.progressInstance = progress
 		DockProgress.progress = progress
-
-		progressObserver = progress?.observe(\.fractionCompleted) { sender, _ in
-			let secondsElapsed = -self.startTime.timeIntervalSinceNow
-			let percent = sender.fractionCompleted
-			let secondsLeft = (secondsElapsed / percent) * (1 - percent)
-
-			DispatchQueue.main.async {
-				if let remainingText = self.formattedTimeRemaining(seconds: secondsLeft) {
-					if self.timeRemainingLabel.text.isEmpty {
-						self.timeRemainingLabel.fadeIn()
-					}
-
-					self.timeRemainingLabel.text = remainingText
-				}
-			}
-		}
+		timeEstimator.progress = progress
+		timeEstimator.start()
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
@@ -229,17 +210,6 @@ final class MainWindowController: NSWindowController {
 			timeRemainingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 			timeRemainingLabel.topAnchor.constraint(equalTo: circularProgress.bottomAnchor)
 		])
-	}
-
-	private func formattedTimeRemaining(seconds: TimeInterval) -> String? {
-		elapsedTimeFormatter.allowedUnits = seconds < 60 ? .second : .minute
-		return elapsedTimeFormatter.string(from: seconds)
-	}
-
-	private lazy var elapsedTimeFormatter = with(DateComponentsFormatter()) {
-		$0.unitsStyle = .full
-		$0.includesApproximationPhrase = true
-		$0.includesTimeRemainingPhrase = true
 	}
 }
 
