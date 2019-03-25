@@ -30,15 +30,15 @@ struct Meta {
 		let defaultMessage = "<!-- Provide your feedback here. Include as many details as possible. -->"
 
 		let body =
-		"""
-		\(message ?? defaultMessage)
+			"""
+			\(message ?? defaultMessage)
 
 
-		---
-		\(App.name) \(App.versionWithBuild)
-		macOS \(System.osVersion)
-		\(System.hardwareModel)
-		"""
+			---
+			\(App.name) \(App.versionWithBuild)
+			macOS \(System.osVersion)
+			\(System.hardwareModel)
+			"""
 
 		let query: [String: String] = [
 			"body": body
@@ -416,10 +416,12 @@ extension Strideable where Stride: SignedInteger {
 
 extension AVAsset {
 	var isVideoDecodable: Bool {
-		guard isReadable,
-			let firstVideoTrack = tracks(withMediaType: .video).first else {
-				return false
-			}
+		guard
+			isReadable,
+			let firstVideoTrack = tracks(withMediaType: .video).first
+		else {
+			return false
+		}
 
 		return firstVideoTrack.isDecodable
 	}
@@ -1370,12 +1372,12 @@ extension Error {
 		} catch CocoaError.userCancelled {
 			return true
 		} catch {
-		#if os(macOS) || os(iOS) || os(tvOS)
-			let pair = { ($0.domain, $0.code) }(error as NSError)
-			return pair == ("SKErrorDomain", 2)
-		#else
-			return false
-		#endif
+			#if os(macOS) || os(iOS) || os(tvOS)
+				let pair = { ($0.domain, $0.code) }(error as NSError)
+				return pair == ("SKErrorDomain", 2)
+			#else
+				return false
+			#endif
 		}
 	}
 }
@@ -1519,15 +1521,6 @@ extension NSResponder {
 		}
 
 		presentError(error, modalFor: window, delegate: nil, didPresent: nil, contextInfo: nil)
-	}
-}
-
-extension NSImage {
-	func resizing(to newSize: CGSize) -> NSImage {
-		return NSImage(size: newSize, flipped: false) {
-			self.draw(in: $0)
-			return true
-		}
 	}
 }
 

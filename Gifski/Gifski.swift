@@ -67,7 +67,7 @@ final class Gifski {
 			fast: false
 		)
 
-		guard let g = GifskiWrapper(settings: settings) else {
+		guard let gifski = GifskiWrapper(settings: settings) else {
 			completionHandlerOnce(.invalidSettings)
 			return
 		}
@@ -75,7 +75,7 @@ final class Gifski {
 		var progress = Progress(parent: .current())
 		progress.fileURL = conversion.output
 
-		g.setProgressCallback(context: &progress) { context in
+		gifski.setProgressCallback(context: &progress) { context in
 			let progress = context!.assumingMemoryBound(to: Progress.self).pointee
 			progress.completedUnitCount += 1
 			return progress.isCancelled ? 0 : 1
@@ -99,8 +99,8 @@ final class Gifski {
 			progress.totalUnitCount = Int64(frameCount)
 
 			var frameForTimes = [CMTime]()
-			for i in 0..<frameCount {
-				frameForTimes.append(CMTime(seconds: (1 / fps) * Double(i), preferredTimescale: .video))
+			for index in 0..<frameCount {
+				frameForTimes.append(CMTime(seconds: (1 / fps) * Double(index), preferredTimescale: .video))
 			}
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
@@ -122,7 +122,7 @@ final class Gifski {
 					}
 
 					do {
-						try g.addFrameARGB(
+						try gifski.addFrameARGB(
 							index: UInt32(result.completedCount - 1),
 							width: UInt32(image.width),
 							bytesPerRow: UInt32(image.bytesPerRow),
@@ -137,7 +137,7 @@ final class Gifski {
 
 					if result.isFinished {
 						do {
-							try g.endAddingFrames()
+							try gifski.endAddingFrames()
 						} catch {
 							completionHandlerOnce(.endAddingFramesFailed(error as! GifskiWrapperError))
 						}
@@ -150,7 +150,7 @@ final class Gifski {
 			}
 
 			do {
-				try g.write(path: conversion.output.path)
+				try gifski.write(path: conversion.output.path)
 				completionHandlerOnce(nil)
 			} catch {
 				// TODO: Figure out how to not get a write error when the process was simply cancelled.
