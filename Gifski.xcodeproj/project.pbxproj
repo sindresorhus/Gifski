@@ -18,6 +18,7 @@
 		E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF122057E24700A80A18 /* CircularProgress.swift */; };
 		E317FF1C20583E9800A80A18 /* DockProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF1B20583E9800A80A18 /* DockProgress.swift */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
+		E3A6BD112245345C00F62256 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A6BD102245345C00F62256 /* Constants.swift */; };
 		E3A9400F2182D7BC006981D5 /* Crashlytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E3A9400D2182D7BC006981D5 /* Crashlytics.framework */; };
 		E3A940102182D7BC006981D5 /* Fabric.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E3A9400E2182D7BC006981D5 /* Fabric.framework */; };
 		E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A940112182DCE5006981D5 /* CustomButton.swift */; };
@@ -81,6 +82,7 @@
 		E317FF122057E24700A80A18 /* CircularProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgress.swift; sourceTree = "<group>"; };
 		E317FF1B20583E9800A80A18 /* DockProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockProgress.swift; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E3A6BD102245345C00F62256 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Constants.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3A9400D2182D7BC006981D5 /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Crashlytics.framework; path = Frameworks/Crashlytics.framework; sourceTree = "<group>"; };
 		E3A9400E2182D7BC006981D5 /* Fabric.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Fabric.framework; path = Frameworks/Fabric.framework; sourceTree = "<group>"; };
 		E3A940112182DCE5006981D5 /* CustomButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CustomButton.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -181,6 +183,7 @@
 			isa = PBXGroup;
 			children = (
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
+				E3A6BD102245345C00F62256 /* Constants.swift */,
 				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
 				E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */,
 				E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */,
@@ -356,6 +359,7 @@
 				E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */,
 				E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */,
 				E339F011203820ED003B78FB /* Gifski.swift in Sources */,
+				E3A6BD112245345C00F62256 /* Constants.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
 				E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */,

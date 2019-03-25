@@ -2,14 +2,6 @@ import Cocoa
 import Fabric
 import Crashlytics
 
-extension NSColor {
-	static let appTheme = NSColor.controlAccentColorPolyfill
-}
-
-extension Defaults.Keys {
-	static let outputQuality = Defaults.Key<Double>("outputQuality", default: 1)
-}
-
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
