@@ -17,6 +17,12 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
+	private lazy var timeRemainingLabel = with(Label()) {
+		$0.isHidden = true
+		$0.textColor = NSColor.secondaryLabelColor
+		$0.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+	}
+
 	private lazy var conversionCompletedView = with(ConversionCompletedView()) {
 		$0.isHidden = true
 	}
@@ -74,8 +80,11 @@ final class MainWindowController: NSWindowController {
 		}
 
 		view?.addSubview(circularProgress)
+		view?.addSubview(timeRemainingLabel)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
 		view?.addSubview(conversionCompletedView, positioned: .above, relativeTo: nil)
+
+		setupTimeRemainingLabel()
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
@@ -129,6 +138,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private var progress: Progress?
+	private lazy var timeEstimator = TimeEstimator(label: timeRemainingLabel)
 
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
@@ -142,6 +152,8 @@ final class MainWindowController: NSWindowController {
 		progress = Progress(totalUnitCount: 1)
 		circularProgress.progressInstance = progress
 		DockProgress.progress = progress
+		timeEstimator.progress = progress
+		timeEstimator.start()
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
@@ -185,6 +197,19 @@ final class MainWindowController: NSWindowController {
 				self.convert(panel.url!)
 			}
 		}
+	}
+
+	private func setupTimeRemainingLabel() {
+		guard let view = view else {
+			return
+		}
+
+		timeRemainingLabel.translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			timeRemainingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			timeRemainingLabel.topAnchor.constraint(equalTo: circularProgress.bottomAnchor)
+		])
 	}
 }
 
