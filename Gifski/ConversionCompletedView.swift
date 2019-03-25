@@ -25,6 +25,7 @@ final class ConversionCompletedView: SSView {
 
 	private let buttonsContainer = with(NSStackView()) {
 		$0.orientation = .horizontal
+		$0.spacing = 20
 	}
 
 	private lazy var showInFinderButton = with(CustomButton()) {
@@ -55,7 +56,7 @@ final class ConversionCompletedView: SSView {
 			// TODO: CustomButton doesn't correctly respect `.sendAction()`
 			shareButton.sendAction(on: .leftMouseDown)
 			shareButton.onAction = { _ in
-				NSSharingService.share(content: [url] as [AnyObject], from: self.shareButton)
+				NSSharingService.share(items: [url as NSURL], from: self.shareButton)
 			}
 		}
 	}
@@ -91,12 +92,12 @@ final class ConversionCompletedView: SSView {
 		addSubview(imageContainer)
 		addSubview(buttonsContainer)
 
+		// TODO: Improve the layout constraints. They are not very good.
 		NSLayoutConstraint.activate([
 			bottomAnchor.constraint(equalTo: buttonsContainer.bottomAnchor),
-			widthAnchor.constraint(equalTo: buttonsContainer.widthAnchor),
-
+			widthAnchor.constraint(equalToConstant: 300),
 			centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
-			centerYAnchor.constraint(equalTo: superview!.centerYAnchor),
+			centerYAnchor.constraint(equalTo: superview!.centerYAnchor, constant: 5),
 
 			imageContainer.topAnchor.constraint(equalTo: topAnchor),
 			imageContainer.widthAnchor.constraint(equalTo: widthAnchor),
@@ -104,9 +105,9 @@ final class ConversionCompletedView: SSView {
 			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 16),
 			infoContainer.widthAnchor.constraint(equalTo: imageContainer.widthAnchor),
 
-			buttonsContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: 16),
+			buttonsContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: 24),
 			buttonsContainer.heightAnchor.constraint(equalToConstant: 30),
-			buttonsContainer.widthAnchor.constraint(equalToConstant: 228),
+			buttonsContainer.centerXAnchor.constraint(equalTo: centerXAnchor),
 
 			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
 			draggableFile.widthAnchor.constraint(equalToConstant: 96),
@@ -118,7 +119,7 @@ final class ConversionCompletedView: SSView {
 			showInFinderButton.widthAnchor.constraint(equalToConstant: 110),
 
 			shareButton.heightAnchor.constraint(equalTo: buttonsContainer.heightAnchor),
-			shareButton.widthAnchor.constraint(equalToConstant: 110)
+			shareButton.widthAnchor.constraint(equalTo: showInFinderButton.widthAnchor)
 		])
 	}
 }

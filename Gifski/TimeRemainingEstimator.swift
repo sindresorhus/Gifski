@@ -1,14 +1,14 @@
 import Foundation
 
-final class TimeEstimator {
+final class TimeRemainingEstimator {
 	/// The delay before revealing the estimated time remaining, allowing the estimation to stabilize.
-	let bufferDuration: TimeInterval = 3.0
+	let bufferDuration: TimeInterval = 3
 
 	/// Don't show the estimate at all if the total time estimate (after it stabilizes) is less than this amount.
-	let skipThreshold: TimeInterval = 10.0
+	let skipThreshold: TimeInterval = 10
 
 	/// Begin fade out when remaining time reaches this amount.
-	let fadeOutThreshold: TimeInterval = 1.0
+	let fadeOutThreshold: TimeInterval = 1
 
 	var progress: Progress? {
 		didSet {
@@ -101,7 +101,7 @@ final class TimeEstimator {
 	}
 
 	private var formattedTimeRemaining: String? {
-		let seconds = secondsRemaining
+		let seconds = secondsRemaining.clamped(to: 1...)
 		elapsedTimeFormatter.allowedUnits = seconds < 60 ? .second : [.hour, .minute]
 		return elapsedTimeFormatter.string(from: seconds)
 	}

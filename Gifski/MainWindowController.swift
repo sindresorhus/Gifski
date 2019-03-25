@@ -138,7 +138,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private var progress: Progress?
-	private lazy var timeEstimator = TimeEstimator(label: timeRemainingLabel)
+	private lazy var timeEstimator = TimeRemainingEstimator(label: timeRemainingLabel)
 
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {

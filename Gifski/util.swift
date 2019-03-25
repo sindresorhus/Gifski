@@ -1025,16 +1025,6 @@ extension CGSize {
 	func aspectFit(to widthHeight: CGFloat) -> CGSize {
 		return aspectFit(to: CGSize(width: widthHeight, height: widthHeight))
 	}
-
-	// TODO: This one doesn't really make sense. `aspectFit(:widthHeight)` should do what this does already.
-	func maxSize(size: CGFloat) -> CGSize {
-		var newSize = aspectFit(to: size)
-
-		newSize.width = min(width, newSize.width)
-		newSize.height = min(height, newSize.height)
-
-		return newSize
-	}
 }
 
 extension CGRect {
@@ -1525,8 +1515,8 @@ extension NSResponder {
 }
 
 extension NSSharingService {
-	class func share(content: [AnyObject], from button: NSButton, preferredEdge: NSRectEdge = .maxX) {
-		let sharingServicePicker = NSSharingServicePicker(items: content)
+	class func share(items: [Any], from button: NSButton, preferredEdge: NSRectEdge = .maxX) {
+		let sharingServicePicker = NSSharingServicePicker(items: items)
 		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: preferredEdge)
 	}
 }
