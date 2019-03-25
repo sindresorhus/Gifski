@@ -1,4 +1,6 @@
 import Cocoa
+import AVFoundation
+import Crashlytics
 
 final class MainWindowController: NSWindowController {
 	private lazy var circularProgress = with(CircularProgress(size: 160)) {
@@ -99,14 +101,50 @@ final class MainWindowController: NSWindowController {
 		cancelConversion()
 	}
 
+	private func getVideoDebugInfo(url: URL, errorTitle: String) -> String {
+		let asset = AVURLAsset(url: url)
+		let track = asset.tracks(withMediaType: .video).first
+		return
+			"""
+			error: \(errorTitle)
+			type: \(url.fileExtension)
+			dimensions: \(String(describing: track?.naturalSize))
+			duration: \(asset.duration.seconds)
+			frameRate: \(String(describing: track?.nominalFrameRate))
+			fileSize: \(url.fileSize)
+			"""
+	}
+
 	func convert(_ inputUrl: URL) {
+		let debugInfo = getVideoDebugInfo(url: inputUrl, errorTitle: "Video file not supported")
+
 		// We already specify the UTIs we support, so this can only happen on invalid but supported files
 		guard inputUrl.isVideoDecodable else {
 			NSAlert.showModal(
 				for: window,
-				title: "Video not supported",
-				message: "The video you tried to convert could not be read."
+				title: "Video file not supported",
+				message: "The video file you tried to convert could not be read. Please open an issue on https://github.com/sindresorhus/gifski-app. ZIP the video and attach it to the issue.\n\nInclude this info:\n\(debugInfo)"
 			)
+
+			#if !DEBUG
+				Crashlytics.sharedInstance().recordError(debugInfo)
+			#endif
+
+			return
+		}
+
+		guard let videoMetadata = inputUrl.videoMetadata else {
+			let debugInfo = getVideoDebugInfo(url: inputUrl, errorTitle: "Video metadata not readable")
+			NSAlert.showModal(
+				for: window,
+				title: "Video metadata not readable",
+				message: "The metadata of the video could not be read. Please open an issue on https://github.com/sindresorhus/gifski-app. ZIP the video and attach it to the issue.\n\nInclude this info:\n\(debugInfo)"
+			)
+
+			#if !DEBUG
+				Crashlytics.sharedInstance().recordError(debugInfo)
+			#endif
+
 			return
 		}
 
@@ -119,6 +157,7 @@ final class MainWindowController: NSWindowController {
 
 		let accessoryViewController = SavePanelAccessoryViewController()
 		accessoryViewController.inputUrl = inputUrl
+		accessoryViewController.videoMetadata = videoMetadata
 
 		accessoryViewController.onDimensionChange = { dimension in
 			self.choosenDimensions = dimension

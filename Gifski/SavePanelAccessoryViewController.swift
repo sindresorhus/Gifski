@@ -1,4 +1,5 @@
 import Cocoa
+import AVFoundation
 
 final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var estimatedSizeLabel: NSTextField!
@@ -8,6 +9,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
 	var inputUrl: URL!
+	var videoMetadata: AVURLAsset.VideoMetadata!
 	var onDimensionChange: ((CGSize) -> Void)?
 	var onFramerateChange: ((Int) -> Void)?
 
@@ -19,18 +21,17 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 		// TODO: Use KVO here
 
-		let metadata = inputUrl.videoMetadata!
-		var currentDimensions = metadata.dimensions
+		var currentDimensions = videoMetadata.dimensions
 
 		func estimateFileSize() {
-			let frameCount = metadata.duration * frameRateSlider.doubleValue
+			let frameCount = videoMetadata.duration * frameRateSlider.doubleValue
 			var fileSize = (Double(currentDimensions.width) * Double(currentDimensions.height) * frameCount) / 3
 			fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
 			estimatedSizeLabel.stringValue = formatter.string(fromByteCount: Int64(fileSize))
 		}
 
 		scaleSlider.onAction = { _ in
-			currentDimensions = metadata.dimensions * self.scaleSlider.doubleValue
+			currentDimensions = self.videoMetadata.dimensions * self.scaleSlider.doubleValue
 			self.scaleLabel.stringValue = "\(Int(currentDimensions.width))×\(Int(currentDimensions.height))"
 			estimateFileSize()
 			self.onDimensionChange?(currentDimensions)
@@ -49,8 +50,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		// Set initial defaults
-		configureScaleSlider(inputDimensions: metadata.dimensions)
-		configureFramerateSlider(inputFrameRate: metadata.frameRate)
+		configureScaleSlider(inputDimensions: videoMetadata.dimensions)
+		configureFramerateSlider(inputFrameRate: videoMetadata.frameRate)
 		configureQualitySlider()
 	}
 
