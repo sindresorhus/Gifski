@@ -1,8 +1,13 @@
 import AppKit
 
 extension NSBezierPath {
-	static func circle(radius: Double, center: CGPoint, startAngle: Double = 0, endAngle: Double = 360) -> NSBezierPath {
-		let path = NSBezierPath()
+	static func circle(
+		radius: Double,
+		center: CGPoint,
+		startAngle: Double = 0,
+		endAngle: Double = 360
+	) -> Self {
+		let path = self.init()
 		path.appendArc(
 			withCenter: center,
 			radius: CGFloat(radius),
@@ -75,8 +80,10 @@ extension CALayer {
 }
 
 extension CAShapeLayer {
-	static func circle(radius: Double, center: CGPoint) -> CAShapeLayer {
-		return CAShapeLayer(path: NSBezierPath.circle(radius: radius, center: center))
+	static func circle(radius: Double, center: CGPoint) -> Self {
+		let layer = self.init()
+		layer.path = NSBezierPath.circle(radius: radius, center: center).cgPath
+		return layer
 	}
 
 	convenience init(path: NSBezierPath) {

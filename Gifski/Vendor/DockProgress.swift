@@ -1,5 +1,5 @@
 // Vendored from: https://github.com/sindresorhus/DockProgress
-// TODO: Use Carthage and frameworks again when targeting Swift 5 as it should be ABI stable
+// TODO: Use Carthage and frameworks again when targeting macOS 10.14.4 since it's ABI stable
 import Cocoa
 
 public final class DockProgress {
@@ -257,9 +257,10 @@ let label = with(NSTextField()) {
 
 
 extension NSBezierPath {
-	static func progressCircle(radius: Double, center: CGPoint) -> NSBezierPath {
+	/// For making a circle progress indicator
+	static func progressCircle(radius: Double, center: CGPoint) -> Self {
 		let startAngle: CGFloat = 90
-		let path = NSBezierPath()
+		let path = self.init()
 		path.appendArc(
 			withCenter: center,
 			radius: CGFloat(radius),
@@ -341,6 +342,8 @@ extension NSBezierPath {
 				path.addCurve(to: points[2], control1: points[0], control2: points[1])
 			case .closePath:
 				path.closeSubpath()
+			@unknown default:
+				assertionFailure("NSBezierPath received a new enum case. Please handle it.")
 			}
 		}
 

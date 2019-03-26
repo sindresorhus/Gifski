@@ -4,8 +4,7 @@ import Cocoa
 @IBDesignable
 public final class CircularProgress: NSView {
 	private var lineWidth: Double = 2
-	// TODO: Remove the closure here when targeting Swift 5
-	private lazy var radius = { bounds.width < bounds.height ? bounds.midX * 0.8 : bounds.midY * 0.8 }()
+	private lazy var radius = bounds.width < bounds.height ? bounds.midX * 0.8 : bounds.midY * 0.8
 	private var _progress: Double = 0
 	private var progressObserver: NSKeyValueObservation?
 	private var finishedObserver: NSKeyValueObservation?
