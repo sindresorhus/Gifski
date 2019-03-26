@@ -127,7 +127,7 @@ final class MainWindowController: NSWindowController {
 			)
 
 			#if !DEBUG
-				Crashlytics.sharedInstance().recordError(debugInfo)
+				Crashlytics.sharedInstance().recordError(NSError.appError(message: debugInfo))
 			#endif
 
 			return
@@ -142,7 +142,7 @@ final class MainWindowController: NSWindowController {
 			)
 
 			#if !DEBUG
-				Crashlytics.sharedInstance().recordError(debugInfo)
+				Crashlytics.sharedInstance().recordError(NSError.appError(message: debugInfo))
 			#endif
 
 			return

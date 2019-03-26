@@ -1391,3 +1391,13 @@ extension CALayer {
 		add(springAnimation, forKey: "")
 	}
 }
+
+extension NSError {
+	class func appError(message: String) -> Self {
+		return self.init(
+			domain: App.id,
+			code: 0,
+			userInfo: [NSLocalizedDescriptionKey: message]
+		)
+	}
+}
