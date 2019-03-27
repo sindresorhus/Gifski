@@ -313,7 +313,6 @@ extension AVAssetImageGenerator {
 		let actualTime: CMTime
 		let completedCount: Int
 		let totalCount: Int
-		let isCancelled: Bool
 		let isFinished: Bool
 	}
 
@@ -338,7 +337,6 @@ extension AVAssetImageGenerator {
 							actualTime: actualTime,
 							completedCount: completedCount,
 							totalCount: totalCount,
-							isCancelled: false,
 							isFinished: completedCount == totalCount
 						)
 					)
