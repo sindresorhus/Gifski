@@ -1401,3 +1401,77 @@ extension NSError {
 		)
 	}
 }
+
+enum FileType {
+	case png
+	case jpeg
+	case heic
+	case tiff
+	case gif
+
+	static func from(fileExtension: String) -> FileType {
+		switch fileExtension {
+		case "png":
+			return .png
+		case "jpg", "jpeg":
+			return .jpeg
+		case "heic":
+			return .heic
+		case "tif", "tiff":
+			return .tiff
+		case "gif":
+			return .gif
+		default:
+			fatalError("Unsupported file type")
+		}
+	}
+
+	static func from(url: URL) -> FileType {
+		return from(fileExtension: url.pathExtension)
+	}
+
+	var name: String {
+		switch self {
+		case .png:
+			return "PNG"
+		case .jpeg:
+			return "JPEG"
+		case .heic:
+			return "HEIC"
+		case .tiff:
+			return "TIFF"
+		case .gif:
+			return "GIF"
+		}
+	}
+
+	var identifier: String {
+		switch self {
+		case .png:
+			return "public.png"
+		case .jpeg:
+			return "public.jpeg"
+		case .heic:
+			return "public.heic"
+		case .tiff:
+			return "public.tiff"
+		case .gif:
+			return "com.compuserve.gif"
+		}
+	}
+
+	var fileExtension: String {
+		switch self {
+		case .png:
+			return "png"
+		case .jpeg:
+			return "jpg"
+		case .heic:
+			return "heic"
+		case .tiff:
+			return "tiff"
+		case .gif:
+			return "gif"
+		}
+	}
+}

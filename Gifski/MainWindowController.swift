@@ -150,8 +150,9 @@ final class MainWindowController: NSWindowController {
 
 		let panel = NSSavePanel()
 		panel.canCreateDirectories = true
+		panel.allowedFileTypes = [FileType.gif.identifier]
 		panel.directoryURL = inputUrl.directoryURL
-		panel.nameFieldStringValue = inputUrl.changingFileExtension(to: "gif").filename
+		panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
 		panel.prompt = "Convert"
 		panel.message = "Choose where to save the GIF"
 
