@@ -62,7 +62,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
 		#if !DEBUG
-			Crashlytics.sharedInstance().recordError(error)
+			Crashlytics.sharedInstance().recordError(
+				// This forces Crashlytics to actually provide some useful info for Swift errors
+				error as NSError,
+				withAdditionalUserInfo: [
+					"type": "\(type(of: error)).\(error)",
+					"localizedDescription": error.localizedDescription
+				])
 		#endif
 
 		return error
