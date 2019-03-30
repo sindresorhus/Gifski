@@ -4,7 +4,7 @@ import Cocoa
 
 public final class DockProgress {
 	private static let appIcon = NSApp.applicationIconImage!
-	private static var previousProgressValue: Double = 0
+	private static var previousProgress: Double = 0
 	private static var progressObserver: NSKeyValueObservation?
 	private static var finishedObserver: NSKeyValueObservation?
 
@@ -12,40 +12,41 @@ public final class DockProgress {
 		NSApp.dockTile.contentView = $0
 	}
 
-	public static var progress: Progress? {
+	public static var progressInstance: Progress? {
 		didSet {
-			if let progress = progress {
-				progressObserver = progress.observe(\.fractionCompleted) { sender, _ in
+			if let progressInstance = progressInstance {
+				progressObserver = progressInstance.observe(\.fractionCompleted) { sender, _ in
 					guard !sender.isCancelled && !sender.isFinished else {
 						return
 					}
 
-					progressValue = sender.fractionCompleted
+					progress = sender.fractionCompleted
 				}
 
-				finishedObserver = progress.observe(\.isFinished) { sender, _ in
+				finishedObserver = progressInstance.observe(\.isFinished) { sender, _ in
 					guard !sender.isCancelled && sender.isFinished else {
 						return
 					}
 
-					progressValue = 1
+					progress = 1
 				}
 			}
 		}
 	}
 
-	public static var progressValue: Double = 0 {
+	public static var progress: Double = 0 {
 		didSet {
-			if previousProgressValue == 0 || (progressValue - previousProgressValue).magnitude > 0.01 {
-				previousProgressValue = progressValue
+			if previousProgress == 0 || (progress - previousProgress).magnitude > 0.01 {
+				previousProgress = progress
 				updateDockIcon()
 			}
 		}
 	}
 
+	/// Reset the `progress` without animating
 	public static func resetProgress() {
-		progressValue = 0
-		previousProgressValue = 0
+		progress = 0
+		previousProgress = 0
 		updateDockIcon()
 	}
 
@@ -61,8 +62,8 @@ public final class DockProgress {
 
 	// TODO: Make the progress smoother by also animating the steps between each call to `updateDockIcon()`
 	private static func updateDockIcon() {
-		// TODO: If the `progressValue` is 1, draw the full circle, then schedule another draw in n milliseconds to hide it
-		let icon = (0..<1).contains(progressValue) ? draw() : appIcon
+		// TODO: If the `progress` is 1, draw the full circle, then schedule another draw in n milliseconds to hide it
+		let icon = (0..<1).contains(progress) ? draw() : appIcon
 		DispatchQueue.main.async {
 			// TODO: Make this better by drawing in the `contentView` directly instead of using an image
 			dockImageView.image = icon
@@ -104,7 +105,7 @@ public final class DockProgress {
 		roundedRect(barInnerBg)
 
 		var barProgress = bar.insetBy(dx: 1, dy: 1)
-		barProgress.size.width = barProgress.width * CGFloat(progressValue)
+		barProgress.size.width = barProgress.width * CGFloat(progress)
 		NSColor.white.set()
 		roundedRect(barProgress)
 	}
@@ -118,7 +119,7 @@ public final class DockProgress {
 		progressCircle.strokeColor = color.cgColor
 		progressCircle.lineWidth = 4
 		progressCircle.cornerRadius = 3
-		progressCircle.progress = progressValue
+		progressCircle.progress = progress
 		progressCircle.render(in: cgContext)
 	}
 
@@ -146,7 +147,7 @@ public final class DockProgress {
 		progressCircle.strokeColor = color.cgColor
 		progressCircle.lineWidth = lineWidth
 		progressCircle.lineCap = .butt
-		progressCircle.progress = progressValue
+		progressCircle.progress = progress
 
 		// Label
 		let dimension = badge.bounds.height - 5
@@ -210,52 +211,6 @@ public final class DockProgress {
 /// util.swift
 ///
 
-extension NSFont {
-	static let helveticaNeueBold = NSFont(name: "HelveticaNeue-Bold", size: 0)
-}
-
-
-/// Fixes the vertical alignment issue of the `CATextLayer` class.
-final class VerticallyCenteredTextLayer: CATextLayer {
-	convenience init(frame rect: CGRect, center: CGPoint) {
-		self.init()
-		frame = rect
-		frame.center = center
-		contentsScale = NSScreen.main?.backingScaleFactor ?? 2
-	}
-
-	// From https://stackoverflow.com/a/44055040/6863743
-	override func draw(in context: CGContext) {
-		let height = bounds.size.height
-		let deltaY = ((height - fontSize) / 2 - fontSize / 10) * -1
-
-		context.saveGState()
-		context.translateBy(x: 0, y: deltaY)
-		super.draw(in: context)
-		context.restoreGState()
-	}
-}
-
-
-/**
-Convenience function for initializing an object and modifying its properties
-
-```
-let label = with(NSTextField()) {
-	$0.stringValue = "Foo"
-	$0.textColor = .systemBlue
-	view.addSubview($0)
-}
-```
-*/
-//@discardableResult
-//private func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
-//	var this = item
-//	try update(&this)
-//	return this
-//}
-
-
 extension NSBezierPath {
 	/// For making a circle progress indicator
 	static func progressCircle(radius: Double, center: CGPoint) -> Self {
@@ -273,56 +228,9 @@ extension NSBezierPath {
 }
 
 
-final class ProgressCircleShapeLayer: CAShapeLayer {
-	convenience init(radius: Double, center: CGPoint) {
-		self.init()
-		fillColor = nil
-		lineCap = .round
-		position = center
-		strokeEnd = 0
-
-		let cgPath = NSBezierPath.progressCircle(radius: radius, center: center).cgPath
-		path = cgPath
-		bounds = cgPath.boundingBox
-	}
-
-	var progress: Double {
-		get {
-			return Double(strokeEnd)
-		}
-		set {
-			strokeEnd = CGFloat(newValue)
-		}
-	}
-
-	func resetProgress() {
-		CALayer.withoutImplicitAnimations {
-			strokeEnd = 0
-		}
-	}
+extension NSFont {
+	static let helveticaNeueBold = NSFont(name: "HelveticaNeue-Bold", size: 0)
 }
-
-
-//private extension NSColor {
-//	func with(alpha: Double) -> NSColor {
-//		return withAlphaComponent(CGFloat(alpha))
-//	}
-//}
-
-
-//private extension CGRect {
-//	var center: CGPoint {
-//		get {
-//			return CGPoint(x: midX, y: midY)
-//		}
-//		set {
-//			origin = CGPoint(
-//				x: newValue.x - (size.width / 2),
-//				y: newValue.y - (size.height / 2)
-//			)
-//		}
-//	}
-//}
 
 
 extension NSBezierPath {
@@ -353,5 +261,27 @@ extension NSBezierPath {
 	/// UIKit polyfill
 	convenience init(roundedRect rect: CGRect, cornerRadius: CGFloat) {
 		self.init(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
+	}
+}
+
+
+/// Fixes the vertical alignment issue of the `CATextLayer` class.
+final class VerticallyCenteredTextLayer: CATextLayer {
+	convenience init(frame rect: CGRect, center: CGPoint) {
+		self.init()
+		frame = rect
+		frame.center = center
+		contentsScale = NSScreen.main?.backingScaleFactor ?? 2
+	}
+
+	// From https://stackoverflow.com/a/44055040/6863743
+	override func draw(in context: CGContext) {
+		let height = bounds.size.height
+		let deltaY = ((height - fontSize) / 2 - fontSize / 10) * -1
+
+		context.saveGState()
+		context.translateBy(x: 0, y: deltaY)
+		super.draw(in: context)
+		context.restoreGState()
 	}
 }

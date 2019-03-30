@@ -192,7 +192,7 @@ final class MainWindowController: NSWindowController {
 
 		progress = Progress(totalUnitCount: 1)
 		circularProgress.progressInstance = progress
-		DockProgress.progress = progress
+		DockProgress.progressInstance = progress
 		timeEstimator.progress = progress
 		timeEstimator.start()
 
