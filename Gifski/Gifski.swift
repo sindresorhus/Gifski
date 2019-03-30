@@ -5,9 +5,9 @@ final class Gifski {
 	enum Error: LocalizedError {
 		case invalidSettings
 		case generateFrameFailed(Swift.Error)
-		case addFrameFailed(GifskiWrapperError)
-		case endAddingFramesFailed(GifskiWrapperError)
-		case writeFailed(GifskiWrapperError)
+		case addFrameFailed(Swift.Error)
+		case endAddingFramesFailed(Swift.Error)
+		case writeFailed(Swift.Error)
 		case cancelled
 
 		var errorDescription: String? {
@@ -53,7 +53,14 @@ final class Gifski {
 	- Parameter completionHandler: Guaranteed to be called on the main thread
 	*/
 	static func run(_ conversion: Conversion, completionHandler: ((Error?) -> Void)?) {
-		let completionHandlerOnce = Once().wrap { error in
+		var progress = Progress(parent: .current())
+		progress.fileURL = conversion.output
+
+		let completionHandlerOnce = Once().wrap { (error: Error?) -> Void in
+			if error != nil {
+				progress.cancel()
+			}
+
 			DispatchQueue.main.async {
 				completionHandler?(error)
 			}
@@ -72,9 +79,6 @@ final class Gifski {
 			return
 		}
 
-		var progress = Progress(parent: .current())
-		progress.fileURL = conversion.output
-
 		gifski.setProgressCallback(context: &progress) { context in
 			let progress = context!.assumingMemoryBound(to: Progress.self).pointee
 			progress.completedUnitCount += 1
@@ -82,14 +86,12 @@ final class Gifski {
 		}
 
 		DispatchQueue.global(qos: .utility).async {
-			progress.publish()
-			defer { progress.unpublish() }
-
 			let asset = AVURLAsset(url: conversion.input, options: nil)
 			let generator = AVAssetImageGenerator(asset: asset)
 			generator.requestedTimeToleranceAfter = .zero
 			generator.requestedTimeToleranceBefore = .zero
 			generator.appliesPreferredTrackTransform = true
+
 			progress.cancellationHandler = {
 				generator.cancelAllCGImageGeneration()
 			}
@@ -131,7 +133,7 @@ final class Gifski {
 							delay: UInt16(100 / fps)
 						)
 					} catch {
-						completionHandlerOnce(.addFrameFailed(error as! GifskiWrapperError))
+						completionHandlerOnce(.addFrameFailed(error))
 						return
 					}
 
@@ -139,7 +141,7 @@ final class Gifski {
 						do {
 							try gifski.endAddingFrames()
 						} catch {
-							completionHandlerOnce(.endAddingFramesFailed(error as! GifskiWrapperError))
+							completionHandlerOnce(.endAddingFramesFailed(error))
 						}
 					}
 				case .failure where result.isCancelled:
@@ -160,7 +162,7 @@ final class Gifski {
 					return
 				}
 
-				completionHandlerOnce(.writeFailed(error as! GifskiWrapperError))
+				completionHandlerOnce(.writeFailed(error))
 			}
 		}
 	}

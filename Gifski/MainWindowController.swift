@@ -48,7 +48,7 @@ final class MainWindowController: NSWindowController {
 						self.conversionCompletedView.fileUrl = self.outUrl
 						self.conversionCompletedView.show()
 						self.videoDropView.isDropLabelHidden = true
-					} else if progress.isCancelled {
+					} else {
 						self.videoDropView.isHidden = false
 						self.videoDropView.fadeInVideoDropLabel()
 					}
@@ -179,7 +179,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private var progress: Progress?
-	private lazy var timeEstimator = TimeRemainingEstimator(label: timeRemainingLabel)
+	private lazy var timeRemainingEstimator = TimeRemainingEstimator(label: timeRemainingLabel)
 
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
@@ -191,10 +191,12 @@ final class MainWindowController: NSWindowController {
 		isRunning = true
 
 		progress = Progress(totalUnitCount: 1)
+		progress?.publish()
+
 		circularProgress.progressInstance = progress
 		DockProgress.progressInstance = progress
-		timeEstimator.progress = progress
-		timeEstimator.start()
+		timeRemainingEstimator.progress = progress
+		timeRemainingEstimator.start()
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
@@ -206,15 +208,19 @@ final class MainWindowController: NSWindowController {
 			)
 
 			Gifski.run(conversion) { error in
+				self.progress?.unpublish()
 				self.isRunning = false
 
 				if let error = error {
+					self.progress?.cancel()
+
 					switch error {
 					case .cancelled:
 						break
 					default:
 						self.presentError(error, modalFor: self.window)
 					}
+
 					return
 				}
 
