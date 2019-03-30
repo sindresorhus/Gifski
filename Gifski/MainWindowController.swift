@@ -218,8 +218,8 @@ final class MainWindowController: NSWindowController {
 					return
 				}
 
-				defaults[.totalConversionsCount] += 1
-				if #available(macOS 10.14, *), defaults[.totalConversionsCount] == 5 {
+				defaults[.successfulConversionsCount] += 1
+				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
 					SKStoreReviewController.requestReview()
 				}
 			}
