@@ -1,5 +1,6 @@
 import Cocoa
 import AVFoundation
+import StoreKit
 import Crashlytics
 
 final class MainWindowController: NSWindowController {
@@ -207,15 +208,19 @@ final class MainWindowController: NSWindowController {
 			Gifski.run(conversion) { error in
 				self.isRunning = false
 
-				guard let error = error else {
+				if let error = error {
+					switch error {
+					case .cancelled:
+						break
+					default:
+						self.presentError(error, modalFor: self.window)
+					}
 					return
 				}
 
-				switch error {
-				case .cancelled:
-					break
-				default:
-					self.presentError(error, modalFor: self.window)
+				defaults[.successfulConversionsCount] += 1
+				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
+					SKStoreReviewController.requestReview()
 				}
 			}
 		}
