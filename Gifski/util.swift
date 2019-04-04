@@ -1,11 +1,6 @@
 import Cocoa
 import AVFoundation
 
-
-/// YOLO
-extension String: Error {}
-
-
 /**
 Convenience function for initializing an object and modifying its properties
 
@@ -410,7 +405,183 @@ extension Strideable where Stride: SignedInteger {
 }
 
 
+extension FixedWidthInteger {
+	/// Returns the integer formatted as a human readble file size.
+	/// Example: `2.3 GB`
+	var bytesFormattedAsFileSize: String {
+		return ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
+	}
+}
+
+
+extension String.StringInterpolation {
+	/**
+	```
+	// This doesn't work as you can only use nil coalescing in interpolation with the same type as the optional
+	"foo \(optionalDouble ?? "none")
+
+	// Now you can do this
+	"foo \(optionalDouble, default: "none")
+	```
+	*/
+	public mutating func appendInterpolation(_ value: Any?, default defaultValue: String) {
+		if let value = value {
+			appendInterpolation(value)
+		} else {
+			appendLiteral(defaultValue)
+		}
+	}
+}
+
+
+// TODO: Make this a `BinaryFloatingPoint` extension instead
+extension Double {
+	/**
+	Converts the number to a string and strips fractional trailing zeros.
+
+	```
+	let x = 1.0
+
+	print(1.0)
+	//=> "1.0"
+
+	print(1.0.formatted)
+	//=> "1"
+
+	print(0.0100.formatted)
+	//=> "0.01"
+	```
+	*/
+    var formatted: String {
+       return truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", self) : String(self)
+    }
+}
+extension CGFloat {
+	var formatted: String {
+		return Double(self).formatted
+	}
+}
+
+
+extension CGSize {
+	/// Example: `140×100`
+	var formatted: String {
+		return "\(width.formatted)×\(height.formatted)"
+	}
+}
+
+
+extension AVAssetTrack {
+	/// Returns the dimensions of the track if it's a video.
+	var dimensions: CGSize? {
+		guard naturalSize != .zero else {
+			return nil
+		}
+
+		let size = naturalSize.applying(preferredTransform)
+		return CGSize(width: abs(size.width), height: abs(size.height))
+	}
+
+	/// Returns the frame rate of the track if it's a video.
+	var frameRate: Double? {
+		return Double(nominalFrameRate)
+	}
+
+	/// Returns the aspect ratio of the track if it's a video.
+	var aspectRatio: Double? {
+		guard let dimensions = dimensions else {
+			return nil
+		}
+
+		return Double(dimensions.height / dimensions.width)
+	}
+
+	/// Example:
+	/// `avc1` (video)
+	/// `aac` (audio)
+	var codec: String? {
+		let descriptions = formatDescriptions as! [CMFormatDescription]
+		return descriptions.map { CMFormatDescriptionGetMediaSubType($0).toString() }.first
+	}
+
+	/// Returns a debug string with the media format. Example: `vide/avc1`
+    var mediaFormat: String {
+		let descriptions = formatDescriptions as! [CMFormatDescription]
+
+        var format = [String]()
+        for description in descriptions {
+            // Get string representation of media type (vide, soun, sbtl, etc.)
+            let type = CMFormatDescriptionGetMediaType(description).toString()
+
+			// Get string representation media subtype (avc1, aac, tx3g, etc.)
+            let subType = CMFormatDescriptionGetMediaSubType(description).toString()
+
+            format.append("\(type)/\(subType)")
+        }
+
+		return format.joined(separator: ",")
+    }
+
+	/// Estimated file size of the track in bytes.
+	var estimatedFileSize: Int {
+		let dataRateInBytes = Double(estimatedDataRate / 8)
+		return Int(timeRange.duration.seconds * dataRateInBytes)
+	}
+}
+
+
+/*
+> FOURCC is short for "four character code" - an identifier for a video codec, compression format, color or pixel format used in media files.
+*/
+extension FourCharCode {
+    /// Create a String representation of a FourCC.
+    func toString() -> String {
+        let bytes: [CChar] = [
+            CChar((self >> 24) & 0xff),
+            CChar((self >> 16) & 0xff),
+            CChar((self >> 8) & 0xff),
+            CChar(self & 0xff),
+            0
+        ]
+
+        return String(cString: bytes).trimmingCharacters(in: .whitespaces)
+    }
+}
+
+
+extension AVMediaType: CustomDebugStringConvertible {
+	public var debugDescription: String {
+		switch self {
+		case .audio:
+			return "Audio"
+		case .closedCaption:
+			return "Closed-caption content"
+		case .depthData:
+			return "Depth data"
+		case .metadata:
+			return "Metadata"
+		// iOS
+		// case .metadataObject:
+		// return "Metadata objects"
+		case .muxed:
+			return "Muxed media"
+		case .subtitle:
+			return "Subtitles"
+		case .text:
+			return "Text"
+		case .timecode:
+			return "Time code"
+		case .video:
+			return "Video"
+		default:
+			return "Unknown"
+		}
+	}
+}
+
+
 extension AVAsset {
+	/// Whether the first video track is decodable.
 	var isVideoDecodable: Bool {
 		guard
 			isReadable,
@@ -421,7 +592,108 @@ extension AVAsset {
 
 		return firstVideoTrack.isDecodable
 	}
+
+	/// Returns the first video track if any.
+	var firstVideoTrack: AVAssetTrack? {
+		return tracks(withMediaType: .video).first
+	}
+
+	/// Returns the first audio track if any.
+	var firstAudioTrack: AVAssetTrack? {
+		return tracks(withMediaType: .audio).first
+	}
+
+	/// Returns the dimensions of the first video track if any.
+	var dimensions: CGSize? {
+		return firstVideoTrack?.dimensions
+	}
+
+	/// Returns the frame rate of the first video track if any.
+	var frameRate: Double? {
+		return firstVideoTrack?.frameRate
+	}
+
+	/// Returns the aspect ratio of the first video track if any.
+	var aspectRatio: Double? {
+		return firstVideoTrack?.aspectRatio
+	}
+
+	/// Returns the video codec of the first video track if any.
+	/// Example: `avc1`
+	var videoCodec: String? {
+		return firstVideoTrack?.codec
+	}
+
+	/// Returns the audio codec of the first audio track if any.
+	/// Example: `aac`
+	var audioCodec: String? {
+		return firstAudioTrack?.codec
+	}
+
+	/// The file size of the asset in bytes.
+	/// - Note: If self is an `AVAsset` and not an `AVURLAsset`, the file size will just be an estimate.
+	var fileSize: Int {
+		guard let urlAsset = self as? AVURLAsset else {
+			return tracks.sum { $0.estimatedFileSize }
+		}
+
+		return urlAsset.url.fileSize
+	}
+
+	var fileSizeFormatted: String {
+		return fileSize.bytesFormattedAsFileSize
+	}
 }
+
+
+extension AVAsset {
+	/// Returns debug info for the asset to use in logging and error messages.
+	var debugInfo: String {
+		var output = [String]()
+
+		let durationFormatter = DateComponentsFormatter()
+		durationFormatter.unitsStyle = .abbreviated
+
+		output.append(
+			"""
+
+			## AVAsset debug info ##
+			Extension: \((self as? AVURLAsset)?.url.fileExtension ?? "nil")
+			Video codec: \(videoCodec, default: "nil")
+			Audio codec: \(audioCodec, default: "nil")
+			Duration: \(durationFormatter.string(from: duration.seconds), default: "nil")
+			Dimension: \(dimensions?.formatted, default: "nil")
+			Frame rate: \(frameRate?.rounded(toDecimalPlaces: 2).formatted, default: "nil")
+			File size: \(fileSizeFormatted)
+			Is readable: \(isReadable)
+			Is playable: \(isPlayable)
+			Is exportable: \(isExportable)
+			Has protected content: \(hasProtectedContent)
+			"""
+		)
+
+		for track in tracks {
+			output.append(
+				"""
+				Track #\(track.trackID)
+				----
+				Type: \(String(reflecting: track.mediaType))
+				Codec: \(track.codec, default: "nil")
+				Duration: \(durationFormatter.string(from: track.timeRange.duration.seconds), default: "<None>")
+				Dimensions: \(track.dimensions?.formatted, default: "nil")
+				Frame rate: \(track.frameRate?.rounded(toDecimalPlaces: 2).formatted, default: "nil")
+				Is playable: \(track.isPlayable)
+				Is decodable: \(track.isDecodable)
+				----
+				"""
+			)
+		}
+
+		return output.joined(separator: "\n\n")
+	}
+}
+
+
 /// Video metadata
 extension AVURLAsset {
 	struct VideoMetadata {
@@ -432,16 +704,17 @@ extension AVURLAsset {
 	}
 
 	var videoMetadata: VideoMetadata? {
-		guard let track = tracks(withMediaType: .video).first else {
+		guard
+			let dimensions = dimensions,
+			let frameRate = frameRate
+		else {
 			return nil
 		}
 
-		let dimensions = track.naturalSize.applying(track.preferredTransform)
-
 		return VideoMetadata(
-			dimensions: CGSize(width: abs(dimensions.width), height: abs(dimensions.height)),
+			dimensions: dimensions,
 			duration: duration.seconds,
-			frameRate: Double(track.nominalFrameRate),
+			frameRate: frameRate,
 			fileSize: url.fileSize
 		)
 	}
@@ -1390,15 +1663,81 @@ extension CALayer {
 	}
 }
 
+extension Error {
+	var isNsError: Bool {
+		return type(of: self) is NSError.Type
+	}
+}
+
 extension NSError {
-	class func appError(message: String) -> Self {
+	// TODO: Return `Self` here in Swift 5.1
+	class func from(error: Error, userInfo: [String: Any] = [:]) -> NSError {
+		// Since Error and NSError are often bridged between each other, we check if it was originally an NSError and then return that.
+		guard !error.isNsError else {
+			guard !userInfo.isEmpty else {
+				return error as NSError
+			}
+
+			// TODO: Use `Self` instead of `NSError` here in Swift 5.1
+			return (error as NSError).appending(userInfo: userInfo)
+		}
+
+		var userInfo = userInfo
+		userInfo[NSLocalizedDescriptionKey] = error.localizedDescription
+
+		return self.init(
+			domain: "\(App.id) - \((error as NSError).domain)",
+			code: 0,
+			userInfo: userInfo
+		)
+	}
+
+	class func appError(message: String, userInfo: [String: Any] = [:]) -> Self {
 		return self.init(
 			domain: App.id,
 			code: 0,
 			userInfo: [NSLocalizedDescriptionKey: message]
 		)
 	}
+
+	/// Returns a new error with the user info appended
+	func appending(userInfo: [String: Any]) -> Self {
+		var currentUserInfo = userInfo
+		for (key, value) in userInfo {
+			currentUserInfo[key] = value
+		}
+		// TODO: Use `Self` here in Swift 5.1
+		return type(of: self).init(domain: domain, code: code, userInfo: currentUserInfo)
+	}
 }
+
+#if canImport(Crashlytics)
+	import Crashlytics
+
+	extension Crashlytics {
+		/// A better error recording method. Captures more debug info.
+		func recordErrorBetter(_ error: Error) {
+			#if !DEBUG
+				// This forces Crashlytics to actually provide some useful info for Swift errors
+				let nsError = NSError.from(error: error)
+
+				recordError(
+					nsError,
+					withAdditionalUserInfo: [
+						"userInfo": nsError.userInfo,
+						"localizedDescription": nsError.localizedDescription
+					]
+				)
+			#endif
+		}
+
+		func recordErrorMessage(_ message: String) {
+			#if !DEBUG
+				recordError(NSError.appError(message: message))
+			#endif
+		}
+	}
+#endif
 
 enum FileType {
 	case png
@@ -1471,5 +1810,37 @@ enum FileType {
 		case .gif:
 			return "gif"
 		}
+	}
+}
+
+extension Sequence {
+	/**
+	Returns the sum of elements in a sequence by mapping the elements with a numerator
+
+	```
+	[1, 2, 3].sum { $0 == 1 ? 10 : $0 }
+	//=> 15
+	```
+	*/
+	func sum<T: Numeric>(_ numerator: (Element) throws -> T) rethrows -> T {
+		var result: T = 0
+		for element in self {
+			result += try numerator(element)
+		}
+		return result
+	}
+}
+
+extension BinaryFloatingPoint {
+	func rounded(
+		toDecimalPlaces decimalPlaces: Int,
+		rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero
+	) -> Self {
+		guard decimalPlaces >= 0 else {
+			return self
+		}
+		var divisor: Self = 1
+		for _ in 0..<decimalPlaces { divisor *= 10 }
+		return (self * divisor).rounded(rule) / divisor
 	}
 }

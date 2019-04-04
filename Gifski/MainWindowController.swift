@@ -102,50 +102,38 @@ final class MainWindowController: NSWindowController {
 		cancelConversion()
 	}
 
-	private func getVideoDebugInfo(url: URL, errorTitle: String) -> String {
-		let asset = AVURLAsset(url: url)
-		let track = asset.tracks(withMediaType: .video).first
-		return
-			"""
-			error: \(errorTitle)
-			type: \(url.fileExtension)
-			dimensions: \(String(describing: track?.naturalSize))
-			duration: \(asset.duration.seconds)
-			frameRate: \(String(describing: track?.nominalFrameRate))
-			fileSize: \(url.fileSize)
-			"""
-	}
-
 	func convert(_ inputUrl: URL) {
-		let debugInfo = getVideoDebugInfo(url: inputUrl, errorTitle: "Video file not supported")
+		let asset = AVURLAsset(url: inputUrl)
 
-		// We already specify the UTIs we support, so this can only happen on invalid but supported files
-		guard inputUrl.isVideoDecodable else {
+		guard asset.videoCodec != "rle" else {
 			NSAlert.showModal(
 				for: window,
-				title: "Video file not supported",
-				message: "The video file you tried to convert could not be read. Please open an issue on https://github.com/sindresorhus/gifski-app. ZIP the video and attach it to the issue.\n\nInclude this info:\n\(debugInfo)"
+				title: "QuickTime Animation format not supported",
+				message: "Re-export or convert your video to ProRes 4444 XQ instead. It's more efficient, more widely supported, and like QuickTime Animation, it also supports alpha channel. To convert an existing video, just open it in QuickTime Player (which will convert it) and then save it."
 			)
-
-			#if !DEBUG
-				Crashlytics.sharedInstance().recordError(NSError.appError(message: debugInfo))
-			#endif
-
 			return
 		}
 
-		guard let videoMetadata = inputUrl.videoMetadata else {
-			let debugInfo = getVideoDebugInfo(url: inputUrl, errorTitle: "Video metadata not readable")
+		// We already specify the UTIs we support, so this can only happen on invalid video files or unsupported codecs.
+		guard asset.isVideoDecodable else {
+			NSAlert.showModal(
+				for: window,
+				title: "Video file not supported",
+				message: "The video file you tried to convert could not be read. Please open an issue on https://github.com/sindresorhus/gifski-app. ZIP the video and attach it to the issue.\n\nInclude this info:\n\(asset.debugInfo)"
+			)
+
+			Crashlytics.sharedInstance().recordErrorMessage("Video file not supported: \(asset.debugInfo)")
+			return
+		}
+
+		guard let videoMetadata = asset.videoMetadata else {
 			NSAlert.showModal(
 				for: window,
 				title: "Video metadata not readable",
-				message: "The metadata of the video could not be read. Please open an issue on https://github.com/sindresorhus/gifski-app. ZIP the video and attach it to the issue.\n\nInclude this info:\n\(debugInfo)"
+				message: "The metadata of the video could not be read. Please open an issue on https://github.com/sindresorhus/gifski-app. ZIP the video and attach it to the issue.\n\nInclude this info:\n\(asset.debugInfo)"
 			)
 
-			#if !DEBUG
-				Crashlytics.sharedInstance().recordError(NSError.appError(message: debugInfo))
-			#endif
-
+			Crashlytics.sharedInstance().recordErrorMessage("Video metadata not readable: \(asset.debugInfo)")
 			return
 		}
 
