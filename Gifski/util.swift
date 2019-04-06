@@ -416,6 +416,8 @@ extension FixedWidthInteger {
 
 extension String.StringInterpolation {
 	/**
+	Interpolate the value by unwrapping it, and if `nil`, use the given default string.
+
 	```
 	// This doesn't work as you can only use nil coalescing in interpolation with the same type as the optional
 	"foo \(optionalDouble ?? "none")
@@ -429,6 +431,25 @@ extension String.StringInterpolation {
 			appendInterpolation(value)
 		} else {
 			appendLiteral(defaultValue)
+		}
+	}
+
+	/**
+	Interpolate the value by unwrapping it, and if `nil`, use `"nil"`.
+
+	```
+	// This doesn't work as you can only use nil coalescing in interpolation with the same type as the optional
+	"foo \(optionalDouble ?? "nil")
+
+	// Now you can do this
+	"foo \(describing: optionalDouble)
+	```
+	*/
+	public mutating func appendInterpolation(describing value: Any?) {
+		if let value = value {
+			appendInterpolation(value)
+		} else {
+			appendLiteral("nil")
 		}
 	}
 }
@@ -658,12 +679,12 @@ extension AVAsset {
 			"""
 
 			## AVAsset debug info ##
-			Extension: \((self as? AVURLAsset)?.url.fileExtension ?? "nil")
-			Video codec: \(videoCodec, default: "nil")
-			Audio codec: \(audioCodec, default: "nil")
-			Duration: \(durationFormatter.string(from: duration.seconds), default: "nil")
-			Dimension: \(dimensions?.formatted, default: "nil")
-			Frame rate: \(frameRate?.rounded(toDecimalPlaces: 2).formatted, default: "nil")
+			Extension: \(describing: (self as? AVURLAsset)?.url.fileExtension)
+			Video codec: \(describing: videoCodec)
+			Audio codec: \(describing: audioCodec)
+			Duration: \(describing: durationFormatter.string(from: duration.seconds))
+			Dimension: \(describing: dimensions?.formatted)
+			Frame rate: \(describing: frameRate?.rounded(toDecimalPlaces: 2).formatted)
 			File size: \(fileSizeFormatted)
 			Is readable: \(isReadable)
 			Is playable: \(isPlayable)
@@ -678,10 +699,10 @@ extension AVAsset {
 				Track #\(track.trackID)
 				----
 				Type: \(String(reflecting: track.mediaType))
-				Codec: \(track.codec, default: "nil")
-				Duration: \(durationFormatter.string(from: track.timeRange.duration.seconds), default: "<None>")
-				Dimensions: \(track.dimensions?.formatted, default: "nil")
-				Frame rate: \(track.frameRate?.rounded(toDecimalPlaces: 2).formatted, default: "nil")
+				Codec: \(describing: track.codec)
+				Duration: \(describing: durationFormatter.string(from: track.timeRange.duration.seconds))
+				Dimensions: \(describing: track.dimensions?.formatted)
+				Frame rate: \(describing: track.frameRate?.rounded(toDecimalPlaces: 2).formatted)
 				Is playable: \(track.isPlayable)
 				Is decodable: \(track.isDecodable)
 				----

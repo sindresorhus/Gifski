@@ -105,6 +105,8 @@ final class MainWindowController: NSWindowController {
 	func convert(_ inputUrl: URL) {
 		let asset = AVURLAsset(url: inputUrl)
 
+		print(asset.debugInfo)
+
 		guard asset.videoCodec != "rle" else {
 			NSAlert.showModal(
 				for: window,
