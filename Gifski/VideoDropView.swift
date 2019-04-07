@@ -40,7 +40,7 @@ class DropView: SSView {
 		}
 	}
 
-	override init(frame: NSRect) {
+	override init(frame: CGRect) {
 		super.init(frame: frame)
 		autoresizingMask = [.width, .height]
 		registerForDraggedTypes(acceptedTypes)
@@ -64,7 +64,7 @@ class DropView: SSView {
 		}
 	}
 
-	override func draw(_ dirtyRect: NSRect) {
+	override func draw(_ dirtyRect: CGRect) {
 		super.draw(dirtyRect)
 
 		if isDraggingHighlighted {
@@ -107,7 +107,7 @@ final class VideoDropView: DropView {
 	var onComplete: (([URL]) -> Void)?
 
 	override var highlightColor: NSColor {
-		return .appTheme
+		return .themeColor
 	}
 
 	override var acceptedTypes: [NSPasteboard.PasteboardType] {

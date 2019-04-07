@@ -557,7 +557,7 @@ class Label: NSTextField {
 
 /// Use it in Interface Builder as a class or programmatically
 final class MonospacedLabel: Label {
-	override init(frame: NSRect) {
+	override init(frame: CGRect) {
 		super.init(frame: frame)
 		setup()
 	}

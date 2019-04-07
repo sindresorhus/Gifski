@@ -28,19 +28,24 @@ final class ConversionCompletedView: SSView {
 		$0.spacing = 20
 	}
 
-	private lazy var showInFinderButton = with(CustomButton()) {
-		$0.title = "Show in Finder"
-		$0.textColor = .appTheme
-		$0.backgroundColor = .clear
-		$0.borderWidth = 1
+	private func createButton(title: String) -> CustomButton {
+		return with(CustomButton()) {
+			$0.title = title
+			$0.textColor = .themeColor
+			// TODO: Custombutton should have a better way of handling different color in dark and light mode
+			$0.activeTextColor = NSColor(named: "ButtonTextColor")!
+			$0.backgroundColor = .clear
+			$0.activeBackgroundColor = .themeColor
+			$0.borderColor = .themeColor
+			$0.activeBorderColor = .themeColor
+			$0.borderWidth = 1
+			$0.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+		}
 	}
 
-	private lazy var shareButton = with(CustomButton()) {
-		$0.title = "Share"
-		$0.textColor = .appTheme
-		$0.backgroundColor = .clear
-		$0.borderWidth = 1
-	}
+	private lazy var showInFinderButton = createButton(title: "Show in Finder")
+
+	private lazy var shareButton = createButton(title: "Share")
 
 	var fileUrl: URL! {
 		didSet {

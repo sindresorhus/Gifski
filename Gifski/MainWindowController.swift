@@ -5,7 +5,7 @@ import Crashlytics
 
 final class MainWindowController: NSWindowController {
 	private lazy var circularProgress = with(CircularProgress(size: 160)) {
-		$0.color = .appTheme
+		$0.color = .themeColor
 		$0.isHidden = true
 		$0.centerInWindow(window)
 	}
@@ -92,7 +92,7 @@ final class MainWindowController: NSWindowController {
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
 
-		DockProgress.style = .circle(radius: 55, color: .appTheme)
+		DockProgress.style = .circle(radius: 55, color: .themeColor)
 	}
 
 	/// Gets called when the Esc key is pressed.
