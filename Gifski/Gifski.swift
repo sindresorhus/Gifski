@@ -119,7 +119,9 @@ final class Gifski {
 						let data = image.dataProvider?.data,
 						let buffer = CFDataGetBytePtr(data)
 					else {
-						completionHandlerOnce(.generateFrameFailed("Could not get byte pointer of image data provider"))
+						completionHandlerOnce(.generateFrameFailed(
+							NSError.appError(message: "Could not get byte pointer of image data provider")
+						))
 						return
 					}
 
