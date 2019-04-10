@@ -38,8 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		guard urls.count == 1 else {
 			NSAlert.showModal(
 				for: mainWindowController.window,
-				title: "Max one file",
-				message: "You can only convert a single file at the time"
+				message: "Gifski can only convert a single file at the time."
 			)
 			return
 		}
@@ -61,7 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
-		Crashlytics.sharedInstance().recordErrorBetter(error)
+		Crashlytics.recordNonFatalError(error: error)
 		return error
 	}
 }

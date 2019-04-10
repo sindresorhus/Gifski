@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import Crashlytics
 
 final class Gifski {
 	enum Error: LocalizedError {
@@ -87,6 +88,24 @@ final class Gifski {
 
 		DispatchQueue.global(qos: .utility).async {
 			let asset = AVURLAsset(url: conversion.input, options: nil)
+
+			Crashlytics.record(
+				key: "Does input file exist",
+				value: conversion.input.exists
+			)
+			Crashlytics.record(
+				key: "Is input file reachable",
+				value: try? conversion.input.checkResourceIsReachable()
+			)
+			Crashlytics.record(
+				key: "Is input file readable",
+				value: conversion.input.isReadable
+			)
+			Crashlytics.record(
+				key: "AVAsset debug info 2",
+				value: asset.debugInfo
+			)
+
 			let generator = AVAssetImageGenerator(asset: asset)
 			generator.requestedTimeToleranceAfter = .zero
 			generator.requestedTimeToleranceBefore = .zero

@@ -237,59 +237,59 @@ extension NSWindowController: NSWindowDelegate {
 
 
 extension NSAlert {
-	/// Show a modal alert sheet on a window
-	/// If the window is nil, it will be a app-modal alert
+	/// Show a modal alert sheet on a window.
+	/// If the window is nil, it will be a app-modal alert.
 	@discardableResult
 	static func showModal(
 		for window: NSWindow?,
-		title: String,
-		message: String? = nil,
-		style: NSAlert.Style = .critical
+		message: String,
+		informativeText: String? = nil,
+		style: NSAlert.Style = .warning
 	) -> NSApplication.ModalResponse {
 		guard let window = window else {
 			return NSAlert(
-				title: title,
 				message: message,
+				informativeText: informativeText,
 				style: style
 			).runModal()
 		}
 
 		return NSAlert(
-			title: title,
 			message: message,
+			informativeText: informativeText,
 			style: style
 		).runModal(for: window)
 	}
 
-	/// Show a app-modal (window indepedendent) alert
+	/// Show a app-modal (window indepedendent) alert.
 	@discardableResult
 	static func showModal(
-		title: String,
-		message: String? = nil,
-		style: NSAlert.Style = .critical
+		message: String,
+		informativeText: String? = nil,
+		style: NSAlert.Style = .warning
 	) -> NSApplication.ModalResponse {
 		return NSAlert(
-			title: title,
 			message: message,
+			informativeText: informativeText,
 			style: style
 		).runModal()
 	}
 
 	convenience init(
-		title: String,
-		message: String? = nil,
-		style: NSAlert.Style = .critical
+		message: String,
+		informativeText: String? = nil,
+		style: NSAlert.Style = .warning
 	) {
 		self.init()
-		self.messageText = title
+		self.messageText = message
 		self.alertStyle = style
 
-		if let message = message {
-			self.informativeText = message
+		if let informativeText = informativeText {
+			self.informativeText = informativeText
 		}
 	}
 
-	/// Runs the alert as a window-modal sheel
+	/// Runs the alert as a window-modal sheet.
 	@discardableResult
 	func runModal(for window: NSWindow) -> NSApplication.ModalResponse {
 		beginSheetModal(for: window) { returnCode in
@@ -612,6 +612,16 @@ extension AVAsset {
 		}
 
 		return firstVideoTrack.isDecodable
+	}
+
+	/// Returns a boolean of whether there are any video tracks.
+	var hasVideo: Bool {
+		return !tracks(withMediaType: .video).isEmpty
+	}
+
+	/// Returns a boolean of whether there are any audio tracks.
+	var hasAudio: Bool {
+		return !tracks(withMediaType: .audio).isEmpty
 	}
 
 	/// Returns the first video track if any.
@@ -1275,6 +1285,14 @@ extension URL {
 		return values.allValues[key] as? T
 	}
 
+	private func boolResourceValue(forKey key: URLResourceKey, defaultValue: Bool = false) -> Bool {
+		guard let values = try? resourceValues(forKeys: [key]) else {
+			return defaultValue
+		}
+
+		return values.allValues[key] as? Bool ?? defaultValue
+	}
+
 	/// File UTI
 	var typeIdentifier: String? {
 		return resourceValue(forKey: .typeIdentifierKey)
@@ -1287,6 +1305,14 @@ extension URL {
 
 	var fileSizeFormatted: String {
 		return ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
+	}
+
+	var exists: Bool {
+		return FileManager.default.fileExists(atPath: path)
+	}
+
+	var isReadable: Bool {
+		return boolResourceValue(forKey: .isReadableKey)
 	}
 }
 
@@ -1693,42 +1719,64 @@ extension Error {
 extension NSError {
 	// TODO: Return `Self` here in Swift 5.1
 	class func from(error: Error, userInfo: [String: Any] = [:]) -> NSError {
+		let nsError = error as NSError
+
 		// Since Error and NSError are often bridged between each other, we check if it was originally an NSError and then return that.
 		guard !error.isNsError else {
 			guard !userInfo.isEmpty else {
-				return error as NSError
+				return nsError
 			}
 
 			// TODO: Use `Self` instead of `NSError` here in Swift 5.1
-			return (error as NSError).appending(userInfo: userInfo)
+			return nsError.appending(userInfo: userInfo)
 		}
 
 		var userInfo = userInfo
 		userInfo[NSLocalizedDescriptionKey] = error.localizedDescription
 
+		// This is needed as `localizedDescription` often lacks important information, for example, when an NSError is wrapped in a Swift.Error.
+		userInfo["Swift.Error"] = "\(nsError.domain).\(error)"
+
 		return self.init(
-			domain: "\(App.id) - \((error as NSError).domain)",
-			code: 0,
+			domain: "\(App.id) - \(nsError.domain)",
+			code: nsError.code,
 			userInfo: userInfo
 		)
 	}
 
-	class func appError(message: String, userInfo: [String: Any] = [:]) -> Self {
+	/**
+	- Parameter domainPostfix: String to append to the `domain`.
+	*/
+	class func appError(message: String, userInfo: [String: Any] = [:], domainPostfix: String? = nil) -> Self {
 		return self.init(
-			domain: App.id,
+			domain: domainPostfix != nil ? "\(App.id) - \(domainPostfix!)" : App.id,
 			code: 0,
 			userInfo: [NSLocalizedDescriptionKey: message]
 		)
 	}
 
-	/// Returns a new error with the user info appended
-	func appending(userInfo: [String: Any]) -> Self {
-		var currentUserInfo = userInfo
-		for (key, value) in userInfo {
-			currentUserInfo[key] = value
-		}
+	/// Returns a new error with the user info appended.
+	func appending(userInfo newUserInfo: [String: Any]) -> Self {
 		// TODO: Use `Self` here in Swift 5.1
-		return type(of: self).init(domain: domain, code: code, userInfo: currentUserInfo)
+		return type(of: self).init(
+			domain: domain,
+			code: code,
+			userInfo: userInfo.appending(newUserInfo)
+		)
+	}
+}
+
+extension Dictionary {
+	/// Adds the elements of the given dictionary to a copy of self and returns that.
+	/// Identical keys in the given dictionary overwrites keys in the copy of self.
+	func appending(_ dictionary: [Key: Value]) -> [Key: Value] {
+		var newDictionary = self
+
+		for (key, value) in dictionary {
+			newDictionary[key] = value
+		}
+
+		return newDictionary
 	}
 }
 
@@ -1737,24 +1785,25 @@ extension NSError {
 
 	extension Crashlytics {
 		/// A better error recording method. Captures more debug info.
-		func recordErrorBetter(_ error: Error) {
+		static func recordNonFatalError(error: Error, userInfo: [String: Any] = [:]) {
 			#if !DEBUG
 				// This forces Crashlytics to actually provide some useful info for Swift errors
-				let nsError = NSError.from(error: error)
+				let nsError = NSError.from(error: error, userInfo: userInfo)
 
-				recordError(
-					nsError,
-					withAdditionalUserInfo: [
-						"userInfo": nsError.userInfo,
-						"localizedDescription": nsError.localizedDescription
-					]
-				)
+				sharedInstance().recordError(nsError)
 			#endif
 		}
 
-		func recordErrorMessage(_ message: String) {
+		static func recordNonFatalError(title: String? = nil, message: String) {
 			#if !DEBUG
-				recordError(NSError.appError(message: message))
+				sharedInstance().recordError(NSError.appError(message: message, domainPostfix: title))
+			#endif
+		}
+
+		/// Set a value for a for a key to be associated with your crash data which will be visible in Crashlytics.
+		static func record(key: String, value: Any?) {
+			#if !DEBUG
+				sharedInstance().setObjectValue(value, forKey: key)
 			#endif
 		}
 	}
