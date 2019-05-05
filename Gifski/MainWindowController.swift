@@ -128,6 +128,8 @@ final class MainWindowController: NSWindowController {
 
 		let asset = AVURLAsset(url: inputUrl)
 
+		print(asset.debugInfo)
+
 		Crashlytics.record(key: "AVAsset debug info", value: asset.debugInfo)
 
 		guard asset.videoCodec != .appleAnimation else {
