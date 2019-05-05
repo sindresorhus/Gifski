@@ -492,6 +492,39 @@ extension CGSize {
 }
 
 
+extension NSImage {
+	/// UIImage polyfill
+	convenience init(cgImage: CGImage) {
+		let size = CGSize(width: cgImage.width, height: cgImage.height)
+		self.init(cgImage: cgImage, size: size)
+	}
+}
+
+
+extension CGImage {
+	var nsImage: NSImage {
+		return NSImage(cgImage: self)
+	}
+}
+
+
+extension AVAssetImageGenerator {
+	func image(at time: CMTime) -> NSImage? {
+		return (try? copyCGImage(at: time, actualTime: nil))?.nsImage
+	}
+}
+
+extension AVAsset {
+	func image(at time: CMTime) -> NSImage? {
+		let imageGenerator = AVAssetImageGenerator(asset: self)
+		imageGenerator.appliesPreferredTrackTransform = true
+		imageGenerator.requestedTimeToleranceAfter = .zero
+		imageGenerator.requestedTimeToleranceBefore = .zero
+		return imageGenerator.image(at: time)
+	}
+}
+
+
 extension AVAssetTrack {
 	/// Returns the dimensions of the track if it's a video.
 	var dimensions: CGSize? {
@@ -500,7 +533,14 @@ extension AVAssetTrack {
 		}
 
 		let size = naturalSize.applying(preferredTransform)
-		return CGSize(width: abs(size.width), height: abs(size.height))
+		let preferredSize = CGSize(width: abs(size.width), height: abs(size.height))
+
+		// Workaround for https://github.com/sindresorhus/gifski-app/issues/76
+		guard preferredSize != .zero else {
+			return asset?.image(at: CMTime(seconds: 0, preferredTimescale: .video))?.size
+		}
+
+		return preferredSize
 	}
 
 	/// Returns the frame rate of the track if it's a video.
