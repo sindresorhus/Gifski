@@ -134,6 +134,12 @@ final class Gifski {
 				]
 			)
 
+			// Locally only!
+			Crashlytics.record(
+				key: debugKey,
+				value: "\(conversion)"
+			)
+
 			Crashlytics.record(
 				key: "\(debugKey): Is readable?",
 				value: asset.isReadable
