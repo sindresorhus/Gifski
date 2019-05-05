@@ -90,19 +90,19 @@ final class Gifski {
 			let asset = AVURLAsset(url: conversion.input, options: nil)
 
 			Crashlytics.record(
-				key: "Does input file exist",
+				key: "Conversion: Does input file exist",
 				value: conversion.input.exists
 			)
 			Crashlytics.record(
-				key: "Is input file reachable",
+				key: "Conversion: Is input file reachable",
 				value: try? conversion.input.checkResourceIsReachable()
 			)
 			Crashlytics.record(
-				key: "Is input file readable",
+				key: "Conversion: Is input file readable",
 				value: conversion.input.isReadable
 			)
 			Crashlytics.record(
-				key: "AVAsset debug info 2",
+				key: "Conversion: AVAsset debug info",
 				value: asset.debugInfo
 			)
 

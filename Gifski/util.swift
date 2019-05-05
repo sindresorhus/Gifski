@@ -22,7 +22,7 @@ func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
 
 struct Meta {
 	static func openSubmitFeedbackPage(message: String? = nil) {
-		let defaultMessage = "<!-- Provide your feedback here. Include as many details as possible. -->"
+		let defaultMessage = "<!--\nProvide your feedback here. Include as many details as possible.\nYou can also email me at sindresorhus@gmail.com\n-->"
 
 		let body =
 			"""
@@ -520,9 +520,17 @@ extension AVAssetTrack {
 	/// Example:
 	/// `avc1` (video)
 	/// `aac` (audio)
-	var codec: String? {
+	var codecString: String? {
 		let descriptions = formatDescriptions as! [CMFormatDescription]
 		return descriptions.map { CMFormatDescriptionGetMediaSubType($0).toString() }.first
+	}
+
+	var codec: AVFormat? {
+		guard let codecString = codecString else {
+			return nil
+		}
+
+		return AVFormat(fourCC: codecString)
 	}
 
 	/// Returns a debug string with the media format. Example: `vide/avc1`
@@ -567,6 +575,130 @@ extension FourCharCode {
 
         return String(cString: bytes).trimmingCharacters(in: .whitespaces)
     }
+}
+
+
+// TODO: Support audio formats too.
+enum AVFormat: String {
+	case hevc
+	case h264
+	case appleProResRAWHQ
+	case appleProResRAW
+	case appleProRes4444XQ
+	case appleProRes4444
+	case appleProRes422HQ
+	case appleProRes422
+	case appleProRes422LT
+	case appleProRes422Proxy
+	case appleAnimation
+
+	init?(fourCC: String) {
+		switch fourCC.trimmingCharacters(in: .whitespaces) {
+		case "hvc1":
+			self = .hevc
+		case "avc1":
+			self = .h264
+		case "aprh": // From https://avpres.net/Glossar/ProResRAW.html
+			self = .appleProResRAWHQ
+		case "aprn":
+			self = .appleProResRAW
+		case "ap4x":
+			self = .appleProRes4444XQ
+		case "ap4h":
+			self = .appleProRes4444
+		case "apch":
+			self = .appleProRes422HQ
+		case "apcn":
+			self = .appleProRes422
+		case "apcs":
+			self = .appleProRes422LT
+		case "apco":
+			self = .appleProRes422Proxy
+		case "rle":
+			self = .appleAnimation
+		default:
+			return nil
+		}
+	}
+
+	init?(fourCC: FourCharCode) {
+		self.init(fourCC: fourCC.toString())
+	}
+
+	var fourCC: String {
+		switch self {
+		case .hevc:
+			return "hvc1"
+		case .h264:
+			return "avc1"
+		case .appleProResRAWHQ:
+			return "aprh"
+		case .appleProResRAW:
+			return "aprn"
+		case .appleProRes4444XQ:
+			return "ap4x"
+		case .appleProRes4444:
+			return "ap4h"
+		case .appleProRes422HQ:
+			return "apcn"
+		case .appleProRes422:
+			return "apch"
+		case .appleProRes422LT:
+			return "apcs"
+		case .appleProRes422Proxy:
+			return "apco"
+		case .appleAnimation:
+			return "rle "
+		}
+	}
+
+	var isAppleProRes: Bool {
+		return [
+			.appleProResRAWHQ,
+			.appleProResRAW,
+			.appleProRes4444XQ,
+			.appleProRes4444,
+			.appleProRes422HQ,
+			.appleProRes422,
+			.appleProRes422LT,
+			.appleProRes422Proxy
+		].contains(self)
+	}
+}
+
+extension AVFormat: CustomStringConvertible {
+	var description: String {
+		switch self {
+		case .hevc:
+			return "HEVC"
+		case .h264:
+			return "H264"
+		case .appleProResRAWHQ:
+			return "Apple ProRes RAW HQ"
+		case .appleProResRAW:
+			return "Apple ProRes RAW"
+		case .appleProRes4444XQ:
+			return "Apple ProRes 4444 XQ"
+		case .appleProRes4444:
+			return "Apple ProRes 4444"
+		case .appleProRes422HQ:
+			return "Apple ProRes 422 HQ"
+		case .appleProRes422:
+			return "Apple ProRes 422"
+		case .appleProRes422LT:
+			return "Apple ProRes 422 LT"
+		case .appleProRes422Proxy:
+			return "Apple ProRes 422 Proxy"
+		case .appleAnimation:
+			return "Apple Animation"
+		}
+	}
+}
+
+extension AVFormat: CustomDebugStringConvertible {
+	var debugDescription: String {
+		return "\(description) (\(fourCC))"
+	}
 }
 
 
@@ -650,15 +782,14 @@ extension AVAsset {
 	}
 
 	/// Returns the video codec of the first video track if any.
-	/// Example: `avc1`
-	var videoCodec: String? {
+	var videoCodec: AVFormat? {
 		return firstVideoTrack?.codec
 	}
 
 	/// Returns the audio codec of the first audio track if any.
 	/// Example: `aac`
 	var audioCodec: String? {
-		return firstAudioTrack?.codec
+		return firstAudioTrack?.codecString
 	}
 
 	/// The file size of the asset in bytes.
@@ -676,7 +807,6 @@ extension AVAsset {
 	}
 }
 
-
 extension AVAsset {
 	/// Returns debug info for the asset to use in logging and error messages.
 	var debugInfo: String {
@@ -690,7 +820,7 @@ extension AVAsset {
 
 			## AVAsset debug info ##
 			Extension: \(describing: (self as? AVURLAsset)?.url.fileExtension)
-			Video codec: \(describing: videoCodec)
+			Video codec: \(describing: videoCodec?.debugDescription)
 			Audio codec: \(describing: audioCodec)
 			Duration: \(describing: durationFormatter.string(from: duration.seconds))
 			Dimension: \(describing: dimensions?.formatted)
@@ -708,10 +838,11 @@ extension AVAsset {
 				"""
 				Track #\(track.trackID)
 				----
-				Type: \(String(reflecting: track.mediaType))
-				Codec: \(describing: track.codec)
+				Type: \(track.mediaType.debugDescription)
+				Codec: \(describing: track.mediaType == .video ? track.codec?.debugDescription : track.codecString)
 				Duration: \(describing: durationFormatter.string(from: track.timeRange.duration.seconds))
 				Dimensions: \(describing: track.dimensions?.formatted)
+				Natural size: \(describing: track.naturalSize)
 				Frame rate: \(describing: track.frameRate?.rounded(toDecimalPlaces: 2).formatted)
 				Is playable: \(track.isPlayable)
 				Is decodable: \(track.isDecodable)
@@ -1313,6 +1444,29 @@ extension URL {
 
 	var isReadable: Bool {
 		return boolResourceValue(forKey: .isReadableKey)
+	}
+}
+
+extension URL {
+	/**
+	Check if the file conforms to the given type identifier
+
+	```
+	URL(fileURLWithPath: "video.mp4").conformsTo(typeIdentifier: "public.movie")
+	//=> true
+	```
+	*/
+	func conformsTo(typeIdentifier parentTypeIdentifier: String) -> Bool {
+		guard let typeIdentifier = typeIdentifier else {
+			return false
+		}
+
+		return UTTypeConformsTo(typeIdentifier as CFString, parentTypeIdentifier as CFString)
+	}
+
+	/// - Important: This doesn't guarantee it's a video. A video container could contain only an audio track. Use the `AVAsset` properties to ensure it's something you can use.
+	var isVideo: Bool {
+		return conformsTo(typeIdentifier: kUTTypeMovie as String)
 	}
 }
 

@@ -103,11 +103,34 @@ final class MainWindowController: NSWindowController {
 	}
 
 	func convert(_ inputUrl: URL) {
+		Crashlytics.record(
+			key: "Does input file exist",
+			value: inputUrl.exists
+		)
+		Crashlytics.record(
+			key: "Is input file reachable",
+			value: try? inputUrl.checkResourceIsReachable()
+		)
+		Crashlytics.record(
+			key: "Is input file readable",
+			value: inputUrl.isReadable
+		)
+
+		// This is very unlikely to happen. We have a lot of file type filters in place, so the only way this can happen is if the user right-clicks a non-video in Finder, chooses "Open With", then "Other…", chooses "All Applications", and then selects Gifski. Yet, some people are doing this…
+		guard inputUrl.isVideo else {
+			NSAlert.showModal(
+				for: window,
+				message: "The selected file is not a video.",
+				informativeText: "Gifski can only convert a video file."
+			)
+			return
+		}
+
 		let asset = AVURLAsset(url: inputUrl)
 
 		Crashlytics.record(key: "AVAsset debug info", value: asset.debugInfo)
 
-		guard asset.videoCodec != "rle" else {
+		guard asset.videoCodec != .appleAnimation else {
 			NSAlert.showModal(
 				for: window,
 				message: "The QuickTime Animation format is not supported.",
@@ -135,7 +158,7 @@ final class MainWindowController: NSWindowController {
 			NSAlert.showModal(
 				for: window,
 				message: "The video file is not supported.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app. ZIP the video and attach it to the issue.\n\nInclude this info:\n\(asset.debugInfo)"
+				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
 			)
 
 			Crashlytics.recordNonFatalError(
@@ -149,11 +172,29 @@ final class MainWindowController: NSWindowController {
 			NSAlert.showModal(
 				for: window,
 				message: "The video metadata is not readable.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app. ZIP the video and attach it to the issue.\n\nInclude this info:\n\(asset.debugInfo)"
+				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
 			)
 
 			Crashlytics.recordNonFatalError(
 				title: "The video metadata is not readable.",
+				message: asset.debugInfo
+			)
+			return
+		}
+
+		guard
+			let dimensions = asset.dimensions,
+			dimensions.width > 10,
+			dimensions.height > 10
+		else {
+			NSAlert.showModal(
+				for: window,
+				message: "The video dimensions must be at least 10×10.",
+				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
+			)
+
+			Crashlytics.recordNonFatalError(
+				title: "The video dimensions must be at least 10×10.",
 				message: asset.debugInfo
 			)
 			return
