@@ -1931,8 +1931,12 @@ extension NSError {
 		// This is needed as `localizedDescription` often lacks important information, for example, when an NSError is wrapped in a Swift.Error.
 		userInfo["Swift.Error"] = "\(nsError.domain).\(error)"
 
+		// Awful, but no better way to get the enum case name.
+		// This gets `Error.generateFrameFailed` from `Error.generateFrameFailed(Error Domain=AVFoundationErrorDomain Code=-11832 […]`.
+		let errorName = "\(error)".split(separator: "(").first ?? ""
+
 		return self.init(
-			domain: "\(App.id) - \(nsError.domain)",
+			domain: "\(App.id) - \(nsError.domain)\(errorName != nil ? "." : "")\(errorName)",
 			code: nsError.code,
 			userInfo: userInfo
 		)
