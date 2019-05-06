@@ -1936,7 +1936,7 @@ extension NSError {
 		let errorName = "\(error)".split(separator: "(").first ?? ""
 
 		return self.init(
-			domain: "\(App.id) - \(nsError.domain)\(errorName != nil ? "." : "")\(errorName)",
+			domain: "\(App.id) - \(nsError.domain)\(errorName.isEmpty ? "" : ".")\(errorName)",
 			code: nsError.code,
 			userInfo: userInfo
 		)
