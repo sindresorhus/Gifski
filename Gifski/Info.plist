@@ -23,6 +23,26 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSServices</key>
+	<array>
+		<dict>
+			<key>NSMessage</key>
+			<string>convertToGif</string>
+			<key>NSPortName</key>
+			<string>Gifski</string>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Gifski: Convert to GIF</string>
+			</dict>
+			<key>NSRequiredContext</key>
+			<dict/>
+			<key>NSSendFileTypes</key>
+			<array>
+				<string>public.movie</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
