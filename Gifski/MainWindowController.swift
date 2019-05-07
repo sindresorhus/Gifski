@@ -63,7 +63,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	var conversionCompleted: Bool {
-		return conversionCompletedView.isHidden == false && self.outUrl != nil
+		return conversionCompletedView.isHidden == false && outUrl != nil
 	}
 
 	convenience init() {
