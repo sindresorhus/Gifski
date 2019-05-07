@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		hasFinishedLaunching = true
 		NSApplication.shared.isAutomaticCustomizeTouchBarMenuItemEnabled = true
+		NSApp.servicesProvider = self
 
 		if urlsToConvertOnLaunch != nil {
 			mainWindowController.convert(urlsToConvertOnLaunch)
@@ -62,5 +63,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
 		Crashlytics.recordNonFatalError(error: error)
 		return error
+	}
+
+	/// This is called from NSApp as a service resolver
+	@objc
+	func convertToGif(_ pasteboard: NSPasteboard, userData: String, error: NSErrorPointer) {
+		guard let url = pasteboard.fileURLs().first else {
+			return
+		}
+
+		mainWindowController.convert(url)
 	}
 }
