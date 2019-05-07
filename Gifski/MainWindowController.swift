@@ -2,6 +2,7 @@ import Cocoa
 import AVFoundation
 import StoreKit
 import Crashlytics
+import Quartz
 
 final class MainWindowController: NSWindowController {
 	private lazy var circularProgress = with(CircularProgress(size: 160)) {
@@ -59,6 +60,10 @@ final class MainWindowController: NSWindowController {
 				conversionCompletedView.isHidden = true
 			}
 		}
+	}
+
+	var conversionCompleted: Bool {
+		return conversionCompletedView.isHidden == false && self.outUrl != nil
 	}
 
 	convenience init() {
@@ -301,6 +306,18 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
+	@IBAction private func quickLook(_ sender: Any) {
+		guard let panel = QLPreviewPanel.shared() else {
+			return
+		}
+
+		if panel.isVisible {
+			panel.orderOut(nil)
+		} else {
+			panel.makeKeyAndOrderFront(nil)
+		}
+	}
+
 	private func setupTimeRemainingLabel() {
 		guard let view = view else {
 			return
@@ -320,8 +337,38 @@ extension MainWindowController: NSMenuItemValidation {
 		switch menuItem.action {
 		case #selector(open)?:
 			return !isRunning
+		case #selector(quickLook(_:))?:
+			return conversionCompleted
 		default:
-			return validateMenuItem(menuItem)
+			return true
 		}
+	}
+}
+
+extension MainWindowController: QLPreviewPanelDataSource {
+	override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
+		return true
+	}
+
+	override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+		guard let panel = QLPreviewPanel.shared() else {
+			return
+		}
+
+		panel.dataSource = self
+		panel.makeKeyAndOrderFront(self)
+	}
+
+	override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+		// For some reason if we do not override this func, the app will crash
+		// when hiding the panel
+	}
+
+	func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
+		return 1
+	}
+
+	func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
+		return outUrl as NSURL
 	}
 }
