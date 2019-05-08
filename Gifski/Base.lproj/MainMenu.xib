@@ -66,7 +66,8 @@
                                     <action selector="open:" target="-1" id="E6Y-20-4aZ"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Quick Look..." keyEquivalent=" " id="Wfh-bM-KvX">
+                            <menuItem isSeparatorItem="YES" id="TB9-2E-bka"/>
+                            <menuItem title="Quick Look" keyEquivalent=" " id="Wfh-bM-KvX">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="quickLook:" target="-1" id="h7S-AO-RZK"/>
