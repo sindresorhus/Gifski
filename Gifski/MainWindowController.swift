@@ -62,7 +62,7 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	var conversionCompleted: Bool {
+	var isConversionCompleted: Bool {
 		return conversionCompletedView.isHidden == false && outUrl != nil
 	}
 
@@ -338,7 +338,7 @@ extension MainWindowController: NSMenuItemValidation {
 		case #selector(open)?:
 			return !isRunning
 		case #selector(quickLook(_:))?:
-			return conversionCompleted
+			return isConversionCompleted
 		default:
 			return true
 		}
