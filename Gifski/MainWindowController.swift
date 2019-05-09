@@ -2,7 +2,6 @@ import Cocoa
 import AVFoundation
 import StoreKit
 import Crashlytics
-import Quartz
 
 final class MainWindowController: NSWindowController {
 	private lazy var circularProgress = with(CircularProgress(size: 160)) {
@@ -307,15 +306,11 @@ final class MainWindowController: NSWindowController {
 	}
 
 	@IBAction private func quickLook(_ sender: Any) {
-		guard let panel = QLPreviewPanel.shared() else {
-			return
-		}
-
-		if panel.isVisible {
-			panel.orderOut(nil)
-		} else {
-			panel.makeKeyAndOrderFront(nil)
-		}
+		// Kind of a hack to get our conversion view to be the next responder to answer
+		// for QLPreviewPanel methods. Can we do it better?
+		nextResponder = conversionCompletedView
+		conversionCompletedView.quickLookPreviewItems(nil)
+		nextResponder = nil
 	}
 
 	private func setupTimeRemainingLabel() {
@@ -342,33 +337,5 @@ extension MainWindowController: NSMenuItemValidation {
 		default:
 			return true
 		}
-	}
-}
-
-extension MainWindowController: QLPreviewPanelDataSource {
-	override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
-		return true
-	}
-
-	override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
-		guard let panel = QLPreviewPanel.shared() else {
-			return
-		}
-
-		panel.dataSource = self
-		panel.makeKeyAndOrderFront(self)
-	}
-
-	override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
-		// For some reason if we do not override this func, the app will crash
-		// when hiding the panel
-	}
-
-	func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
-		return 1
-	}
-
-	func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
-		return outUrl as NSURL
 	}
 }

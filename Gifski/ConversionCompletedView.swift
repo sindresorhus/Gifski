@@ -1,4 +1,5 @@
 import Cocoa
+import Quartz
 
 final class ConversionCompletedView: SSView {
 	private let draggableFile = DraggableFile()
@@ -70,6 +71,22 @@ final class ConversionCompletedView: SSView {
 		fadeIn()
 	}
 
+	override func quickLook(with event: NSEvent) {
+		quickLookPreviewItems(nil)
+	}
+
+	override func quickLookPreviewItems(_ sender: Any?) {
+		guard let panel = QLPreviewPanel.shared() else {
+			return
+		}
+
+		if panel.isVisible {
+			panel.orderOut(nil)
+		} else {
+			panel.makeKeyAndOrderFront(nil)
+		}
+	}
+
 	override func didAppear() {
 		translatesAutoresizingMaskIntoConstraints = false
 
@@ -126,5 +143,46 @@ final class ConversionCompletedView: SSView {
 			shareButton.heightAnchor.constraint(equalTo: buttonsContainer.heightAnchor),
 			shareButton.widthAnchor.constraint(equalTo: showInFinderButton.widthAnchor)
 		])
+	}
+}
+
+extension ConversionCompletedView: QLPreviewPanelDataSource {
+	override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
+		return true
+	}
+
+	override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+		panel.delegate = self
+		panel.dataSource = self
+	}
+
+	override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+		panel.dataSource = nil
+		panel.delegate = nil
+	}
+
+	func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
+		return 1
+	}
+
+	func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
+		return fileUrl as NSURL
+	}
+}
+
+extension ConversionCompletedView: QLPreviewPanelDelegate {
+	func previewPanel(_ panel: QLPreviewPanel!, sourceFrameOnScreenFor item: QLPreviewItem!) -> NSRect {
+		guard let imageRect = draggableFile.subviews.first?.frame, let window = window else {
+			return .zero
+		}
+
+		let windowFrame = draggableFile.convert(imageRect, to: nil)
+		let screenFrame = window.convertToScreen(windowFrame)
+		
+		return screenFrame
+	}
+
+	func previewPanel(_ panel: QLPreviewPanel!, transitionImageFor item: QLPreviewItem!, contentRect: UnsafeMutablePointer<NSRect>!) -> Any! {
+		return draggableFile.image
 	}
 }
