@@ -80,11 +80,7 @@ final class ConversionCompletedView: SSView {
 			return
 		}
 
-		if panel.isVisible {
-			panel.orderOut(nil)
-		} else {
-			panel.makeKeyAndOrderFront(nil)
-		}
+		panel.toggle()
 	}
 
 	override func didAppear() {
