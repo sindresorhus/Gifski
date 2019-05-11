@@ -167,7 +167,7 @@ extension ConversionCompletedView: QLPreviewPanelDataSource {
 }
 
 extension ConversionCompletedView: QLPreviewPanelDelegate {
-	func previewPanel(_ panel: QLPreviewPanel!, sourceFrameOnScreenFor item: QLPreviewItem!) -> NSRect {
+	func previewPanel(_ panel: QLPreviewPanel!, sourceFrameOnScreenFor item: QLPreviewItem!) -> CGRect {
 		guard let imageRect = draggableFile.subviews.first?.frame, let window = window else {
 			return .zero
 		}
@@ -178,7 +178,7 @@ extension ConversionCompletedView: QLPreviewPanelDelegate {
 		return screenFrame
 	}
 
-	func previewPanel(_ panel: QLPreviewPanel!, transitionImageFor item: QLPreviewItem!, contentRect: UnsafeMutablePointer<NSRect>!) -> Any! {
+	func previewPanel(_ panel: QLPreviewPanel!, transitionImageFor item: QLPreviewItem!, contentRect: UnsafeMutablePointer<CGRect>!) -> Any! {
 		return draggableFile.image
 	}
 }
