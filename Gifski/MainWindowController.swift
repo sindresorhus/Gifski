@@ -120,8 +120,8 @@ final class MainWindowController: NSWindowController {
 		guard inputUrl.isVideo else {
 			NSAlert.showModal(
 				for: window,
-				message: "The selected file is not a video.",
-				informativeText: "Gifski can only convert a video file."
+				message: "The selected file cannot be converted because it's not a video.",
+				informativeText: "Try again with a video file, usually with the file extension “mp4” or “mov”."
 			)
 			return
 		}
@@ -140,45 +140,36 @@ final class MainWindowController: NSWindowController {
 		}
 
 		if asset.hasAudio && !asset.hasVideo {
-			NSAlert.showModal(
+			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "Audio files are not supported.",
-				informativeText: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video."
+				informativeText: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video.",
+				debugInfo: asset.debugInfo
 			)
 
-			Crashlytics.recordNonFatalError(
-				title: "Audio files are not supported.",
-				message: asset.debugInfo
-			)
 			return
 		}
 
 		// We already specify the UTIs we support, so this can only happen on invalid video files or unsupported codecs.
 		guard asset.isVideoDecodable else {
-			NSAlert.showModal(
+			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video file is not supported.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
+				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)",
+				debugInfo: asset.debugInfo
 			)
 
-			Crashlytics.recordNonFatalError(
-				title: "The video file is not supported.",
-				message: asset.debugInfo
-			)
 			return
 		}
 
 		guard let videoMetadata = asset.videoMetadata else {
-			NSAlert.showModal(
+			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video metadata is not readable.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
+				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)",
+				debugInfo: asset.debugInfo
 			)
 
-			Crashlytics.recordNonFatalError(
-				title: "The video metadata is not readable.",
-				message: asset.debugInfo
-			)
 			return
 		}
 
@@ -187,16 +178,13 @@ final class MainWindowController: NSWindowController {
 			dimensions.width > 10,
 			dimensions.height > 10
 		else {
-			NSAlert.showModal(
+			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video dimensions must be at least 10×10.",
-				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
+				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)",
+				debugInfo: asset.debugInfo
 			)
 
-			Crashlytics.recordNonFatalError(
-				title: "The video dimensions must be at least 10×10.",
-				message: asset.debugInfo
-			)
 			return
 		}
 
