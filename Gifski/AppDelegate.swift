@@ -64,7 +64,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		Crashlytics.recordNonFatalError(error: error)
 		return error
 	}
+}
 
+extension AppDelegate {
 	/// This is called from NSApp as a service resolver
 	@objc
 	func convertToGif(_ pasteboard: NSPasteboard, userData: String, error: NSErrorPointer) {
