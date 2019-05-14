@@ -1,11 +1,6 @@
 import Cocoa
 import AVFoundation
 
-
-/// YOLO
-extension String: Error {}
-
-
 /**
 Convenience function for initializing an object and modifying its properties
 
@@ -26,17 +21,19 @@ func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
 
 
 struct Meta {
-	static func openSubmitFeedbackPage() {
+	static func openSubmitFeedbackPage(message: String? = nil) {
+		let defaultMessage = "<!--\nProvide your feedback here. Include as many details as possible.\nYou can also email me at sindresorhus@gmail.com\n-->"
+
 		let body =
-		"""
-		<!-- Provide your feedback here. Include as many details as possible. -->
+			"""
+			\(message ?? defaultMessage)
 
 
-		---
-		\(App.name) \(App.version) (\(App.build))
-		macOS \(System.osVersion)
-		\(System.hardwareModel)
-		"""
+			---
+			\(App.name) \(App.versionWithBuild)
+			macOS \(System.osVersion)
+			\(System.hardwareModel)
+			"""
 
 		let query: [String: String] = [
 			"body": body
@@ -137,15 +134,20 @@ extension NSWindow {
 
 	static let defaultContentSize = CGSize(width: 480, height: 300)
 
-	/// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/gifski-app/pull/30#discussion_r175337064
+	// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/gifski-app/pull/30#discussion_r175337064
 	static var defaultContentRect: CGRect {
 		return centeredOnScreen(rect: defaultContentSize.cgRect)
 	}
 
 	static let defaultStyleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
 
-	static func centeredWindow(size: CGSize = defaultContentSize) -> NSWindow {
-		let window = NSWindow()
+	static func centeredWindow(size: CGSize = defaultContentSize) -> Self {
+		let window = self.init(
+			contentRect: NSWindow.defaultContentRect,
+			styleMask: NSWindow.defaultStyleMask,
+			backing: .buffered,
+			defer: true
+		)
 		window.setContentSize(size)
 		window.centerNatural()
 		return window
@@ -235,59 +237,59 @@ extension NSWindowController: NSWindowDelegate {
 
 
 extension NSAlert {
-	/// Show a modal alert sheet on a window
-	/// If the window is nil, it will be a app-modal alert
+	/// Show a modal alert sheet on a window.
+	/// If the window is nil, it will be a app-modal alert.
 	@discardableResult
 	static func showModal(
 		for window: NSWindow?,
-		title: String,
-		message: String? = nil,
-		style: NSAlert.Style = .critical
+		message: String,
+		informativeText: String? = nil,
+		style: NSAlert.Style = .warning
 	) -> NSApplication.ModalResponse {
 		guard let window = window else {
 			return NSAlert(
-				title: title,
 				message: message,
+				informativeText: informativeText,
 				style: style
 			).runModal()
 		}
 
 		return NSAlert(
-			title: title,
 			message: message,
+			informativeText: informativeText,
 			style: style
 		).runModal(for: window)
 	}
 
-	/// Show a app-modal (window indepedendent) alert
+	/// Show a app-modal (window indepedendent) alert.
 	@discardableResult
 	static func showModal(
-		title: String,
-		message: String? = nil,
-		style: NSAlert.Style = .critical
+		message: String,
+		informativeText: String? = nil,
+		style: NSAlert.Style = .warning
 	) -> NSApplication.ModalResponse {
 		return NSAlert(
-			title: title,
 			message: message,
+			informativeText: informativeText,
 			style: style
 		).runModal()
 	}
 
 	convenience init(
-		title: String,
-		message: String? = nil,
-		style: NSAlert.Style = .critical
+		message: String,
+		informativeText: String? = nil,
+		style: NSAlert.Style = .warning
 	) {
 		self.init()
-		self.messageText = title
+		self.messageText = message
 		self.alertStyle = style
 
-		if let message = message {
-			self.informativeText = message
+		if let informativeText = informativeText {
+			self.informativeText = informativeText
 		}
 	}
 
-	/// Runs the alert as a window-modal sheel
+	/// Runs the alert as a window-modal sheet.
 	@discardableResult
 	func runModal(for window: NSWindow) -> NSApplication.ModalResponse {
 		beginSheetModal(for: window) { returnCode in
@@ -306,22 +308,12 @@ extension AVAssetImageGenerator {
 		let actualTime: CMTime
 		let completedCount: Int
 		let totalCount: Int
-		let isCancelled: Bool
 		let isFinished: Bool
-	}
-
-	/// TODO: Remove this when using Swift 5 and use `CancellationError` in the cancellation case
-	enum Error: CancellableError {
-		case cancelled
-
-		var isCancelled: Bool {
-			return self == .cancelled
-		}
 	}
 
 	func generateCGImagesAsynchronously(
 		forTimePoints timePoints: [CMTime],
-		completionHandler: @escaping (CoreResult<CompletionHandlerResult, Error>) -> Void
+		completionHandler: @escaping (Swift.Result<CompletionHandlerResult, Error>) -> Void
 	) {
 		let times = timePoints.map { NSValue(time: $0) }
 		let totalCount = times.count
@@ -340,15 +332,16 @@ extension AVAssetImageGenerator {
 							actualTime: actualTime,
 							completedCount: completedCount,
 							totalCount: totalCount,
-							isCancelled: false,
 							isFinished: completedCount == totalCount
 						)
 					)
 				)
 			case .failed:
-				completionHandler(.failure(error! as! Error))
+				completionHandler(.failure(error!))
 			case .cancelled:
-				completionHandler(.failure(.cancelled))
+				completionHandler(.failure(CancellationError()))
+			@unknown default:
+				assertionFailure("AVAssetImageGenerator.generateCGImagesAsynchronously() received a new enum case. Please handle it.")
 			}
 		}
 	}
@@ -412,16 +405,497 @@ extension Strideable where Stride: SignedInteger {
 }
 
 
+extension FixedWidthInteger {
+	/// Returns the integer formatted as a human readble file size.
+	/// Example: `2.3 GB`
+	var bytesFormattedAsFileSize: String {
+		return ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
+	}
+}
+
+
+extension String.StringInterpolation {
+	/**
+	Interpolate the value by unwrapping it, and if `nil`, use the given default string.
+
+	```
+	// This doesn't work as you can only use nil coalescing in interpolation with the same type as the optional
+	"foo \(optionalDouble ?? "none")
+
+	// Now you can do this
+	"foo \(optionalDouble, default: "none")
+	```
+	*/
+	public mutating func appendInterpolation(_ value: Any?, default defaultValue: String) {
+		if let value = value {
+			appendInterpolation(value)
+		} else {
+			appendLiteral(defaultValue)
+		}
+	}
+
+	/**
+	Interpolate the value by unwrapping it, and if `nil`, use `"nil"`.
+
+	```
+	// This doesn't work as you can only use nil coalescing in interpolation with the same type as the optional
+	"foo \(optionalDouble ?? "nil")
+
+	// Now you can do this
+	"foo \(describing: optionalDouble)
+	```
+	*/
+	public mutating func appendInterpolation(describing value: Any?) {
+		if let value = value {
+			appendInterpolation(value)
+		} else {
+			appendLiteral("nil")
+		}
+	}
+}
+
+
+// TODO: Make this a `BinaryFloatingPoint` extension instead
+extension Double {
+	/**
+	Converts the number to a string and strips fractional trailing zeros.
+
+	```
+	let x = 1.0
+
+	print(1.0)
+	//=> "1.0"
+
+	print(1.0.formatted)
+	//=> "1"
+
+	print(0.0100.formatted)
+	//=> "0.01"
+	```
+	*/
+    var formatted: String {
+       return truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", self) : String(self)
+    }
+}
+extension CGFloat {
+	var formatted: String {
+		return Double(self).formatted
+	}
+}
+
+
+extension CGSize {
+	/// Example: `140×100`
+	var formatted: String {
+		return "\(width.formatted)×\(height.formatted)"
+	}
+}
+
+
+extension NSImage {
+	/// UIImage polyfill
+	convenience init(cgImage: CGImage) {
+		let size = CGSize(width: cgImage.width, height: cgImage.height)
+		self.init(cgImage: cgImage, size: size)
+	}
+}
+
+
+extension CGImage {
+	var nsImage: NSImage {
+		return NSImage(cgImage: self)
+	}
+}
+
+
+extension AVAssetImageGenerator {
+	func image(at time: CMTime) -> NSImage? {
+		return (try? copyCGImage(at: time, actualTime: nil))?.nsImage
+	}
+}
+
 extension AVAsset {
+	func image(at time: CMTime) -> NSImage? {
+		let imageGenerator = AVAssetImageGenerator(asset: self)
+		imageGenerator.appliesPreferredTrackTransform = true
+		imageGenerator.requestedTimeToleranceAfter = .zero
+		imageGenerator.requestedTimeToleranceBefore = .zero
+		return imageGenerator.image(at: time)
+	}
+}
+
+
+extension AVAssetTrack {
+	/// Returns the dimensions of the track if it's a video.
+	var dimensions: CGSize? {
+		guard naturalSize != .zero else {
+			return nil
+		}
+
+		let size = naturalSize.applying(preferredTransform)
+		let preferredSize = CGSize(width: abs(size.width), height: abs(size.height))
+
+		// Workaround for https://github.com/sindresorhus/gifski-app/issues/76
+		guard preferredSize != .zero else {
+			return asset?.image(at: CMTime(seconds: 0, preferredTimescale: .video))?.size
+		}
+
+		return preferredSize
+	}
+
+	/// Returns the frame rate of the track if it's a video.
+	var frameRate: Double? {
+		return Double(nominalFrameRate)
+	}
+
+	/// Returns the aspect ratio of the track if it's a video.
+	var aspectRatio: Double? {
+		guard let dimensions = dimensions else {
+			return nil
+		}
+
+		return Double(dimensions.height / dimensions.width)
+	}
+
+	/// Example:
+	/// `avc1` (video)
+	/// `aac` (audio)
+	var codecString: String? {
+		let descriptions = formatDescriptions as! [CMFormatDescription]
+		return descriptions.map { CMFormatDescriptionGetMediaSubType($0).toString() }.first
+	}
+
+	var codec: AVFormat? {
+		guard let codecString = codecString else {
+			return nil
+		}
+
+		return AVFormat(fourCC: codecString)
+	}
+
+	/// Returns a debug string with the media format. Example: `vide/avc1`
+    var mediaFormat: String {
+		let descriptions = formatDescriptions as! [CMFormatDescription]
+
+        var format = [String]()
+        for description in descriptions {
+            // Get string representation of media type (vide, soun, sbtl, etc.)
+            let type = CMFormatDescriptionGetMediaType(description).toString()
+
+			// Get string representation media subtype (avc1, aac, tx3g, etc.)
+            let subType = CMFormatDescriptionGetMediaSubType(description).toString()
+
+            format.append("\(type)/\(subType)")
+        }
+
+		return format.joined(separator: ",")
+    }
+
+	/// Estimated file size of the track in bytes.
+	var estimatedFileSize: Int {
+		let dataRateInBytes = Double(estimatedDataRate / 8)
+		return Int(timeRange.duration.seconds * dataRateInBytes)
+	}
+}
+
+
+/*
+> FOURCC is short for "four character code" - an identifier for a video codec, compression format, color or pixel format used in media files.
+*/
+extension FourCharCode {
+    /// Create a String representation of a FourCC.
+    func toString() -> String {
+        let bytes: [CChar] = [
+            CChar((self >> 24) & 0xff),
+            CChar((self >> 16) & 0xff),
+            CChar((self >> 8) & 0xff),
+            CChar(self & 0xff),
+            0
+        ]
+
+        return String(cString: bytes).trimmingCharacters(in: .whitespaces)
+    }
+}
+
+
+// TODO: Support audio formats too.
+enum AVFormat: String {
+	case hevc
+	case h264
+	case appleProResRAWHQ
+	case appleProResRAW
+	case appleProRes4444XQ
+	case appleProRes4444
+	case appleProRes422HQ
+	case appleProRes422
+	case appleProRes422LT
+	case appleProRes422Proxy
+	case appleAnimation
+
+	init?(fourCC: String) {
+		switch fourCC.trimmingCharacters(in: .whitespaces) {
+		case "hvc1":
+			self = .hevc
+		case "avc1":
+			self = .h264
+		case "aprh": // From https://avpres.net/Glossar/ProResRAW.html
+			self = .appleProResRAWHQ
+		case "aprn":
+			self = .appleProResRAW
+		case "ap4x":
+			self = .appleProRes4444XQ
+		case "ap4h":
+			self = .appleProRes4444
+		case "apch":
+			self = .appleProRes422HQ
+		case "apcn":
+			self = .appleProRes422
+		case "apcs":
+			self = .appleProRes422LT
+		case "apco":
+			self = .appleProRes422Proxy
+		case "rle":
+			self = .appleAnimation
+		default:
+			return nil
+		}
+	}
+
+	init?(fourCC: FourCharCode) {
+		self.init(fourCC: fourCC.toString())
+	}
+
+	var fourCC: String {
+		switch self {
+		case .hevc:
+			return "hvc1"
+		case .h264:
+			return "avc1"
+		case .appleProResRAWHQ:
+			return "aprh"
+		case .appleProResRAW:
+			return "aprn"
+		case .appleProRes4444XQ:
+			return "ap4x"
+		case .appleProRes4444:
+			return "ap4h"
+		case .appleProRes422HQ:
+			return "apcn"
+		case .appleProRes422:
+			return "apch"
+		case .appleProRes422LT:
+			return "apcs"
+		case .appleProRes422Proxy:
+			return "apco"
+		case .appleAnimation:
+			return "rle "
+		}
+	}
+
+	var isAppleProRes: Bool {
+		return [
+			.appleProResRAWHQ,
+			.appleProResRAW,
+			.appleProRes4444XQ,
+			.appleProRes4444,
+			.appleProRes422HQ,
+			.appleProRes422,
+			.appleProRes422LT,
+			.appleProRes422Proxy
+		].contains(self)
+	}
+}
+
+extension AVFormat: CustomStringConvertible {
+	var description: String {
+		switch self {
+		case .hevc:
+			return "HEVC"
+		case .h264:
+			return "H264"
+		case .appleProResRAWHQ:
+			return "Apple ProRes RAW HQ"
+		case .appleProResRAW:
+			return "Apple ProRes RAW"
+		case .appleProRes4444XQ:
+			return "Apple ProRes 4444 XQ"
+		case .appleProRes4444:
+			return "Apple ProRes 4444"
+		case .appleProRes422HQ:
+			return "Apple ProRes 422 HQ"
+		case .appleProRes422:
+			return "Apple ProRes 422"
+		case .appleProRes422LT:
+			return "Apple ProRes 422 LT"
+		case .appleProRes422Proxy:
+			return "Apple ProRes 422 Proxy"
+		case .appleAnimation:
+			return "Apple Animation"
+		}
+	}
+}
+
+extension AVFormat: CustomDebugStringConvertible {
+	var debugDescription: String {
+		return "\(description) (\(fourCC))"
+	}
+}
+
+
+extension AVMediaType: CustomDebugStringConvertible {
+	public var debugDescription: String {
+		switch self {
+		case .audio:
+			return "Audio"
+		case .closedCaption:
+			return "Closed-caption content"
+		case .depthData:
+			return "Depth data"
+		case .metadata:
+			return "Metadata"
+		// iOS
+		// case .metadataObject:
+		// return "Metadata objects"
+		case .muxed:
+			return "Muxed media"
+		case .subtitle:
+			return "Subtitles"
+		case .text:
+			return "Text"
+		case .timecode:
+			return "Time code"
+		case .video:
+			return "Video"
+		default:
+			return "Unknown"
+		}
+	}
+}
+
+
+extension AVAsset {
+	/// Whether the first video track is decodable.
 	var isVideoDecodable: Bool {
-		guard isReadable,
-			let firstVideoTrack = tracks(withMediaType: .video).first else {
-				return false
-			}
+		guard
+			isReadable,
+			let firstVideoTrack = tracks(withMediaType: .video).first
+		else {
+			return false
+		}
 
 		return firstVideoTrack.isDecodable
 	}
+
+	/// Returns a boolean of whether there are any video tracks.
+	var hasVideo: Bool {
+		return !tracks(withMediaType: .video).isEmpty
+	}
+
+	/// Returns a boolean of whether there are any audio tracks.
+	var hasAudio: Bool {
+		return !tracks(withMediaType: .audio).isEmpty
+	}
+
+	/// Returns the first video track if any.
+	var firstVideoTrack: AVAssetTrack? {
+		return tracks(withMediaType: .video).first
+	}
+
+	/// Returns the first audio track if any.
+	var firstAudioTrack: AVAssetTrack? {
+		return tracks(withMediaType: .audio).first
+	}
+
+	/// Returns the dimensions of the first video track if any.
+	var dimensions: CGSize? {
+		return firstVideoTrack?.dimensions
+	}
+
+	/// Returns the frame rate of the first video track if any.
+	var frameRate: Double? {
+		return firstVideoTrack?.frameRate
+	}
+
+	/// Returns the aspect ratio of the first video track if any.
+	var aspectRatio: Double? {
+		return firstVideoTrack?.aspectRatio
+	}
+
+	/// Returns the video codec of the first video track if any.
+	var videoCodec: AVFormat? {
+		return firstVideoTrack?.codec
+	}
+
+	/// Returns the audio codec of the first audio track if any.
+	/// Example: `aac`
+	var audioCodec: String? {
+		return firstAudioTrack?.codecString
+	}
+
+	/// The file size of the asset in bytes.
+	/// - Note: If self is an `AVAsset` and not an `AVURLAsset`, the file size will just be an estimate.
+	var fileSize: Int {
+		guard let urlAsset = self as? AVURLAsset else {
+			return tracks.sum { $0.estimatedFileSize }
+		}
+
+		return urlAsset.url.fileSize
+	}
+
+	var fileSizeFormatted: String {
+		return fileSize.bytesFormattedAsFileSize
+	}
 }
+
+extension AVAsset {
+	/// Returns debug info for the asset to use in logging and error messages.
+	var debugInfo: String {
+		var output = [String]()
+
+		let durationFormatter = DateComponentsFormatter()
+		durationFormatter.unitsStyle = .abbreviated
+
+		output.append(
+			"""
+
+			## AVAsset debug info ##
+			Extension: \(describing: (self as? AVURLAsset)?.url.fileExtension)
+			Video codec: \(describing: videoCodec?.debugDescription)
+			Audio codec: \(describing: audioCodec)
+			Duration: \(describing: durationFormatter.string(from: duration.seconds))
+			Dimension: \(describing: dimensions?.formatted)
+			Frame rate: \(describing: frameRate?.rounded(toDecimalPlaces: 2).formatted)
+			File size: \(fileSizeFormatted)
+			Is readable: \(isReadable)
+			Is playable: \(isPlayable)
+			Is exportable: \(isExportable)
+			Has protected content: \(hasProtectedContent)
+			"""
+		)
+
+		for track in tracks {
+			output.append(
+				"""
+				Track #\(track.trackID)
+				----
+				Type: \(track.mediaType.debugDescription)
+				Codec: \(describing: track.mediaType == .video ? track.codec?.debugDescription : track.codecString)
+				Duration: \(describing: durationFormatter.string(from: track.timeRange.duration.seconds))
+				Dimensions: \(describing: track.dimensions?.formatted)
+				Natural size: \(describing: track.naturalSize)
+				Frame rate: \(describing: track.frameRate?.rounded(toDecimalPlaces: 2).formatted)
+				Is playable: \(track.isPlayable)
+				Is decodable: \(track.isDecodable)
+				----
+				"""
+			)
+		}
+
+		return output.joined(separator: "\n\n")
+	}
+}
+
+
 /// Video metadata
 extension AVURLAsset {
 	struct VideoMetadata {
@@ -432,16 +906,17 @@ extension AVURLAsset {
 	}
 
 	var videoMetadata: VideoMetadata? {
-		guard let track = tracks(withMediaType: .video).first else {
+		guard
+			let dimensions = dimensions,
+			let frameRate = frameRate
+		else {
 			return nil
 		}
 
-		let dimensions = track.naturalSize.applying(track.preferredTransform)
-
 		return VideoMetadata(
-			dimensions: CGSize(width: abs(dimensions.width), height: abs(dimensions.height)),
+			dimensions: dimensions,
 			duration: duration.seconds,
-			frameRate: Double(track.nominalFrameRate),
+			frameRate: frameRate,
 			fileSize: url.fileSize
 		)
 	}
@@ -557,7 +1032,7 @@ class Label: NSTextField {
 
 /// Use it in Interface Builder as a class or programmatically
 final class MonospacedLabel: Label {
-	override init(frame: NSRect) {
+	override init(frame: CGRect) {
 		super.init(frame: frame)
 		setup()
 	}
@@ -840,6 +1315,7 @@ struct App {
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
 	static let build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
+	static let versionWithBuild = "\(version) (\(build))"
 }
 
 
@@ -980,6 +1456,14 @@ extension URL {
 		return values.allValues[key] as? T
 	}
 
+	private func boolResourceValue(forKey key: URLResourceKey, defaultValue: Bool = false) -> Bool {
+		guard let values = try? resourceValues(forKeys: [key]) else {
+			return defaultValue
+		}
+
+		return values.allValues[key] as? Bool ?? defaultValue
+	}
+
 	/// File UTI
 	var typeIdentifier: String? {
 		return resourceValue(forKey: .typeIdentifierKey)
@@ -989,11 +1473,50 @@ extension URL {
 	var fileSize: Int {
 		return resourceValue(forKey: .fileSizeKey) ?? 0
 	}
+
+	var fileSizeFormatted: String {
+		return ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
+	}
+
+	var exists: Bool {
+		return FileManager.default.fileExists(atPath: path)
+	}
+
+	var isReadable: Bool {
+		return boolResourceValue(forKey: .isReadableKey)
+	}
+}
+
+extension URL {
+	/**
+	Check if the file conforms to the given type identifier
+
+	```
+	URL(fileURLWithPath: "video.mp4").conformsTo(typeIdentifier: "public.movie")
+	//=> true
+	```
+	*/
+	func conformsTo(typeIdentifier parentTypeIdentifier: String) -> Bool {
+		guard let typeIdentifier = typeIdentifier else {
+			return false
+		}
+
+		return UTTypeConformsTo(typeIdentifier as CFString, parentTypeIdentifier as CFString)
+	}
+
+	/// - Important: This doesn't guarantee it's a video. A video container could contain only an audio track. Use the `AVAsset` properties to ensure it's something you can use.
+	var isVideo: Bool {
+		return conformsTo(typeIdentifier: kUTTypeMovie as String)
+	}
 }
 
 extension CGSize {
 	static func * (lhs: CGSize, rhs: Double) -> CGSize {
 		return CGSize(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
+	}
+
+	static func * (lhs: CGSize, rhs: CGFloat) -> CGSize {
+		return CGSize(width: lhs.width * rhs, height: lhs.height * rhs)
 	}
 
 	init(widthHeight: CGFloat) {
@@ -1002,6 +1525,15 @@ extension CGSize {
 
 	var cgRect: CGRect {
 		return CGRect(origin: .zero, size: self)
+	}
+
+	func aspectFit(to boundingSize: CGSize) -> CGSize {
+		let ratio = min(boundingSize.width / width, boundingSize.height / height)
+		return self * ratio
+	}
+
+	func aspectFit(to widthHeight: CGFloat) -> CGSize {
+		return aspectFit(to: CGSize(width: widthHeight, height: widthHeight))
 	}
 }
 
@@ -1171,156 +1703,6 @@ extension CGRect {
 	}
 }
 
-
-/// Polyfill for Swift 5
-/// https://github.com/moiseev/swift/blob/47740c012943020aa89df93129b4fc2f33618c00/stdlib/public/core/Result.swift
-/// TODO: Remove when using Swift 5
-///
-/// A value that represents either a success or a failure, including an
-/// associated value in each case.
-public enum Result<Success, Failure: Swift.Error> {
-  /// A success, storing a `Success` value.
-  case success(Success)
-
-  /// A failure, storing a `Failure` value.
-  case failure(Failure)
-
-  /// Returns a new result, mapping any success value using the given
-  /// transformation.
-  ///
-  /// Use this method when you need to transform the value of a `Result`
-  /// instance when it represents a success. The following example transforms
-  /// the integer success value of a result into a string:
-  ///
-  ///     func getNextInteger() -> Result<Int, Error> { ... }
-  ///
-  ///     let integerResult = getNextInteger()
-  ///     // integerResult == .success(5)
-  ///     let stringResult = integerResult.map({ String($0) })
-  ///     // stringResult == .success("5")
-  ///
-  /// - Parameter transform: A closure that takes the success value of this
-  ///   instance.
-  /// - Returns: A `Result` instance with the result of evaluating `transform`
-  ///   as the new success value if this instance represents a success.
-  public func map<NewSuccess>(
-	_ transform: (Success) -> NewSuccess
-  ) -> Result<NewSuccess, Failure> {
-	switch self {
-	case let .success(success):
-	  return .success(transform(success))
-	case let .failure(failure):
-	  return .failure(failure)
-	}
-  }
-
-  /// Returns a new result, mapping any failure value using the given
-  /// transformation.
-  ///
-  /// Use this method when you need to transform the value of a `Result`
-  /// instance when it represents a failure. The following example transforms
-  /// the error value of a result by wrapping it in a custom `Error` type:
-  ///
-  ///     struct DatedError: Error {
-  ///         var error: Error
-  ///         var date: Date
-  ///
-  ///         init(_ error: Error) {
-  ///             self.error = error
-  ///             self.date = Date()
-  ///         }
-  ///     }
-  ///
-  ///     let result: Result<Int, Error> = ...
-  ///     // result == .failure(<error value>)
-  ///     let resultWithDatedError = result.mapError({ e in DatedError(e) })
-  ///     // result == .failure(DatedError(error: <error value>, date: <date>))
-  ///
-  /// - Parameter transform: A closure that takes the failure value of the
-  ///   instance.
-  /// - Returns: A `Result` instance with the result of evaluating `transform`
-  ///   as the new failure value if this instance represents a failure.
-  public func mapError<NewFailure>(
-	_ transform: (Failure) -> NewFailure
-  ) -> Result<Success, NewFailure> {
-	switch self {
-	case let .success(success):
-	  return .success(success)
-	case let .failure(failure):
-	  return .failure(transform(failure))
-	}
-  }
-
-  /// Returns a new result, mapping any success value using the given
-  /// transformation and unwrapping the produced result.
-  ///
-  /// - Parameter transform: A closure that takes the success value of the
-  ///   instance.
-  /// - Returns: A `Result` instance with the result of evaluating `transform`
-  ///   as the new failure value if this instance represents a failure.
-  public func flatMap<NewSuccess>(
-	_ transform: (Success) -> Result<NewSuccess, Failure>
-  ) -> Result<NewSuccess, Failure> {
-	switch self {
-	case let .success(success):
-	  return transform(success)
-	case let .failure(failure):
-	  return .failure(failure)
-	}
-  }
-
-  /// Returns a new result, mapping any failure value using the given
-  /// transformation and unwrapping the produced result.
-  ///
-  /// - Parameter transform: A closure that takes the failure value of the
-  ///   instance.
-  /// - Returns: A `Result` instance, either from the closure or the previous
-  ///   `.success`.
-  public func flatMapError<NewFailure>(
-	_ transform: (Failure) -> Result<Success, NewFailure>
-  ) -> Result<Success, NewFailure> {
-	switch self {
-	case let .success(success):
-	  return .success(success)
-	case let .failure(failure):
-	  return transform(failure)
-	}
-  }
-
-  /// Returns the success value as a throwing expression.
-  ///
-  /// Use this method to retrieve the value of this result if it represents a
-  /// success, or to catch the value if it represents a failure.
-  ///
-  ///     let integerResult: Result<Int, Error> = .success(5)
-  ///     do {
-  ///         let value = try integerResult.get()
-  ///         print("The value is \(value).")
-  ///     } catch error {
-  ///         print("Error retrieving the value: \(error)")
-  ///     }
-  ///     // Prints "The value is 5."
-  ///
-  /// - Returns: The success value, if the instance represent a success.
-  /// - Throws: The failure value, if the instance represents a failure.
-  public func get() throws -> Success {
-	switch self {
-	case let .success(success):
-	  return success
-	case let .failure(failure):
-	  throw failure
-	}
-  }
-}
-
-extension Result: Equatable where Success: Equatable, Failure: Equatable {}
-extension Result: Hashable where Success: Hashable, Failure: Hashable {}
-
-// To be able to use it in places that already have a local result
-// TODO: Remove this when using Swift 5
-typealias CoreResult = Result
-
-
 public protocol CancellableError: Error {
 	/// Returns true if this Error represents a cancelled condition
 	var isCancelled: Bool { get }
@@ -1341,12 +1723,12 @@ extension Error {
 		} catch CocoaError.userCancelled {
 			return true
 		} catch {
-		#if os(macOS) || os(iOS) || os(tvOS)
-			let pair = { ($0.domain, $0.code) }(error as NSError)
-			return pair == ("SKErrorDomain", 2)
-		#else
-			return false
-		#endif
+			#if os(macOS) || os(iOS) || os(tvOS)
+				let pair = { ($0.domain, $0.code) }(error as NSError)
+				return pair == ("SKErrorDomain", 2)
+			#else
+				return false
+			#endif
 		}
 	}
 }
@@ -1371,5 +1753,362 @@ extension Result {
 		} catch {
 			return error.isCancelled
 		}
+	}
+}
+
+// TODO: Find a way to reduce the number of overloads for `wrap()`.
+final class Once {
+	private var lock = os_unfair_lock()
+	private var hasRun = false
+	private var value: Any?
+
+	/**
+	Executes the given closure only once. (Thread-safe)
+
+	Returns the value that the called closure returns the first (and only) time it's called.
+
+	```
+	final class Foo {
+		private let once = Once()
+
+		func bar() {
+			once.run {
+				print("Called only once")
+			}
+		}
+	}
+
+	let foo = Foo()
+	foo.bar()
+	foo.bar()
+	```
+
+	```
+	func process(_ text: String) -> String {
+		return text
+	}
+
+	let a = once.run {
+		process("a")
+	}
+
+	let b = once.run {
+		process("b")
+	}
+
+	print(a, b)
+	//=> "a a"
+	```
+	*/
+	func run<T>(_ closure: () throws -> T) rethrows -> T {
+		os_unfair_lock_lock(&lock)
+		defer {
+			os_unfair_lock_unlock(&lock)
+		}
+
+		guard !hasRun else {
+			return value as! T
+		}
+
+		hasRun = true
+
+		let returnValue = try closure()
+		value = returnValue
+		return returnValue
+	}
+
+	// TODO: Support any number of arguments when Swift supports variadics.
+	/// Wraps a single-argument function.
+	func wrap<T, U>(_ function: @escaping ((T) -> U)) -> ((T) -> U) {
+		return { parameter in
+			self.run {
+				function(parameter)
+			}
+		}
+	}
+
+	/// Wraps an optional single-argument function.
+	func wrap<T, U>(_ function: ((T) -> U)?) -> ((T) -> U)? {
+		guard let function = function else {
+			return nil
+		}
+
+		return { parameter in
+			self.run {
+				function(parameter)
+			}
+		}
+	}
+
+	/// Wraps a single-argument throwing function.
+	func wrap<T, U>(_ function: @escaping ((T) throws -> U)) -> ((T) throws -> U) {
+		return { parameter in
+			try self.run {
+				try function(parameter)
+			}
+		}
+	}
+
+	/// Wraps an optional single-argument throwing function.
+	func wrap<T, U>(_ function: ((T) throws -> U)?) -> ((T) throws -> U)? {
+		guard let function = function else {
+			return nil
+		}
+
+		return { parameter in
+			try self.run {
+				try function(parameter)
+			}
+		}
+	}
+}
+
+extension NSResponder {
+	/// Presents the error in the given window if it's not nil, otherwise falls back to an app-modal dialog.
+	open func presentError(_ error: Error, modalFor window: NSWindow?) {
+		guard let window = window else {
+			presentError(error)
+			return
+		}
+
+		presentError(error, modalFor: window, delegate: nil, didPresent: nil, contextInfo: nil)
+	}
+}
+
+extension NSSharingService {
+	class func share(items: [Any], from button: NSButton, preferredEdge: NSRectEdge = .maxX) {
+		let sharingServicePicker = NSSharingServicePicker(items: items)
+		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: preferredEdge)
+	}
+}
+
+extension CALayer {
+	// TODO: Make this one more generic by accepting a `x` parameter too.
+	func animateScaleMove(fromScale: CGFloat, fromY: CGFloat) {
+		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
+
+		var tr = CATransform3DIdentity
+		tr = CATransform3DTranslate(tr, bounds.size.width / 2, fromY, 0)
+		tr = CATransform3DScale(tr, fromScale, fromScale, 1)
+		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
+
+		springAnimation.damping = 15
+		springAnimation.mass = 0.9
+		springAnimation.initialVelocity = 1
+		springAnimation.duration = springAnimation.settlingDuration
+
+		springAnimation.fromValue = NSValue(caTransform3D: tr)
+		springAnimation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
+
+		add(springAnimation, forKey: "")
+	}
+}
+
+extension Error {
+	var isNsError: Bool {
+		return type(of: self) is NSError.Type
+	}
+}
+
+extension NSError {
+	// TODO: Return `Self` here in Swift 5.1
+	class func from(error: Error, userInfo: [String: Any] = [:]) -> NSError {
+		let nsError = error as NSError
+
+		// Since Error and NSError are often bridged between each other, we check if it was originally an NSError and then return that.
+		guard !error.isNsError else {
+			guard !userInfo.isEmpty else {
+				return nsError
+			}
+
+			// TODO: Use `Self` instead of `NSError` here in Swift 5.1
+			return nsError.appending(userInfo: userInfo)
+		}
+
+		var userInfo = userInfo
+		userInfo[NSLocalizedDescriptionKey] = error.localizedDescription
+
+		// This is needed as `localizedDescription` often lacks important information, for example, when an NSError is wrapped in a Swift.Error.
+		userInfo["Swift.Error"] = "\(nsError.domain).\(error)"
+
+		// Awful, but no better way to get the enum case name.
+		// This gets `Error.generateFrameFailed` from `Error.generateFrameFailed(Error Domain=AVFoundationErrorDomain Code=-11832 […]`.
+		let errorName = "\(error)".split(separator: "(").first ?? ""
+
+		return self.init(
+			domain: "\(App.id) - \(nsError.domain)\(errorName.isEmpty ? "" : ".")\(errorName)",
+			code: nsError.code,
+			userInfo: userInfo
+		)
+	}
+
+	/**
+	- Parameter domainPostfix: String to append to the `domain`.
+	*/
+	class func appError(message: String, userInfo: [String: Any] = [:], domainPostfix: String? = nil) -> Self {
+		return self.init(
+			domain: domainPostfix != nil ? "\(App.id) - \(domainPostfix!)" : App.id,
+			code: 0,
+			userInfo: [NSLocalizedDescriptionKey: message]
+		)
+	}
+
+	/// Returns a new error with the user info appended.
+	func appending(userInfo newUserInfo: [String: Any]) -> Self {
+		// TODO: Use `Self` here in Swift 5.1
+		return type(of: self).init(
+			domain: domain,
+			code: code,
+			userInfo: userInfo.appending(newUserInfo)
+		)
+	}
+}
+
+extension Dictionary {
+	/// Adds the elements of the given dictionary to a copy of self and returns that.
+	/// Identical keys in the given dictionary overwrites keys in the copy of self.
+	func appending(_ dictionary: [Key: Value]) -> [Key: Value] {
+		var newDictionary = self
+
+		for (key, value) in dictionary {
+			newDictionary[key] = value
+		}
+
+		return newDictionary
+	}
+}
+
+#if canImport(Crashlytics)
+	import Crashlytics
+
+	extension Crashlytics {
+		/// A better error recording method. Captures more debug info.
+		static func recordNonFatalError(error: Error, userInfo: [String: Any] = [:]) {
+			#if !DEBUG
+				// This forces Crashlytics to actually provide some useful info for Swift errors
+				let nsError = NSError.from(error: error, userInfo: userInfo)
+
+				sharedInstance().recordError(nsError)
+			#endif
+		}
+
+		static func recordNonFatalError(title: String? = nil, message: String) {
+			#if !DEBUG
+				sharedInstance().recordError(NSError.appError(message: message, domainPostfix: title))
+			#endif
+		}
+
+		/// Set a value for a for a key to be associated with your crash data which will be visible in Crashlytics.
+		static func record(key: String, value: Any?) {
+			#if !DEBUG
+				sharedInstance().setObjectValue(value, forKey: key)
+			#endif
+		}
+	}
+#endif
+
+enum FileType {
+	case png
+	case jpeg
+	case heic
+	case tiff
+	case gif
+
+	static func from(fileExtension: String) -> FileType {
+		switch fileExtension {
+		case "png":
+			return .png
+		case "jpg", "jpeg":
+			return .jpeg
+		case "heic":
+			return .heic
+		case "tif", "tiff":
+			return .tiff
+		case "gif":
+			return .gif
+		default:
+			fatalError("Unsupported file type")
+		}
+	}
+
+	static func from(url: URL) -> FileType {
+		return from(fileExtension: url.pathExtension)
+	}
+
+	var name: String {
+		switch self {
+		case .png:
+			return "PNG"
+		case .jpeg:
+			return "JPEG"
+		case .heic:
+			return "HEIC"
+		case .tiff:
+			return "TIFF"
+		case .gif:
+			return "GIF"
+		}
+	}
+
+	var identifier: String {
+		switch self {
+		case .png:
+			return "public.png"
+		case .jpeg:
+			return "public.jpeg"
+		case .heic:
+			return "public.heic"
+		case .tiff:
+			return "public.tiff"
+		case .gif:
+			return "com.compuserve.gif"
+		}
+	}
+
+	var fileExtension: String {
+		switch self {
+		case .png:
+			return "png"
+		case .jpeg:
+			return "jpg"
+		case .heic:
+			return "heic"
+		case .tiff:
+			return "tiff"
+		case .gif:
+			return "gif"
+		}
+	}
+}
+
+extension Sequence {
+	/**
+	Returns the sum of elements in a sequence by mapping the elements with a numerator
+
+	```
+	[1, 2, 3].sum { $0 == 1 ? 10 : $0 }
+	//=> 15
+	```
+	*/
+	func sum<T: Numeric>(_ numerator: (Element) throws -> T) rethrows -> T {
+		var result: T = 0
+		for element in self {
+			result += try numerator(element)
+		}
+		return result
+	}
+}
+
+extension BinaryFloatingPoint {
+	func rounded(
+		toDecimalPlaces decimalPlaces: Int,
+		rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero
+	) -> Self {
+		guard decimalPlaces >= 0 else {
+			return self
+		}
+		var divisor: Self = 1
+		for _ in 0..<decimalPlaces { divisor *= 10 }
+		return (self * divisor).rounded(rule) / divisor
 	}
 }

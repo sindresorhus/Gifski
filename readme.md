@@ -1,5 +1,5 @@
 <div align="center">
-	<img src="Stuff/AppIcon-readme.png" width="256" height="256">
+	<img src="Stuff/AppIcon-readme.png" width="200" height="200">
 	<h1>Gifski</h1>
 	<p>
 		<b>Convert videos to high-quality GIFs on your Mac</b>
@@ -10,6 +10,8 @@
 </div>
 
 This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts videos to GIF animations using [`pngquant`](https://pngquant.org)'s fancy features for efficient cross-frame palettes and temporal dithering. It produces animated GIFs that use thousands of colors per frame.
+
+Gifski supports all the video formats that macOS supports (`.mp4` or `.mov` with H264, HEVC, ProRes, etc). The [QuickTime Animation format](https://en.wikipedia.org/wiki/QuickTime_Animation) is not supported. Use [ProRes 4444 XQ](https://en.wikipedia.org/wiki/Apple_ProRes) instead. It's more efficient, more widely supported, and like QuickTime Animation, it also supports alpha channel.
 
 **[Blog post](https://blog.sindresorhus.com/gifski-972692460aa5)** &nbsp;&nbsp; **[Product Hunt](https://www.producthunt.com/posts/gifski)**
 
@@ -42,7 +44,7 @@ xcode-select --install
 
 - [gifski library](https://github.com/ImageOptim/gifski) - High-quality GIF encoder
 - [Defaults](https://github.com/sindresorhus/Defaults/blob/master/readme.md) - Swifty and modern UserDefaults
-- [CircularProgress](https://github.com/sindresorhus/CircularProgress) - Circular progress indicator your macOS app
+- [CircularProgress](https://github.com/sindresorhus/CircularProgress) - Circular progress indicator for your macOS app
 - [DockProgress](https://github.com/sindresorhus/DockProgress) - Show progress in your app's Dock icon
 
 
@@ -56,6 +58,7 @@ xcode-select --install
 - [Sindre Sorhus](https://github.com/sindresorhus)
 - [Kornel Lesiński](https://github.com/kornelski)
 - [Lars-Jørgen Kristiansen](https://github.com/LarsJK)
+- [Boy van Amstel](https://github.com/boyvanamstel)
 
 
 ## License

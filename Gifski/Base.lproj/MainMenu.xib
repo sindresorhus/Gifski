@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14113" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14490.70" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" customObjectInstantitationMethod="direct">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14113"/>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14490.70"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -141,24 +142,26 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                         <items>
-                            <menuItem title="Gifski.app Website" id="IJ2-L8-CcF" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
+                            <menuItem title="Website" id="IJ2-L8-CcF" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://sindresorhus.com/gifski"/>
                                 </userDefinedRuntimeAttributes>
                             </menuItem>
-                            <menuItem title="Gifski.app Source Code" id="LPR-FD-PrP" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
+                            <menuItem title="Source Code" id="LPR-FD-PrP" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://github.com/sindresorhus/gifski-app"/>
                                 </userDefinedRuntimeAttributes>
                             </menuItem>
+                            <menuItem isSeparatorItem="YES" id="R9f-81-F3Z"/>
                             <menuItem title="About Gifski Library" id="TcL-ZY-7a3" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://gif.ski"/>
                                 </userDefinedRuntimeAttributes>
                             </menuItem>
+                            <menuItem isSeparatorItem="YES" id="yQX-Pq-3me"/>
                             <menuItem title="Send Feedback…" id="sOe-gQ-Htm" customClass="FeedbackMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                             </menuItem>

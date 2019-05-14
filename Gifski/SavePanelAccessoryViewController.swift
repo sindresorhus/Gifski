@@ -14,28 +14,29 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
     @IBOutlet private var proportionalScaleAffordanceButton: NSButton!
 
     var inputUrl: URL!
+	var videoMetadata: AVURLAsset.VideoMetadata!
     var onDimensionChange: ((CGSize) -> Void)?
     var onFramerateChange: ((Int) -> Void)?
-    private var dimensionRatios: [Float] = [1.0, 1.0]
-    private var scaleXDoubleValue: Double = 1.0
-    private var scaleYDoubleValue: Double = 1.0
-    private var scaleXMinDoubleValue: Double = 0.0
-    private var scaleYMinDoubleValue: Double = 0.0
     var fileDimensions = CGSize(width: 0, height: 0)
     var currentDimensions = CGSize(width: 0, height: 0)
 	var shouldRevertX = false
 	var shouldRevertY = false
 
     let formatter = ByteCountFormatter()
-    var metadata: AVURLAsset.VideoMetadata!
+
+	private var dimensionRatios: [Float] = [1.0, 1.0]
+	private var scaleXDoubleValue: Double = 1.0
+	private var scaleYDoubleValue: Double = 1.0
+	private var scaleXMinDoubleValue: Double = 0.0
+	private var scaleYMinDoubleValue: Double = 0.0
 
     override func viewDidLoad() {
         super.viewDidLoad()
         formatter.zeroPadsFractionDigits = true
 
         /// TODO: Use KVO here
-        metadata = inputUrl.videoMetadata!
-        fileDimensions = metadata.dimensions
+        videoMetadata = inputUrl.videoMetadata!
+        fileDimensions = videoMetadata.dimensions
 
         frameRateSlider.onAction = { _ in
             let frameRate = self.frameRateSlider.integerValue
@@ -76,8 +77,8 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
         heightTextField.delegate = self
 
         // Set initial defaults
-        configureScaleSettings(inputDimensions: metadata.dimensions)
-        configureFramerateSlider(inputFrameRate: metadata.frameRate)
+        configureScaleSettings(inputDimensions: videoMetadata.dimensions)
+        configureFramerateSlider(inputFrameRate: videoMetadata.frameRate)
         configureQualitySlider()
     }
 
@@ -94,7 +95,7 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
     }
 
     func estimateFileSize() {
-        let frameCount = metadata.duration * frameRateSlider.doubleValue
+        let frameCount = videoMetadata.duration * frameRateSlider.doubleValue
         var fileSize = (Double(currentDimensions.width) * Double(currentDimensions.height) * frameCount) / 3
         fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
         estimatedSizeLabel.stringValue = formatter.string(fromByteCount: Int64(fileSize))
@@ -207,8 +208,8 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
             widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
             heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
         } else {
-            widthTextField.stringValue = "\(Int(metadata.dimensions.width * CGFloat(scaleXDoubleValue)))"
-            heightTextField.stringValue = "\(Int(metadata.dimensions.height * CGFloat(scaleYDoubleValue)))"
+            widthTextField.stringValue = "\(Int(videoMetadata.dimensions.width * CGFloat(scaleXDoubleValue)))"
+            heightTextField.stringValue = "\(Int(videoMetadata.dimensions.height * CGFloat(scaleYDoubleValue)))"
         }
     }
 

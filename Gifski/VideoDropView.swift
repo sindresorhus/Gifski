@@ -20,6 +20,16 @@ class DropView: SSView {
 		return .controlAccentColorPolyfill
 	}
 
+	var isDropLabelHidden: Bool = false {
+		didSet {
+			dropLabel.isHidden = isDropLabelHidden
+		}
+	}
+
+	func fadeInVideoDropLabel() {
+		dropLabel.fadeIn()
+	}
+
 	var acceptedTypes: [NSPasteboard.PasteboardType] {
 		unimplemented()
 	}
@@ -30,7 +40,7 @@ class DropView: SSView {
 		}
 	}
 
-	override init(frame: NSRect) {
+	override init(frame: CGRect) {
 		super.init(frame: frame)
 		autoresizingMask = [.width, .height]
 		registerForDraggedTypes(acceptedTypes)
@@ -54,7 +64,7 @@ class DropView: SSView {
 		}
 	}
 
-	override func draw(_ dirtyRect: NSRect) {
+	override func draw(_ dirtyRect: CGRect) {
 		super.draw(dirtyRect)
 
 		if isDraggingHighlighted {
@@ -93,11 +103,11 @@ class DropView: SSView {
 }
 
 final class VideoDropView: DropView {
-	/// TODO: Any way to make this generic so we can have it in DropView instead?
+	// TODO: Any way to make this generic so we can have it in DropView instead?
 	var onComplete: (([URL]) -> Void)?
 
 	override var highlightColor: NSColor {
-		return .appTheme
+		return .themeColor
 	}
 
 	override var acceptedTypes: [NSPasteboard.PasteboardType] {

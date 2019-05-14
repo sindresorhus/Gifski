@@ -1,8 +1,11 @@
 import Cocoa
+import AVFoundation
+import StoreKit
+import Crashlytics
 
 final class MainWindowController: NSWindowController {
 	private lazy var circularProgress = with(CircularProgress(size: 160)) {
-		$0.color = .appTheme
+		$0.color = .themeColor
 		$0.isHidden = true
 		$0.centerInWindow(window)
 	}
@@ -12,35 +15,49 @@ final class MainWindowController: NSWindowController {
 
 		let this = $0
 		$0.onComplete = { url in
+			NSApp.activate(ignoringOtherApps: true)
 			self.convert(url.first!)
-			this.dropText = nil
 		}
 	}
 
-	private lazy var showInFinderButton = with(CustomButton()) {
-		$0.title = "Show in Finder"
-		$0.frame = CGRect(x: 0, y: 0, width: 110, height: 30)
-		$0.textColor = .appTheme
-		$0.backgroundColor = .clear
-		$0.borderWidth = 1
+	private lazy var timeRemainingLabel = with(Label()) {
 		$0.isHidden = true
-		$0.centerInWindow(window)
+		$0.textColor = NSColor.secondaryLabelColor
+		$0.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+	}
+
+	private lazy var conversionCompletedView = with(ConversionCompletedView()) {
+		$0.isHidden = true
 	}
 
 	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
 
+	private var outUrl: URL!
+
 	var isRunning: Bool = false {
 		didSet {
-			if isRunning {
-				videoDropView.isHidden = true
-				showInFinderButton.isHidden = true
-			} else {
-				videoDropView.isHidden = false
-				showInFinderButton.fadeIn()
-			}
+			videoDropView.isHidden = isRunning
 
-			circularProgress.isHidden = !isRunning
+			if let progress = progress, !isRunning {
+				circularProgress.fadeOut(delay: 1) {
+					self.circularProgress.resetProgress()
+					DockProgress.resetProgress()
+
+					if progress.isFinished {
+						self.conversionCompletedView.fileUrl = self.outUrl
+						self.conversionCompletedView.show()
+						self.videoDropView.isDropLabelHidden = true
+					} else {
+						self.videoDropView.isHidden = false
+						self.videoDropView.fadeInVideoDropLabel()
+					}
+				}
+			} else {
+				circularProgress.isHidden = false
+				videoDropView.isDropLabelHidden = true
+				conversionCompletedView.isHidden = true
+			}
 		}
 	}
 
@@ -66,35 +83,134 @@ final class MainWindowController: NSWindowController {
 		}
 
 		view?.addSubview(circularProgress)
+		view?.addSubview(timeRemainingLabel)
 		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
-		view?.addSubview(showInFinderButton)
+		view?.addSubview(conversionCompletedView, positioned: .above, relativeTo: nil)
+
+		setupTimeRemainingLabel()
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
 
-		DockProgress.style = .circle(radius: 55, color: .appTheme)
+		DockProgress.style = .circle(radius: 55, color: .themeColor)
+	}
+
+	/// Gets called when the Esc key is pressed.
+	/// Reference: https://stackoverflow.com/a/42440020
+	@objc
+	func cancel(_ sender: Any?) {
+		cancelConversion()
 	}
 
 	func convert(_ inputUrl: URL) {
-		// We already specify the UTIs we support, so this can only happen on invalid but supported files
-		guard inputUrl.isVideoDecodable else {
+		Crashlytics.record(
+			key: "Does input file exist",
+			value: inputUrl.exists
+		)
+		Crashlytics.record(
+			key: "Is input file reachable",
+			value: try? inputUrl.checkResourceIsReachable()
+		)
+		Crashlytics.record(
+			key: "Is input file readable",
+			value: inputUrl.isReadable
+		)
+
+		// This is very unlikely to happen. We have a lot of file type filters in place, so the only way this can happen is if the user right-clicks a non-video in Finder, chooses "Open With", then "Other…", chooses "All Applications", and then selects Gifski. Yet, some people are doing this…
+		guard inputUrl.isVideo else {
 			NSAlert.showModal(
 				for: window,
-				title: "Video not supported",
-				message: "The video you tried to convert could not be read."
+				message: "The selected file is not a video.",
+				informativeText: "Gifski can only convert a video file."
+			)
+			return
+		}
+
+		let asset = AVURLAsset(url: inputUrl)
+
+		Crashlytics.record(key: "AVAsset debug info", value: asset.debugInfo)
+
+		guard asset.videoCodec != .appleAnimation else {
+			NSAlert.showModal(
+				for: window,
+				message: "The QuickTime Animation format is not supported.",
+				informativeText: "Re-export or convert your video to ProRes 4444 XQ instead. It's more efficient, more widely supported, and like QuickTime Animation, it also supports alpha channel. To convert an existing video, open it in QuickTime Player, which will automatically convert it, and then save it."
+			)
+			return
+		}
+
+		if asset.hasAudio && !asset.hasVideo {
+			NSAlert.showModal(
+				for: window,
+				message: "Audio files are not supported.",
+				informativeText: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video."
+			)
+
+			Crashlytics.recordNonFatalError(
+				title: "Audio files are not supported.",
+				message: asset.debugInfo
+			)
+			return
+		}
+
+		// We already specify the UTIs we support, so this can only happen on invalid video files or unsupported codecs.
+		guard asset.isVideoDecodable else {
+			NSAlert.showModal(
+				for: window,
+				message: "The video file is not supported.",
+				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
+			)
+
+			Crashlytics.recordNonFatalError(
+				title: "The video file is not supported.",
+				message: asset.debugInfo
+			)
+			return
+		}
+
+		guard let videoMetadata = asset.videoMetadata else {
+			NSAlert.showModal(
+				for: window,
+				message: "The video metadata is not readable.",
+				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
+			)
+
+			Crashlytics.recordNonFatalError(
+				title: "The video metadata is not readable.",
+				message: asset.debugInfo
+			)
+			return
+		}
+
+		guard
+			let dimensions = asset.dimensions,
+			dimensions.width > 10,
+			dimensions.height > 10
+		else {
+			NSAlert.showModal(
+				for: window,
+				message: "The video dimensions must be at least 10×10.",
+				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)"
+			)
+
+			Crashlytics.recordNonFatalError(
+				title: "The video dimensions must be at least 10×10.",
+				message: asset.debugInfo
 			)
 			return
 		}
 
 		let panel = NSSavePanel()
 		panel.canCreateDirectories = true
+		panel.allowedFileTypes = [FileType.gif.identifier]
 		panel.directoryURL = inputUrl.directoryURL
-		panel.nameFieldStringValue = inputUrl.changingFileExtension(to: "gif").filename
+		panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
 		panel.prompt = "Convert"
 		panel.message = "Choose where to save the GIF"
 
 		let accessoryViewController = SavePanelAccessoryViewController()
 		accessoryViewController.inputUrl = inputUrl
+		accessoryViewController.videoMetadata = videoMetadata
 
 		accessoryViewController.onDimensionChange = { dimension in
 			self.choosenDimensions = dimension
@@ -113,22 +229,27 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
+	private var progress: Progress?
+	private lazy var timeRemainingEstimator = TimeRemainingEstimator(label: timeRemainingLabel)
+
 	func startConversion(inputUrl: URL, outputUrl: URL) {
 		guard !isRunning else {
 			return
 		}
 
-		showInFinderButton.onAction = { _ in
-			NSWorkspace.shared.activateFileViewerSelecting([outputUrl])
-		}
+		outUrl = outputUrl
 
 		isRunning = true
 
-		let progress = Progress(totalUnitCount: 1)
-		circularProgress.progressInstance = progress
-		DockProgress.progress = progress
+		progress = Progress(totalUnitCount: 1)
+		progress?.publish()
 
-		progress.performAsCurrent(withPendingUnitCount: 1) {
+		circularProgress.progressInstance = progress
+		DockProgress.progressInstance = progress
+		timeRemainingEstimator.progress = progress
+		timeRemainingEstimator.start()
+
+		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
 				input: inputUrl,
 				output: outputUrl,
@@ -138,21 +259,32 @@ final class MainWindowController: NSWindowController {
 			)
 
 			Gifski.run(conversion) { error in
+				self.progress?.unpublish()
+				self.isRunning = false
+
 				if let error = error {
-					fatalError(error.localizedDescription)
+					self.progress?.cancel()
+
+					switch error {
+					case .cancelled:
+						break
+					default:
+						self.presentError(error, modalFor: self.window)
+					}
+
+					return
 				}
 
-				// Workaround for https://github.com/sindresorhus/gifski-app/issues/46
-				progress.completedUnitCount = 0
-
-				DispatchQueue.main.async {
-					self.circularProgress.fadeOut(delay: 1) {
-						self.circularProgress.resetProgress()
-						self.isRunning = false
-					}
+				defaults[.successfulConversionsCount] += 1
+				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
+					SKStoreReviewController.requestReview()
 				}
 			}
 		}
+	}
+
+	private func cancelConversion() {
+		progress?.cancel()
 	}
 
 	@objc
@@ -167,6 +299,19 @@ final class MainWindowController: NSWindowController {
 				self.convert(panel.url!)
 			}
 		}
+	}
+
+	private func setupTimeRemainingLabel() {
+		guard let view = view else {
+			return
+		}
+
+		timeRemainingLabel.translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			timeRemainingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			timeRemainingLabel.topAnchor.constraint(equalTo: circularProgress.bottomAnchor)
+		])
 	}
 }
 

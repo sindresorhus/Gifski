@@ -2,14 +2,6 @@ import Cocoa
 import Fabric
 import Crashlytics
 
-extension NSColor {
-	static let appTheme = NSColor.controlAccentColorPolyfill
-}
-
-extension Defaults.Keys {
-	static let outputQuality = Defaults.Key<Double>("outputQuality", default: 1)
-}
-
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
@@ -24,7 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
-		Fabric.with([Crashlytics.self])
+		#if !DEBUG
+			Fabric.with([Crashlytics.self])
+		#endif
 
 		mainWindowController.showWindow(self)
 
@@ -44,15 +38,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		guard urls.count == 1 else {
 			NSAlert.showModal(
 				for: mainWindowController.window,
-				title: "Max one file",
-				message: "You can only convert a single file at the time"
+				message: "Gifski can only convert a single file at the time."
 			)
 			return
 		}
 
 		let videoUrl = urls.first!
 
-		/// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
+		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
 		if hasFinishedLaunching {
 			mainWindowController.convert(videoUrl)
 		} else {
@@ -64,5 +57,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
 		return true
+	}
+
+	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
+		Crashlytics.recordNonFatalError(error: error)
+		return error
 	}
 }
