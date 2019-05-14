@@ -168,14 +168,7 @@ extension ConversionCompletedView: QLPreviewPanelDataSource {
 
 extension ConversionCompletedView: QLPreviewPanelDelegate {
 	func previewPanel(_ panel: QLPreviewPanel!, sourceFrameOnScreenFor item: QLPreviewItem!) -> CGRect {
-		guard let imageRect = draggableFile.subviews.first?.frame, let window = window else {
-			return .zero
-		}
-
-		let windowFrame = draggableFile.convert(imageRect, to: nil)
-		let screenFrame = window.convertToScreen(windowFrame)
-		
-		return screenFrame
+		return draggableFile.imageView?.boundsInScreenCoordinates ?? .zero
 	}
 
 	func previewPanel(_ panel: QLPreviewPanel!, transitionImageFor item: QLPreviewItem!, contentRect: UnsafeMutablePointer<CGRect>!) -> Any! {

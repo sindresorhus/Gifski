@@ -27,6 +27,10 @@ final class DraggableFile: NSImageView {
 		}
 	}
 
+	var imageView: NSView? {
+		return subviews.first
+	}
+
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 

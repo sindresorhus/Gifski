@@ -2123,3 +2123,10 @@ extension QLPreviewPanel {
 		}
 	}
 }
+
+extension NSView {
+	/// Get the view frame in screen coordinates.
+	var boundsInScreenCoordinates: CGRect? {
+		return window?.convertToScreen(convert(bounds, to: nil))
+	}
+}
