@@ -71,18 +71,6 @@ final class ConversionCompletedView: SSView {
 		fadeIn()
 	}
 
-	override func quickLook(with event: NSEvent) {
-		quickLookPreviewItems(nil)
-	}
-
-	override func quickLookPreviewItems(_ sender: Any?) {
-		guard let panel = QLPreviewPanel.shared() else {
-			return
-		}
-
-		panel.toggle()
-	}
-
 	override func didAppear() {
 		translatesAutoresizingMaskIntoConstraints = false
 
@@ -143,6 +131,18 @@ final class ConversionCompletedView: SSView {
 }
 
 extension ConversionCompletedView: QLPreviewPanelDataSource {
+	override func quickLook(with event: NSEvent) {
+		quickLookPreviewItems(nil)
+	}
+
+	override func quickLookPreviewItems(_ sender: Any?) {
+		guard let panel = QLPreviewPanel.shared() else {
+			return
+		}
+
+		panel.toggle()
+	}
+
 	override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
 		return true
 	}
