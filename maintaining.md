@@ -23,3 +23,10 @@ Now make sure you have enabled the service in your settings:
 1. Go to your **System Preferences** -> **Keyboard**.
 1. Now click on the **Shortcuts** tab at the top.
 1. On the left panel select `Services` and on the right panel search for `Convert to Gif with Gifski` service - enable it.
+
+### Troubleshooting system services
+
+Sometimes the service doesn't work and it's really hard to understand why without any tools. You can use a debug flag on the instance of `Finder` app and see the logs it dumps:
+```bash
+/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder -NSDebugServices com.sindresorhus.Gifski
+```
