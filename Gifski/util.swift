@@ -236,7 +236,36 @@ extension NSWindowController: NSWindowDelegate {
 }
 
 
+extension NSView {
+	private final class AddedToSuperviewObserverView: NSView {
+		var onAdded: (() -> Void)?
 
+		override var acceptsFirstResponder: Bool {
+			return false
+		}
+
+		convenience init() {
+			self.init(frame: .zero)
+		}
+
+		override func viewDidMoveToWindow() {
+			guard window != nil else {
+				return
+			}
+
+			onAdded?()
+			removeFromSuperview()
+		}
+	}
+
+	// Enables you do add contraints and do other initialization without having to subclass the view.
+	// TODO: Please show me a better way to achieve this than using an invisible view 🙏
+	func onAddedToSuperview(_ closure: @escaping () -> Void) {
+		let view = AddedToSuperviewObserverView()
+		view.onAdded = closure
+		addSubview(view)
+	}
+}
 
 extension NSAlert {
 	/// Show an alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
@@ -245,11 +274,13 @@ extension NSAlert {
 		for window: NSWindow? = nil,
 		message: String,
 		informativeText: String? = nil,
+		detailText: String? = nil,
 		style: NSAlert.Style = .warning
 	) -> NSApplication.ModalResponse {
 		return NSAlert(
 			message: message,
 			informativeText: informativeText,
+			detailText: detailText,
 			style: style
 		).runModal(for: window)
 	}
@@ -257,6 +288,7 @@ extension NSAlert {
 	convenience init(
 		message: String,
 		informativeText: String? = nil,
+		detailText: String? = nil,
 		style: NSAlert.Style = .warning
 	) {
 		self.init()
@@ -265,6 +297,37 @@ extension NSAlert {
 
 		if let informativeText = informativeText {
 			self.informativeText = informativeText
+		}
+
+		if let detailText = detailText {
+			if #available(macOS 10.14, *) {
+				let scrollView = NSTextView.scrollableTextView()
+				//scrollView.frame = CGRect(width: 300, height: 120)
+				scrollView.translatesAutoresizingMaskIntoConstraints = false
+				scrollView.heightAnchor.constraint(equalToConstant: 120).isActive = true
+
+				scrollView.onAddedToSuperview {
+					print("added")
+					scrollView.leftAnchor.constraint(equalTo: scrollView.superview!.leftAnchor).isActive = true
+					scrollView.rightAnchor.constraint(equalTo: scrollView.superview!.rightAnchor).isActive = true
+				}
+
+				// FOR DEBUGGING
+				scrollView.drawsBackground = true
+				scrollView.backgroundColor = .red
+				// scrollView.frame = CGRect(width: 100, height: 100)
+
+				let textView = scrollView.documentView as! NSTextView
+				textView.drawsBackground = false
+				textView.isEditable = false
+				textView.font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+				textView.textColor = .secondaryLabelColor
+				textView.string = detailText
+
+				self.accessoryView = scrollView
+			} else {
+				self.informativeText += "\n\(detailText)"
+			}
 		}
 	}
 
@@ -2007,6 +2070,7 @@ extension Dictionary {
 				for: window,
 				message: message,
 				informativeText: informativeText,
+				detailText: debugInfo,
 				style: style
 			)
 		}

@@ -28,6 +28,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		if urlsToConvertOnLaunch != nil {
 			mainWindowController.convert(urlsToConvertOnLaunch)
 		}
+
+		// TEMP for testing
+		NSAlert.showModalAndReportToCrashlytics(
+			message: "The video file is not supported.",
+			informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
+			debugInfo: "TEST"
+		)
 	}
 
 	func application(_ application: NSApplication, open urls: [URL]) {
