@@ -29,6 +29,10 @@ final class ConversionCompletedView: SSView {
 		$0.spacing = 20
 	}
 
+	private var isConversionCompleted: Bool {
+		return isHidden == false && fileUrl != nil
+	}
+
 	private func createButton(title: String) -> CustomButton {
 		return with(CustomButton()) {
 			$0.title = title
@@ -68,6 +72,8 @@ final class ConversionCompletedView: SSView {
 	}
 
 	func show() {
+		// We need to manually make self as the first responder, but when the view is hidden it is auto-removed
+		window?.makeFirstResponder(self)
 		fadeIn()
 	}
 
@@ -131,6 +137,10 @@ final class ConversionCompletedView: SSView {
 }
 
 extension ConversionCompletedView: QLPreviewPanelDataSource {
+	@IBAction private func quickLook(_ sender: Any) {
+		quickLookPreviewItems(nil)
+	}
+
 	override func quickLook(with event: NSEvent) {
 		quickLookPreviewItems(nil)
 	}
@@ -173,5 +183,16 @@ extension ConversionCompletedView: QLPreviewPanelDelegate {
 
 	func previewPanel(_ panel: QLPreviewPanel!, transitionImageFor item: QLPreviewItem!, contentRect: UnsafeMutablePointer<CGRect>!) -> Any! {
 		return draggableFile.image
+	}
+}
+
+extension ConversionCompletedView: NSMenuItemValidation {
+	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+		switch menuItem.action {
+		case #selector(quickLook(_:))?:
+			return isConversionCompleted
+		default:
+			return true
+		}
 	}
 }

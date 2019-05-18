@@ -70,7 +70,7 @@
                             <menuItem title="Quick Look" keyEquivalent=" " id="Wfh-bM-KvX">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="quickLook:" target="-1" id="Zr4-ny-Pim"/>
+                                    <action selector="quickLook:" target="-1" id="IQy-U1-llq"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>

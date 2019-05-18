@@ -61,10 +61,6 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	var isConversionCompleted: Bool {
-		return conversionCompletedView.isHidden == false && outUrl != nil
-	}
-
 	convenience init() {
 		let window = NSWindow.centeredWindow(size: CGSize(width: 360, height: 240))
 		self.init(window: window)
@@ -305,14 +301,6 @@ final class MainWindowController: NSWindowController {
 		}
 	}
 
-	@IBAction private func quickLook(_ sender: Any) {
-		// Kind of a hack to get our conversion view to be the next responder to answer
-		// for QLPreviewPanel methods. Can we do it better?
-		nextResponder = conversionCompletedView
-		conversionCompletedView.quickLookPreviewItems(nil)
-		nextResponder = nil
-	}
-
 	private func setupTimeRemainingLabel() {
 		guard let view = view else {
 			return
@@ -332,8 +320,6 @@ extension MainWindowController: NSMenuItemValidation {
 		switch menuItem.action {
 		case #selector(open)?:
 			return !isRunning
-		case #selector(quickLook(_:))?:
-			return isConversionCompleted
 		default:
 			return true
 		}
