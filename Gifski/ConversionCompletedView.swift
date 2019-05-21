@@ -74,6 +74,7 @@ final class ConversionCompletedView: SSView {
 	func show() {
 		// We need to manually make self as the first responder, but when the view is hidden it is auto-removed
 		window?.makeFirstResponder(self)
+
 		fadeIn()
 	}
 
