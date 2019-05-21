@@ -1,5 +1,6 @@
 import Cocoa
 import AVFoundation
+import class Quartz.QLPreviewPanel
 
 /**
 Convenience function for initializing an object and modifying its properties
@@ -2116,5 +2117,22 @@ extension BinaryFloatingPoint {
 		var divisor: Self = 1
 		for _ in 0..<decimalPlaces { divisor *= 10 }
 		return (self * divisor).rounded(rule) / divisor
+	}
+}
+
+extension QLPreviewPanel {
+	func toggle() {
+		if isVisible {
+			orderOut(nil)
+		} else {
+			makeKeyAndOrderFront(nil)
+		}
+	}
+}
+
+extension NSView {
+	/// Get the view frame in screen coordinates.
+	var boundsInScreenCoordinates: CGRect? {
+		return window?.convertToScreen(convert(bounds, to: nil))
 	}
 }

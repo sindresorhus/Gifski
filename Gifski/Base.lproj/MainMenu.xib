@@ -66,6 +66,13 @@
                                     <action selector="open:" target="-1" id="E6Y-20-4aZ"/>
                                 </connections>
                             </menuItem>
+                            <menuItem isSeparatorItem="YES" id="TB9-2E-bka"/>
+                            <menuItem title="Quick Look" keyEquivalent=" " id="Wfh-bM-KvX">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="quickLook:" target="-1" id="IQy-U1-llq"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>
                             <menuItem title="Close" keyEquivalent="w" id="3u8-9s-Y0B">
                                 <connections>

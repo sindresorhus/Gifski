@@ -309,7 +309,7 @@ extension MainWindowController: NSMenuItemValidation {
 		case #selector(open)?:
 			return !isRunning
 		default:
-			return validateMenuItem(menuItem)
+			return true
 		}
 	}
 }
