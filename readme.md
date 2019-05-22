@@ -25,14 +25,7 @@ Requires macOS 10.13 or later.
 
 ## System service
 
-Gifski provides a [system service](https://www.computerworld.com/article/2476298/os-x-a-quick-guide-to-services-on-your-mac.html) that lets you quickly convert a video to GIF from anywhere.
-
-You first have to enable it:
-
-1. Go to **System Preferences…** → **Keyboard**.
-2. Click the **Shortcuts** tab at the top.
-3. In the left panel, select **Services**.
-4. In the right panel, look for the **Convert to GIF with Gifski** service and click its checkbox.
+Gifski includes a [system service](https://www.computerworld.com/article/2476298/os-x-a-quick-guide-to-services-on-your-mac.html) that lets you quickly convert a video to GIF from the **Services** menu in any app that provides a compatible video file.
 
 
 ## Screenshots
