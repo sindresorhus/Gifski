@@ -19,8 +19,6 @@ Then, we need to check if our system has the latest service installed:
 /System/Library/CoreServices/pbs -update
 ```
 
-Now make sure you have enabled the service.
-
 ### Troubleshooting system services
 
 Sometimes the service doesn't work and it's really hard to understand why without any tools. You can use a debug flag on the instance of `Finder` app and see the logs it dumps:
