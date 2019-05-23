@@ -1,5 +1,6 @@
 import Cocoa
 import AVFoundation
+import class Quartz.QLPreviewPanel
 
 /**
 Convenience function for initializing an object and modifying its properties
@@ -236,43 +237,22 @@ extension NSWindowController: NSWindowDelegate {
 }
 
 
+
+
 extension NSAlert {
-	/// Show a modal alert sheet on a window.
-	/// If the window is nil, it will be a app-modal alert.
+	/// Show an alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
 	@discardableResult
 	static func showModal(
-		for window: NSWindow?,
+		for window: NSWindow? = nil,
 		message: String,
 		informativeText: String? = nil,
 		style: NSAlert.Style = .warning
 	) -> NSApplication.ModalResponse {
-		guard let window = window else {
-			return NSAlert(
-				message: message,
-				informativeText: informativeText,
-				style: style
-			).runModal()
-		}
-
 		return NSAlert(
 			message: message,
 			informativeText: informativeText,
 			style: style
 		).runModal(for: window)
-	}
-
-	/// Show a app-modal (window indepedendent) alert.
-	@discardableResult
-	static func showModal(
-		message: String,
-		informativeText: String? = nil,
-		style: NSAlert.Style = .warning
-	) -> NSApplication.ModalResponse {
-		return NSAlert(
-			message: message,
-			informativeText: informativeText,
-			style: style
-		).runModal()
 	}
 
 	convenience init(
@@ -289,9 +269,13 @@ extension NSAlert {
 		}
 	}
 
-	/// Runs the alert as a window-modal sheet.
+	/// Runs the alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
 	@discardableResult
-	func runModal(for window: NSWindow) -> NSApplication.ModalResponse {
+	func runModal(for window: NSWindow? = nil) -> NSApplication.ModalResponse {
+		guard let window = window else {
+			return runModal()
+		}
+
 		beginSheetModal(for: window) { returnCode in
 			NSApp.stopModal(withCode: returnCode)
 		}
@@ -857,7 +841,6 @@ extension AVAsset {
 
 		output.append(
 			"""
-
 			## AVAsset debug info ##
 			Extension: \(describing: (self as? AVURLAsset)?.url.fileExtension)
 			Video codec: \(describing: videoCodec?.debugDescription)
@@ -2005,6 +1988,30 @@ extension Dictionary {
 			#endif
 		}
 	}
+
+	extension NSAlert {
+		/// Show a modal alert sheet on a window, or as an app-model alert if the given window is nil, and also report it as a non-fatal error to Crashlytics.
+		@discardableResult
+		static func showModalAndReportToCrashlytics(
+			for window: NSWindow? = nil,
+			message: String,
+			informativeText: String? = nil,
+			style: NSAlert.Style = .warning,
+			debugInfo: String
+		) -> NSApplication.ModalResponse {
+			Crashlytics.recordNonFatalError(
+				title: message,
+				message: debugInfo
+			)
+
+			return NSAlert.showModal(
+				for: window,
+				message: message,
+				informativeText: informativeText,
+				style: style
+			)
+		}
+	}
 #endif
 
 enum FileType {
@@ -2110,5 +2117,22 @@ extension BinaryFloatingPoint {
 		var divisor: Self = 1
 		for _ in 0..<decimalPlaces { divisor *= 10 }
 		return (self * divisor).rounded(rule) / divisor
+	}
+}
+
+extension QLPreviewPanel {
+	func toggle() {
+		if isVisible {
+			orderOut(nil)
+		} else {
+			makeKeyAndOrderFront(nil)
+		}
+	}
+}
+
+extension NSView {
+	/// Get the view frame in screen coordinates.
+	var boundsInScreenCoordinates: CGRect? {
+		return window?.convertToScreen(convert(bounds, to: nil))
 	}
 }

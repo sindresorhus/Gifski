@@ -23,6 +23,11 @@ Requires macOS 10.13 or later.
 [![](https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/macappstore-lrg.svg)](https://itunes.apple.com/no/app/gifski/id1351639930?mt=12)
 
 
+## System service
+
+Gifski includes a [system service](https://www.computerworld.com/article/2476298/os-x-a-quick-guide-to-services-on-your-mac.html) that lets you quickly convert a video to GIF from the **Services** menu in any app that provides a compatible video file.
+
+
 ## Screenshots
 
 <img src="Stuff/screenshot.jpg" width="918" height="413">
