@@ -3,7 +3,7 @@ import Cocoa
 
 @IBDesignable
 public final class CircularProgress: NSView {
-	private var lineWidth: Double = 2
+	private var lineWidth: CGFloat = 2
 	private lazy var radius = bounds.width < bounds.height ? bounds.midX * 0.8 : bounds.midY * 0.8
 	private var _progress: Double = 0
 	private var progressObserver: NSKeyValueObservation?
@@ -14,11 +14,11 @@ public final class CircularProgress: NSView {
 	private lazy var backgroundCircle = with(CAShapeLayer.circle(radius: Double(radius), center: bounds.center)) {
 		$0.frame = bounds
 		$0.fillColor = nil
-		$0.lineWidth = CGFloat(lineWidth) / 2
+		$0.lineWidth = lineWidth / 2
 	}
 
 	private lazy var progressCircle = with(ProgressCircleShapeLayer(radius: Double(radius), center: bounds.center)) {
-		$0.lineWidth = CGFloat(lineWidth)
+		$0.lineWidth = lineWidth
 	}
 
 	private lazy var progressLabel = with(CATextLayer(text: "0%")) {
@@ -32,8 +32,8 @@ public final class CircularProgress: NSView {
 		$0.isHidden = true
 	}
 
-	internal lazy var indeterminateCircle = with(IndeterminateShapeLayer(radius: Double(radius), center: bounds.center)) {
-		$0.lineWidth = CGFloat(lineWidth)
+	internal lazy var indeterminateCircle = with(IndeterminateProgressCircleShapeLayer(radius: Double(radius), center: bounds.center)) {
+		$0.lineWidth = lineWidth
 	}
 
 	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", radius: Double(radius), center: bounds.center)) {
@@ -45,6 +45,12 @@ public final class CircularProgress: NSView {
 		$0.onAction = { _ in
 			self.cancelProgress()
 		}
+	}
+
+	private lazy var successView = with(CheckmarkView(frame: bounds)) {
+		$0.color = color
+		$0.lineWidth = lineWidth
+		$0.isHidden = true
 	}
 
 	private var originalColor: NSColor = .controlAccentColorPolyfill
@@ -67,7 +73,7 @@ public final class CircularProgress: NSView {
 	}
 
 	/**
-	Show `✔` instead `100%`.
+	Show an animated checkmark instead of `100%`.
 	*/
 	@IBInspectable public var showCheckmarkAtHundredPercent: Bool = true
 
@@ -95,6 +101,7 @@ public final class CircularProgress: NSView {
 
 			if !progressLabel.isHidden {
 				progressLabel.string = "\(Int(_progress * 100))%"
+				successView.isHidden = true
 			}
 
 			if _progress == 1 {
@@ -125,7 +132,12 @@ public final class CircularProgress: NSView {
 				isIndeterminate = false
 
 				if showCheckmarkAtHundredPercent {
-					progressLabel.string = "✓"
+					progressLabel.string = ""
+					cancelButton.isHidden = true
+
+					DispatchQueue.main.async {
+						self.successView.isHidden = false
+					}
 				}
 			}
 		}
@@ -208,6 +220,8 @@ public final class CircularProgress: NSView {
 		cancelButton.backgroundColor = color.with(alpha: 0.1)
 		cancelButton.activeBackgroundColor = color
 
+		successView.color = color
+
 		if indeterminateCircle.animation(forKey: "rotate") == nil {
 			indeterminateCircle.add(CABasicAnimation.rotate, forKey: "rotate")
 		}
@@ -220,6 +234,7 @@ public final class CircularProgress: NSView {
 		layer?.addSublayer(progressCircle)
 		layer?.addSublayer(progressLabel)
 
+		addSubview(successView)
 		addSubview(cancelButton)
 
 		progressCircle.isHidden = isIndeterminate
@@ -241,6 +256,8 @@ public final class CircularProgress: NSView {
 
 		progressCircle.resetProgress()
 		progressLabel.string = "0%"
+
+		successView.isHidden = true
 
 		needsDisplay = true
 	}
@@ -358,23 +375,20 @@ public final class CircularProgress: NSView {
 	}
 
 	override public func mouseEntered(with event: NSEvent) {
-		guard isCancellable else {
+		guard isCancellable && !isCancelled && !isFinished else {
 			super.mouseEntered(with: event)
 			return
 		}
 
 		progressLabel.isHidden = true
 		cancelButton.fadeIn()
+		successView.isHidden = shouldHideSuccessView
 	}
 
 	override public func mouseExited(with event: NSEvent) {
-		guard isCancellable else {
-			super.mouseExited(with: event)
-			return
-		}
-
 		progressLabel.isHidden = isIndeterminate && progress == 0
 		cancelButton.isHidden = true
+		successView.isHidden = shouldHideSuccessView
 	}
 
 	private var _isIndeterminate = false
@@ -414,5 +428,9 @@ public final class CircularProgress: NSView {
 		progressCircle.isHidden = false
 
 		progressLabel.isHidden = !cancelButton.isHidden
+	}
+
+	private var shouldHideSuccessView: Bool {
+		return !showCheckmarkAtHundredPercent || !isFinished
 	}
 }
