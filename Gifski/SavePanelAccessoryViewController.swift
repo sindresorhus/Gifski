@@ -3,21 +3,21 @@ import AVKit
 
 enum DimensionsMode: CaseIterable {
 	case pixels
-	case percentage
+	case percent
 
 	var title: String {
 		switch self {
 		case .pixels:
 			return "pixels"
-		case .percentage:
-			return "percentage"
+		case .percent:
+			return "percent"
 		}
 	}
 
 	init(title: String) {
 		switch title {
-		case DimensionsMode.percentage.title:
-			self = .percentage
+		case DimensionsMode.percent.title:
+			self = .percent
 		default:
 			self = .pixels
 		}
@@ -33,7 +33,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var widthTextField: NSTextField!
 	@IBOutlet private var heightTextField: NSTextField!
 	@IBOutlet private var predefinedSizesDropdown: NSPopUpButton!
-	@IBOutlet private var widthHeightTypeDropdown: NSPopUpButton!
+	@IBOutlet private var dimensionsModeDropdown: NSPopUpButton!
 
 	var inputUrl: URL!
 	var videoMetadata: AVURLAsset.VideoMetadata!
@@ -79,26 +79,23 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		predefinedSizesDropdown.onAction = { [weak self] _ in
-			guard let self = self else {
+			guard let self = self, let item = self.predefinedSizesDropdown.selectedItem else {
 				return
 			}
 
-			if let item = self.predefinedSizesDropdown.selectedItem {
-				let index = self.predefinedSizesDropdown.index(of: item)
-				let correspondingScale = self.dimensionRatios[index]
-				self.scaleXDoubleValue = Double(correspondingScale)
-				self.scaleYDoubleValue = Double(correspondingScale)
-				self.widthTextField.stringValue = "\(Int(Double(self.fileDimensions.width) * self.scaleXDoubleValue))"
-				self.heightTextField.stringValue = "\(Int(Double(self.fileDimensions.height) * self.scaleYDoubleValue))"
-			}
+			let index = self.predefinedSizesDropdown.index(of: item)
+			let correspondingScale = self.dimensionRatios[index]
+			self.scaleXDoubleValue = Double(correspondingScale)
+			self.scaleYDoubleValue = Double(correspondingScale)
+			self.updateWidthAndHeight(with: self.dimensionsMode)
 			self.recalculateCurrentDimensions()
 		}
 
-		widthHeightTypeDropdown.removeAllItems()
-		widthHeightTypeDropdown.addItems(withTitles: DimensionsMode.allCases.map { $0.title })
+		dimensionsModeDropdown.removeAllItems()
+		dimensionsModeDropdown.addItems(withTitles: DimensionsMode.allCases.map { $0.title })
 
-		widthHeightTypeDropdown.onAction = { [weak self] _ in
-			guard let self = self, let item = self.widthHeightTypeDropdown.selectedItem else {
+		dimensionsModeDropdown.onAction = { [weak self] _ in
+			guard let self = self, let item = self.dimensionsModeDropdown.selectedItem else {
 				return
 			}
 
@@ -140,11 +137,11 @@ final class SavePanelAccessoryViewController: NSViewController {
 			let divisorFloat = CGFloat(integerLiteral: divisor)
 			let dimensionRatio = Float(1 / divisorFloat)
 			dimensionRatios.append(dimensionRatio)
-			var percentageString: String = "Original"
+			var percentString: String = "Original"
 			if divisor != 1 {
-				percentageString = "\(Int(round(dimensionRatio * 100.0)))%"
+				percentString = "\(Int(round(dimensionRatio * 100.0)))%"
 			}
-			predefinedSizesDropdown.addItem(withTitle: " \(Int(dimensions.width / divisorFloat)) × \(Int(dimensions.height / divisorFloat)) (\(percentageString))")
+			predefinedSizesDropdown.addItem(withTitle: " \(Int(dimensions.width / divisorFloat)) × \(Int(dimensions.height / divisorFloat)) (\(percentString))")
 		}
 		predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
 		dimensionRatios.append(1)
@@ -152,8 +149,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 		for size in commonsizes {
 			let dimensionRatio = CGFloat(size) / dimensions.width
 			dimensionRatios.append(Float(dimensionRatio))
-			let percentageString = "\(Int(round(dimensionRatio * 100.0)))%"
-			predefinedSizesDropdown.addItem(withTitle: "\(Int(dimensions.width * dimensionRatio)) × \(Int(dimensions.height * dimensionRatio)) (\(percentageString))")
+			let percentString = "\(Int(round(dimensionRatio * 100.0)))%"
+			predefinedSizesDropdown.addItem(withTitle: "\(Int(dimensions.width * dimensionRatio)) × \(Int(dimensions.height * dimensionRatio)) (\(percentString))")
 		}
 		if dimensions.width >= 640 {
 			scaleXDoubleValue = 0.5
@@ -173,7 +170,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		case .pixels:
 			widthTextField.stringValue = "\(Int(videoMetadata.dimensions.width * CGFloat(scaleXDoubleValue)))"
 			heightTextField.stringValue = "\(Int(videoMetadata.dimensions.height * CGFloat(scaleYDoubleValue)))"
-		case .percentage:
+		case .percent:
 			widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
 			heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
 		}
@@ -206,7 +203,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			switch dimensionsMode {
 			case .pixels:
 				currentScaleXDoubleValue = width / Double(fileDimensions.width)
-			case .percentage:
+			case .percent:
 				currentScaleXDoubleValue = width / 100.0
 			}
 
@@ -221,7 +218,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			switch dimensionsMode {
 			case .pixels:
 				self.heightTextField.stringValue = "\(Int(Double(fileDimensions.height) * self.scaleYDoubleValue))"
-			case .percentage:
+			case .percent:
 				self.heightTextField.stringValue = "\(Int(100 * scaleYDoubleValue))"
 			}
 
@@ -231,7 +228,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			switch dimensionsMode {
 			case .pixels:
 				currentScaleYDoubleValue = height / Double(fileDimensions.height)
-			case .percentage:
+			case .percent:
 				currentScaleYDoubleValue = height / 100.0
 			}
 
@@ -246,7 +243,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			switch dimensionsMode {
 			case .pixels:
 				self.widthTextField.stringValue = "\(Int(Double(fileDimensions.width) * self.scaleXDoubleValue))"
-			case .percentage:
+			case .percent:
 				self.widthTextField.stringValue = "\(Int(100.0 * scaleXDoubleValue))"
 			}
 			self.recalculateCurrentDimensions()

@@ -8,6 +8,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="SavePanelAccessoryViewController" customModule="Gifski" customModuleProvider="target">
             <connections>
+                <outlet property="dimensionsModeDropdown" destination="aVG-zO-Cd7" id="d67-vF-mqS"/>
                 <outlet property="estimatedSizeLabel" destination="iCr-ZN-9aI" id="ATK-IA-uf5"/>
                 <outlet property="frameRateLabel" destination="5Ke-gz-J2u" id="VaC-Et-vm7"/>
                 <outlet property="frameRateSlider" destination="Rej-Dl-z8Y" id="cIA-dv-KJw"/>
@@ -15,7 +16,6 @@
                 <outlet property="predefinedSizesDropdown" destination="BWw-q9-45K" id="mLx-BM-G3f"/>
                 <outlet property="qualitySlider" destination="wmm-UU-g6g" id="RlB-Ty-dIN"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
-                <outlet property="widthHeightTypeDropdown" destination="aVG-zO-Cd7" id="d67-vF-mqS"/>
                 <outlet property="widthTextField" destination="Jqk-p7-DIM" id="uiL-Sw-PE5"/>
             </connections>
         </customObject>
