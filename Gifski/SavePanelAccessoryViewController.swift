@@ -38,19 +38,25 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 		videoMetadata = inputUrl.videoMetadata!
 		fileDimensions = videoMetadata.dimensions
 
-		frameRateSlider.onAction = { _ in
+		frameRateSlider.onAction = { [weak self] _ in
+			guard let self = self else { return }
+
 			let frameRate = self.frameRateSlider.integerValue
 			self.frameRateLabel.stringValue = "\(frameRate)"
 			self.onFramerateChange?(frameRate)
 			self.estimateFileSize()
 		}
 
-		qualitySlider.onAction = { _ in
+		qualitySlider.onAction = { [weak self] _ in
+			guard let self = self else { return }
+
 			defaults[.outputQuality] = self.qualitySlider.doubleValue
 			self.estimateFileSize()
 		}
 
-		predefinedSizesDropdown.onAction = {_ in
+		predefinedSizesDropdown.onAction = { [weak self] _ in
+			guard let self = self else { return }
+
 			if let item = self.predefinedSizesDropdown.selectedItem {
 				let index = self.predefinedSizesDropdown.index(of: item)
 				let correspondingScale = self.dimensionRatios[index]
@@ -62,7 +68,9 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 			self.recalculateCurrentDimensions()
 		}
 
-		widthHeightTypeDropdown.onAction = {_ in
+		widthHeightTypeDropdown.onAction = { [weak self] _ in
+			guard let self = self else { return }
+
 			if let item = self.widthHeightTypeDropdown.selectedItem {
 				let index = self.widthHeightTypeDropdown.index(of: item)
 				if index == 0 {
