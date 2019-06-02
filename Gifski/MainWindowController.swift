@@ -30,8 +30,7 @@ final class MainWindowController: NSWindowController {
 		$0.isHidden = true
 	}
 
-	private lazy var accessoryViewController = SavePanelAccessoryViewController()
-
+	private var accessoryViewController: SavePanelAccessoryViewController!
 	private var choosenDimensions: CGSize?
 	private var choosenFrameRate: Int?
 
@@ -198,6 +197,7 @@ final class MainWindowController: NSWindowController {
 		panel.prompt = "Convert"
 		panel.message = "Choose where to save the GIF"
 
+		accessoryViewController = SavePanelAccessoryViewController()
 		accessoryViewController.inputUrl = inputUrl
 		accessoryViewController.videoMetadata = videoMetadata
 
@@ -215,6 +215,8 @@ final class MainWindowController: NSWindowController {
 			if $0 == .OK {
 				self.startConversion(inputUrl: inputUrl, outputUrl: panel.url!)
 			}
+
+			self.accessoryViewController = nil
 		}
 	}
 
