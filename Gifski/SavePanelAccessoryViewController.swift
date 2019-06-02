@@ -30,6 +30,60 @@ enum DimensionsMode: CaseIterable {
 			self = .pixels
 		}
 	}
+
+	func width(fromScale scale: Double, originalSize: CGSize) -> Double {
+		switch self {
+		case .pixels:
+			return Double(originalSize.width) * scale
+		case .percent:
+			return 100.0 * scale
+		}
+	}
+
+	func height(fromScale scale: Double, originalSize: CGSize) -> Double {
+		switch self {
+		case .pixels:
+			return Double(originalSize.height) * scale
+		case .percent:
+			return 100.0 * scale
+		}
+	}
+
+	func scale(width: Double, originalSize: CGSize) -> Double {
+		switch self {
+		case .pixels:
+			return width / Double(originalSize.width)
+		case .percent:
+			return width / 100.0
+		}
+	}
+
+	func scale(height: Double, originalSize: CGSize) -> Double {
+		switch self {
+		case .pixels:
+			return height / Double(originalSize.height)
+		case .percent:
+			return height / 100.0
+		}
+	}
+
+	func validated(widthScale: Double, originalSize: CGSize) -> Double {
+		let range = self == .pixels ? (1.0...Double(originalSize.width)) : (1.0...100.0)
+		let maxValue = self == .pixels ? Double(originalSize.width) : 100.0
+		return validated(scale: widthScale, maxValue: maxValue, range: range)
+	}
+
+	func validated(heightScale: Double, originalSize: CGSize) -> Double {
+		let range = self == .pixels ? (1.0...Double(originalSize.height)) : (1.0...100.0)
+		let maxValue = self == .pixels ? Double(originalSize.height) : 100.0
+		return validated(scale: heightScale, maxValue: maxValue, range: range)
+	}
+
+	private func validated(scale: Double, maxValue: Double, range: ClosedRange<Double>) -> Double {
+		let scaledValue = scale * maxValue
+		let validatedScaledValue = scaledValue.clamped(to: range)
+		return validatedScaledValue / maxValue
+	}
 }
 
 final class SavePanelAccessoryViewController: NSViewController {
@@ -47,20 +101,26 @@ final class SavePanelAccessoryViewController: NSViewController {
 	var videoMetadata: AVURLAsset.VideoMetadata!
 	var onDimensionChange: ((CGSize) -> Void)?
 	var onFramerateChange: ((Int) -> Void)?
-	var currentDimensions = CGSize.zero
-
-	var fileDimensions: CGSize {
-		return videoMetadata.dimensions
-	}
 
 	let formatter = ByteCountFormatter()
 
 	private var dimensionsMode = DimensionsMode.pixels
 	private var dimensionRatios: [Float] = [1.0, 1.0]
-	private var scaleXDoubleValue: Double = 1.0
-	private var scaleYDoubleValue: Double = 1.0
-	private var scaleXMinDoubleValue: Double = 0.0
-	private var scaleYMinDoubleValue: Double = 0.0
+	private var currentScale = CGSize(width: 1.0, height: 1.0) {
+		didSet {
+			dimensionsUpdated()
+		}
+	}
+
+	private var fileDimensions: CGSize {
+		return videoMetadata.dimensions
+	}
+
+	private var currentDimensions: CGSize {
+		let width = dimensionsMode.width(fromScale: Double(currentScale.width), originalSize: fileDimensions)
+		let height = dimensionsMode.height(fromScale: Double(currentScale.height), originalSize: fileDimensions)
+		return CGSize(width: width, height: height)
+	}
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -93,10 +153,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 			let index = self.predefinedSizesDropdown.index(of: item)
 			let correspondingScale = self.dimensionRatios[index]
-			self.scaleXDoubleValue = Double(correspondingScale)
-			self.scaleYDoubleValue = Double(correspondingScale)
-			self.updateWidthAndHeight(with: self.dimensionsMode)
-			self.recalculateCurrentDimensions()
+			self.currentScale = CGSize(width: Double(correspondingScale), height: Double(correspondingScale))
 		}
 
 		dimensionsModeDropdown.removeAllItems()
@@ -106,8 +163,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 			guard let self = self, let item = self.dimensionsModeDropdown.selectedItem else {
 				return
 			}
-
-			self.updateWidthAndHeight(with: DimensionsMode(title: item.title))
+			self.dimensionsMode = DimensionsMode(title: item.title)
+			self.dimensionsUpdated()
 		}
 
 		widthTextField.delegate = self
@@ -119,25 +176,17 @@ final class SavePanelAccessoryViewController: NSViewController {
 		configureQualitySlider()
 	}
 
+	private func dimensionsUpdated() {
+		updateWidthAndHeight()
+		estimateFileSize()
+		onDimensionChange?(currentDimensions)
+	}
+
 	private func estimateFileSize() {
 		let frameCount = videoMetadata.duration * frameRateSlider.doubleValue
 		var fileSize = (Double(currentDimensions.width) * Double(currentDimensions.height) * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
 		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
-	}
-
-	private func recalculateCurrentDimensions() {
-		self.currentDimensions = CGSize(width: fileDimensions.width * CGFloat(scaleXDoubleValue), height: fileDimensions.height * CGFloat(scaleYDoubleValue))
-		estimateFileSize()
-		self.onDimensionChange?(self.currentDimensions)
-	}
-
-	private func validateScaleDoubleValue(_ scaleValue: Double, pendingX: Bool, pendingY: Bool) -> Bool {
-		if scaleValue <= 0.001 || scaleValue > 1 {
-			return false
-		} else {
-			return true
-		}
 	}
 
 	private func configureScaleSettings(inputDimensions dimensions: CGSize) {
@@ -161,32 +210,16 @@ final class SavePanelAccessoryViewController: NSViewController {
 			predefinedSizesDropdown.addItem(withTitle: "\(Int(dimensions.width * dimensionRatio)) × \(Int(dimensions.height * dimensionRatio)) (\(percentString))")
 		}
 		if dimensions.width >= 640 {
-			scaleXDoubleValue = 0.5
-			scaleYDoubleValue = 0.5
+			currentScale = CGSize(width: 0.5, height: 0.5)
 			predefinedSizesDropdown.selectItem(at: 3)
 		} else {
 			predefinedSizesDropdown.selectItem(at: 2)
 		}
-		scaleXMinDoubleValue = minimumScale(inputDimensions: dimensions)
-		scaleYMinDoubleValue = scaleXMinDoubleValue
-		updateWidthAndHeight(with: dimensionsMode)
-		self.recalculateCurrentDimensions()
 	}
 
-	private func updateWidthAndHeight(with mode: DimensionsMode) {
-		switch mode {
-		case .pixels:
-			widthTextField.stringValue = "\(Int(videoMetadata.dimensions.width * CGFloat(scaleXDoubleValue)))"
-			heightTextField.stringValue = "\(Int(videoMetadata.dimensions.height * CGFloat(scaleYDoubleValue)))"
-		case .percent:
-			widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
-			heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
-		}
-	}
-
-	private func minimumScale(inputDimensions dimensions: CGSize) -> Double {
-		let shortestSide = min(dimensions.width, dimensions.height)
-		return 10 / Double(shortestSide)
+	private func updateWidthAndHeight() {
+		widthTextField.stringValue = "\(Int(currentDimensions.width))"
+		heightTextField.stringValue = "\(Int(currentDimensions.height))"
 	}
 
 	private func configureFramerateSlider(inputFrameRate frameRate: Double) {
@@ -206,56 +239,25 @@ final class SavePanelAccessoryViewController: NSViewController {
 	}
 
 	private func scalingTextFieldTextDidChange(_ textField: NSTextField) {
+		let userScale: Double
+		let validatedScale: Double
+
 		if textField == widthTextField, let width = Double(self.widthTextField.stringValue) {
-			let currentScaleXDoubleValue: Double
-			switch dimensionsMode {
-			case .pixels:
-				currentScaleXDoubleValue = width / Double(fileDimensions.width)
-			case .percent:
-				currentScaleXDoubleValue = width / 100.0
-			}
-
-			if !validateScaleDoubleValue(currentScaleXDoubleValue, pendingX: false, pendingY: true) {
-				return
-			}
-
-			self.scaleXDoubleValue = currentScaleXDoubleValue
-			self.predefinedSizesDropdown.selectItem(at: 0)
-			self.scaleYDoubleValue = self.scaleXDoubleValue
-
-			switch dimensionsMode {
-			case .pixels:
-				self.heightTextField.stringValue = "\(Int(Double(fileDimensions.height) * self.scaleYDoubleValue))"
-			case .percent:
-				self.heightTextField.stringValue = "\(Int(100 * scaleYDoubleValue))"
-			}
-
-			self.recalculateCurrentDimensions()
+			userScale = dimensionsMode.scale(width: width, originalSize: fileDimensions)
+			validatedScale = dimensionsMode.validated(widthScale: userScale, originalSize: fileDimensions)
 		} else if textField == heightTextField, let height = Double(self.heightTextField.stringValue) {
-			let currentScaleYDoubleValue: Double
-			switch dimensionsMode {
-			case .pixels:
-				currentScaleYDoubleValue = height / Double(fileDimensions.height)
-			case .percent:
-				currentScaleYDoubleValue = height / 100.0
-			}
-
-			if !validateScaleDoubleValue(currentScaleYDoubleValue, pendingX: false, pendingY: true) {
-				return
-			}
-
-			self.scaleYDoubleValue = currentScaleYDoubleValue
-			self.predefinedSizesDropdown.selectItem(at: 0)
-			self.scaleXDoubleValue = self.scaleYDoubleValue
-
-			switch dimensionsMode {
-			case .pixels:
-				self.widthTextField.stringValue = "\(Int(Double(fileDimensions.width) * self.scaleXDoubleValue))"
-			case .percent:
-				self.widthTextField.stringValue = "\(Int(100.0 * scaleXDoubleValue))"
-			}
-			self.recalculateCurrentDimensions()
+			userScale = dimensionsMode.scale(width: height, originalSize: fileDimensions)
+			validatedScale = dimensionsMode.validated(widthScale: userScale, originalSize: fileDimensions)
+		} else {
+			return
 		}
+
+		if !userScale.isEqual(to: validatedScale) {
+			// shake
+		}
+
+		self.currentScale = CGSize(width: validatedScale, height: validatedScale)
+		self.predefinedSizesDropdown.selectItem(at: 0)
 	}
 }
 
