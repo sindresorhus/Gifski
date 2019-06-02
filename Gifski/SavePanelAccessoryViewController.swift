@@ -11,7 +11,6 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 	@IBOutlet private var widthTextField: NSTextField!
 	@IBOutlet private var heightTextField: NSTextField!
 	@IBOutlet private var widthHeightTypeDropdown: NSPopUpButton!
-	@IBOutlet private var proportionalScaleAffordanceButton: NSButton!
 
 	var inputUrl: URL!
 	var videoMetadata: AVURLAsset.VideoMetadata!
