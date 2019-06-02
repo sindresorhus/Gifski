@@ -104,8 +104,15 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 	let formatter = ByteCountFormatter()
 
-	private var dimensionsMode = DimensionsMode.pixels
+	private var dimensionsMode = DimensionsMode.pixels {
+		didSet {
+			// Doesn't matter if we choose width or height scale - these are the same
+			let scale = self.dimensionsMode.validated(widthScale: Double(self.currentScale.width), originalSize: self.fileDimensions)
+			self.currentScale = CGSize(width: scale, height: scale)
+		}
+	}
 	private var dimensionRatios: [Float] = [1.0, 1.0]
+
 	private var currentScale = CGSize(width: 1.0, height: 1.0) {
 		didSet {
 			dimensionsUpdated()
@@ -164,7 +171,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 				return
 			}
 			self.dimensionsMode = DimensionsMode(title: item.title)
-			self.dimensionsUpdated()
 		}
 
 		widthTextField.delegate = self
