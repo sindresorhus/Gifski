@@ -7,18 +7,16 @@ final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
 
-	@IBOutlet private var predefinedSizesDropdown: NSPopUpButton!
 	@IBOutlet private var widthTextField: NSTextField!
 	@IBOutlet private var heightTextField: NSTextField!
+	@IBOutlet private var predefinedSizesDropdown: NSPopUpButton!
 	@IBOutlet private var widthHeightTypeDropdown: NSPopUpButton!
 
 	var inputUrl: URL!
 	var videoMetadata: AVURLAsset.VideoMetadata!
 	var onDimensionChange: ((CGSize) -> Void)?
 	var onFramerateChange: ((Int) -> Void)?
-	var currentDimensions = CGSize(width: 0, height: 0)
-	var shouldRevertX = false
-	var shouldRevertY = false
+	var currentDimensions = CGSize.zero
 
 	var fileDimensions: CGSize {
 		return videoMetadata.dimensions
