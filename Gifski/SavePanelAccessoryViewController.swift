@@ -21,14 +21,12 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 	private var dimensionsMode = DimensionsMode.pixels {
 		didSet {
-			// Doesn't matter if we choose width or height scale - these are the same
-			let scale = self.dimensionsMode.validated(widthScale: Double(self.currentScale.width), originalSize: self.fileDimensions)
-			self.currentScale = CGSize(width: scale, height: scale)
+			self.currentScale = self.dimensionsMode.validated(widthScale: self.currentScale, originalSize: self.fileDimensions)
 		}
 	}
-	private var dimensionRatios: [Float] = [1.0, 1.0]
+	private var dimensionRatios: [Double] = [1.0, 1.0]
 
-	private var currentScale = CGSize(width: 1.0, height: 1.0) {
+	private var currentScale: Double = 1.0 {
 		didSet {
 			dimensionsUpdated()
 		}
@@ -39,8 +37,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 	}
 
 	private var currentDimensions: CGSize {
-		let width = dimensionsMode.width(fromScale: Double(currentScale.width), originalSize: fileDimensions)
-		let height = dimensionsMode.height(fromScale: Double(currentScale.height), originalSize: fileDimensions)
+		let width = dimensionsMode.width(fromScale: currentScale, originalSize: fileDimensions)
+		let height = dimensionsMode.height(fromScale: currentScale, originalSize: fileDimensions)
 		return CGSize(width: width, height: height)
 	}
 
@@ -74,8 +72,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			}
 
 			let index = self.predefinedSizesDropdown.index(of: item)
-			let correspondingScale = self.dimensionRatios[index]
-			self.currentScale = CGSize(width: Double(correspondingScale), height: Double(correspondingScale))
+			self.currentScale = self.dimensionRatios[index]
 		}
 
 		dimensionsModeDropdown.removeAllItems()
@@ -110,10 +107,11 @@ final class SavePanelAccessoryViewController: NSViewController {
 		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
 	}
 
+	// TODO: clean this up
 	private func configureScaleSettings(inputDimensions dimensions: CGSize) {
 		for divisor in 1..<6 {
 			let divisorFloat = CGFloat(integerLiteral: divisor)
-			let dimensionRatio = Float(1 / divisorFloat)
+			let dimensionRatio = Double(1.0 / divisorFloat)
 			dimensionRatios.append(dimensionRatio)
 			var percentString: String = "Original"
 			if divisor != 1 {
@@ -126,12 +124,12 @@ final class SavePanelAccessoryViewController: NSViewController {
 		let commonsizes = [960, 800, 640, 500, 480, 320, 256, 200, 160, 128, 80, 64]
 		for size in commonsizes {
 			let dimensionRatio = CGFloat(size) / dimensions.width
-			dimensionRatios.append(Float(dimensionRatio))
+			dimensionRatios.append(Double(dimensionRatio))
 			let percentString = "\(Int(round(dimensionRatio * 100.0)))%"
 			predefinedSizesDropdown.addItem(withTitle: "\(Int(dimensions.width * dimensionRatio)) × \(Int(dimensions.height * dimensionRatio)) (\(percentString))")
 		}
 		if dimensions.width >= 640 {
-			currentScale = CGSize(width: 0.5, height: 0.5)
+			currentScale = 0.5
 			predefinedSizesDropdown.selectItem(at: 3)
 		} else {
 			predefinedSizesDropdown.selectItem(at: 2)
@@ -166,18 +164,20 @@ final class SavePanelAccessoryViewController: NSViewController {
 		if textField == widthTextField, let width = Double(self.widthTextField.stringValue) {
 			userScale = dimensionsMode.scale(width: width, originalSize: fileDimensions)
 			validatedScale = dimensionsMode.validated(widthScale: userScale, originalSize: fileDimensions)
+			// TODO: edge case (preview doesn't handle it either)
+			// when the aspect ratio for the image is big, specyfing width 1 will make height 0
 		} else if textField == heightTextField, let height = Double(self.heightTextField.stringValue) {
 			userScale = dimensionsMode.scale(width: height, originalSize: fileDimensions)
-			validatedScale = dimensionsMode.validated(widthScale: userScale, originalSize: fileDimensions)
+			validatedScale = dimensionsMode.validated(heightScale: userScale, originalSize: fileDimensions)
 		} else {
 			return
 		}
 
 		if !userScale.isEqual(to: validatedScale) {
-			// shake
+			// TODO: shake
 		}
 
-		self.currentScale = CGSize(width: validatedScale, height: validatedScale)
+		self.currentScale = validatedScale
 		self.predefinedSizesDropdown.selectItem(at: 0)
 	}
 }
