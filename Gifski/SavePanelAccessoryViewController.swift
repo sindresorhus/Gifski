@@ -17,10 +17,13 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 	var videoMetadata: AVURLAsset.VideoMetadata!
 	var onDimensionChange: ((CGSize) -> Void)?
 	var onFramerateChange: ((Int) -> Void)?
-	var fileDimensions = CGSize(width: 0, height: 0)
 	var currentDimensions = CGSize(width: 0, height: 0)
 	var shouldRevertX = false
 	var shouldRevertY = false
+
+	var fileDimensions: CGSize {
+		return videoMetadata.dimensions
+	}
 
 	let formatter = ByteCountFormatter()
 
@@ -34,12 +37,10 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 		super.viewDidLoad()
 		formatter.zeroPadsFractionDigits = true
 
-		/// TODO: Use KVO here
-		videoMetadata = inputUrl.videoMetadata!
-		fileDimensions = videoMetadata.dimensions
-
 		frameRateSlider.onAction = { [weak self] _ in
-			guard let self = self else { return }
+			guard let self = self else {
+				return
+			}
 
 			let frameRate = self.frameRateSlider.integerValue
 			self.frameRateLabel.stringValue = "\(frameRate)"
@@ -48,14 +49,18 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 		}
 
 		qualitySlider.onAction = { [weak self] _ in
-			guard let self = self else { return }
+			guard let self = self else {
+				return
+			}
 
 			defaults[.outputQuality] = self.qualitySlider.doubleValue
 			self.estimateFileSize()
 		}
 
 		predefinedSizesDropdown.onAction = { [weak self] _ in
-			guard let self = self else { return }
+			guard let self = self else {
+				return
+			}
 
 			if let item = self.predefinedSizesDropdown.selectedItem {
 				let index = self.predefinedSizesDropdown.index(of: item)
@@ -69,7 +74,9 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 		}
 
 		widthHeightTypeDropdown.onAction = { [weak self] _ in
-			guard let self = self else { return }
+			guard let self = self else {
+				return
+			}
 
 			if let item = self.widthHeightTypeDropdown.selectedItem {
 				let index = self.widthHeightTypeDropdown.index(of: item)
