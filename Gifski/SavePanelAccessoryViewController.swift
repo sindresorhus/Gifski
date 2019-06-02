@@ -98,7 +98,7 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
         let frameCount = videoMetadata.duration * frameRateSlider.doubleValue
         var fileSize = (Double(currentDimensions.width) * Double(currentDimensions.height) * frameCount) / 3
         fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
-        estimatedSizeLabel.stringValue = formatter.string(fromByteCount: Int64(fileSize))
+		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
     }
 
     func recalculateCurrentDimensions() {
