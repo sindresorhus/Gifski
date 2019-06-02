@@ -14,6 +14,14 @@ enum DimensionsMode: CaseIterable {
 		}
 	}
 
+	var deltaUnit: Int {
+		return 1
+	}
+
+	var biggerDeltaUnit: Int {
+		return 10
+	}
+
 	init(title: String) {
 		switch title {
 		case DimensionsMode.percent.title:
@@ -260,17 +268,25 @@ extension SavePanelAccessoryViewController: NSTextFieldDelegate {
 	}
 
 	func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-		var deltaValue = 0
-		if commandSelector == #selector(moveUp(_:)) {
-			deltaValue = 1
-		} else if commandSelector == #selector(moveDown(_:)) {
-			deltaValue = -1
-		} else {
-			return false
-		}
 		guard let currentValue = Int(textView.string) else {
 			return false
 		}
+
+		let deltaValue: Int
+		switch commandSelector {
+		case #selector(moveUp):
+			deltaValue = dimensionsMode.deltaUnit
+		case #selector(moveDown):
+			deltaValue = dimensionsMode.deltaUnit * -1
+		case #selector(moveBackward):
+			deltaValue = dimensionsMode.biggerDeltaUnit
+		case #selector(moveForward):
+			deltaValue = dimensionsMode.biggerDeltaUnit * -1
+		default:
+			// we only handle arrow-up (moveUp), arrow-down (moveDown), option+arrow-up (moveBackward), option+arrow-down (moveForward)
+			return false
+		}
+
 		textView.string = "\(currentValue + deltaValue)"
 		if let correspondingTextField = textView.superview?.superview as? NSTextField {
 			scalingTextFieldTextDidChange(correspondingTextField)
