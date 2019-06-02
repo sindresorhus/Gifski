@@ -1,7 +1,7 @@
 import Cocoa
 import AVKit
 
-final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDelegate {
+final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var estimatedSizeLabel: NSTextField!
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
@@ -121,61 +121,6 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 		self.onDimensionChange?(self.currentDimensions)
 	}
 
-	func controlTextDidChange(_ obj: Notification) {
-		guard let textField = obj.object as? NSTextField else {
-			return
-		}
-		scalingTextFieldTextDidChange(textField)
-	}
-
-	func scalingTextFieldTextDidChange(_ textField: NSTextField) {
-		if textField == widthTextField {
-			guard let width = Double(self.widthTextField.stringValue) else {
-				return
-			}
-			var currentScaleXDoubleValue: Double = 0
-			if percentageMode {
-				currentScaleXDoubleValue = width / 100
-			} else {
-				currentScaleXDoubleValue = width / Double(fileDimensions.width)
-			}
-			if !validateScaleDoubleValue(currentScaleXDoubleValue, pendingX: false, pendingY: true) {
-				return
-			}
-			self.scaleXDoubleValue = currentScaleXDoubleValue
-			self.predefinedSizesDropdown.selectItem(at: 0)
-			self.scaleYDoubleValue = self.scaleXDoubleValue
-			if percentageMode {
-				self.heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
-			} else {
-				self.heightTextField.stringValue = "\(Int(Double(fileDimensions.height) * self.scaleYDoubleValue))"
-			}
-			self.recalculateCurrentDimensions()
-		} else if textField == heightTextField {
-			guard let height = Double(self.heightTextField.stringValue) else {
-				return
-			}
-			var currentScaleYDoubleValue: Double = 0
-			if percentageMode {
-				currentScaleYDoubleValue = height / 100
-			} else {
-				currentScaleYDoubleValue = height / Double(fileDimensions.height)
-			}
-			if !validateScaleDoubleValue(currentScaleYDoubleValue, pendingX: false, pendingY: true) {
-				return
-			}
-			self.scaleYDoubleValue = currentScaleYDoubleValue
-			self.predefinedSizesDropdown.selectItem(at: 0)
-			self.scaleXDoubleValue = self.scaleYDoubleValue
-			if percentageMode {
-				self.widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
-			} else {
-				self.widthTextField.stringValue = "\(Int(Double(fileDimensions.width) * self.scaleXDoubleValue))"
-			}
-			self.recalculateCurrentDimensions()
-		}
-	}
-
 	private func validateScaleDoubleValue(_ scaleValue: Double, pendingX: Bool, pendingY: Bool) -> Bool {
 		if scaleValue <= 0.001 || scaleValue > 1 {
 			return false
@@ -227,25 +172,6 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 		}
 	}
 
-	func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-		var deltaValue = 0
-		if commandSelector == #selector(moveUp(_:)) {
-			deltaValue = 1
-		} else if commandSelector == #selector(moveDown(_:)) {
-			deltaValue = -1
-		} else {
-			return false
-		}
-		guard let currentValue = Int(textView.string) else {
-			return false
-		}
-		textView.string = "\(currentValue + deltaValue)"
-		if let correspondingTextField = textView.superview?.superview as? NSTextField {
-			scalingTextFieldTextDidChange(correspondingTextField)
-		}
-		return true
-	}
-
 	private func minimumScale(inputDimensions dimensions: CGSize) -> Double {
 		let shortestSide = min(dimensions.width, dimensions.height)
 		return 10 / Double(shortestSide)
@@ -265,5 +191,81 @@ final class SavePanelAccessoryViewController: NSViewController, NSTextFieldDeleg
 	private func configureQualitySlider() {
 		qualitySlider.doubleValue = defaults[.outputQuality]
 		qualitySlider.triggerAction()
+	}
+
+	private func scalingTextFieldTextDidChange(_ textField: NSTextField) {
+		if textField == widthTextField {
+			guard let width = Double(self.widthTextField.stringValue) else {
+				return
+			}
+			var currentScaleXDoubleValue: Double = 0
+			if percentageMode {
+				currentScaleXDoubleValue = width / 100
+			} else {
+				currentScaleXDoubleValue = width / Double(fileDimensions.width)
+			}
+			if !validateScaleDoubleValue(currentScaleXDoubleValue, pendingX: false, pendingY: true) {
+				return
+			}
+			self.scaleXDoubleValue = currentScaleXDoubleValue
+			self.predefinedSizesDropdown.selectItem(at: 0)
+			self.scaleYDoubleValue = self.scaleXDoubleValue
+			if percentageMode {
+				self.heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
+			} else {
+				self.heightTextField.stringValue = "\(Int(Double(fileDimensions.height) * self.scaleYDoubleValue))"
+			}
+			self.recalculateCurrentDimensions()
+		} else if textField == heightTextField {
+			guard let height = Double(self.heightTextField.stringValue) else {
+				return
+			}
+			var currentScaleYDoubleValue: Double = 0
+			if percentageMode {
+				currentScaleYDoubleValue = height / 100
+			} else {
+				currentScaleYDoubleValue = height / Double(fileDimensions.height)
+			}
+			if !validateScaleDoubleValue(currentScaleYDoubleValue, pendingX: false, pendingY: true) {
+				return
+			}
+			self.scaleYDoubleValue = currentScaleYDoubleValue
+			self.predefinedSizesDropdown.selectItem(at: 0)
+			self.scaleXDoubleValue = self.scaleYDoubleValue
+			if percentageMode {
+				self.widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
+			} else {
+				self.widthTextField.stringValue = "\(Int(Double(fileDimensions.width) * self.scaleXDoubleValue))"
+			}
+			self.recalculateCurrentDimensions()
+		}
+	}
+}
+
+extension SavePanelAccessoryViewController: NSTextFieldDelegate {
+	func controlTextDidChange(_ obj: Notification) {
+		guard let textField = obj.object as? NSTextField else {
+			return
+		}
+		scalingTextFieldTextDidChange(textField)
+	}
+
+	func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+		var deltaValue = 0
+		if commandSelector == #selector(moveUp(_:)) {
+			deltaValue = 1
+		} else if commandSelector == #selector(moveDown(_:)) {
+			deltaValue = -1
+		} else {
+			return false
+		}
+		guard let currentValue = Int(textView.string) else {
+			return false
+		}
+		textView.string = "\(currentValue + deltaValue)"
+		if let correspondingTextField = textView.superview?.superview as? NSTextField {
+			scalingTextFieldTextDidChange(correspondingTextField)
+		}
+		return true
 	}
 }
