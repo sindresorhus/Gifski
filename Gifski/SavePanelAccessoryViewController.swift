@@ -1,6 +1,29 @@
 import Cocoa
 import AVKit
 
+enum DimensionsMode: CaseIterable {
+	case pixels
+	case percentage
+
+	var title: String {
+		switch self {
+		case .pixels:
+			return "pixels"
+		case .percentage:
+			return "percentage"
+		}
+	}
+
+	init(title: String) {
+		switch title {
+		case DimensionsMode.percentage.title:
+			self = .percentage
+		default:
+			self = .pixels
+		}
+	}
+}
+
 final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var estimatedSizeLabel: NSTextField!
 	@IBOutlet private var frameRateSlider: NSSlider!
@@ -24,6 +47,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 	let formatter = ByteCountFormatter()
 
+	private var dimensionsMode = DimensionsMode.pixels
 	private var dimensionRatios: [Float] = [1.0, 1.0]
 	private var scaleXDoubleValue: Double = 1.0
 	private var scaleYDoubleValue: Double = 1.0
@@ -70,19 +94,15 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self.recalculateCurrentDimensions()
 		}
 
+		widthHeightTypeDropdown.removeAllItems()
+		widthHeightTypeDropdown.addItems(withTitles: DimensionsMode.allCases.map { $0.title })
+
 		widthHeightTypeDropdown.onAction = { [weak self] _ in
-			guard let self = self else {
+			guard let self = self, let item = self.widthHeightTypeDropdown.selectedItem else {
 				return
 			}
 
-			if let item = self.widthHeightTypeDropdown.selectedItem {
-				let index = self.widthHeightTypeDropdown.index(of: item)
-				if index == 0 {
-					self.updateTextFieldsFromPopup(asPercentage: false)
-				} else {
-					self.updateTextFieldsFromPopup(asPercentage: true)
-				}
-			}
+			self.updateWidthAndHeight(with: DimensionsMode(title: item.title))
 		}
 
 		widthTextField.delegate = self
@@ -92,18 +112,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 		configureScaleSettings(inputDimensions: videoMetadata.dimensions)
 		configureFramerateSlider(inputFrameRate: videoMetadata.frameRate)
 		configureQualitySlider()
-	}
-
-	private var percentageMode: Bool {
-		guard let item = self.widthHeightTypeDropdown.selectedItem else {
-			return false
-		}
-		let index = self.widthHeightTypeDropdown.index(of: item)
-		if index == 1 {
-			return true
-		} else {
-			return false
-		}
 	}
 
 	private func estimateFileSize() {
@@ -156,17 +164,18 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 		scaleXMinDoubleValue = minimumScale(inputDimensions: dimensions)
 		scaleYMinDoubleValue = scaleXMinDoubleValue
-		updateTextFieldsFromPopup(asPercentage: false)
+		updateWidthAndHeight(with: dimensionsMode)
 		self.recalculateCurrentDimensions()
 	}
 
-	private func updateTextFieldsFromPopup(asPercentage: Bool) {
-		if asPercentage {
-			widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
-			heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
-		} else {
+	private func updateWidthAndHeight(with mode: DimensionsMode) {
+		switch mode {
+		case .pixels:
 			widthTextField.stringValue = "\(Int(videoMetadata.dimensions.width * CGFloat(scaleXDoubleValue)))"
 			heightTextField.stringValue = "\(Int(videoMetadata.dimensions.height * CGFloat(scaleYDoubleValue)))"
+		case .percentage:
+			widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
+			heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
 		}
 	}
 
@@ -192,48 +201,53 @@ final class SavePanelAccessoryViewController: NSViewController {
 	}
 
 	private func scalingTextFieldTextDidChange(_ textField: NSTextField) {
-		if textField == widthTextField {
-			guard let width = Double(self.widthTextField.stringValue) else {
-				return
-			}
-			var currentScaleXDoubleValue: Double = 0
-			if percentageMode {
-				currentScaleXDoubleValue = width / 100
-			} else {
+		if textField == widthTextField, let width = Double(self.widthTextField.stringValue) {
+			let currentScaleXDoubleValue: Double
+			switch dimensionsMode {
+			case .pixels:
 				currentScaleXDoubleValue = width / Double(fileDimensions.width)
+			case .percentage:
+				currentScaleXDoubleValue = width / 100.0
 			}
+
 			if !validateScaleDoubleValue(currentScaleXDoubleValue, pendingX: false, pendingY: true) {
 				return
 			}
+
 			self.scaleXDoubleValue = currentScaleXDoubleValue
 			self.predefinedSizesDropdown.selectItem(at: 0)
 			self.scaleYDoubleValue = self.scaleXDoubleValue
-			if percentageMode {
-				self.heightTextField.stringValue = "\(Int(100 * CGFloat(scaleYDoubleValue)))"
-			} else {
+
+			switch dimensionsMode {
+			case .pixels:
 				self.heightTextField.stringValue = "\(Int(Double(fileDimensions.height) * self.scaleYDoubleValue))"
+			case .percentage:
+				self.heightTextField.stringValue = "\(Int(100 * scaleYDoubleValue))"
 			}
+
 			self.recalculateCurrentDimensions()
-		} else if textField == heightTextField {
-			guard let height = Double(self.heightTextField.stringValue) else {
-				return
-			}
-			var currentScaleYDoubleValue: Double = 0
-			if percentageMode {
-				currentScaleYDoubleValue = height / 100
-			} else {
+		} else if textField == heightTextField, let height = Double(self.heightTextField.stringValue) {
+			let currentScaleYDoubleValue: Double
+			switch dimensionsMode {
+			case .pixels:
 				currentScaleYDoubleValue = height / Double(fileDimensions.height)
+			case .percentage:
+				currentScaleYDoubleValue = height / 100.0
 			}
+
 			if !validateScaleDoubleValue(currentScaleYDoubleValue, pendingX: false, pendingY: true) {
 				return
 			}
+
 			self.scaleYDoubleValue = currentScaleYDoubleValue
 			self.predefinedSizesDropdown.selectItem(at: 0)
 			self.scaleXDoubleValue = self.scaleYDoubleValue
-			if percentageMode {
-				self.widthTextField.stringValue = "\(Int(100 * CGFloat(scaleXDoubleValue)))"
-			} else {
+
+			switch dimensionsMode {
+			case .pixels:
 				self.widthTextField.stringValue = "\(Int(Double(fileDimensions.width) * self.scaleXDoubleValue))"
+			case .percentage:
+				self.widthTextField.stringValue = "\(Int(100.0 * scaleXDoubleValue))"
 			}
 			self.recalculateCurrentDimensions()
 		}
