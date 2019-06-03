@@ -66,6 +66,14 @@ extension NSColor {
 
 
 extension NSView {
+	func shake(duration: TimeInterval = 0.3) {
+		let animation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+		animation.timingFunction = .linear
+		animation.duration = duration
+		animation.values = [-5.0, 5.0, -2.5, 2.5, 0.0 ]
+		layer?.add(animation, forKey: nil)
+	}
+
 	func pulsate(duration: TimeInterval = 2) {
 		let animation = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
 		animation.duration = duration

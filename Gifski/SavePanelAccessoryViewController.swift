@@ -174,7 +174,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		if !userScale.isEqual(to: validatedScale) {
-			// TODO: shake
+			textField.shake()
 		}
 
 		self.currentScale = validatedScale
