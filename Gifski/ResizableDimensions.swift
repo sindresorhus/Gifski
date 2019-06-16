@@ -1,62 +1,91 @@
 import struct CoreGraphics.CGSize
 import struct CoreGraphics.CGFloat
 
-enum DimensionsType: Equatable, CaseIterable {
+enum DimensionsType: String, Equatable, CaseIterable {
 	case pixels
 	case percent
-
-	var title: String {
-		switch self {
-		case .pixels:
-			return "pixels"
-		case .percent:
-			return "percent"
-		}
-	}
 }
 
 struct Dimensions: Equatable {
 	let type: DimensionsType
-	let dimensions: CGSize
+	let value: CGSize
 }
 
 final class ResizableDimensions {
-
-	var dimensions: Dimensions
-
 	/// Minimum scaling, 1.0 being the original size
-	var minimumScale: CGFloat
+	let minimumScale: CGFloat
 
 	/// Maximum scaling, 1.0 being the original size
-	var maximumScale: CGFloat
+	let maximumScale: CGFloat
 
+	private(set) var currentDimensions: Dimensions
 	private let originalDimensions: Dimensions
 	private var currentScale: CGFloat
 
 	init(dimensions: Dimensions, minimumScale: CGFloat? = nil, maximumScale: CGFloat? = nil) {
 		self.originalDimensions = dimensions
-		self.dimensions = dimensions
+		self.currentDimensions = dimensions
 		self.minimumScale = minimumScale ?? 0.01
 		self.maximumScale = maximumScale ?? 1.0
 		self.currentScale = 1.0
 	}
 
-	func change(dimensionsType: DimensionsType) -> Dimensions {
-		dimensions = calculateDimensions(for: dimensionsType)
+	private func copy() -> ResizableDimensions {
+		let resizableDimensions = ResizableDimensions(dimensions: originalDimensions, minimumScale: minimumScale, maximumScale: maximumScale)
+		resizableDimensions.currentDimensions = currentDimensions
+		resizableDimensions.currentScale = currentScale
 
-		return dimensions
+		return resizableDimensions
 	}
 
-	func resize(to newDimensions: CGSize) -> Dimensions {
-		let newScale = calculateScale(for: newDimensions)
-		currentScale = validated(scale: newScale)
-		dimensions = calculateDimensions(for: dimensions.type)
+	func change(dimensionsType: DimensionsType) {
+		currentDimensions = calculateDimensions(for: dimensionsType)
+	}
 
-		return dimensions
+	func changed(dimensionsType: DimensionsType) -> ResizableDimensions {
+		let resizableDimensions = copy()
+		resizableDimensions.change(dimensionsType: dimensionsType)
+
+		return resizableDimensions
+	}
+
+	func resize(to newDimensions: CGSize) {
+		let newScale = calculateScale(usingWidth: newDimensions.width)
+		currentScale = validated(scale: newScale)
+		currentDimensions = calculateDimensions(for: currentDimensions.type)
+	}
+
+	func resize(usingWidth width: CGFloat) {
+		let newScale = calculateScale(usingWidth: width)
+		currentScale = validated(scale: newScale)
+		currentDimensions = calculateDimensions(for: currentDimensions.type)
+	}
+
+	func resize(usingHeight height: CGFloat) {
+		let newScale = calculateScale(usingHeight: height)
+		currentScale = validated(scale: newScale)
+		currentDimensions = calculateDimensions(for: currentDimensions.type)
+	}
+
+	func resized(to newDimensions: CGSize) -> ResizableDimensions {
+		let resizableDimensions = copy()
+		resizableDimensions.resize(to: newDimensions)
+
+		return resizableDimensions
 	}
 
 	func validate(newSize: CGSize) -> Bool {
-		let scale = calculateScale(for: newSize)
+		let scale = calculateScale(usingWidth: newSize.width)
+		return validated(scale: scale) == scale
+	}
+
+	func validate(newWidth width: CGFloat) -> Bool {
+		let scale = calculateScale(usingWidth: width)
+		return validated(scale: scale) == scale
+	}
+
+	func validate(newHeight height: CGFloat) -> Bool {
+		let scale = calculateScale(usingHeight: height)
 		return validated(scale: scale) == scale
 	}
 
@@ -66,18 +95,22 @@ final class ResizableDimensions {
 			case .percent:
 				return CGSize(width: 100.0, height: 100.0)
 			case .pixels:
-				return originalDimensions.dimensions
+				return originalDimensions.value
 			}
 		}()
 
 		let width = currentScale * multiplier.width
 		let height = currentScale * multiplier.height
 
-		return Dimensions(type: type, dimensions: CGSize(width: width, height: height))
+		return Dimensions(type: type, value: CGSize(width: width, height: height))
 	}
 
-	private func calculateScale(for newDimensions: CGSize) -> CGFloat {
-		return (currentScale * newDimensions.width) / dimensions.dimensions.width
+	private func calculateScale(usingWidth width: CGFloat) -> CGFloat {
+		return (currentScale * width) / currentDimensions.value.width
+	}
+
+	private func calculateScale(usingHeight height: CGFloat) -> CGFloat {
+		return (currentScale * height) / currentDimensions.value.height
 	}
 
 	private func validated(scale: CGFloat) -> CGFloat {
@@ -86,15 +119,24 @@ final class ResizableDimensions {
 }
 
 extension ResizableDimensions: CustomStringConvertible {
-
 	var description: String {
-		switch dimensions.type {
+		switch currentDimensions.type {
 		case .percent:
-			let pixels = calculateDimensions(for: .pixels)
-			return String(format: "%.0f%% (%.0fx%.0f)", dimensions.dimensions.width, pixels.dimensions.width, pixels.dimensions.height)
+			let pixels = changed(dimensionsType: .pixels).pixelsDescription
+			let percent = percentDescription
+			return "\(percent) (\(currentScale == 1.0 ? "Original" : pixels))"
 		case .pixels:
-			let percent = calculateDimensions(for: .percent)
-			return String(format: "%.0fx%.0f (%.0f%%)", dimensions.dimensions.width, dimensions.dimensions.height, percent.dimensions.width)
+			let percent = changed(dimensionsType: .percent).percentDescription
+			let pixels = pixelsDescription
+			return "\(pixels) (\(currentScale == 1.0 ? "Original" : percent))"
 		}
+	}
+
+	private var pixelsDescription: String {
+		return String(format: "%.0f x %.0f", currentDimensions.value.width, currentDimensions.value.height)
+	}
+
+	private var percentDescription: String {
+		return String(format: "%.0f%%", currentDimensions.value.width)
 	}
 }

@@ -2,6 +2,21 @@ import Cocoa
 import AVKit
 
 final class SavePanelAccessoryViewController: NSViewController {
+	enum PredefinedSizeItem {
+		case custom
+		case spacer
+		case dimensions(ResizableDimensions)
+
+		var resizableDimensions: ResizableDimensions? {
+			switch self {
+			case let .dimensions(resizableDimensions):
+				return resizableDimensions
+			default:
+				return nil
+			}
+		}
+	}
+
 	@IBOutlet private var estimatedSizeLabel: NSTextField!
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
@@ -10,7 +25,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var widthTextField: NSTextField!
 	@IBOutlet private var heightTextField: NSTextField!
 	@IBOutlet private var predefinedSizesDropdown: NSPopUpButton!
-	@IBOutlet private var dimensionsModeDropdown: NSPopUpButton!
+	@IBOutlet private var dimensionsTypeDropdown: NSPopUpButton!
 
 	var inputUrl: URL!
 	var videoMetadata: AVURLAsset.VideoMetadata!
@@ -19,33 +34,95 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 	let formatter = ByteCountFormatter()
 
-	private var dimensionsMode = DimensionsMode.pixels {
-		didSet {
-			self.currentScale = self.dimensionsMode.validated(widthScale: self.currentScale, originalSize: self.fileDimensions)
-		}
-	}
-	private var dimensionRatios: [Double] = [1.0, 1.0]
-
-	private var currentScale: Double = 1.0 {
-		didSet {
-			dimensionsUpdated()
-		}
-	}
-
-	private var fileDimensions: CGSize {
-		return videoMetadata.dimensions
-	}
-
-	private var currentDimensions: CGSize {
-		let width = dimensionsMode.width(fromScale: currentScale, originalSize: fileDimensions)
-		let height = dimensionsMode.height(fromScale: currentScale, originalSize: fileDimensions)
-		return CGSize(width: width, height: height)
-	}
+	private var resizableDimensions: ResizableDimensions!
+	private var predefinedSizes: [PredefinedSizeItem]!
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		formatter.zeroPadsFractionDigits = true
 
+		formatter.zeroPadsFractionDigits = true
+		setupDimensions()
+		setupDropdowns()
+		setupSliders()
+	}
+
+	private func setupDimensions() {
+		let minimumScale: CGFloat = 0.01
+		let maximumScale: CGFloat = 1.0
+		let dimensions = Dimensions(type: .pixels, value: videoMetadata.dimensions)
+		resizableDimensions = ResizableDimensions(dimensions: dimensions, minimumScale: minimumScale, maximumScale: maximumScale)
+
+		let pixelCommonSizes: [CGFloat] = [dimensions.value.width, 960.0, 800.0, 640.0, 500.0, 480.0, 320.0, 256.0, 200.0, 160.0, 128.0, 80.0, 64.0].sorted(by: >)
+		let pixelDimensions = pixelCommonSizes.map { width -> CGSize in
+			let ratio = width / dimensions.value.width
+			let height = dimensions.value.height * ratio
+			return CGSize(width: width, height: height)
+		}
+		let predefinedPixelDimensions = pixelDimensions
+			.filter { resizableDimensions.validate(newSize: $0) }
+			.map { resizableDimensions.resized(to: $0) }
+
+		let percentCommonSizes: [CGFloat] = [100.0, 50.0, 33.0, 25.0, 20.0]
+		let predefinedPercentDimensions = percentCommonSizes
+			.map {
+				resizableDimensions.changed(dimensionsType: .percent)
+					.resized(to: CGSize(width: $0, height: $0))
+			}
+
+		predefinedSizes = [.custom]
+		predefinedSizes.append(.spacer)
+		predefinedSizes.append(contentsOf: predefinedPixelDimensions.map { .dimensions($0) })
+		predefinedSizes.append(.spacer)
+		predefinedSizes.append(contentsOf: predefinedPercentDimensions.map { .dimensions($0) })
+	}
+
+	private func setupDropdowns() {
+		predefinedSizesDropdown.removeAllItems()
+		predefinedSizes.forEach { size in
+			switch size {
+			case .custom:
+				predefinedSizesDropdown.addItem(withTitle: "Custom")
+			case .spacer:
+				predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
+			case let .dimensions(dimensions):
+				predefinedSizesDropdown.addItem(withTitle: "\(dimensions)")
+			}
+		}
+
+		predefinedSizesDropdown.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
+			let index = self.predefinedSizesDropdown.indexOfSelectedItem
+			if let size = self.predefinedSizes?[safe: index], case .dimensions(let dimensions) = size {
+				self.resizableDimensions.change(dimensionsType: dimensions.currentDimensions.type)
+				self.resizableDimensions.resize(to: dimensions.currentDimensions.value)
+				self.dimensionsUpdated()
+			}
+		}
+
+		dimensionsTypeDropdown.removeAllItems()
+		dimensionsTypeDropdown.addItems(withTitles: DimensionsType.allCases.map { $0.rawValue })
+
+		dimensionsTypeDropdown.onAction = { [weak self] _ in
+			guard let self = self, let item = self.dimensionsTypeDropdown.selectedItem,
+				let dimensionsType = DimensionsType(rawValue: item.title) else {
+				return
+			}
+
+			self.resizableDimensions.change(dimensionsType: dimensionsType)
+			self.dimensionsUpdated()
+		}
+
+		if resizableDimensions.currentDimensions.value.width > 640.0 {
+			predefinedSizesDropdown.selectItem(at: 3)
+		} else {
+			predefinedSizesDropdown.selectItem(at: 2)
+		}
+	}
+
+	private func setupSliders() {
 		frameRateSlider.onAction = { [weak self] _ in
 			guard let self = self else {
 				return
@@ -66,79 +143,32 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self.estimateFileSize()
 		}
 
-		predefinedSizesDropdown.onAction = { [weak self] _ in
-			guard let self = self, let item = self.predefinedSizesDropdown.selectedItem else {
-				return
-			}
-
-			let index = self.predefinedSizesDropdown.index(of: item)
-			self.currentScale = self.dimensionRatios[index]
-		}
-
-		dimensionsModeDropdown.removeAllItems()
-		dimensionsModeDropdown.addItems(withTitles: DimensionsMode.allCases.map { $0.title })
-
-		dimensionsModeDropdown.onAction = { [weak self] _ in
-			guard let self = self, let item = self.dimensionsModeDropdown.selectedItem else {
-				return
-			}
-			self.dimensionsMode = DimensionsMode(title: item.title)
-		}
-
 		widthTextField.delegate = self
 		heightTextField.delegate = self
 
 		// Set initial defaults
-		configureScaleSettings(inputDimensions: videoMetadata.dimensions)
 		configureFramerateSlider(inputFrameRate: videoMetadata.frameRate)
 		configureQualitySlider()
 	}
 
 	private func dimensionsUpdated() {
-		updateWidthAndHeight()
+		updateDimensionsDisplay()
 		estimateFileSize()
-		onDimensionChange?(currentDimensions)
+		onDimensionChange?(resizableDimensions.currentDimensions.value)
 	}
 
 	private func estimateFileSize() {
 		let frameCount = videoMetadata.duration * frameRateSlider.doubleValue
-		var fileSize = (Double(currentDimensions.width) * Double(currentDimensions.height) * frameCount) / 3
+		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
+		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
 		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
 	}
 
-	// TODO: clean this up
-	private func configureScaleSettings(inputDimensions dimensions: CGSize) {
-		for divisor in 1..<6 {
-			let divisorFloat = CGFloat(integerLiteral: divisor)
-			let dimensionRatio = Double(1.0 / divisorFloat)
-			dimensionRatios.append(dimensionRatio)
-			var percentString: String = "Original"
-			if divisor != 1 {
-				percentString = "\(Int(round(dimensionRatio * 100.0)))%"
-			}
-			predefinedSizesDropdown.addItem(withTitle: " \(Int(dimensions.width / divisorFloat)) × \(Int(dimensions.height / divisorFloat)) (\(percentString))")
-		}
-		predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
-		dimensionRatios.append(1)
-		let commonsizes = [960, 800, 640, 500, 480, 320, 256, 200, 160, 128, 80, 64]
-		for size in commonsizes {
-			let dimensionRatio = CGFloat(size) / dimensions.width
-			dimensionRatios.append(Double(dimensionRatio))
-			let percentString = "\(Int(round(dimensionRatio * 100.0)))%"
-			predefinedSizesDropdown.addItem(withTitle: "\(Int(dimensions.width * dimensionRatio)) × \(Int(dimensions.height * dimensionRatio)) (\(percentString))")
-		}
-		if dimensions.width >= 640 {
-			currentScale = 0.5
-			predefinedSizesDropdown.selectItem(at: 3)
-		} else {
-			predefinedSizesDropdown.selectItem(at: 2)
-		}
-	}
-
-	private func updateWidthAndHeight() {
-		widthTextField.stringValue = "\(Int(currentDimensions.width))"
-		heightTextField.stringValue = "\(Int(currentDimensions.height))"
+	private func updateDimensionsDisplay() {
+		widthTextField.stringValue = String(format: "%.0f", resizableDimensions.currentDimensions.value.width)
+		heightTextField.stringValue = String(format: "%.0f", resizableDimensions.currentDimensions.value.height)
+		dimensionsTypeDropdown.selectItem(withTitle: resizableDimensions.currentDimensions.type.rawValue)
 	}
 
 	private func configureFramerateSlider(inputFrameRate frameRate: Double) {
@@ -158,27 +188,24 @@ final class SavePanelAccessoryViewController: NSViewController {
 	}
 
 	private func scalingTextFieldTextDidChange(_ textField: NSTextField) {
-		let userScale: Double
-		let validatedScale: Double
-
-		if textField == widthTextField, let width = Double(self.widthTextField.stringValue) {
-			userScale = dimensionsMode.scale(width: width, originalSize: fileDimensions)
-			validatedScale = dimensionsMode.validated(widthScale: userScale, originalSize: fileDimensions)
-			// TODO: edge case (preview doesn't handle it either)
-			// when the aspect ratio for the image is big, specyfing width 1 will make height 0
-		} else if textField == heightTextField, let height = Double(self.heightTextField.stringValue) {
-			userScale = dimensionsMode.scale(width: height, originalSize: fileDimensions)
-			validatedScale = dimensionsMode.validated(heightScale: userScale, originalSize: fileDimensions)
+		let valid: Bool
+		if textField == widthTextField {
+			let width = CGFloat(Double(self.widthTextField.stringValue) ?? 0.0)
+			valid = resizableDimensions.validate(newWidth: width)
+			resizableDimensions.resize(usingWidth: width)
+		} else if textField == heightTextField {
+			let height = CGFloat(Double(self.heightTextField.stringValue) ?? 0.0)
+			valid = resizableDimensions.validate(newHeight: height)
+			resizableDimensions.resize(usingHeight: height)
 		} else {
 			return
 		}
 
-		if !userScale.isEqual(to: validatedScale) {
+		if !valid {
 			textField.shake()
 		}
-
-		self.currentScale = validatedScale
-		self.predefinedSizesDropdown.selectItem(at: 0)
+		dimensionsUpdated()
+		predefinedSizesDropdown.selectItem(at: 0)
 	}
 }
 
@@ -198,13 +225,13 @@ extension SavePanelAccessoryViewController: NSTextFieldDelegate {
 		let deltaValue: Int
 		switch commandSelector {
 		case #selector(moveUp):
-			deltaValue = dimensionsMode.deltaUnit
+			deltaValue = 1
 		case #selector(moveDown):
-			deltaValue = dimensionsMode.deltaUnit * -1
+			deltaValue = -1
 		case #selector(moveBackward):
-			deltaValue = dimensionsMode.biggerDeltaUnit
+			deltaValue = 10
 		case #selector(moveForward):
-			deltaValue = dimensionsMode.biggerDeltaUnit * -1
+			deltaValue = -10
 		default:
 			// we only handle arrow-up (moveUp), arrow-down (moveDown), option+arrow-up (moveBackward), option+arrow-down (moveForward)
 			return false
