@@ -78,7 +78,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 	private func setupDropdowns() {
 		predefinedSizesDropdown.removeAllItems()
-		predefinedSizes.forEach { size in
+
+		for size in predefinedSizes {
 			switch size {
 			case .custom:
 				predefinedSizesDropdown.addItem(withTitle: "Custom")
