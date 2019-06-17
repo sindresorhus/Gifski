@@ -6,12 +6,21 @@ enum DimensionsType: String, Equatable, CaseIterable {
 	case percent
 }
 
-struct Dimensions: Equatable {
+struct Dimensions: Equatable, CustomStringConvertible {
 	let type: DimensionsType
 	let value: CGSize
 
 	func rounded() -> Dimensions {
 		return Dimensions(type: type, value: value.rounded())
+	}
+
+	var description: String {
+		switch type {
+		case .pixels:
+			return String(format: "%.0f x %.0f", value.width, value.height)
+		case .percent:
+			return String(format: "%.0f%%", value.width)
+		}
 	}
 }
 
@@ -80,17 +89,21 @@ final class ResizableDimensions: Copyable {
 
 	func validate(newSize: CGSize) -> Bool {
 		let scale = calculateScale(usingWidth: newSize.width)
-		return validated(scale: scale) == scale
+		return scalesEqual(validated(scale: scale), scale)
 	}
 
 	func validate(newWidth width: CGFloat) -> Bool {
 		let scale = calculateScale(usingWidth: width)
-		return validated(scale: scale) == scale
+		return scalesEqual(validated(scale: scale), scale)
 	}
 
 	func validate(newHeight height: CGFloat) -> Bool {
 		let scale = calculateScale(usingHeight: height)
-		return validated(scale: scale) == scale
+		return scalesEqual(validated(scale: scale), scale)
+	}
+
+	private func scalesEqual(_ scale1: CGFloat, _ scale2: CGFloat) -> Bool {
+		return scale1.isEqual(to: scale2, roundingDecimalPlaces: 3)
 	}
 
 	private func calculateDimensions(for type: DimensionsType) -> Dimensions {
@@ -126,21 +139,11 @@ extension ResizableDimensions: CustomStringConvertible {
 	var description: String {
 		switch currentDimensions.type {
 		case .percent:
-			let pixels = changed(dimensionsType: .pixels).pixelsDescription
-			let percent = percentDescription
-			return "\(percent) (\(currentScale == 1.0 ? "Original" : pixels))"
+			let pixelsDimensions = changed(dimensionsType: .pixels).currentDimensions
+			return "\(currentDimensions) (\(pixelsDimensions == originalDimensions ? "Original" : "\(pixelsDimensions)"))"
 		case .pixels:
-			let percent = changed(dimensionsType: .percent).percentDescription
-			let pixels = pixelsDescription
-			return "\(pixels) (\(currentScale == 1.0 ? "Original" : percent))"
+			let percentDimensions = changed(dimensionsType: .percent).currentDimensions
+			return "\(currentDimensions) (\(currentDimensions == originalDimensions ? "Original" : "\(percentDimensions)"))"
 		}
-	}
-
-	private var pixelsDescription: String {
-		return String(format: "%.0f x %.0f", currentDimensions.value.width, currentDimensions.value.height)
-	}
-
-	private var percentDescription: String {
-		return String(format: "%.0f%%", currentDimensions.value.width)
 	}
 }

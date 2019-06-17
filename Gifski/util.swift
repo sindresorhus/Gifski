@@ -2168,3 +2168,9 @@ extension CGSize {
 		return CGSize(width: width.rounded(rule), height: height.rounded(rule))
 	}
 }
+
+extension BinaryFloatingPoint {
+	func isEqual(to otherValue: Self, roundingDecimalPlaces decimalPlaces: Int) -> Bool {
+		return rounded(toDecimalPlaces: decimalPlaces) == otherValue.rounded(toDecimalPlaces: decimalPlaces)
+	}
+}
