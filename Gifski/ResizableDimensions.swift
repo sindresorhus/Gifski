@@ -11,7 +11,7 @@ struct Dimensions: Equatable {
 	let value: CGSize
 }
 
-final class ResizableDimensions {
+final class ResizableDimensions: Copyable {
 	/// Minimum scaling, 1.0 being the original size
 	let minimumScale: CGFloat
 
@@ -30,12 +30,12 @@ final class ResizableDimensions {
 		self.currentScale = 1.0
 	}
 
-	private func copy() -> ResizableDimensions {
-		let resizableDimensions = ResizableDimensions(dimensions: originalDimensions, minimumScale: minimumScale, maximumScale: maximumScale)
-		resizableDimensions.currentDimensions = currentDimensions
-		resizableDimensions.currentScale = currentScale
-
-		return resizableDimensions
+	init(instance: ResizableDimensions) {
+		self.originalDimensions = instance.originalDimensions
+		self.minimumScale = instance.minimumScale
+		self.maximumScale = instance.maximumScale
+		self.currentScale = instance.currentScale
+		self.currentDimensions = instance.currentDimensions
 	}
 
 	func change(dimensionsType: DimensionsType) {
