@@ -229,14 +229,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
 			predefinedSizesDropdown.selectItem(at: index)
 		} else {
-			// If we can't, change dimension type and try again
-			let newType: DimensionsType = resizableDimensions.currentDimensions.type == .percent ? .pixels : .percent
-			let resizableDimensions = self.resizableDimensions.changed(dimensionsType: newType)
-			if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
-				predefinedSizesDropdown.selectItem(at: index)
-			} else {
-				updateSelectedItemAsCustomWithSize()
-			}
+			updateSelectedItemAsCustomWithSize()
 		}
 	}
 
