@@ -121,6 +121,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		} else {
 			predefinedSizesDropdown.selectItem(at: 2)
 		}
+		predefinedSizesDropdown.onAction?(predefinedSizesDropdown)
 	}
 
 	private func setupSliders() {
