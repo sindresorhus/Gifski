@@ -2159,6 +2159,6 @@ protocol Copyable {
 
 extension Copyable {
 	func copy() -> Self {
-		return Self.init(instance: self)
+		return Self(instance: self)
 	}
 }
