@@ -27,6 +27,10 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 	}
 
 	override func performKeyEquivalent(with event: NSEvent) -> Bool {
+		guard window?.firstResponder == currentEditor() else {
+			return super.performKeyEquivalent(with: event)
+		}
+
 		let key = event.specialKey
 		let isHoldingOption = event.modifierFlags.contains(.option)
 		let initialDelta = isHoldingOption ? alternativeDelta : delta
