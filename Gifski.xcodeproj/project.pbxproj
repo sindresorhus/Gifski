@@ -10,6 +10,7 @@
 		5A7524BA20D0862200F12C99 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A7524B520D085FB00F12C99 /* libgifski.a */; };
 		6D86841721FD283B0044F6FE /* ConversionCompletedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */; };
 		6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841621FD283B0044F6FE /* DraggableFile.swift */; };
+		8548806522B78E8300E97401 /* IntTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806422B78E8300E97401 /* IntTextField.swift */; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
 		9F3340A322431CC3006EF9B5 /* TimeRemainingEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */; };
 		B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */; };
@@ -75,6 +76,7 @@
 		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
 		6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ConversionCompletedView.swift; sourceTree = "<group>"; usesTabs = 1; };
 		6D86841621FD283B0044F6FE /* DraggableFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = DraggableFile.swift; sourceTree = "<group>"; usesTabs = 1; };
+		8548806422B78E8300E97401 /* IntTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntTextField.swift; sourceTree = "<group>"; };
 		8588EB0C22A424B800030A59 /* ResizableDimensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableDimensions.swift; sourceTree = "<group>"; };
 		9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = TimeRemainingEstimator.swift; sourceTree = "<group>"; usesTabs = 1; };
 		B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+Util.swift"; sourceTree = "<group>"; usesTabs = 1; };
@@ -197,6 +199,7 @@
 				C2040B8820435871004EE259 /* GifskiWrapper.swift */,
 				E3A940112182DCE5006981D5 /* CustomButton.swift */,
 				8588EB0C22A424B800030A59 /* ResizableDimensions.swift */,
+				8548806422B78E8300E97401 /* IntTextField.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
@@ -367,6 +370,7 @@
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
 				8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */,
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
+				8548806522B78E8300E97401 /* IntTextField.swift in Sources */,
 				E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */,
 				E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */,
 				6D86841721FD283B0044F6FE /* ConversionCompletedView.swift in Sources */,

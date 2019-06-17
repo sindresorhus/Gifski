@@ -63,7 +63,7 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Jqk-p7-DIM">
+                                    <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Jqk-p7-DIM" customClass="IntTextField" customModule="Gifski" customModuleProvider="target">
                                         <rect key="frame" x="101" y="61" width="150" height="22"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="150" id="f0p-wK-4JS"/>
@@ -74,7 +74,7 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bzf-LM-SxO">
+                                    <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bzf-LM-SxO" customClass="IntTextField" customModule="Gifski" customModuleProvider="target">
                                         <rect key="frame" x="101" y="29" width="150" height="22"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="150" id="rW2-DE-8b1"/>

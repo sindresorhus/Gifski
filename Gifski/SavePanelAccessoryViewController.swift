@@ -22,8 +22,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
 
-	@IBOutlet private var widthTextField: NSTextField!
-	@IBOutlet private var heightTextField: NSTextField!
+	@IBOutlet private var widthTextField: IntTextField!
+	@IBOutlet private var heightTextField: IntTextField!
 	@IBOutlet private var predefinedSizesDropdown: NSPopUpButton!
 	@IBOutlet private var dimensionsTypeDropdown: NSPopUpButton!
 
@@ -44,6 +44,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		setupDimensions()
 		setupDropdowns()
 		setupSliders()
+		setupWidthAndHeightTextFields()
 	}
 
 	private func setupDimensions() {
@@ -145,12 +146,51 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self.estimateFileSize()
 		}
 
-		widthTextField.delegate = self
-		heightTextField.delegate = self
+		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5...30)
+		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
+		frameRateSlider.triggerAction()
 
-		// Set initial defaults
-		configureFramerateSlider(inputFrameRate: videoMetadata.frameRate)
-		configureQualitySlider()
+		qualitySlider.doubleValue = defaults[.outputQuality]
+		qualitySlider.triggerAction()
+	}
+
+	private func setupWidthAndHeightTextFields() {
+		widthTextField.onBlur = { [weak self] width in
+			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
+			self?.dimensionsUpdated()
+			self?.predefinedSizesDropdown.selectItem(at: 0)
+		}
+		widthTextField.onTextDidChange = { [weak self] width in
+			guard let self = self else {
+				return
+			}
+
+			let validated = self.resizableDimensions.validate(newWidth: CGFloat(width)) == true
+			if validated {
+				self.resizableDimensions.resize(usingWidth: CGFloat(width))
+				self.dimensionsUpdated()
+				self.predefinedSizesDropdown.selectItem(at: 0)
+			} else {
+				self.widthTextField.shake(direction: .horizontal)
+			}
+		}
+		heightTextField.onBlur = { [weak self] height in
+			self?.resizableDimensions.resize(usingHeight: CGFloat(height))
+		}
+		heightTextField.onTextDidChange = { [weak self] height in
+			guard let self = self else {
+				return
+			}
+
+			let validated = self.resizableDimensions.validate(newHeight: CGFloat(height)) == true
+			if validated {
+				self.resizableDimensions.resize(usingHeight: CGFloat(height))
+				self.dimensionsUpdated()
+				self.predefinedSizesDropdown.selectItem(at: 0)
+			} else {
+				self.heightTextField.shake(direction: .horizontal)
+			}
+		}
 	}
 
 	private func dimensionsUpdated() {
@@ -173,76 +213,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 		dimensionsTypeDropdown.selectItem(withTitle: resizableDimensions.currentDimensions.type.rawValue)
 	}
 
-	private func configureFramerateSlider(inputFrameRate frameRate: Double) {
-		frameRateSlider.maxValue = frameRate.clamped(to: 5...30)
-		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
-		frameRateSlider.triggerAction()
-	}
-
 	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
 		let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
 		return defaultFrameRate.clamped(to: 5...30)
-	}
-
-	private func configureQualitySlider() {
-		qualitySlider.doubleValue = defaults[.outputQuality]
-		qualitySlider.triggerAction()
-	}
-
-	private func scalingTextFieldTextDidChange(_ textField: NSTextField) {
-		let valid: Bool
-		if textField == widthTextField {
-			let width = CGFloat(Double(self.widthTextField.stringValue) ?? 0.0)
-			valid = resizableDimensions.validate(newWidth: width)
-			resizableDimensions.resize(usingWidth: width)
-		} else if textField == heightTextField {
-			let height = CGFloat(Double(self.heightTextField.stringValue) ?? 0.0)
-			valid = resizableDimensions.validate(newHeight: height)
-			resizableDimensions.resize(usingHeight: height)
-		} else {
-			return
-		}
-
-		if !valid {
-			textField.shake(direction: .horizontal)
-		}
-		dimensionsUpdated()
-		predefinedSizesDropdown.selectItem(at: 0)
-	}
-}
-
-extension SavePanelAccessoryViewController: NSTextFieldDelegate {
-	func controlTextDidChange(_ obj: Notification) {
-		guard let textField = obj.object as? NSTextField else {
-			return
-		}
-		scalingTextFieldTextDidChange(textField)
-	}
-
-	func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-		guard let currentValue = Int(textView.string) else {
-			return false
-		}
-
-		let deltaValue: Int
-		switch commandSelector {
-		case #selector(moveUp):
-			deltaValue = 1
-		case #selector(moveDown):
-			deltaValue = -1
-		case #selector(moveBackward):
-			deltaValue = 10
-		case #selector(moveForward):
-			deltaValue = -10
-		default:
-			// we only handle arrow-up (moveUp), arrow-down (moveDown), option+arrow-up (moveBackward), option+arrow-down (moveForward)
-			return false
-		}
-
-		textView.string = "\(currentValue + deltaValue)"
-		if let correspondingTextField = textView.superview?.superview as? NSTextField {
-			scalingTextFieldTextDidChange(correspondingTextField)
-		}
-		return true
 	}
 }
