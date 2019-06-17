@@ -24,7 +24,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 	@IBOutlet private var widthTextField: IntTextField!
 	@IBOutlet private var heightTextField: IntTextField!
-	@IBOutlet private var predefinedSizesDropdown: NSPopUpButton!
+	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
 	@IBOutlet private var dimensionsTypeDropdown: NSPopUpButton!
 
 	var inputUrl: URL!
@@ -95,13 +95,22 @@ final class SavePanelAccessoryViewController: NSViewController {
 			}
 		}
 
-		predefinedSizesDropdown.onAction = { [weak self] _ in
+		predefinedSizesDropdown.onMenuWillOpenAction = { [weak self] in
+			self?.predefinedSizesDropdown.item(at: 0)?.title = "Custom"
+		}
+		predefinedSizesDropdown.onMenuDidCloseAction = { [weak self] selectedIndex in
 			guard let self = self else {
 				return
 			}
 
-			let index = self.predefinedSizesDropdown.indexOfSelectedItem
-			if let size = self.predefinedSizes?[safe: index], case .dimensions(let dimensions) = size {
+			let oldOrNewSelectedIndex = selectedIndex ?? self.predefinedSizesDropdown.indexOfSelectedItem
+			if let size = self.predefinedSizes?[safe: oldOrNewSelectedIndex], case .custom = size {
+				// we don't care if it's newly selected index or not - if it's custom, set its size
+				self.updateSelectedItemAsCustomWithSize()
+			} else if let index = selectedIndex, let size = self.predefinedSizes?[safe: index],
+				case .dimensions(let dimensions) = size {
+				// but we care if it's newly selected index for dimensions, we don't want to recalculate
+				// if we don't have to
 				self.resizableDimensions.change(dimensionsType: dimensions.currentDimensions.type)
 				self.resizableDimensions.resize(to: dimensions.currentDimensions.value)
 				self.dimensionsUpdated()
@@ -127,7 +136,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		} else {
 			predefinedSizesDropdown.selectItem(at: 2)
 		}
-		predefinedSizesDropdown.onAction?(predefinedSizesDropdown)
+		dimensionsUpdated()
 	}
 
 	private func setupSliders() {
@@ -226,11 +235,17 @@ final class SavePanelAccessoryViewController: NSViewController {
 			if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
 				predefinedSizesDropdown.selectItem(at: index)
 			} else {
-				// If all fails, select custom and assign a custom pixels label to it
-				predefinedSizesDropdown.selectItem(at: 0)
-				let selectedCustomTitle = "Custom - \(resizableDimensions)"
+				updateSelectedItemAsCustomWithSize()
 			}
 		}
+	}
+
+	private func updateSelectedItemAsCustomWithSize() {
+		let newType: DimensionsType = resizableDimensions.currentDimensions.type == .percent ? .pixels : .percent
+		let resizableDimensions = self.resizableDimensions.changed(dimensionsType: newType)
+		let selectedCustomTitle = "Custom - \(resizableDimensions.currentDimensions)"
+		predefinedSizesDropdown.item(at: 0)?.title = selectedCustomTitle
+		predefinedSizesDropdown.selectItem(at: 0)
 	}
 
 	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {

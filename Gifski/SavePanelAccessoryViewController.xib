@@ -42,7 +42,7 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <popUpButton verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="BWw-q9-45K">
+                                    <popUpButton verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="BWw-q9-45K" customClass="MenuPopUpButton" customModule="Gifski" customModuleProvider="target">
                                         <rect key="frame" x="99" y="94" width="249" height="32"/>
                                         <popUpButtonCell key="cell" type="push" title="Custom" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="HdF-GF-uLW" id="SEY-z7-JVq">
                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
