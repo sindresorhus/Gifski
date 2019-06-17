@@ -103,7 +103,7 @@ final class ResizableDimensions: Copyable {
 	}
 
 	private func scalesEqual(_ scale1: CGFloat, _ scale2: CGFloat) -> Bool {
-		return scale1.isEqual(to: scale2, roundingDecimalPlaces: 3)
+		return scale1.isAlmostEqual(to: scale2, tolerance: 0.001)
 	}
 
 	private func calculateDimensions(for type: DimensionsType) -> Dimensions {
