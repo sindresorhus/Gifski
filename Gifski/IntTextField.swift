@@ -9,7 +9,8 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 	var alternativeDelta = 10
 
 	var onBlur: ((Int) -> Void)?
-	var onTextDidChange: ((Int) -> Void)?
+	var onValidValueChange: ((Int) -> Void)?
+	var minMax: ClosedRange<Int>?
 
 	required init?(coder: NSCoder) {
 		super.init(coder: coder)
@@ -43,13 +44,13 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		let currentValue = Int(stringValue) ?? 0
 		let newValue = currentValue + delta
 		stringValue = "\(newValue)"
-		onTextDidChange?(newValue)
+		handleChangedText()
 
 		return true
 	}
 
 	func controlTextDidChange(_ object: Notification) {
-		onTextDidChange?(integerValue)
+		handleChangedText()
 	}
 
 	func controlTextDidEndEditing(_ object: Notification) {
@@ -58,5 +59,21 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 
 	func indicateValidationFailure() {
 		shake(direction: .horizontal)
+	}
+
+	private func handleChangedText() {
+		if isValid(integerValue) {
+			onValidValueChange?(integerValue)
+		} else {
+			indicateValidationFailure()
+		}
+	}
+
+	private func isValid(_ value: Int) -> Bool {
+		guard let minMax = minMax else {
+			return true
+		}
+
+		return minMax.contains(value)
 	}
 }

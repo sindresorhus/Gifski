@@ -119,6 +119,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 			self.resizableDimensions.change(dimensionsType: dimensionsType)
 			self.dimensionsUpdated()
+			self.updateTextFieldsMinMax()
 		}
 
 		if resizableDimensions.currentDimensions.value.width > 640.0 {
@@ -163,34 +164,34 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
 			self?.dimensionsUpdated()
 		}
-		widthTextField.onTextDidChange = { [weak self] width in
+		widthTextField.onValidValueChange = { [weak self] width in
 			guard let self = self else {
 				return
 			}
 
-			if self.resizableDimensions.validate(newWidth: CGFloat(width)) {
-				self.resizableDimensions.resize(usingWidth: CGFloat(width))
-				self.dimensionsUpdated()
-			} else {
-				self.widthTextField.indicateValidationFailure()
-			}
+			self.resizableDimensions.resize(usingWidth: CGFloat(width))
+			self.dimensionsUpdated()
 		}
 		heightTextField.onBlur = { [weak self] height in
 			self?.resizableDimensions.resize(usingHeight: CGFloat(height))
 			self?.dimensionsUpdated()
 		}
-		heightTextField.onTextDidChange = { [weak self] height in
+		heightTextField.onValidValueChange = { [weak self] height in
 			guard let self = self else {
 				return
 			}
 
-			if self.resizableDimensions.validate(newHeight: CGFloat(height)) {
-				self.resizableDimensions.resize(usingHeight: CGFloat(height))
-				self.dimensionsUpdated()
-			} else {
-				self.heightTextField.indicateValidationFailure()
-			}
+			self.resizableDimensions.resize(usingHeight: CGFloat(height))
+			self.dimensionsUpdated()
 		}
+		updateTextFieldsMinMax()
+	}
+
+	private func updateTextFieldsMinMax() {
+		let widthMinMax = resizableDimensions.widthMinMax
+		let heightMinMax = resizableDimensions.heightMinMax
+		widthTextField.minMax = Int(widthMinMax.lowerBound)...Int(widthMinMax.upperBound)
+		heightTextField.minMax = Int(heightMinMax.lowerBound)...Int(heightMinMax.upperBound)
 	}
 
 	private func dimensionsUpdated() {
