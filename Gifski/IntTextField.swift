@@ -46,7 +46,7 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		let currentValue = Int(stringValue) ?? 0
 		let newValue = currentValue + delta
 		stringValue = "\(newValue)"
-		onTextDidChange?(newValue)	
+		onTextDidChange?(newValue)
 
 		return true
 	}

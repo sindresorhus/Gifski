@@ -158,35 +158,31 @@ final class SavePanelAccessoryViewController: NSViewController {
 		widthTextField.onBlur = { [weak self] width in
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
 			self?.dimensionsUpdated()
-			self?.predefinedSizesDropdown.selectItem(at: 0)
 		}
 		widthTextField.onTextDidChange = { [weak self] width in
 			guard let self = self else {
 				return
 			}
 
-			let validated = self.resizableDimensions.validate(newWidth: CGFloat(width)) == true
-			if validated {
+			if self.resizableDimensions.validate(newWidth: CGFloat(width)) {
 				self.resizableDimensions.resize(usingWidth: CGFloat(width))
 				self.dimensionsUpdated()
-				self.predefinedSizesDropdown.selectItem(at: 0)
 			} else {
 				self.widthTextField.shake(direction: .horizontal)
 			}
 		}
 		heightTextField.onBlur = { [weak self] height in
 			self?.resizableDimensions.resize(usingHeight: CGFloat(height))
+			self?.dimensionsUpdated()
 		}
 		heightTextField.onTextDidChange = { [weak self] height in
 			guard let self = self else {
 				return
 			}
 
-			let validated = self.resizableDimensions.validate(newHeight: CGFloat(height)) == true
-			if validated {
+			if self.resizableDimensions.validate(newHeight: CGFloat(height)) {
 				self.resizableDimensions.resize(usingHeight: CGFloat(height))
 				self.dimensionsUpdated()
-				self.predefinedSizesDropdown.selectItem(at: 0)
 			} else {
 				self.heightTextField.shake(direction: .horizontal)
 			}
@@ -196,6 +192,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	private func dimensionsUpdated() {
 		updateDimensionsDisplay()
 		estimateFileSize()
+		selectPredefinedSizeBasedOnCurrentDimensions()
 		onDimensionChange?(resizableDimensions.currentDimensions.value)
 	}
 
@@ -211,6 +208,24 @@ final class SavePanelAccessoryViewController: NSViewController {
 		widthTextField.stringValue = String(format: "%.0f", resizableDimensions.currentDimensions.value.width)
 		heightTextField.stringValue = String(format: "%.0f", resizableDimensions.currentDimensions.value.height)
 		dimensionsTypeDropdown.selectItem(withTitle: resizableDimensions.currentDimensions.type.rawValue)
+	}
+
+	private func selectPredefinedSizeBasedOnCurrentDimensions() {
+		// Check if we can select predefined option that has the same dimensions settings
+		if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
+			predefinedSizesDropdown.selectItem(at: index)
+		} else {
+			// If we can't, change dimension type and try again
+			let newType: DimensionsType = resizableDimensions.currentDimensions.type == .percent ? .pixels : .percent
+			let resizableDimensions = self.resizableDimensions.changed(dimensionsType: newType)
+			if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
+				predefinedSizesDropdown.selectItem(at: index)
+			} else {
+				// If all fails, select custom and assign a custom pixels label to it
+				predefinedSizesDropdown.selectItem(at: 0)
+				let selectedCustomTitle = "Custom - \(resizableDimensions)"
+			}
+		}
 	}
 
 	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
