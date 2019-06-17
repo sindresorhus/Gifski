@@ -53,7 +53,11 @@ final class SavePanelAccessoryViewController: NSViewController {
 		let dimensions = Dimensions(type: .pixels, value: videoMetadata.dimensions)
 		resizableDimensions = ResizableDimensions(dimensions: dimensions, minimumScale: minimumScale, maximumScale: maximumScale)
 
-		let pixelCommonSizes: [CGFloat] = [dimensions.value.width, 960.0, 800.0, 640.0, 500.0, 480.0, 320.0, 256.0, 200.0, 160.0, 128.0, 80.0, 64.0].sorted(by: >)
+		var pixelCommonSizes: [CGFloat] = [960.0, 800.0, 640.0, 500.0, 480.0, 320.0, 256.0, 200.0, 160.0, 128.0, 80.0, 64.0]
+		if !pixelCommonSizes.contains(dimensions.value.width) {
+			pixelCommonSizes.append(dimensions.value.width)
+			pixelCommonSizes.sort(by: >)
+		}
 		let pixelDimensions = pixelCommonSizes.map { width -> CGSize in
 			let ratio = width / dimensions.value.width
 			let height = dimensions.value.height * ratio
