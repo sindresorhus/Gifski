@@ -9,6 +9,10 @@ enum DimensionsType: String, Equatable, CaseIterable {
 struct Dimensions: Equatable {
 	let type: DimensionsType
 	let value: CGSize
+
+	func rounded() -> Dimensions {
+		return Dimensions(type: type, value: value.rounded())
+	}
 }
 
 final class ResizableDimensions: Copyable {
@@ -23,8 +27,8 @@ final class ResizableDimensions: Copyable {
 	private var currentScale: CGFloat
 
 	init(dimensions: Dimensions, minimumScale: CGFloat? = nil, maximumScale: CGFloat? = nil) {
-		self.originalDimensions = dimensions
-		self.currentDimensions = dimensions
+		self.originalDimensions = dimensions.rounded()
+		self.currentDimensions = self.originalDimensions
 		self.minimumScale = minimumScale ?? 0.01
 		self.maximumScale = maximumScale ?? 1.0
 		self.currentScale = 1.0
@@ -102,7 +106,7 @@ final class ResizableDimensions: Copyable {
 		let width = currentScale * multiplier.width
 		let height = currentScale * multiplier.height
 
-		return Dimensions(type: type, value: CGSize(width: width, height: height))
+		return Dimensions(type: type, value: CGSize(width: width, height: height)).rounded()
 	}
 
 	private func calculateScale(usingWidth width: CGFloat) -> CGFloat {
