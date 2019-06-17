@@ -67,7 +67,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			.filter { resizableDimensions.validate(newSize: $0) }
 			.map { resizableDimensions.resized(to: $0) }
 
-		let percentCommonSizes: [CGFloat] = [100.0, 50.0, 33.0, 25.0, 20.0]
+		let percentCommonSizes: [CGFloat] = [50.0, 33.0, 25.0, 20.0]
 		let predefinedPercentDimensions = percentCommonSizes
 			.map {
 				resizableDimensions.changed(dimensionsType: .percent)
