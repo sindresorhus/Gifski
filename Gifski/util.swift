@@ -66,8 +66,9 @@ extension NSColor {
 
 
 extension NSView {
-	func shake(duration: TimeInterval = 0.3) {
-		let animation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+	func shake(duration: TimeInterval = 0.3, direction: NSUserInterfaceLayoutOrientation) {
+		let translation = direction == .horizontal ? "x" : "y"
+		let animation = CAKeyframeAnimation(keyPath: "transform.translation.\(translation)")
 		animation.timingFunction = .linear
 		animation.duration = duration
 		animation.values = [-5.0, 5.0, -2.5, 2.5, 0.0 ]

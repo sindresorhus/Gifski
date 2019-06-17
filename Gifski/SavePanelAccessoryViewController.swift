@@ -204,7 +204,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		}
 
 		if !valid {
-			textField.shake()
+			textField.shake(direction: .horizontal)
 		}
 		dimensionsUpdated()
 		predefinedSizesDropdown.selectItem(at: 0)
