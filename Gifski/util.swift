@@ -2162,3 +2162,9 @@ extension Copyable {
 		return Self(instance: self)
 	}
 }
+
+extension CGSize {
+	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> CGSize {
+		return CGSize(width: width.rounded(rule), height: height.rounded(rule))
+	}
+}
