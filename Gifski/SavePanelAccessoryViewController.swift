@@ -168,7 +168,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 				self.resizableDimensions.resize(usingWidth: CGFloat(width))
 				self.dimensionsUpdated()
 			} else {
-				self.widthTextField.shake(direction: .horizontal)
+				self.widthTextField.indicateValidationFailure()
 			}
 		}
 		heightTextField.onBlur = { [weak self] height in
@@ -184,7 +184,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 				self.resizableDimensions.resize(usingHeight: CGFloat(height))
 				self.dimensionsUpdated()
 			} else {
-				self.heightTextField.shake(direction: .horizontal)
+				self.heightTextField.indicateValidationFailure()
 			}
 		}
 	}

@@ -6,7 +6,7 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 	var delta = 1
 
 	// Delta used for option + arrow navigation
-	var biggerDelta = 10
+	var alternativeDelta = 10
 
 	var onBlur: ((Int) -> Void)?
 	var onTextDidChange: ((Int) -> Void)?
@@ -32,13 +32,13 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		let delta: Int
 		switch (key, isHoldingOption) {
 		case (.upArrow?, true):
-			delta = self.biggerDelta
+			delta = self.alternativeDelta
 		case (.upArrow?, false):
 			delta = self.delta
 		case (.downArrow?, true):
-			delta = -1 * self.biggerDelta
+			delta = self.alternativeDelta * -1
 		case (.downArrow?, false):
-			delta = -1 * self.delta
+			delta = self.delta * -1
 		default:
 			return super.performKeyEquivalent(with: event)
 		}
@@ -51,11 +51,15 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		return true
 	}
 
-	func controlTextDidChange(_ obj: Notification) {
+	func controlTextDidChange(_ object: Notification) {
 		onTextDidChange?(integerValue)
 	}
 
-	func controlTextDidEndEditing(_ obj: Notification) {
+	func controlTextDidEndEditing(_ object: Notification) {
 		onBlur?(integerValue)
+	}
+
+	func indicateValidationFailure() {
+		shake(direction: .horizontal)
 	}
 }
