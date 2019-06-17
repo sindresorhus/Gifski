@@ -26,18 +26,18 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 	}
 
 	override func performKeyEquivalent(with event: NSEvent) -> Bool {
-		let key = Int(event.keyCode)
+		let key = event.specialKey
 		let isHoldingOption = event.modifierFlags.contains(.option)
 
 		let delta: Int
 		switch (key, isHoldingOption) {
-		case (kVK_UpArrow, true):
+		case (.upArrow?, true):
 			delta = self.biggerDelta
-		case (kVK_UpArrow, false):
+		case (.upArrow?, false):
 			delta = self.delta
-		case (kVK_DownArrow, true):
+		case (.downArrow?, true):
 			delta = -1 * self.biggerDelta
-		case (kVK_DownArrow, false):
+		case (.downArrow?, false):
 			delta = -1 * self.delta
 		default:
 			return super.performKeyEquivalent(with: event)
