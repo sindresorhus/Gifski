@@ -225,6 +225,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 	}
 
 	private func selectPredefinedSizeBasedOnCurrentDimensions() {
+		// First reset the state
+		predefinedSizesDropdown.selectItem(at: NSNotFound)
 		// Check if we can select predefined option that has the same dimensions settings
 		if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
 			predefinedSizesDropdown.selectItem(at: index)
