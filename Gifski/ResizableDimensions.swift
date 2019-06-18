@@ -131,11 +131,11 @@ final class ResizableDimensions: Copyable {
 	}
 
 	private func calculateScale(usingWidth width: CGFloat) -> CGFloat {
-		return (currentScale * width) / currentDimensions.value.width
+		return width / multiplier(for: currentDimensions.type).width
 	}
 
 	private func calculateScale(usingHeight height: CGFloat) -> CGFloat {
-		return (currentScale * height) / currentDimensions.value.height
+		return height / multiplier(for: currentDimensions.type).height
 	}
 
 	private func validated(scale: CGFloat) -> CGFloat {
