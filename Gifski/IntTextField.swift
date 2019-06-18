@@ -58,6 +58,9 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 	}
 
 	func controlTextDidEndEditing(_ object: Notification) {
+		if !isValid(integerValue) {
+			indicateValidationFailure()
+		}
 		onBlur?(integerValue)
 	}
 
