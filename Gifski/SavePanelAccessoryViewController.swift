@@ -25,7 +25,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	@IBOutlet private var widthTextField: IntTextField!
 	@IBOutlet private var heightTextField: IntTextField!
 	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
-	@IBOutlet private var dimensionsTypeDropdown: NSPopUpButton!
+	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
 
 	var inputUrl: URL!
 	var videoMetadata: AVURLAsset.VideoMetadata!
@@ -120,8 +120,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 		dimensionsTypeDropdown.removeAllItems()
 		dimensionsTypeDropdown.addItems(withTitles: DimensionsType.allCases.map { $0.rawValue })
 
-		dimensionsTypeDropdown.onAction = { [weak self] _ in
-			guard let self = self, let item = self.dimensionsTypeDropdown.selectedItem,
+		dimensionsTypeDropdown.onMenuDidCloseAction = { [weak self] selectedIndex in
+			guard let self = self, let index = selectedIndex, let item = self.dimensionsTypeDropdown.item(at: index),
 				let dimensionsType = DimensionsType(rawValue: item.title) else {
 				return
 			}

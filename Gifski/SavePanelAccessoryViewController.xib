@@ -93,7 +93,7 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <popUpButton verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="aVG-zO-Cd7" userLabel="widthHeightPopUp">
+                                    <popUpButton verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="aVG-zO-Cd7" userLabel="widthHeightPopUp" customClass="MenuPopUpButton" customModule="Gifski" customModuleProvider="target">
                                         <rect key="frame" x="263" y="50" width="85" height="25"/>
                                         <popUpButtonCell key="cell" type="push" title="pixels" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="7ml-rS-kJf" id="Emv-9m-sNX">
                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
