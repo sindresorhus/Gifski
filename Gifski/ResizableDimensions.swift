@@ -10,8 +10,8 @@ struct Dimensions: Equatable, CustomStringConvertible {
 	let type: DimensionsType
 	let value: CGSize
 
-	func rounded() -> Dimensions {
-		return Dimensions(type: type, value: value.rounded())
+	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> Dimensions {
+		return Dimensions(type: type, value: value.rounded(rule))
 	}
 
 	var description: String {
@@ -127,7 +127,8 @@ final class ResizableDimensions: Copyable {
 		let width = currentScale * multiplier.width
 		let height = currentScale * multiplier.height
 
-		return Dimensions(type: type, value: CGSize(width: width, height: height)).rounded()
+		let dimensions = Dimensions(type: type, value: CGSize(width: width, height: height))
+		return type == .pixels ? dimensions.rounded() : dimensions.rounded(.down)
 	}
 
 	private func calculateScale(usingWidth width: CGFloat) -> CGFloat {
