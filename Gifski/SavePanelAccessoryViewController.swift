@@ -47,6 +47,13 @@ final class SavePanelAccessoryViewController: NSViewController {
 		setupWidthAndHeightTextFields()
 	}
 
+	override func viewWillAppear() {
+		super.viewWillAppear()
+
+		// Hack to enlarge extended save panel frame
+		UserDefaults.standard.set("{841, 681}", forKey: "NSNavPanelExpandedSizeForSaveMode")
+	}
+
 	private func setupDimensions() {
 		let minimumScale: CGFloat = 0.01
 		let maximumScale: CGFloat = 1.0
