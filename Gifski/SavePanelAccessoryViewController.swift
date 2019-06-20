@@ -91,6 +91,21 @@ final class SavePanelAccessoryViewController: NSViewController {
 	private func setupDropdowns() {
 		predefinedSizesDropdown.removeAllItems()
 
+		var maxFirstPartLength = 0
+		var maxLastPartLength = 0
+		for case let .dimensions(dimensions) in predefinedSizes where dimensions.currentDimensions.type == .pixels {
+			let dimensionsString = "\(dimensions)"
+			guard let lastPart = dimensionsString.split(separator: " ").last, let lastPartIndex = dimensionsString.range(of: lastPart) else {
+				continue
+			}
+			let lastPartLength = lastPart.count
+			let firstPart = dimensionsString.replacingCharacters(in: lastPartIndex, with: " ")
+			let firstPartLength = firstPart.count
+
+			maxFirstPartLength = firstPartLength > maxFirstPartLength ? firstPartLength : maxFirstPartLength
+			maxLastPartLength = lastPartLength > maxLastPartLength ? lastPartLength : maxLastPartLength
+		}
+
 		for size in predefinedSizes {
 			switch size {
 			case .custom:
@@ -98,9 +113,15 @@ final class SavePanelAccessoryViewController: NSViewController {
 			case .spacer:
 				predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
 			case let .dimensions(dimensions):
-				predefinedSizesDropdown.addItem(withTitle: "\(dimensions)")
+				predefinedSizesDropdown.addItem(withTitle: dimensions.paddedDescription(lengthOfFirstPart: maxFirstPartLength, lengthOfSecondPart: maxLastPartLength))
 			}
 		}
+//
+//		let titles = predefinedSizesDropdown.itemTitles.paddingToEqualLength()
+//		let dimensionTitles
+//		for (index, title) in titles.enumerated() where !title.isEmpty {
+//			predefinedSizesDropdown.item(at: index)?.title = title
+//		}
 
 		predefinedSizesDropdown.onMenuWillOpenAction = { [weak self] in
 			self?.predefinedSizesDropdown.item(at: 0)?.title = "Custom"
@@ -253,5 +274,33 @@ final class SavePanelAccessoryViewController: NSViewController {
 	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
 		let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
 		return defaultFrameRate.clamped(to: 5...30)
+	}
+}
+
+extension Collection where Element == String {
+	/// Pad the elements to equal length.
+	func paddingToEqualLength() -> [String] {
+		guard let maxLength = self.max(by: { $1.count > $0.count })?.count else {
+			return []
+		}
+
+		return map { string in
+			guard let lastStringPart = string.split(separator: " ").last, let lastStringPartRange = string.range(of: lastStringPart) else {
+				return string.padding(toLength: maxLength, withPad: " ", startingAt: 0)
+			}
+
+			let stringWithoutLastPart = string.replacingCharacters(in: lastStringPartRange, with: "")
+			let paddedStringWithoutLastPart = stringWithoutLastPart.padding(toLength: maxLength - lastStringPart.count, withPad: " ", startingAt: 0)
+			return paddedStringWithoutLastPart + lastStringPart
+
+//			let nsString = NSString(string: string)
+//			return nsString.padding(toLength: maxLength, withPad: " ", startingAt: 0)
+//			let index = string.lastIndex(where: { $0.isWhitespace }) ?? string.endIndex
+//			let distance = string.distance(from: string.endIndex, to: index)
+//			return string.padding(toLength: maxLength, withPad: " ", startingAt: distance)
+//			let stringToInsert = Array(repeating: Character(" "), count: maxLength - string.count)
+//			mutableString.insert(contentsOf: stringToInsert, at: index)
+//			return mutableString
+		}
 	}
 }
