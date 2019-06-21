@@ -153,7 +153,7 @@ extension UserDefaults {
 	}
 }
 
-/// TODO: Nest this inside `Defaults` if Swift ever supported nested protocols.
+// TODO: Nest this inside `Defaults` if Swift ever supported nested protocols.
 public protocol DefaultsObservation {
 	func invalidate()
 }
