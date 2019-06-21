@@ -113,10 +113,10 @@ final class SavePanelAccessoryViewController: NSViewController {
 			}
 		}
 
-		predefinedSizesDropdown.onMenuWillOpenAction = { [weak self] in
+		predefinedSizesDropdown.onMenuWillOpen = { [weak self] in
 			self?.predefinedSizesDropdown.item(at: 0)?.title = "Custom"
 		}
-		predefinedSizesDropdown.onMenuDidCloseAction = { [weak self] selectedIndex in
+		predefinedSizesDropdown.onMenuDidClose = { [weak self] selectedIndex in
 			guard let self = self else {
 				return
 			}
@@ -138,7 +138,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		dimensionsTypeDropdown.removeAllItems()
 		dimensionsTypeDropdown.addItems(withTitles: DimensionsType.allCases.map { $0.rawValue })
 
-		dimensionsTypeDropdown.onMenuDidCloseAction = { [weak self] selectedIndex in
+		dimensionsTypeDropdown.onMenuDidClose = { [weak self] selectedIndex in
 			guard let self = self, let index = selectedIndex, let item = self.dimensionsTypeDropdown.item(at: index),
 				let dimensionsType = DimensionsType(rawValue: item.title) else {
 				return
