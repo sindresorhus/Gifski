@@ -50,7 +50,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	override func viewWillAppear() {
 		super.viewWillAppear()
 
-		// Hack to enlarge extended save panel frame
+		// Hack to enlarge extended save panel frame. Original frame: {841,481}
 		UserDefaults.standard.set("{841, 681}", forKey: "NSNavPanelExpandedSizeForSaveMode")
 	}
 
