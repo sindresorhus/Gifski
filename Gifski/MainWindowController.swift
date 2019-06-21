@@ -1,5 +1,6 @@
 import Cocoa
 import AVFoundation
+import UserNotifications
 import StoreKit
 import Crashlytics
 
@@ -266,6 +267,14 @@ final class MainWindowController: NSWindowController {
 				defaults[.successfulConversionsCount] += 1
 				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
 					SKStoreReviewController.requestReview()
+				}
+
+				if #available(macOS 10.14, *), !NSApp.isActive || self.window?.isVisible == false {
+					let notification = UNMutableNotificationContent()
+					notification.title = "Conversion Completed"
+					notification.subtitle = outputUrl.filename
+					let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
+					UNUserNotificationCenter.current().add(request)
 				}
 			}
 		}
