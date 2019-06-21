@@ -922,7 +922,7 @@ extension NSView {
 		])
 	}
 
-	func constrain(size: CGSize) {
+	func constrain(to size: CGSize) {
 		NSLayoutConstraint.activate([
 			widthAnchor.constraint(equalToConstant: size.width),
 			heightAnchor.constraint(equalToConstant: size.height)

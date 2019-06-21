@@ -1,6 +1,45 @@
 import AppKit
 
 final class Tooltip: NSPopover {
+	struct ShowBehavior {
+		enum Option {
+			case always
+			case once
+		}
+
+		static func always(identifier: String) -> ShowBehavior {
+			return .init(identifier: identifier, option: .always)
+		}
+
+		static func once(identifier: String) -> ShowBehavior {
+			return .init(identifier: identifier, option: .once)
+		}
+
+		let identifier: String
+		let option: Option
+
+		private var key: Defaults.Key<Int> {
+			return Defaults.Key<Int>("__Tooltip__\(identifier)", default: 0)
+		}
+
+		private var showCount: Int {
+			return defaults[key]
+		}
+
+		var canShow: Bool {
+			switch option {
+			case .always:
+				return true
+			case .once:
+				return showCount < 1
+			}
+		}
+
+		func didShow() {
+			defaults[key] += 1
+		}
+	}
+
 	private let showBehavior: ShowBehavior
 
 	init(text: String, showBehavior: ShowBehavior, closeOnClick: Bool = true, contentInsets: NSEdgeInsets = .init(all: 10.0), maxWidth: Double? = nil) {
@@ -67,7 +106,7 @@ fileprivate final class ToolTipViewController: NSViewController {
 
 		if let maxWidth = maxWidth {
 			let newSize = textField.sizeThatFits(NSSize(width: CGFloat(maxWidth) - contentInsets.horizontal, height: .greatestFiniteMagnitude))
-			textField.constrain(size: newSize)
+			textField.constrain(to: newSize)
 		}
 
 		wrapperView.addSubview(textField)
