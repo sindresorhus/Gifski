@@ -37,6 +37,8 @@ final class SavePanelAccessoryViewController: NSViewController {
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
 
+	private let tooltip = Tooltip(text: "Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.", showBehavior: .onlyOnce(identifier: "tooltipCmdArrowsShown"), maxWidth: 250.0)
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
@@ -61,11 +63,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		widthTextField.nextKeyView = heightTextField
 		heightTextField.nextKeyView = dimensionsTypeDropdown
 
-		if !defaults[.tooltipCmdArrowsShown] {
-			defaults[.tooltipCmdArrowsShown] = true
-		}
-			let tooltip = Tooltip(text: "Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.", maxWidth: 250.0)
-			tooltip.show(from: widthTextField, preferredEdge: .maxX)
+		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 	}
 
 	private func setupDimensions() {

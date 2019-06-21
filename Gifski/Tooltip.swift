@@ -1,18 +1,31 @@
 import AppKit
 
 final class Tooltip: NSPopover {
-	init(text: String, closeOnClick: Bool = true, contentInsets: NSEdgeInsets = .init(all: 10.0), maxWidth: Double? = nil) {
+	private let showBehavior: ShowBehavior
+
+	init(text: String, showBehavior: ShowBehavior, closeOnClick: Bool = true, contentInsets: NSEdgeInsets = .init(all: 10.0), maxWidth: Double? = nil) {
+		self.showBehavior = showBehavior
 		super.init()
+
 		setupContent(text: text, closeOnClick: closeOnClick, contentInsets: contentInsets, maxWidth: maxWidth)
 	}
 
 	required init?(coder: NSCoder) {
+		self.showBehavior = .always(identifier: NSUUID().uuidString)
 		super.init(coder: coder)
+
 		setupContent(text: "", closeOnClick: true, contentInsets: .zero, maxWidth: nil)
 	}
 
 	func show(from positioningView: NSView, preferredEdge: NSRectEdge) {
 		show(relativeTo: positioningView.bounds, of: positioningView, preferredEdge: preferredEdge)
+	}
+
+	override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
+		if showBehavior.canShow {
+			showBehavior.didShow()
+			super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
+		}
 	}
 
 	private func setupContent(text: String, closeOnClick: Bool, contentInsets: NSEdgeInsets, maxWidth: Double?) {
