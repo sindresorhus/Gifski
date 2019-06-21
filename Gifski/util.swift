@@ -945,6 +945,7 @@ extension NSView {
 			return
 		}
 
+		superview.translatesAutoresizingMaskIntoConstraints = false
 		translatesAutoresizingMaskIntoConstraints = false
 
 		NSLayoutConstraint.activate([
@@ -952,6 +953,13 @@ extension NSView {
 			trailingAnchor.constraint(equalTo: superview.trailingAnchor, constant: -insets.right),
 			topAnchor.constraint(equalTo: superview.topAnchor, constant: insets.top),
 			bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -insets.bottom)
+		])
+	}
+
+	func constrain(size: CGSize) {
+		NSLayoutConstraint.activate([
+			widthAnchor.constraint(equalToConstant: size.width),
+			heightAnchor.constraint(equalToConstant: size.height)
 		])
 	}
 }
@@ -2186,6 +2194,7 @@ extension CGSize {
 }
 
 // Source: https://github.com/apple/swift-evolution/blob/9940e45977e2006a29eccccddf6b62305758c5c3/proposals/0259-approximately-equal.md
+// swiftlint:disable all
 extension FloatingPoint {
 	/// Test approximate equality with relative tolerance.
 	///
@@ -2319,5 +2328,24 @@ extension FloatingPoint {
 		// If self is finite and other is infinite, flip order and use scaling
 		// defined above, since this relation is symmetric.
 		return other.rescaledAlmostEqual(to: self, tolerance: tolerance)
+	}
+}
+// swiftlint:enable all
+
+extension NSEdgeInsets {
+	static var zero: NSEdgeInsets {
+		return NSEdgeInsetsZero
+	}
+
+	init(all: CGFloat) {
+		self.init(top: all, left: all, bottom: all, right: all)
+	}
+
+	var vertical: CGFloat {
+		return top + bottom
+	}
+
+	var horizontal: CGFloat {
+		return left + right
 	}
 }

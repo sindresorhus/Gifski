@@ -1,7 +1,6 @@
 import AppKit
 
 final class IntTextField: NSTextField, NSTextFieldDelegate {
-
 	override var canBecomeKeyView: Bool {
 		return true
 	}
