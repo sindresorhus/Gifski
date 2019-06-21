@@ -54,6 +54,14 @@ final class SavePanelAccessoryViewController: NSViewController {
 		UserDefaults.standard.set("{841, 681}", forKey: "NSNavPanelExpandedSizeForSaveMode")
 	}
 
+	override func viewDidAppear() {
+		super.viewDidAppear()
+
+		dimensionsTypeDropdown.nextKeyView = heightTextField.nextKeyView
+		widthTextField.nextKeyView = heightTextField
+		heightTextField.nextKeyView = dimensionsTypeDropdown
+	}
+
 	private func setupDimensions() {
 		let minimumScale: CGFloat = 0.01
 		let maximumScale: CGFloat = 1.0

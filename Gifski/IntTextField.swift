@@ -2,6 +2,11 @@ import AppKit
 import Carbon
 
 final class IntTextField: NSTextField, NSTextFieldDelegate {
+
+	override var canBecomeKeyView: Bool {
+		return true
+	}
+
 	// Delta used for arrow navigation
 	var delta = 1
 
