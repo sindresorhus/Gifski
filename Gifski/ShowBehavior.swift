@@ -1,22 +1,19 @@
-enum ShowBehavior {
-	case always(identifier: String)
-	case onlyOnce(identifier: String)
-
-	var identifier: String {
-		switch self {
-		case let .always(identifier), let .onlyOnce(identifier):
-			return identifier
-		}
+struct ShowBehavior {
+	enum Option {
+		case always
+		case once
 	}
 
-	var canShow: Bool {
-		switch self {
-		case .always:
-			return true
-		case .onlyOnce:
-			return showCount < 1
-		}
+	static func always(identifier: String) -> ShowBehavior {
+		return .init(identifier: identifier, option: .always)
 	}
+
+	static func once(identifier: String) -> ShowBehavior {
+		return .init(identifier: identifier, option: .once)
+	}
+
+	let identifier: String
+	let option: Option
 
 	private var key: Defaults.Key<Int> {
 		return Defaults.Key<Int>("showBehavior_" + identifier, default: 0)
@@ -24,6 +21,15 @@ enum ShowBehavior {
 
 	private var showCount: Int {
 		return defaults[key]
+	}
+
+	var canShow: Bool {
+		switch option {
+		case .always:
+			return true
+		case .once:
+			return showCount < 1
+		}
 	}
 
 	func didShow() {

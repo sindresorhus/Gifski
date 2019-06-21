@@ -37,7 +37,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
 
-	private let tooltip = Tooltip(text: "Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.", showBehavior: .onlyOnce(identifier: "tooltipCmdArrowsShown"), maxWidth: 250.0)
+	private let tooltip = Tooltip(text: "Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.", showBehavior: .once(identifier: "tooltipOptionArrowsShown"), maxWidth: 250.0)
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
