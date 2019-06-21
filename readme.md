@@ -59,6 +59,7 @@ xcode-select --install
 - [Kornel Lesiński](https://github.com/kornelski)
 - [Lars-Jørgen Kristiansen](https://github.com/LarsJK)
 - [Boy van Amstel](https://github.com/boyvanamstel)
+- [Łukasz Mróz](https://github.com/sunshinejr)
 
 
 ## License
