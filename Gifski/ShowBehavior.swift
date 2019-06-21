@@ -16,7 +16,7 @@ struct ShowBehavior {
 	let option: Option
 
 	private var key: Defaults.Key<Int> {
-		return Defaults.Key<Int>("showBehavior_" + identifier, default: 0)
+		return Defaults.Key<Int>("__showBehavior_" + identifier, default: 0)
 	}
 
 	private var showCount: Int {
