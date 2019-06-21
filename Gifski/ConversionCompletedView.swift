@@ -2,29 +2,38 @@ import Cocoa
 import Quartz
 
 final class ConversionCompletedView: SSView {
-	private let draggableFile = DraggableFile()
+	private let draggableFile = with(DraggableFile()) {
+		$0.translatesAutoresizingMaskIntoConstraints = false
+	}
 
 	private let fileNameLabel = with(Label()) {
-		$0.textColor = .secondaryLabelColor
-		$0.font = .boldSystemFont(ofSize: 14)
+		$0.translatesAutoresizingMaskIntoConstraints = false
+		$0.textColor = .labelColor
+		$0.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
 		$0.alignment = .center
+		$0.maximumNumberOfLines = 1
+		$0.cell?.lineBreakMode = .byTruncatingTail
 	}
 
 	private let fileSizeLabel = with(Label()) {
+		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.textColor = .secondaryLabelColor
 		$0.font = .systemFont(ofSize: 12)
 		$0.alignment = .center
 	}
 
 	private let infoContainer = with(NSStackView()) {
+		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.orientation = .vertical
 	}
 
 	private let imageContainer = with(NSStackView()) {
+		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.orientation = .vertical
 	}
 
 	private let buttonsContainer = with(NSStackView()) {
+		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.orientation = .horizontal
 		$0.spacing = 20
 	}
@@ -33,18 +42,11 @@ final class ConversionCompletedView: SSView {
 		return isHidden == false && fileUrl != nil
 	}
 
-	private func createButton(title: String) -> CustomButton {
-		return with(CustomButton()) {
+	private func createButton(title: String) -> NSButton {
+		return with(NSButton()) {
+			$0.translatesAutoresizingMaskIntoConstraints = false
 			$0.title = title
-			$0.textColor = .themeColor
-			// TODO: Custombutton should have a better way of handling different color in dark and light mode
-			$0.activeTextColor = NSColor(named: "ButtonTextColor")!
-			$0.backgroundColor = .clear
-			$0.activeBackgroundColor = .themeColor
-			$0.borderColor = .themeColor
-			$0.activeBorderColor = .themeColor
-			$0.borderWidth = 1
-			$0.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+			$0.bezelStyle = .texturedRounded
 		}
 	}
 
@@ -81,18 +83,6 @@ final class ConversionCompletedView: SSView {
 	override func didAppear() {
 		translatesAutoresizingMaskIntoConstraints = false
 
-		infoContainer.translatesAutoresizingMaskIntoConstraints = false
-		imageContainer.translatesAutoresizingMaskIntoConstraints = false
-		draggableFile.translatesAutoresizingMaskIntoConstraints = false
-		fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
-		showInFinderButton.translatesAutoresizingMaskIntoConstraints = false
-		shareButton.translatesAutoresizingMaskIntoConstraints = false
-		fileSizeLabel.translatesAutoresizingMaskIntoConstraints = false
-		buttonsContainer.translatesAutoresizingMaskIntoConstraints = false
-
-		fileNameLabel.maximumNumberOfLines = 1
-		fileNameLabel.cell?.lineBreakMode = .byTruncatingTail
-
 		infoContainer.addArrangedSubview(fileNameLabel)
 		infoContainer.addArrangedSubview(fileSizeLabel)
 
@@ -115,10 +105,10 @@ final class ConversionCompletedView: SSView {
 			imageContainer.topAnchor.constraint(equalTo: topAnchor),
 			imageContainer.widthAnchor.constraint(equalTo: widthAnchor),
 
-			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 16),
+			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 18),
 			infoContainer.widthAnchor.constraint(equalTo: imageContainer.widthAnchor),
 
-			buttonsContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: 24),
+			buttonsContainer.topAnchor.constraint(equalTo: infoContainer.bottomAnchor, constant: 24),
 			buttonsContainer.heightAnchor.constraint(equalToConstant: 30),
 			buttonsContainer.centerXAnchor.constraint(equalTo: centerXAnchor),
 
