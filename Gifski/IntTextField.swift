@@ -1,5 +1,4 @@
 import AppKit
-import Carbon
 
 final class IntTextField: NSTextField, NSTextFieldDelegate {
 
