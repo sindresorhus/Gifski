@@ -53,17 +53,13 @@ xcode-select --install
 - [DockProgress](https://github.com/sindresorhus/DockProgress) - Show progress in your app's Dock icon
 
 
-## Links
-
-- [More Swift packages by me](https://github.com/search?q=user%3Asindresorhus+language%3Aswift)
-
-
 ## Maintainers
 
 - [Sindre Sorhus](https://github.com/sindresorhus)
 - [Kornel Lesiński](https://github.com/kornelski)
 - [Lars-Jørgen Kristiansen](https://github.com/LarsJK)
 - [Boy van Amstel](https://github.com/boyvanamstel)
+- [Łukasz Mróz](https://github.com/sunshinejr)
 
 
 ## License

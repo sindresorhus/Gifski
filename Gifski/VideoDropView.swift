@@ -13,7 +13,8 @@ class DropView: SSView {
 	}
 
 	private let dropLabel = with(Label()) {
-		$0.textColor = NSColor.secondaryLabelColor
+		$0.textColor = .secondaryLabelColor
+		$0.font = NSFont.systemFont(ofSize: 14)
 	}
 
 	var highlightColor: NSColor {
@@ -53,7 +54,6 @@ class DropView: SSView {
 
 	override func didAppear() {
 		addSubviewToCenter(dropLabel)
-		dropLabel.pulsateScale()
 	}
 
 	override func layout() {

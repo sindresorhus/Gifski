@@ -158,7 +158,7 @@
                             <menuItem title="Source Code" id="LPR-FD-PrP" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://github.com/sindresorhus/gifski-app"/>
+                                    <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://github.com/sindresorhus/Gifski"/>
                                 </userDefinedRuntimeAttributes>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="R9f-81-F3Z"/>
