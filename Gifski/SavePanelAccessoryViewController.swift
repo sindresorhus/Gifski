@@ -60,6 +60,12 @@ final class SavePanelAccessoryViewController: NSViewController {
 		dimensionsTypeDropdown.nextKeyView = heightTextField.nextKeyView
 		widthTextField.nextKeyView = heightTextField
 		heightTextField.nextKeyView = dimensionsTypeDropdown
+
+		if !defaults[.tooltipCmdArrowsShown] {
+			defaults[.tooltipCmdArrowsShown] = true
+			let tooltip = Tooltip(text: "You can also navigate using arrows. Hold CMD and you can navigate even faster!", contentInsets: .init(value: 6.0), maxWidth: 250.0)
+			tooltip.show(relativeTo: widthTextField.bounds, of: widthTextField, preferredEdge: .maxX)
+		}
 	}
 
 	private func setupDimensions() {

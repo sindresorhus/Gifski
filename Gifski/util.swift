@@ -938,6 +938,22 @@ extension NSView {
 		addSubview(view)
 		view.center(inView: superview!)
 	}
+
+	func pinToSuperview(insets: NSEdgeInsets = .zero) {
+		guard let superview = superview else {
+			assertionFailure("There is no superview for this view so we cannot pin it.")
+			return
+		}
+
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: insets.left),
+			trailingAnchor.constraint(equalTo: superview.trailingAnchor, constant: -insets.right),
+			topAnchor.constraint(equalTo: superview.topAnchor, constant: insets.top),
+			bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -insets.bottom)
+		])
+	}
 }
 
 

@@ -13,6 +13,7 @@
 		8548806522B78E8300E97401 /* IntTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806422B78E8300E97401 /* IntTextField.swift */; };
 		8548806E22B82D1400E97401 /* MenuPopUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806D22B82D1300E97401 /* MenuPopUpButton.swift */; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
+		85B9CF6422BD3FA00050A2E4 /* Tooltip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */; };
 		9F3340A322431CC3006EF9B5 /* TimeRemainingEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */; };
 		B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
@@ -80,6 +81,7 @@
 		8548806422B78E8300E97401 /* IntTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntTextField.swift; sourceTree = "<group>"; };
 		8548806D22B82D1300E97401 /* MenuPopUpButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPopUpButton.swift; sourceTree = "<group>"; };
 		8588EB0C22A424B800030A59 /* ResizableDimensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizableDimensions.swift; sourceTree = "<group>"; };
+		85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tooltip.swift; sourceTree = "<group>"; };
 		9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = TimeRemainingEstimator.swift; sourceTree = "<group>"; usesTabs = 1; };
 		B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+Util.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -203,6 +205,7 @@
 				8588EB0C22A424B800030A59 /* ResizableDimensions.swift */,
 				8548806422B78E8300E97401 /* IntTextField.swift */,
 				8548806D22B82D1300E97401 /* MenuPopUpButton.swift */,
+				85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
@@ -367,6 +370,7 @@
 				E30557F0207E521F003401A1 /* Defaults.swift in Sources */,
 				E317FF1C20583E9800A80A18 /* DockProgress.swift in Sources */,
 				E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */,
+				85B9CF6422BD3FA00050A2E4 /* Tooltip.swift in Sources */,
 				E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */,
 				E339F011203820ED003B78FB /* Gifski.swift in Sources */,
 				E3A6BD112245345C00F62256 /* Constants.swift in Sources */,

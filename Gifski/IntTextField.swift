@@ -22,7 +22,7 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		setup()
 	}
 
-	override init(frame frameRect: NSRect) {
+	override init(frame frameRect: CGRect) {
 		super.init(frame: frameRect)
 		setup()
 	}
