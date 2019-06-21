@@ -19,7 +19,7 @@ enum ShowBehavior {
 	}
 
 	private var key: Defaults.Key<Int> {
-		return Defaults.Key<Int>(identifier, default: 0)
+		return Defaults.Key<Int>("showBehavior_" + identifier, default: 0)
 	}
 
 	private var showCount: Int {

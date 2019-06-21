@@ -11,7 +11,7 @@ final class Tooltip: NSPopover {
 	}
 
 	required init?(coder: NSCoder) {
-		self.showBehavior = .always(identifier: NSUUID().uuidString)
+		self.showBehavior = .always(identifier: UUID().uuidString)
 		super.init(coder: coder)
 
 		setupContent(text: "", closeOnClick: true, contentInsets: .zero, maxWidth: nil)
@@ -21,7 +21,7 @@ final class Tooltip: NSPopover {
 		show(relativeTo: positioningView.bounds, of: positioningView, preferredEdge: preferredEdge)
 	}
 
-	override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
+	override func show(relativeTo positioningRect: CGRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
 		if showBehavior.canShow {
 			showBehavior.didShow()
 			super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
