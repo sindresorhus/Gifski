@@ -1,7 +1,7 @@
 use std::collections::BinaryHeap;
 use std::cmp::Ordering;
 use std::sync::mpsc;
-use error::*;
+use crate::error::*;
 
 pub struct OrdQueue<T> {
     sender: mpsc::SyncSender<ReverseTuple<T>>,
@@ -31,11 +31,10 @@ impl<T: Send + 'static> OrdQueue<T> {
     }
 }
 
-
 impl<T> Iterator for OrdQueueIter<T> {
     type Item = T;
     fn next(&mut self) -> Option<T> {
-        while self.receive_buffer.peek().map(|i|i.0) != Some(self.next_index) {
+        while self.receive_buffer.peek().map(|i| i.0) != Some(self.next_index) {
             match self.receiver.recv() {
                 Ok(item) => {
                     self.receive_buffer.push(item);
@@ -43,7 +42,7 @@ impl<T> Iterator for OrdQueueIter<T> {
                 Err(_) => {
                     // Sender dropped (but continue to dump receive_buffer buffer)
                     break;
-                }
+                },
             }
         }
 

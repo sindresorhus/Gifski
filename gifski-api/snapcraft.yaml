@@ -1,0 +1,43 @@
+name: gifski
+summary: gifski
+description: |
+   GIF encoder based on libimagequant (pngquant).
+   Squeezes maximum possible quality from the awful
+   GIF format. https://gif.ski
+
+adopt-info: gifski
+base: core18
+confinement: strict
+
+apps:
+  gifski:
+    command: gifski
+    plugs:
+    - home
+    - removable-media
+
+parts:
+  gifski:
+    after:
+      - selective-checkout
+
+    source: https://github.com/ImageOptim/gifski.git
+    override-pull: |
+      snapcraftctl pull
+
+      "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout
+
+    plugin: rust
+    rust-features:
+      - openmp
+    stage-packages:
+      - libgomp1
+
+  selective-checkout:
+    plugin: nil
+    build-packages:
+    - git
+    stage-snaps:
+    - selective-checkout
+    prime:
+    - -*

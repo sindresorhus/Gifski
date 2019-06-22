@@ -1,6 +1,6 @@
-use source::*;
+use crate::source::*;
 use gifski::Collector;
-use error::*;
+use crate::error::*;
 use std::path::PathBuf;
 
 pub struct Lodecoder {

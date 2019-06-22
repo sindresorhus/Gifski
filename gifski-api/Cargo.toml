@@ -10,27 +10,28 @@ license = "AGPL-3.0+"
 name = "gifski"
 readme = "README.md"
 repository = "https://github.com/ImageOptim/gifski"
-version = "0.8.3"
+version = "0.9.0"
 autobins = false
+edition = "2018"
 
 [[bin]]
 doctest = false
 name = "gifski"
 
 [dependencies]
-clap = "2.29.0"
-error-chain = "0.11.0"
+clap = "2.32.0"
+error-chain = "0.12.0"
 gif = "0.10.0"
 gif-dispose = "2.1.1"
-glob = "0.2.11"
 imagequant = "2.11.9"
-imgref = "1.3.3"
-lodepng = "2.1.2"
+imgref = "1.3.5"
+lodepng = "2.1.5"
 pbr = "1.0.0"
-rayon = "1.0.0"
+rayon = "1.0.3"
 resize = "0.3.0"
-rgb = "0.8.7"
-wild = "1.0.1"
+rgb = "0.8.10"
+wild = "2.0"
+natord = "1.0.9"
 
 [dependencies.ffmpeg]
 optional = true
@@ -38,7 +39,7 @@ git = "https://github.com/kornelski/rust-ffmpeg.git"
 features = ["codec", "format", "filter", "software-resampling", "software-scaling", "resampling" ]
 
 [features]
-default-features = []
+default = []
 openmp = ["imagequant/openmp"]
 openmp-static = ["imagequant/openmp-static"]
 video = ["ffmpeg"]

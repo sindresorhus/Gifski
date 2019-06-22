@@ -58,10 +58,6 @@ final class GifskiWrapper {
 		self.pointer = pointer
 	}
 
-	deinit {
-		gifski_drop(pointer)
-	}
-
 	func setProgressCallback(context: UnsafeMutableRawPointer, cb: @escaping (@convention(c) (UnsafeMutableRawPointer?) -> Int32)) {
 		gifski_set_progress_callback(pointer, cb, context)
 	}
@@ -73,12 +69,12 @@ final class GifskiWrapper {
 		}
 	}
 
-	func endAddingFrames() throws {
-		try wrap { gifski_end_adding_frames(pointer) }
+	func finish() throws {
+		try wrap { gifski_finish(pointer) }
 	}
 
-	func write(path: String) throws {
-		try wrap { gifski_write(pointer, path) }
+	func setFileOutput(path: String) throws {
+		try wrap { gifski_set_file_output(pointer, path) }
 	}
 
 	private func wrap(_ fn: () -> GifskiError) throws {

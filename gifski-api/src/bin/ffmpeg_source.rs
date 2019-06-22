@@ -28,7 +28,7 @@ impl FfmpegDecoder {
         let frames = input_context.streams().best(ffmpeg::media::Type::Video).ok_or("The file has no video tracks")?.frames() as u64;
         Ok(Self {
             input_context,
-            frames
+            frames,
         })
     }
 
@@ -69,7 +69,7 @@ impl FfmpegDecoder {
             let pts = vid_frame.pts().unwrap_or(prev_pts + 1);
             let ptsf = (pts as u64 * time_base.numerator() as u64) as f64 / f64::from(time_base.denominator());
             let wanted_pts_gif = (ptsf * 100.0).ceil() as u32;
-            let delay = if wanted_pts_gif > gif_delay_pts {wanted_pts_gif - gif_delay_pts} else {2} as u16;
+            let delay = if wanted_pts_gif > gif_delay_pts { wanted_pts_gif - gif_delay_pts } else { 2 } as u16;
             gif_delay_pts += u32::from(delay);
 
             prev_pts = pts;

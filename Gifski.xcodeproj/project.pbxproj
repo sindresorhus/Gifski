@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5A7524BA20D0862200F12C99 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A7524B520D085FB00F12C99 /* libgifski.a */; };
 		6D86841721FD283B0044F6FE /* ConversionCompletedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */; };
 		6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841621FD283B0044F6FE /* DraggableFile.swift */; };
 		9F3340A322431CC3006EF9B5 /* TimeRemainingEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */; };
@@ -18,6 +17,7 @@
 		E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF122057E24700A80A18 /* CircularProgress.swift */; };
 		E317FF1C20583E9800A80A18 /* DockProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF1B20583E9800A80A18 /* DockProgress.swift */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
+		E3807B6022BE315D00388F50 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E3807B5B22BE315A00388F50 /* libgifski.a */; };
 		E3A6BD112245345C00F62256 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A6BD102245345C00F62256 /* Constants.swift */; };
 		E3A9400F2182D7BC006981D5 /* Crashlytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E3A9400D2182D7BC006981D5 /* Crashlytics.framework */; };
 		E3A940102182D7BC006981D5 /* Fabric.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E3A9400E2182D7BC006981D5 /* Fabric.framework */; };
@@ -35,26 +35,26 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		5A7524B420D085FB00F12C99 /* PBXContainerItemProxy */ = {
+		E3807B5A22BE315A00388F50 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = CA602A3EF80C27F69BFA602F;
-			remoteInfo = "gifski-staticlib";
+			remoteGlobalIDString = CA60E15ACA76538A1122A904;
+			remoteInfo = gifski;
 		};
-		5A7524B620D085FB00F12C99 /* PBXContainerItemProxy */ = {
+		E3807B5C22BE315A00388F50 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = CA602FC434891560C496C677;
-			remoteInfo = "gifski-cdylib";
+			remoteGlobalIDString = CA60F2BAC541F7CC3EDC5919;
+			remoteInfo = libgifski;
 		};
-		5A7524B820D085FB00F12C99 /* PBXContainerItemProxy */ = {
+		E3807B5E22BE315A00388F50 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = CA6090FAA71A22C7698EC3CF;
-			remoteInfo = "gifski-bin";
+			remoteGlobalIDString = CA608A209BAEAE13C0448516;
+			remoteInfo = gifski;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -109,7 +109,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5A7524BA20D0862200F12C99 /* libgifski.a in Frameworks */,
+				E3807B6022BE315D00388F50 /* libgifski.a in Frameworks */,
 				E3A9400F2182D7BC006981D5 /* Crashlytics.framework in Frameworks */,
 				E3FDC26D203F32DA00C00409 /* libresolv.tbd in Frameworks */,
 				E3A940102182D7BC006981D5 /* Fabric.framework in Frameworks */,
@@ -122,9 +122,9 @@
 		5A7524AE20D085FB00F12C99 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5A7524B520D085FB00F12C99 /* libgifski.a */,
-				5A7524B720D085FB00F12C99 /* libgifski.dylib */,
-				5A7524B920D085FB00F12C99 /* gifski */,
+				E3807B5B22BE315A00388F50 /* libgifski.a */,
+				E3807B5D22BE315A00388F50 /* libgifski.dylib */,
+				E3807B5F22BE315A00388F50 /* gifski */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -278,25 +278,25 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		5A7524B520D085FB00F12C99 /* libgifski.a */ = {
+		E3807B5B22BE315A00388F50 /* libgifski.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
 			path = libgifski.a;
-			remoteRef = 5A7524B420D085FB00F12C99 /* PBXContainerItemProxy */;
+			remoteRef = E3807B5A22BE315A00388F50 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		5A7524B720D085FB00F12C99 /* libgifski.dylib */ = {
+		E3807B5D22BE315A00388F50 /* libgifski.dylib */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.dylib";
 			path = libgifski.dylib;
-			remoteRef = 5A7524B620D085FB00F12C99 /* PBXContainerItemProxy */;
+			remoteRef = E3807B5C22BE315A00388F50 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		5A7524B920D085FB00F12C99 /* gifski */ = {
+		E3807B5F22BE315A00388F50 /* gifski */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
 			path = gifski;
-			remoteRef = 5A7524B820D085FB00F12C99 /* PBXContainerItemProxy */;
+			remoteRef = E3807B5E22BE315A00388F50 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
