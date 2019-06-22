@@ -100,22 +100,20 @@ final class Gifski {
 		}
 
 		DispatchQueue.global(qos: .utility).async {
-			let asset = AVURLAsset(url: conversion.video, options: nil)
+			let asset = AVURLAsset(
+				url: conversion.video,
+				options: [AVURLAssetPreferPreciseDurationAndTimingKey: true]
+			)
 
-			// TODO: Check if it's readable here and present error to user if not.
+			guard asset.isReadable else {
+				// This can happen if the user selects a file, and then the file becomes
+				// unavailable or deleted before the "Convert" button is clicked.
+				completionHandlerOnce(.generateFrameFailed(
+					NSError.appError(message: "The selected file is no longer readable")
+				))
+				return
+			}
 
-			Crashlytics.record(
-				key: "Conversion: Does input file exist",
-				value: conversion.video.exists
-			)
-			Crashlytics.record(
-				key: "Conversion: Is input file reachable",
-				value: try? conversion.video.checkResourceIsReachable()
-			)
-			Crashlytics.record(
-				key: "Conversion: Is input file readable",
-				value: conversion.video.isReadable
-			)
 			Crashlytics.record(
 				key: "Conversion: AVAsset debug info",
 				value: asset.debugInfo
