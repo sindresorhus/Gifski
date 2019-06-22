@@ -2315,3 +2315,9 @@ extension NSEdgeInsets {
 		return left + right
 	}
 }
+
+extension NSControl {
+	func focus() {
+		window?.makeFirstResponder(self)
+	}
+}

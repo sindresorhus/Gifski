@@ -167,6 +167,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self.frameRateLabel.stringValue = "\(frameRate)"
 			self.onFramerateChange?(frameRate)
 			self.estimateFileSize()
+			self.frameRateSlider.focus()
 		}
 
 		qualitySlider.onAction = { [weak self] _ in
@@ -176,6 +177,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 			defaults[.outputQuality] = self.qualitySlider.doubleValue
 			self.estimateFileSize()
+			self.qualitySlider.focus()
 		}
 
 		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5...30)

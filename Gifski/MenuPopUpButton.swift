@@ -24,7 +24,7 @@ final class MenuPopUpButton: NSPopUpButton, NSMenuDelegate {
 		onMenuDidClose?(selectedIndex)
 
 		if shouldFocus {
-			window?.makeFirstResponder(self)
+			focus()
 		}
 	}
 
