@@ -58,7 +58,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
-		dimensionsTypeDropdown.nextKeyView = heightTextField.nextKeyView
+		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		widthTextField.nextKeyView = heightTextField
 		heightTextField.nextKeyView = dimensionsTypeDropdown
 
