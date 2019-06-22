@@ -5,15 +5,18 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		return true
 	}
 
-	// Delta used for arrow navigation
+	/// Delta used for arrow navigation
 	var delta = 1
 
-	// Delta used for option + arrow navigation
+	/// Delta used for option + arrow navigation
 	var alternativeDelta = 10
 
+	var onValueChange: ((Int) -> Void)?
 	var onBlur: ((Int) -> Void)?
-	var onValidValueChange: ((Int) -> Void)?
 	var minMax: ClosedRange<Int>?
+	var isEmpty: Bool {
+		return stringValue.trimmingCharacters(in: .whitespaces).isEmpty
+	}
 
 	required init?(coder: NSCoder) {
 		super.init(coder: coder)
@@ -51,13 +54,27 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		let currentValue = Int(stringValue) ?? 0
 		let newValue = currentValue + delta
 		stringValue = "\(newValue)"
-		handleChangedText()
+		handleValueChange()
 
 		return true
 	}
 
 	func controlTextDidChange(_ object: Notification) {
-		handleChangedText()
+		let isInvalidButInBounds = !isValid(integerValue) && integerValue > 0 && integerValue <= (minMax?.upperBound ?? Int.max)
+
+		// For entered text we want to give a little bit more room to breathe
+		if isEmpty || isInvalidButInBounds {
+			return
+		}
+
+		handleValueChange()
+	}
+
+	private func handleValueChange() {
+		onValueChange?(integerValue)
+		if !isValid(integerValue) {
+			indicateValidationFailure()
+		}
 	}
 
 	func controlTextDidEndEditing(_ object: Notification) {
@@ -69,14 +86,6 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 
 	func indicateValidationFailure() {
 		shake(direction: .horizontal)
-	}
-
-	private func handleChangedText() {
-		if isValid(integerValue) {
-			onValidValueChange?(integerValue)
-		} else {
-			indicateValidationFailure()
-		}
 	}
 
 	private func isValid(_ value: Int) -> Bool {

@@ -191,7 +191,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
 			self?.dimensionsUpdated()
 		}
-		widthTextField.onValidValueChange = { [weak self] width in
+		widthTextField.onValueChange = { [weak self] width in
 			guard let self = self else {
 				return
 			}
@@ -203,7 +203,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self?.resizableDimensions.resize(usingHeight: CGFloat(height))
 			self?.dimensionsUpdated()
 		}
-		heightTextField.onValidValueChange = { [weak self] height in
+		heightTextField.onValueChange = { [weak self] height in
 			guard let self = self else {
 				return
 			}
