@@ -7,8 +7,7 @@ final class Gifski {
 		case invalidSettings
 		case generateFrameFailed(Swift.Error)
 		case addFrameFailed(Swift.Error)
-		case startWritingFailed(Swift.Error)
-		case finishWritingFailed(Swift.Error)
+		case writeFailed(Swift.Error)
 		case cancelled
 
 		var errorDescription: String? {
@@ -19,10 +18,8 @@ final class Gifski {
 				return "Failed to generate frame: \(error.localizedDescription)"
 			case let .addFrameFailed(error):
 				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
-			case let .startWritingFailed(error):
-				return "Failed to start writing, with underlying error: \(error.localizedDescription)"
-			case let .finishWritingFailed(error):
-				return "Failed to finish writing, with underlying error: \(error.localizedDescription)"
+			case let .writeFailed(error):
+				return "Failed to write, with underlying error: \(error.localizedDescription)"
 			case .cancelled:
 				return "The conversion was cancelled"
 			}
@@ -83,7 +80,7 @@ final class Gifski {
 		do {
 			try gifski.setFileOutput(path: conversion.output.path)
 		} catch {
-			completionHandlerOnce(.startWritingFailed(error))
+			completionHandlerOnce(.writeFailed(error))
 			return
 		}
 
@@ -170,7 +167,7 @@ final class Gifski {
 							try gifski.finish()
 							completionHandlerOnce(nil)
 						} catch {
-							completionHandlerOnce(.finishWritingFailed(error))
+							completionHandlerOnce(.writeFailed(error))
 						}
 					}
 				case .failure where result.isCancelled:
