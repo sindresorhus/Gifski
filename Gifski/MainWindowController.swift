@@ -141,11 +141,10 @@ final class MainWindowController: NSWindowController {
 		}
 
 		if asset.hasAudio && !asset.hasVideo {
-			NSAlert.showModalAndReportToCrashlytics(
+			NSAlert.showModal(
 				for: window,
 				message: "Audio files are not supported.",
-				informativeText: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video.",
-				debugInfo: asset.debugInfo
+				informativeText: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video."
 			)
 
 			return

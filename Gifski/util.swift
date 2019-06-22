@@ -266,32 +266,15 @@ extension NSAlert {
 		if let detailText = detailText {
 			if #available(macOS 10.14, *) {
 				let scrollView = NSTextView.scrollableTextView()
-				//scrollView.frame = CGRect(width: 300, height: 120)
-				scrollView.translatesAutoresizingMaskIntoConstraints = false
-				scrollView.heightAnchor.constraint(equalToConstant: 120).isActive = true
-
-				// Alternative solution
-//				scrollView.frame = CGRect(width: 300, height: 120)
-//				scrollView.onAddedToSuperview {
-//					if let messageTextField = (scrollView.superview?.superview?.subviews.first { $0 is NSTextField }) {
-//						scrollView.frame.width = messageTextField.frame.width
-//					} else {
-//						assertionFailure("Couldn't detect the message textfield view of the NSAlert panel")
-//					}
-//				}
+				scrollView.frame = CGRect(width: 300, height: 120)
 
 				scrollView.onAddedToSuperview {
 					if let messageTextField = (scrollView.superview?.superview?.subviews.first { $0 is NSTextField }) {
-						scrollView.bottomAnchor.constraint(equalTo: scrollView.superview!.bottomAnchor).isActive = true
-						scrollView.leftAnchor.constraint(equalTo: scrollView.superview!.leftAnchor).isActive = true
-						scrollView.widthAnchor.constraint(equalTo: messageTextField.widthAnchor).isActive = true
+						scrollView.frame.width = messageTextField.frame.width
+					} else {
+						assertionFailure("Couldn't detect the message textfield view of the NSAlert panel")
 					}
 				}
-
-				// FOR DEBUGGING
-				scrollView.drawsBackground = true
-				scrollView.backgroundColor = .red
-				//scrollView.frame = CGRect(width: 100, height: 100)
 
 				let textView = scrollView.documentView as! NSTextView
 				textView.drawsBackground = false
@@ -759,7 +742,7 @@ extension AVFormat: CustomStringConvertible {
 
 extension AVFormat: CustomDebugStringConvertible {
 	var debugDescription: String {
-		return "\(description) (\(fourCC))"
+		return "\(description) (\(fourCC.trimmingCharacters(in: .whitespaces)))"
 	}
 }
 
