@@ -188,12 +188,13 @@ final class ProgressCircleShapeLayer: CAShapeLayer {
 	}
 }
 
+
 /**
 Shows the indeterminate state, when it's activated.
 
 It draws part of a circle that gets animated into a looping motion around its core.
 */
-final class IndeterminateShapeLayer: CAShapeLayer {
+final class IndeterminateProgressCircleShapeLayer: CAShapeLayer {
 	convenience init(radius: Double, center: CGPoint) {
 		self.init()
 		fillColor = nil

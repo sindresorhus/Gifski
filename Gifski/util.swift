@@ -1,5 +1,6 @@
 import Cocoa
 import AVFoundation
+import class Quartz.QLPreviewPanel
 
 /**
 Convenience function for initializing an object and modifying its properties
@@ -39,7 +40,7 @@ struct Meta {
 			"body": body
 		]
 
-		URL(string: "https://github.com/sindresorhus/gifski-app/issues/new")!.addingDictionaryAsQuery(query).open()
+		URL(string: "https://github.com/sindresorhus/Gifski/issues/new")!.addingDictionaryAsQuery(query).open()
 	}
 }
 
@@ -60,43 +61,6 @@ extension NSColor {
 extension NSColor {
 	func with(alpha: Double) -> NSColor {
 		return withAlphaComponent(CGFloat(alpha))
-	}
-}
-
-
-extension NSView {
-	func pulsate(duration: TimeInterval = 2) {
-		let animation = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
-		animation.duration = duration
-		animation.fromValue = 1
-		animation.toValue = 0.9
-		animation.timingFunction = .easeInOut
-		animation.autoreverses = true
-		animation.repeatCount = .infinity
-
-		wantsLayer = true
-		layer?.add(animation, forKey: nil)
-	}
-
-	func pulsateScale(duration: TimeInterval = 1.5, scale: Double = 1.05) {
-		pulsate(duration: duration)
-
-		let multiplier = CGFloat(scale)
-
-		var tr = CATransform3DIdentity
-		tr = CATransform3DTranslate(tr, bounds.size.width / 2, bounds.size.height / 2, 0)
-		tr = CATransform3DScale(tr, multiplier, multiplier, 1)
-		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
-
-		let animation = CABasicAnimation(keyPath: #keyPath(CALayer.transform))
-		animation.toValue = NSValue(caTransform3D: tr)
-		animation.duration = duration
-		animation.timingFunction = .easeInOut
-		animation.autoreverses = true
-		animation.repeatCount = .infinity
-
-		wantsLayer = true
-		layer?.add(animation, forKey: nil)
 	}
 }
 
@@ -134,7 +98,7 @@ extension NSWindow {
 
 	static let defaultContentSize = CGSize(width: 480, height: 300)
 
-	// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/gifski-app/pull/30#discussion_r175337064
+	// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/Gifski/pull/30#discussion_r175337064
 	static var defaultContentRect: CGRect {
 		return centeredOnScreen(rect: defaultContentSize.cgRect)
 	}
@@ -531,9 +495,9 @@ extension Double {
 	//=> "0.01"
 	```
 	*/
-    var formatted: String {
-       return truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", self) : String(self)
-    }
+	var formatted: String {
+	   return truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", self) : String(self)
+	}
 }
 extension CGFloat {
 	var formatted: String {
@@ -593,7 +557,7 @@ extension AVAssetTrack {
 		let size = naturalSize.applying(preferredTransform)
 		let preferredSize = CGSize(width: abs(size.width), height: abs(size.height))
 
-		// Workaround for https://github.com/sindresorhus/gifski-app/issues/76
+		// Workaround for https://github.com/sindresorhus/Gifski/issues/76
 		guard preferredSize != .zero else {
 			return asset?.image(at: CMTime(seconds: 0, preferredTimescale: .video))?.size
 		}
@@ -632,22 +596,22 @@ extension AVAssetTrack {
 	}
 
 	/// Returns a debug string with the media format. Example: `vide/avc1`
-    var mediaFormat: String {
+	var mediaFormat: String {
 		let descriptions = formatDescriptions as! [CMFormatDescription]
 
-        var format = [String]()
-        for description in descriptions {
-            // Get string representation of media type (vide, soun, sbtl, etc.)
-            let type = CMFormatDescriptionGetMediaType(description).toString()
+		var format = [String]()
+		for description in descriptions {
+			// Get string representation of media type (vide, soun, sbtl, etc.)
+			let type = CMFormatDescriptionGetMediaType(description).toString()
 
 			// Get string representation media subtype (avc1, aac, tx3g, etc.)
-            let subType = CMFormatDescriptionGetMediaSubType(description).toString()
+			let subType = CMFormatDescriptionGetMediaSubType(description).toString()
 
-            format.append("\(type)/\(subType)")
-        }
+			format.append("\(type)/\(subType)")
+		}
 
 		return format.joined(separator: ",")
-    }
+	}
 
 	/// Estimated file size of the track in bytes.
 	var estimatedFileSize: Int {
@@ -661,18 +625,18 @@ extension AVAssetTrack {
 > FOURCC is short for "four character code" - an identifier for a video codec, compression format, color or pixel format used in media files.
 */
 extension FourCharCode {
-    /// Create a String representation of a FourCC.
-    func toString() -> String {
-        let bytes: [CChar] = [
-            CChar((self >> 24) & 0xff),
-            CChar((self >> 16) & 0xff),
-            CChar((self >> 8) & 0xff),
-            CChar(self & 0xff),
-            0
-        ]
+	/// Create a String representation of a FourCC.
+	func toString() -> String {
+		let bytes: [CChar] = [
+			CChar((self >> 24) & 0xff),
+			CChar((self >> 16) & 0xff),
+			CChar((self >> 8) & 0xff),
+			CChar(self & 0xff),
+			0
+		]
 
-        return String(cString: bytes).trimmingCharacters(in: .whitespaces)
-    }
+		return String(cString: bytes).trimmingCharacters(in: .whitespaces)
+	}
 }
 
 
@@ -2192,5 +2156,22 @@ extension BinaryFloatingPoint {
 		var divisor: Self = 1
 		for _ in 0..<decimalPlaces { divisor *= 10 }
 		return (self * divisor).rounded(rule) / divisor
+	}
+}
+
+extension QLPreviewPanel {
+	func toggle() {
+		if isVisible {
+			orderOut(nil)
+		} else {
+			makeKeyAndOrderFront(nil)
+		}
+	}
+}
+
+extension NSView {
+	/// Get the view frame in screen coordinates.
+	var boundsInScreenCoordinates: CGRect? {
+		return window?.convertToScreen(convert(bounds, to: nil))
 	}
 }

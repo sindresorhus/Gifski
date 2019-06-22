@@ -1,5 +1,6 @@
 import Cocoa
 import AVFoundation
+import UserNotifications
 import StoreKit
 import Crashlytics
 
@@ -22,7 +23,7 @@ final class MainWindowController: NSWindowController {
 
 	private lazy var timeRemainingLabel = with(Label()) {
 		$0.isHidden = true
-		$0.textColor = NSColor.secondaryLabelColor
+		$0.textColor = .secondaryLabelColor
 		$0.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
 	}
 
@@ -155,7 +156,7 @@ final class MainWindowController: NSWindowController {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video file is not supported.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
+				informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
 				debugInfo: asset.debugInfo
 			)
 
@@ -166,7 +167,7 @@ final class MainWindowController: NSWindowController {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video metadata is not readable.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
+				informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
 				debugInfo: asset.debugInfo
 			)
 
@@ -181,7 +182,7 @@ final class MainWindowController: NSWindowController {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video dimensions must be at least 10×10.",
-				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/gifski-app or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
+				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
 				debugInfo: asset.debugInfo
 			)
 
@@ -267,6 +268,14 @@ final class MainWindowController: NSWindowController {
 				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
 					SKStoreReviewController.requestReview()
 				}
+
+				if #available(macOS 10.14, *), !NSApp.isActive || self.window?.isVisible == false {
+					let notification = UNMutableNotificationContent()
+					notification.title = "Conversion Completed"
+					notification.subtitle = outputUrl.filename
+					let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
+					UNUserNotificationCenter.current().add(request)
+				}
 			}
 		}
 	}
@@ -309,7 +318,7 @@ extension MainWindowController: NSMenuItemValidation {
 		case #selector(open)?:
 			return !isRunning
 		default:
-			return validateMenuItem(menuItem)
+			return true
 		}
 	}
 }

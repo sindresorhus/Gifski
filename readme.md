@@ -23,6 +23,11 @@ Requires macOS 10.13 or later.
 [![](https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/macappstore-lrg.svg)](https://itunes.apple.com/no/app/gifski/id1351639930?mt=12)
 
 
+## System service
+
+Gifski includes a [system service](https://www.computerworld.com/article/2476298/os-x-a-quick-guide-to-services-on-your-mac.html) that lets you quickly convert a video to GIF from the **Services** menu in any app that provides a compatible video file.
+
+
 ## Screenshots
 
 <img src="Stuff/screenshot.jpg" width="918" height="413">
@@ -48,17 +53,13 @@ xcode-select --install
 - [DockProgress](https://github.com/sindresorhus/DockProgress) - Show progress in your app's Dock icon
 
 
-## Links
-
-- [More Swift packages by me](https://github.com/search?q=user%3Asindresorhus+language%3Aswift)
-
-
 ## Maintainers
 
 - [Sindre Sorhus](https://github.com/sindresorhus)
 - [Kornel Lesiński](https://github.com/kornelski)
 - [Lars-Jørgen Kristiansen](https://github.com/LarsJK)
 - [Boy van Amstel](https://github.com/boyvanamstel)
+- [Łukasz Mróz](https://github.com/sunshinejr)
 
 
 ## License
