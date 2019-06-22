@@ -23,13 +23,17 @@ Requires macOS 10.13 or later.
 [![](https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/macappstore-lrg.svg)](https://itunes.apple.com/no/app/gifski/id1351639930?mt=12)
 
 
-## Resizing GIF using keyboard
+## Features
 
-Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.
-
-## System service
+### System service
 
 Gifski includes a [system service](https://www.computerworld.com/article/2476298/os-x-a-quick-guide-to-services-on-your-mac.html) that lets you quickly convert a video to GIF from the **Services** menu in any app that provides a compatible video file.
+
+### Change GIF dimensions with the keyboard
+
+<img src="https://user-images.githubusercontent.com/170270/59964494-b8519f00-952b-11e9-8d16-47c8bc103a61.gif" width="226" height="80" align="right">
+
+In the width/height input fields in the save panel, press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.
 
 
 ## Screenshots

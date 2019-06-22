@@ -8,7 +8,14 @@ final class Tooltip: NSPopover {
 		return Defaults.Key<Int>("__Tooltip__\(identifier)", default: 0)
 	}
 
-	init(identifier: String, text: String, showOnlyOnce: Bool = false, closeOnClick: Bool = true, contentInsets: NSEdgeInsets = .init(all: 10.0), maxWidth: Double? = nil) {
+	init(
+		identifier: String,
+		text: String,
+		showOnlyOnce: Bool = false,
+		closeOnClick: Bool = true,
+		contentInsets: NSEdgeInsets = .init(all: 15),
+		maxWidth: Double? = nil
+	) {
 		self.identifier = identifier
 		self.showOnlyOnce = showOnlyOnce
 		super.init()
@@ -28,14 +35,23 @@ final class Tooltip: NSPopover {
 		show(relativeTo: positioningView.bounds, of: positioningView, preferredEdge: preferredEdge)
 	}
 
-	override func show(relativeTo positioningRect: CGRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
+	override func show(
+		relativeTo positioningRect: CGRect,
+		of positioningView: NSView,
+		preferredEdge: NSRectEdge
+	) {
 		if !showOnlyOnce || (showOnlyOnce && defaults[showKey] < 1) {
 			defaults[showKey] += 1
 			super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
 		}
 	}
 
-	private func setupContent(text: String, closeOnClick: Bool, contentInsets: NSEdgeInsets, maxWidth: Double?) {
+	private func setupContent(
+		text: String,
+		closeOnClick: Bool,
+		contentInsets: NSEdgeInsets,
+		maxWidth: Double?
+	) {
 		contentViewController = ToolTipViewController(text: text, contentInsets: contentInsets, maxWidth: maxWidth) { [weak self] in
 			if closeOnClick {
 				self?.close()
@@ -46,14 +62,19 @@ final class Tooltip: NSPopover {
 }
 
 fileprivate final class ToolTipViewController: NSViewController {
-	fileprivate var text: String
-	fileprivate var contentInsets: NSEdgeInsets
+	fileprivate let text: String
+	fileprivate let contentInsets: NSEdgeInsets
 	fileprivate var maxWidth: Double?
 	fileprivate var onClick: (() -> Void)?
 
 	private lazy var clickRecognizer = NSClickGestureRecognizer(target: self, action: #selector(didClick))
 
-	init(text: String, contentInsets: NSEdgeInsets, maxWidth: Double?, onClick: (() -> Void)?) {
+	init(
+		text: String,
+		contentInsets: NSEdgeInsets,
+		maxWidth: Double?,
+		onClick: (() -> Void)?
+	) {
 		self.text = text
 		self.contentInsets = contentInsets
 		self.maxWidth = maxWidth

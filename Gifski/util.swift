@@ -71,7 +71,7 @@ extension NSView {
 		let animation = CAKeyframeAnimation(keyPath: "transform.translation.\(translation)")
 		animation.timingFunction = .linear
 		animation.duration = duration
-		animation.values = [-5.0, 5.0, -2.5, 2.5, 0.0 ]
+		animation.values = [-5, 5, -2.5, 2.5, 0]
 		layer?.add(animation, forKey: nil)
 	}
 }

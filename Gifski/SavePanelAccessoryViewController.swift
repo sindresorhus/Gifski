@@ -36,7 +36,13 @@ final class SavePanelAccessoryViewController: NSViewController {
 	private var predefinedSizes: [PredefinedSizeItem]!
 
 	private let formatter = ByteCountFormatter()
-	private let tooltip = Tooltip(identifier: "tooltipOptionArrowsShown", text: "Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.", showOnlyOnce: true, maxWidth: 250.0)
+
+	private let tooltip = Tooltip(
+		identifier: "savePanelArrowKeys",
+		text: "Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.",
+		showOnlyOnce: true,
+		maxWidth: 300
+	)
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -51,7 +57,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	override func viewWillAppear() {
 		super.viewWillAppear()
 
-		// Hack to enlarge extended save panel frame. Original frame: {841,481}
+		// Hack to enlarge extended save panel frame. Original frame: `{841,481}`
 		UserDefaults.standard.set("{841, 681}", forKey: "NSNavPanelExpandedSizeForSaveMode")
 	}
 
@@ -67,25 +73,52 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 	private func setupDimensions() {
 		let minimumScale: CGFloat = 0.01
-		let maximumScale: CGFloat = 1.0
+		let maximumScale: CGFloat = 1
 		let dimensions = Dimensions(type: .pixels, value: videoMetadata.dimensions)
-		resizableDimensions = ResizableDimensions(dimensions: dimensions, minimumScale: minimumScale, maximumScale: maximumScale)
 
-		var pixelCommonSizes: [CGFloat] = [960.0, 800.0, 640.0, 500.0, 480.0, 320.0, 256.0, 200.0, 160.0, 128.0, 80.0, 64.0]
+		resizableDimensions = ResizableDimensions(
+			dimensions: dimensions,
+			minimumScale: minimumScale,
+			maximumScale: maximumScale
+		)
+
+		var pixelCommonSizes: [CGFloat] = [
+			960,
+			800,
+			640,
+			500,
+			480,
+			320,
+			256,
+			200,
+			160,
+			128,
+			80,
+			64
+		]
+
 		if !pixelCommonSizes.contains(dimensions.value.width) {
 			pixelCommonSizes.append(dimensions.value.width)
 			pixelCommonSizes.sort(by: >)
 		}
+
 		let pixelDimensions = pixelCommonSizes.map { width -> CGSize in
 			let ratio = width / dimensions.value.width
 			let height = dimensions.value.height * ratio
 			return CGSize(width: width, height: height)
 		}
+
 		let predefinedPixelDimensions = pixelDimensions
 			.filter { resizableDimensions.validate(newSize: $0) }
 			.map { resizableDimensions.resized(to: $0) }
 
-		let percentCommonSizes: [CGFloat] = [50.0, 33.0, 25.0, 20.0]
+		let percentCommonSizes: [CGFloat] = [
+			50,
+			33,
+			25,
+			20
+		]
+
 		let predefinedPercentDimensions = percentCommonSizes
 			.map {
 				resizableDimensions.changed(dimensionsType: .percent)
@@ -116,6 +149,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		predefinedSizesDropdown.onMenuWillOpen = { [weak self] in
 			self?.predefinedSizesDropdown.item(at: 0)?.title = "Custom"
 		}
+
 		predefinedSizesDropdown.onMenuDidClose = { [weak self] selectedIndex in
 			guard let self = self else {
 				return
@@ -123,11 +157,11 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 			let oldOrNewSelectedIndex = selectedIndex ?? self.predefinedSizesDropdown.indexOfSelectedItem
 			if let size = self.predefinedSizes?[safe: oldOrNewSelectedIndex], case .custom = size {
-				// we don't care if it's newly selected index or not - if it's custom, set its size
+				// We don't care if it's newly selected index or not, if it's custom, set its size
 				self.updateSelectedItemAsCustomWithSize()
 			} else if let index = selectedIndex, let size = self.predefinedSizes?[safe: index],
 				case .dimensions(let dimensions) = size {
-				// but we care if it's newly selected index for dimensions, we don't want to recalculate
+				// But we care if it's newly selected index for dimensions, we don't want to recalculate
 				// if we don't have to
 				self.resizableDimensions.change(dimensionsType: dimensions.currentDimensions.type)
 				self.resizableDimensions.resize(to: dimensions.currentDimensions.value)
@@ -139,8 +173,12 @@ final class SavePanelAccessoryViewController: NSViewController {
 		dimensionsTypeDropdown.addItems(withTitles: DimensionsType.allCases.map { $0.rawValue })
 
 		dimensionsTypeDropdown.onMenuDidClose = { [weak self] selectedIndex in
-			guard let self = self, let index = selectedIndex, let item = self.dimensionsTypeDropdown.item(at: index),
-				let dimensionsType = DimensionsType(rawValue: item.title) else {
+			guard
+				let self = self,
+				let index = selectedIndex,
+				let item = self.dimensionsTypeDropdown.item(at: index),
+				let dimensionsType = DimensionsType(rawValue: item.title)
+			else {
 				return
 			}
 
@@ -149,11 +187,12 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self.updateTextFieldsMinMax()
 		}
 
-		if resizableDimensions.currentDimensions.value.width > 640.0 {
+		if resizableDimensions.currentDimensions.value.width > 640 {
 			predefinedSizesDropdown.selectItem(at: 3)
 		} else {
 			predefinedSizesDropdown.selectItem(at: 2)
 		}
+
 		dimensionsUpdated()
 	}
 
@@ -191,6 +230,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
 			self?.dimensionsUpdated()
 		}
+
 		widthTextField.onValueChange = { [weak self] width in
 			guard let self = self else {
 				return
@@ -199,10 +239,12 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self.resizableDimensions.resize(usingWidth: CGFloat(width))
 			self.dimensionsUpdated()
 		}
+
 		heightTextField.onBlur = { [weak self] height in
 			self?.resizableDimensions.resize(usingHeight: CGFloat(height))
 			self?.dimensionsUpdated()
 		}
+
 		heightTextField.onValueChange = { [weak self] height in
 			guard let self = self else {
 				return
@@ -211,6 +253,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 			self.resizableDimensions.resize(usingHeight: CGFloat(height))
 			self.dimensionsUpdated()
 		}
+
 		updateTextFieldsMinMax()
 	}
 
@@ -245,6 +288,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 	private func selectPredefinedSizeBasedOnCurrentDimensions() {
 		// First reset the state
 		predefinedSizesDropdown.selectItem(at: NSNotFound)
+
 		// Check if we can select predefined option that has the same dimensions settings
 		if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
 			predefinedSizesDropdown.selectItem(at: index)

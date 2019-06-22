@@ -9,7 +9,7 @@ final class MenuPopUpButton: NSPopUpButton, NSMenuDelegate {
 	var onMenuDidClose: ((_ selectedIndex: Int?) -> Void)?
 	var onMenuWillOpen: (() -> Void)?
 
-	/// If true it will regain focus once the menu has been touched
+	/// If true, it will regain focus once the menu has been touched
 	var shouldFocus = true
 
 	private var currentlySelectedIndex: Int?
@@ -20,7 +20,7 @@ final class MenuPopUpButton: NSPopUpButton, NSMenuDelegate {
 	}
 
 	func menuDidClose(_ menu: NSMenu) {
-		let selectedIndex: Int? = currentlySelectedIndex != indexOfSelectedItem ? indexOfSelectedItem : nil
+		let selectedIndex = currentlySelectedIndex != indexOfSelectedItem ? indexOfSelectedItem : nil
 		onMenuDidClose?(selectedIndex)
 
 		if shouldFocus {

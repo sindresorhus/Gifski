@@ -55,8 +55,8 @@ final class ResizableDimensions: Copyable {
 		self.originalDimensions = dimensions.rounded()
 		self.currentDimensions = self.originalDimensions
 		self.minimumScale = minimumScale ?? 0.01
-		self.maximumScale = maximumScale ?? 1.0
-		self.currentScale = 1.0
+		self.maximumScale = maximumScale ?? 1
+		self.currentScale = 1
 	}
 
 	init(instance: ResizableDimensions) {
@@ -146,7 +146,7 @@ final class ResizableDimensions: Copyable {
 	private func multiplier(for type: DimensionsType) -> CGSize {
 		switch type {
 		case .percent:
-			return CGSize(width: 100.0, height: 100.0)
+			return CGSize(width: 100, height: 100)
 		case .pixels:
 			return originalDimensions.value
 		}

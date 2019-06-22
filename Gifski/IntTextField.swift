@@ -74,6 +74,7 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		if !isValid(integerValue) {
 			indicateValidationFailure()
 		}
+
 		onValueChange?(integerValue)
 	}
 
@@ -81,6 +82,7 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		if !isValid(integerValue) {
 			indicateValidationFailure()
 		}
+
 		onBlur?(integerValue)
 	}
 
