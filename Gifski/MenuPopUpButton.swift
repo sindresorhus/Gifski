@@ -20,11 +20,12 @@ final class MenuPopUpButton: NSPopUpButton, NSMenuDelegate {
 	}
 
 	func menuDidClose(_ menu: NSMenu) {
+		let selectedIndex: Int? = currentlySelectedIndex != indexOfSelectedItem ? indexOfSelectedItem : nil
+		onMenuDidClose?(selectedIndex)
+
 		if shouldFocus {
 			window?.makeFirstResponder(self)
 		}
-		let selectedIndex: Int? = currentlySelectedIndex != indexOfSelectedItem ? indexOfSelectedItem : nil
-		onMenuDidClose?(selectedIndex)
 	}
 
 	func menuWillOpen(_ menu: NSMenu) {
