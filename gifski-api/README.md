@@ -12,9 +12,9 @@ It's a CLI tool, but it can also be compiled [as a C library](https://docs.rs/gi
 
 See [releases](https://github.com/ImageOptim/gifski/releases) page for executables.
 
-If you have [Rust](https://www.rust-lang.org/install.html), you can also get it with [`cargo install gifski`](https://crates.rs/crates/gifski). Run `cargo build --release --features=openmp` to build from source.
+If you have [Rust](https://www.rust-lang.org/install.html) 1.31+, you can also get it with [`cargo install gifski`](https://crates.rs/crates/gifski). Run `cargo build --release --features=openmp` to build from source.
 
-If you have [Homebrew](https://brew.sh/), you can also get it with `brew install gifski`. Add the `--with-openmp` to make it run faster.
+If you have [Homebrew](https://brew.sh/), you can also get it with `brew install gifski`.
 
 ## Usage
 
@@ -36,7 +36,7 @@ See `gifski -h` for more options.
 
 ## Building
 
-1. [Install Rust](https://www.rust-lang.org/en-US/install.html)
+1. [Install Rust via rustup](https://www.rust-lang.org/en-US/install.html) or run `rustup update`. This project only supports up-to-date versions of Rust. You may get compile errors, warnings about "unstable edition", etc. if you don't run `rustup update` regularly.
 2. Clone the repository: `git clone https://github.com/ImageOptim/gifski`
 3. In the cloned directory, run: `cargo build --release`
 
@@ -56,7 +56,7 @@ and link with `target/release/libgifski.a`. Please observe the [LICENSE](LICENSE
 
 AGPL 3 or later. Let [me](https://kornel.ski/contact) know if you'd like to use it in a product incompatible with this license. I can offer alternative licensing options, including [commercial licenses](https://supso.org/projects/pngquant).
 
-### With built-in video support
+## With built-in video support
 
 The tool optionally supports decoding video directly, but unfortunately it relies on ffmpeg 3.x, which may be *very hard* to get working, so it's not enabled by default.
 
@@ -69,3 +69,25 @@ When compiled with video support [ffmpeg licenses](https://www.ffmpeg.org/legal.
 ```sh
 gifski -o out.gif video.mp4
 ```
+
+## Cross-compilation for iOS
+
+Make sure you have Rust installed via [rustup](https://rustup.rs/). Run once:
+
+```sh
+rustup target add aarch64-apple-ios
+```
+
+and then to build the library:
+
+```sh
+cargo build --lib --release --target=aarch64-apple-ios
+```
+
+The build will print "dropping unsupported crate type `cdylib`". This is normal and expected.
+
+This will create a static library in `./target/aarch64-apple-ios/release/libgifski.a`. You can add this library to your Xcode project.
+
+You can also [use `cargo lipo` command](https://lib.rs/crates/cargo-lipo) to integrate with Xcode project to have it built automatically.
+
+

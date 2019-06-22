@@ -7,7 +7,6 @@ final class Gifski {
 		case invalidSettings
 		case generateFrameFailed(Swift.Error)
 		case addFrameFailed(Swift.Error)
-		case endAddingFramesFailed(Swift.Error)
 		case writeFailed(Swift.Error)
 		case cancelled
 
@@ -19,10 +18,8 @@ final class Gifski {
 				return "Failed to generate frame: \(error.localizedDescription)"
 			case let .addFrameFailed(error):
 				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
-			case let .endAddingFramesFailed(error):
-				return "Failed to end adding frames, with underlying error: \(error.localizedDescription)"
 			case let .writeFailed(error):
-				return "Failed to write to output, with underlying error: \(error.localizedDescription)"
+				return "Failed to write, with underlying error: \(error.localizedDescription)"
 			case .cancelled:
 				return "The conversion was cancelled"
 			}
@@ -77,6 +74,13 @@ final class Gifski {
 
 		guard let gifski = GifskiWrapper(settings: settings) else {
 			completionHandlerOnce(.invalidSettings)
+			return
+		}
+
+		do {
+			try gifski.setFileOutput(path: conversion.output.path)
+		} catch {
+			completionHandlerOnce(.writeFailed(error))
 			return
 		}
 
@@ -160,9 +164,10 @@ final class Gifski {
 
 					if result.isFinished {
 						do {
-							try gifski.endAddingFrames()
+							try gifski.finish()
+							completionHandlerOnce(nil)
 						} catch {
-							completionHandlerOnce(.endAddingFramesFailed(error))
+							completionHandlerOnce(.writeFailed(error))
 						}
 					}
 				case .failure where result.isCancelled:
@@ -170,20 +175,6 @@ final class Gifski {
 				case let .failure(error):
 					completionHandlerOnce(.generateFrameFailed(error))
 				}
-			}
-
-			do {
-				try gifski.write(path: conversion.output.path)
-				completionHandlerOnce(nil)
-			} catch {
-				// TODO: Figure out how to not get a write error when the process was simply cancelled.
-				// To reproduce, remove the guard-statement, and try cancelling at 80-95%.
-				guard !progress.isCancelled else {
-					completionHandlerOnce(.cancelled)
-					return
-				}
-
-				completionHandlerOnce(.writeFailed(error))
 			}
 		}
 	}
