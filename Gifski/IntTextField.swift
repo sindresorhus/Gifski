@@ -71,10 +71,10 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 	}
 
 	private func handleValueChange() {
-		onValueChange?(integerValue)
 		if !isValid(integerValue) {
 			indicateValidationFailure()
 		}
+		onValueChange?(integerValue)
 	}
 
 	func controlTextDidEndEditing(_ object: Notification) {
