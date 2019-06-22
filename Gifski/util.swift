@@ -222,8 +222,8 @@ extension NSView {
 		}
 	}
 
-	// Enables you do add contraints and do other initialization without having to subclass the view.
 	// TODO: Please show me a better way to achieve this than using an invisible view 🙏
+	/// Enables you do add contraints and do other initialization without having to subclass the view.
 	func onAddedToSuperview(_ closure: @escaping () -> Void) {
 		let view = AddedToSuperviewObserverView()
 		view.onAdded = closure
@@ -266,6 +266,9 @@ extension NSAlert {
 		if let detailText = detailText {
 			if #available(macOS 10.14, *) {
 				let scrollView = NSTextView.scrollableTextView()
+
+				// We're setting the frame manually here as it's impossible to use auto-layout,
+				// since it has nothing to constrain to. This will eventually be rewritten in SwiftUI anyway.
 				scrollView.frame = CGRect(width: 300, height: 120)
 
 				scrollView.onAddedToSuperview {
