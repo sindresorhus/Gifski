@@ -200,7 +200,36 @@ extension NSWindowController: NSWindowDelegate {
 }
 
 
+extension NSView {
+	private final class AddedToSuperviewObserverView: NSView {
+		var onAdded: (() -> Void)?
 
+		override var acceptsFirstResponder: Bool {
+			return false
+		}
+
+		convenience init() {
+			self.init(frame: .zero)
+		}
+
+		override func viewDidMoveToWindow() {
+			guard window != nil else {
+				return
+			}
+
+			onAdded?()
+			removeFromSuperview()
+		}
+	}
+
+	// TODO: Please show me a better way to achieve this than using an invisible view 🙏
+	/// Enables you do add contraints and do other initialization without having to subclass the view.
+	func onAddedToSuperview(_ closure: @escaping () -> Void) {
+		let view = AddedToSuperviewObserverView()
+		view.onAdded = closure
+		addSubview(view)
+	}
+}
 
 extension NSAlert {
 	/// Show an alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
@@ -209,11 +238,13 @@ extension NSAlert {
 		for window: NSWindow? = nil,
 		message: String,
 		informativeText: String? = nil,
+		detailText: String? = nil,
 		style: NSAlert.Style = .warning
 	) -> NSApplication.ModalResponse {
 		return NSAlert(
 			message: message,
 			informativeText: informativeText,
+			detailText: detailText,
 			style: style
 		).runModal(for: window)
 	}
@@ -221,6 +252,7 @@ extension NSAlert {
 	convenience init(
 		message: String,
 		informativeText: String? = nil,
+		detailText: String? = nil,
 		style: NSAlert.Style = .warning
 	) {
 		self.init()
@@ -229,6 +261,35 @@ extension NSAlert {
 
 		if let informativeText = informativeText {
 			self.informativeText = informativeText
+		}
+
+		if let detailText = detailText {
+			if #available(macOS 10.14, *) {
+				let scrollView = NSTextView.scrollableTextView()
+
+				// We're setting the frame manually here as it's impossible to use auto-layout,
+				// since it has nothing to constrain to. This will eventually be rewritten in SwiftUI anyway.
+				scrollView.frame = CGRect(width: 300, height: 120)
+
+				scrollView.onAddedToSuperview {
+					if let messageTextField = (scrollView.superview?.superview?.subviews.first { $0 is NSTextField }) {
+						scrollView.frame.width = messageTextField.frame.width
+					} else {
+						assertionFailure("Couldn't detect the message textfield view of the NSAlert panel")
+					}
+				}
+
+				let textView = scrollView.documentView as! NSTextView
+				textView.drawsBackground = false
+				textView.isEditable = false
+				textView.font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+				textView.textColor = .secondaryLabelColor
+				textView.string = detailText
+
+				self.accessoryView = scrollView
+			} else {
+				self.informativeText += "\n\(detailText)"
+			}
 		}
 	}
 
@@ -684,7 +745,7 @@ extension AVFormat: CustomStringConvertible {
 
 extension AVFormat: CustomDebugStringConvertible {
 	var debugDescription: String {
-		return "\(description) (\(fourCC))"
+		return "\(description) (\(fourCC.trimmingCharacters(in: .whitespaces)))"
 	}
 }
 
@@ -1971,6 +2032,7 @@ extension Dictionary {
 				for: window,
 				message: message,
 				informativeText: informativeText,
+				detailText: debugInfo,
 				style: style
 			)
 		}

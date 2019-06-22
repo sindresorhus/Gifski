@@ -141,11 +141,10 @@ final class MainWindowController: NSWindowController {
 		}
 
 		if asset.hasAudio && !asset.hasVideo {
-			NSAlert.showModalAndReportToCrashlytics(
+			NSAlert.showModal(
 				for: window,
 				message: "Audio files are not supported.",
-				informativeText: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video.",
-				debugInfo: asset.debugInfo
+				informativeText: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video."
 			)
 
 			return
@@ -156,7 +155,7 @@ final class MainWindowController: NSWindowController {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video file is not supported.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)",
+				informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
 				debugInfo: asset.debugInfo
 			)
 
@@ -167,7 +166,7 @@ final class MainWindowController: NSWindowController {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video metadata is not readable.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)",
+				informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
 				debugInfo: asset.debugInfo
 			)
 
@@ -182,7 +181,7 @@ final class MainWindowController: NSWindowController {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video dimensions must be at least 10×10.",
-				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\(asset.debugInfo)",
+				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
 				debugInfo: asset.debugInfo
 			)
 
