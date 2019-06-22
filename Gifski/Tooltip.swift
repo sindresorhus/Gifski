@@ -41,7 +41,7 @@ final class Tooltip: NSPopover {
 				self?.close()
 			}
 		}
-		behavior = closeOnClick ? .transient : .applicationDefined
+		behavior = closeOnClick ? .semitransient : .applicationDefined
 	}
 }
 
