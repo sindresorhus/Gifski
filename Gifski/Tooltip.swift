@@ -1,56 +1,24 @@
 import AppKit
 
 final class Tooltip: NSPopover {
-	struct ShowBehavior {
-		enum Option {
-			case always
-			case once
-		}
+	private let identifier: String
+	private let showOnlyOnce: Bool
 
-		static func always(identifier: String) -> ShowBehavior {
-			return .init(identifier: identifier, option: .always)
-		}
-
-		static func once(identifier: String) -> ShowBehavior {
-			return .init(identifier: identifier, option: .once)
-		}
-
-		let identifier: String
-		let option: Option
-
-		private var key: Defaults.Key<Int> {
-			return Defaults.Key<Int>("__Tooltip__\(identifier)", default: 0)
-		}
-
-		private var showCount: Int {
-			return defaults[key]
-		}
-
-		var canShow: Bool {
-			switch option {
-			case .always:
-				return true
-			case .once:
-				return showCount < 1
-			}
-		}
-
-		func didShow() {
-			defaults[key] += 1
-		}
+	private var showKey: Defaults.Key<Int> {
+		return Defaults.Key<Int>("__Tooltip__\(identifier)", default: 0)
 	}
 
-	private let showBehavior: ShowBehavior
-
-	init(text: String, showBehavior: ShowBehavior, closeOnClick: Bool = true, contentInsets: NSEdgeInsets = .init(all: 10.0), maxWidth: Double? = nil) {
-		self.showBehavior = showBehavior
+	init(identifier: String, text: String, showOnlyOnce: Bool = false, closeOnClick: Bool = true, contentInsets: NSEdgeInsets = .init(all: 10.0), maxWidth: Double? = nil) {
+		self.identifier = identifier
+		self.showOnlyOnce = showOnlyOnce
 		super.init()
 
 		setupContent(text: text, closeOnClick: closeOnClick, contentInsets: contentInsets, maxWidth: maxWidth)
 	}
 
 	required init?(coder: NSCoder) {
-		self.showBehavior = .always(identifier: UUID().uuidString)
+		self.identifier = UUID().uuidString
+		self.showOnlyOnce = false
 		super.init(coder: coder)
 
 		setupContent(text: "", closeOnClick: true, contentInsets: .zero, maxWidth: nil)
@@ -61,8 +29,8 @@ final class Tooltip: NSPopover {
 	}
 
 	override func show(relativeTo positioningRect: CGRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
-		if showBehavior.canShow {
-			showBehavior.didShow()
+		if !showOnlyOnce || (showOnlyOnce && defaults[showKey] < 1) {
+			defaults[showKey] += 1
 			super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
 		}
 	}
