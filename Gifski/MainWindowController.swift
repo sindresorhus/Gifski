@@ -46,7 +46,7 @@ final class MainWindowController: NSWindowController {
 					self.circularProgress.resetProgress()
 					DockProgress.resetProgress()
 
-					if progress.isFinished {
+					if progress.isFinished, !progress.isCancelled {
 						self.conversionCompletedView.fileUrl = self.outUrl
 						self.conversionCompletedView.show()
 						self.videoDropView.isDropLabelHidden = true
@@ -242,29 +242,24 @@ final class MainWindowController: NSWindowController {
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			let conversion = Gifski.Conversion(
-				input: inputUrl,
-				output: outputUrl,
+				video: inputUrl,
 				quality: defaults[.outputQuality],
 				dimensions: self.choosenDimensions,
 				frameRate: self.choosenFrameRate
 			)
 
-			Gifski.run(conversion) { error in
+			Gifski.run(conversion) { result in
+				do {
+					try result.get().write(to: outputUrl, options: [.atomic])
+				} catch Gifski.Error.cancelled {
+					self.progress?.cancel()
+				} catch {
+					self.progress?.cancel()
+					self.presentError(error, modalFor: self.window)
+				}
+
 				self.progress?.unpublish()
 				self.isRunning = false
-
-				if let error = error {
-					self.progress?.cancel()
-
-					switch error {
-					case .cancelled:
-						break
-					default:
-						self.presentError(error, modalFor: self.window)
-					}
-
-					return
-				}
 
 				defaults[.successfulConversionsCount] += 1
 				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
