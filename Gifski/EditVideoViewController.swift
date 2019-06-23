@@ -62,7 +62,7 @@ final class EditVideoViewController: NSViewController {
 
     @IBAction private func convert(_ sender: Any) {
 		let conversion = Gifski.Conversion(
-			input: inputUrl,
+			video: inputUrl,
 			quality: defaults[.outputQuality],
 			dimensions: resizableDimensions.currentDimensions.value,
 			frameRate: frameRateSlider.integerValue

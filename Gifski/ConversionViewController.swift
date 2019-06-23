@@ -65,7 +65,7 @@ final class ConversionViewController: NSViewController {
 					self.progress?.cancel()
 				} catch {
 					self.progress?.cancel()
-					self.presentError(error, modalFor: self.window)
+					self.presentError(error, modalFor: self.view.window)
 				}
 
 				try? outputUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
@@ -77,7 +77,7 @@ final class ConversionViewController: NSViewController {
 					SKStoreReviewController.requestReview()
 				}
 
-				if #available(macOS 10.14, *), !NSApp.isActive || self.view.swindow?.isVisible == false {
+				if #available(macOS 10.14, *), !NSApp.isActive || self.view.window?.isVisible == false {
 					let notification = UNMutableNotificationContent()
 					notification.title = "Conversion Completed"
 					notification.subtitle = outputUrl.filename
