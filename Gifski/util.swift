@@ -2398,7 +2398,6 @@ extension URL {
 	}
 
 	func setMetadata<T>(key: MetadataKey, value: T) throws {
-		let attributes = ExtendedAttributes(url: self)
 		try attributes.set("com.apple.metadata:\(key.attributeKey)", value: value)
 	}
 }

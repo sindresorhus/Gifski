@@ -258,7 +258,7 @@ final class MainWindowController: NSWindowController {
 					self.presentError(error, modalFor: self.window)
 				}
 
-				self.addGifskiMetadata(to: outputUrl)
+				try? url.setMetadata(key: .itemCreator, value: "\(App.name) \(App.versionWithBuild)")
 				self.progress?.unpublish()
 				self.isRunning = false
 
@@ -307,10 +307,6 @@ final class MainWindowController: NSWindowController {
 			timeRemainingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 			timeRemainingLabel.topAnchor.constraint(equalTo: circularProgress.bottomAnchor)
 		])
-	}
-
-	private func addGifskiMetadata(to url: URL) {
-		try? url.setMetadata(key: .itemCreator, value: "\(App.name) \(App.versionWithBuild)")
 	}
 }
 
