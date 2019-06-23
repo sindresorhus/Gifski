@@ -97,7 +97,7 @@ class SSView: NSView {
 
 extension NSWindow {
 	// Helper
-	private static func centeredOnScreen(rect: CGRect) -> CGRect {
+	fileprivate static func centeredOnScreen(rect: CGRect) -> CGRect {
 		guard let screen = NSScreen.main else {
 			return rect
 		}
@@ -2381,5 +2381,22 @@ extension NSEdgeInsets {
 extension NSControl {
 	func focus() {
 		window?.makeFirstResponder(self)
+	}
+}
+
+extension NSViewController {
+	func push(viewController: NSViewController, completion: (() -> Void)? = nil) {
+		let newWindowFrame = NSWindow.centeredOnScreen(rect: viewController.view.frame)
+
+		let animation = CABasicAnimation()
+		animation.toValue = newWindowFrame
+		animation.duration = 1.0
+
+		NSAnimationContext.runAnimationGroup({ _ in
+			self.view.window?.animator().setFrame(newWindowFrame, display: true)
+		}, completionHandler: {
+			self.view.window?.contentViewController = viewController
+			completion?()
+		})
 	}
 }
