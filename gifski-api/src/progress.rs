@@ -36,10 +36,8 @@ impl ProgressReporter for NoProgress {
 }
 
 impl ProgressReporter for ProgressCallback {
-    fn increase(&mut self)-> bool {
-        unsafe {
-            (self.callback)(self.arg) == 1
-        }
+    fn increase(&mut self) -> bool {
+        unsafe { (self.callback)(self.arg) == 1 }
     }
     fn done(&mut self, _msg: &str) {}
 }

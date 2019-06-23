@@ -1,36 +1,31 @@
-#![cfg_attr(feature = "malloc", feature(alloc_system, global_allocator, allocator_api))]
-
 #[cfg(feature = "malloc")]
-extern crate alloc_system;
-#[cfg(feature = "malloc")]
-use alloc_system::System;
+use std::alloc::System;
 
 #[cfg(feature = "malloc")]
 #[cfg_attr(feature = "malloc", global_allocator)]
 static A: System = System;
 
-extern crate gifski;
+use gifski;
 #[macro_use] extern crate clap;
 #[macro_use] extern crate error_chain;
 
 #[cfg(feature = "video")]
 extern crate ffmpeg;
-extern crate imgref;
-extern crate rgb;
-extern crate rayon;
-extern crate wild;
+
+use wild;
+use natord;
 
 #[cfg(feature = "video")]
 mod ffmpeg_source;
 mod png;
 mod source;
-use source::*;
+use crate::source::*;
 
 use gifski::progress::{NoProgress, ProgressBar, ProgressReporter};
 
 mod error;
-use error::*;
-use error::ResultExt;
+use crate::error::*;
+use crate::error::ResultExt;
 
 use clap::{App, Arg, AppSettings};
 
@@ -91,6 +86,9 @@ fn bin_main() -> BinResult<()> {
                         .arg(Arg::with_name("once")
                             .long("once")
                             .help("Do not loop the GIF"))
+                        .arg(Arg::with_name("nosort")
+                            .long("nosort")
+                            .help("Use files exactly in the order given, rather than sorted"))
                         .arg(Arg::with_name("quiet")
                             .long("quiet")
                             .help("Do not show a progress bar"))
@@ -100,9 +98,14 @@ fn bin_main() -> BinResult<()> {
                             .empty_values(false)
                             .use_delimiter(false)
                             .required(true))
-                        .get_matches_from(wild::args());
+                        .get_matches_from(wild::args_os());
 
-    let frames: Vec<_> = matches.values_of_os("FRAMES").ok_or("Missing files")?.map(|p| PathBuf::from(p)).collect();
+    let mut frames: Vec<_> = matches.values_of("FRAMES").ok_or("Missing files")?.collect();
+    if !matches.is_present("nosort") {
+        frames.sort_by(|a, b| natord::compare(a, b));
+    }
+    let frames: Vec<_> = frames.into_iter().map(|s| PathBuf::from(s)).collect();
+
     let output_path = Path::new(matches.value_of_os("output").ok_or("Missing output")?);
     let settings = gifski::Settings {
         width: parse_opt(matches.value_of("width")).chain_err(|| "Invalid width")?,
@@ -132,7 +135,7 @@ fn bin_main() -> BinResult<()> {
         Box::new(png::Lodecoder::new(frames, fps))
     };
 
-    let mut progress: Box<ProgressReporter> = if quiet {
+    let mut progress: Box<dyn ProgressReporter> = if quiet {
         Box::new(NoProgress {})
     } else {
         let mut pb = ProgressBar::new(decoder.total_frames());
@@ -171,7 +174,7 @@ fn check_if_path_exists(path: &Path) -> BinResult<()> {
     }
 }
 
-fn parse_opt<T: ::std::str::FromStr<Err=::std::num::ParseIntError>>(s: Option<&str>) -> BinResult<Option<T>> {
+fn parse_opt<T: ::std::str::FromStr<Err = ::std::num::ParseIntError>>(s: Option<&str>) -> BinResult<Option<T>> {
     match s {
         Some(s) => Ok(Some(s.parse()?)),
         None => Ok(None),
@@ -184,7 +187,7 @@ fn get_video_decoder(path: &Path) -> BinResult<Box<Source + Send>> {
 }
 
 #[cfg(not(feature = "video"))]
-fn get_video_decoder(_: &Path) -> BinResult<Box<Source + Send>> {
+fn get_video_decoder(_: &Path) -> BinResult<Box<dyn Source + Send>> {
     Err(r"Video support is permanently disabled in this executable.
 
 To enable video decoding you need to recompile gifski from source with:
@@ -194,4 +197,3 @@ Alternatively, use ffmpeg command to export PNG frames, and then specify
 the PNG files as input for this executable.
 ")?
 }
-

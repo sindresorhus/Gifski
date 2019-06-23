@@ -58,31 +58,26 @@ final class ConversionViewController: NSViewController {
 		timeRemainingEstimator.start()
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
-			Gifski.run(conversion) { error in
+			Gifski.run(conversion) { result in
+				do {
+					try result.get().write(to: outputUrl, options: [.atomic])
+				} catch Gifski.Error.cancelled {
+					self.progress?.cancel()
+				} catch {
+					self.progress?.cancel()
+					self.presentError(error, modalFor: self.window)
+				}
+
+				try? outputUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
 				self.progress?.unpublish()
 				self.isRunning = false
 
-				if let error = error {
-					self.progress?.cancel()
-
-					switch error {
-					case .cancelled:
-						break
-					default:
-						self.presentError(error, modalFor: self.view.window)
-					}
-
-					return
-				}
-
-				self.conversionCompleted()
-				
 				defaults[.successfulConversionsCount] += 1
 				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
 					SKStoreReviewController.requestReview()
 				}
 
-				if #available(macOS 10.14, *), !NSApp.isActive || self.view.window?.isVisible == false {
+				if #available(macOS 10.14, *), !NSApp.isActive || self.view.swindow?.isVisible == false {
 					let notification = UNMutableNotificationContent()
 					notification.title = "Conversion Completed"
 					notification.subtitle = outputUrl.filename

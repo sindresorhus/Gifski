@@ -17,15 +17,11 @@
 */
 #![doc(html_logo_url = "https://gif.ski/icon.png")]
 
-extern crate rgb;
-extern crate gif;
-extern crate imgref;
-extern crate imagequant;
-extern crate resize;
-extern crate lodepng;
-extern crate gif_dispose;
-extern crate rayon;
-extern crate pbr;
+use gif;
+use imagequant;
+use resize;
+use lodepng;
+use gif_dispose;
 
 #[macro_use] extern crate error_chain;
 use gif::*;
@@ -34,11 +30,11 @@ use imgref::*;
 use imagequant::*;
 
 mod error;
-pub use error::*;
+pub use crate::error::*;
 mod ordqueue;
-use ordqueue::*;
+use crate::ordqueue::*;
 pub mod progress;
-use progress::*;
+use crate::progress::*;
 pub mod c_api;
 
 use std::path::PathBuf;
@@ -100,14 +96,17 @@ enum WriteInitState<W: Write> {
 pub fn new(settings: Settings) -> CatResult<(Collector, Writer)> {
     let (queue, queue_iter) = ordqueue::new(4);
 
-    Ok((Collector {
-        queue,
-        width: settings.width,
-        height: settings.height,
-    }, Writer {
-        queue_iter: Some(queue_iter),
-        settings,
-    }))
+    Ok((
+        Collector {
+            queue,
+            width: settings.width,
+            height: settings.height,
+        },
+        Writer {
+            queue_iter: Some(queue_iter),
+            settings,
+        },
+    ))
 }
 
 impl Collector {
@@ -118,7 +117,7 @@ impl Collector {
     }
 
     /// Read and decode a PNG file from disk. Frame index starts at 0. Frame delay is in GIF units (1/100s)
-    pub fn add_frame_png_file(&mut self, frame_index: usize,  path: PathBuf, delay: u16) -> CatResult<()> {
+    pub fn add_frame_png_file(&mut self, frame_index: usize, path: PathBuf, delay: u16) -> CatResult<()> {
         let width = self.width;
         let height = self.height;
         let image = lodepng::decode32_file(&path)
@@ -130,14 +129,14 @@ impl Collector {
     fn resized_binary_alpha(mut image: ImgVec<RGBA8>, width: Option<u32>, height: Option<u32>) -> ImgVec<RGBA8> {
         if let Some(width) = width {
             if image.width() != image.stride() {
-                let mut contig = Vec::with_capacity(image.width()*image.height());
+                let mut contig = Vec::with_capacity(image.width() * image.height());
                 contig.extend(image.rows().flat_map(|r| r.iter().cloned()));
                 image = ImgVec::new(contig, image.width(), image.height());
             }
             let dst_width = (width as usize).min(image.width());
             let dst_height = height.map(|h| (h as usize).min(image.height())).unwrap_or(image.height() * dst_width / image.width());
             let mut r = resize::new(image.width(), image.height(), dst_width, dst_height, resize::Pixel::RGBA, resize::Type::Lanczos3);
-            let mut dst = vec![RGBA::new(0,0,0,0); dst_width * dst_height];
+            let mut dst = vec![RGBA::new(0, 0, 0, 0); dst_width * dst_height];
             r.resize(image.buf.as_bytes(), dst.as_bytes_mut());
             image = ImgVec::new(dst, dst_width, dst_height)
         }
@@ -156,7 +155,7 @@ impl Collector {
         for (y, row) in image.rows_mut().enumerate() {
             for (x, px) in row.iter_mut().enumerate() {
                 if px.a < 255 {
-                    px.a = if px.a < DITHER[(y&7) * 8 + (x&7)] {0} else {255};
+                    px.a = if px.a < DITHER[(y & 7) * 8 + (x & 7)] { 0 } else { 255 };
                 }
             }
         }
@@ -166,13 +165,12 @@ impl Collector {
 
 /// Encode collected frames
 impl Writer {
-
     /// `importance_map` is computed from previous and next frame.
     /// Improves quality of pixels visible for longer.
     /// Avoids wasting palette on pixels identical to the background.
     ///
     /// `background` is the previous frame.
-    fn quantize(image: ImgRef<RGBA8>, importance_map: &[u8], background: Option<ImgRef<RGBA8>>, settings: &Settings) -> CatResult<(ImgVec<u8>, Vec<RGBA8>)> {
+    fn quantize(image: ImgRef<'_, RGBA8>, importance_map: &[u8], background: Option<ImgRef<'_, RGBA8>>, settings: &Settings) -> CatResult<(ImgVec<u8>, Vec<RGBA8>)> {
         let mut liq = Attributes::new();
         if settings.fast {
             liq.set_speed(10);
@@ -188,7 +186,7 @@ impl Writer {
         if let Some(bg) = background {
             img.set_background(liq.new_image(bg.buf, bg.width(), bg.height(), 0.)?)?;
         }
-        img.add_fixed_color(RGBA8::new(0,0,0,0));
+        img.add_fixed_color(RGBA8::new(0, 0, 0, 0));
         let mut res = liq.quantize(&img)?;
         res.set_dithering_level(0.5);
 
@@ -198,7 +196,7 @@ impl Writer {
         Ok((Img::new(pal_img, img.width(), img.height()), pal))
     }
 
-    fn write_frames<W: Write + Send>(write_queue_iter: OrdQueueIter<Arc<GIFFrame>>, outfile: W, settings: &Settings, reporter: &mut ProgressReporter) -> CatResult<()> {
+    fn write_frames<W: Write + Send>(write_queue_iter: OrdQueueIter<Arc<GIFFrame>>, outfile: W, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         let mut enc = WriteInitState::Uninit(outfile);
 
         for f in write_queue_iter {
@@ -253,7 +251,7 @@ impl Writer {
     /// `outfile` can be any writer, such as `File` or `&mut Vec`.
     ///
     /// `ProgressReporter.increase()` is called each time a new frame is being written.
-    pub fn write<W: Write + Send>(mut self, outfile: W, reporter: &mut ProgressReporter) -> CatResult<()> {
+    pub fn write<W: Write + Send>(mut self, outfile: W, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         let (write_queue, write_queue_iter) = ordqueue::new(4);
         let queue_iter = self.queue_iter.take().unwrap();
         let settings = self.settings.clone();
@@ -266,7 +264,7 @@ impl Writer {
     }
 
     fn make_frames(queue_iter: OrdQueueIter<DecodedImage>, mut write_queue: OrdQueue<Arc<GIFFrame>>, settings: &Settings) -> CatResult<()> {
-        let mut decode_iter = queue_iter.enumerate().map(|(i,tmp)| tmp.map(|(image, delay)|(i,image,delay)));
+        let mut decode_iter = queue_iter.enumerate().map(|(i, tmp)| tmp.map(|(image, delay)| (i, image, delay)));
 
         let mut screen = None;
         let mut curr_frame = if let Some(a) = decode_iter.next() {
@@ -300,18 +298,18 @@ impl Writer {
 
                 debug_assert_eq!(next.width(), image.width());
                 importance_map.clear();
-                importance_map.extend(next.rows().zip(image.rows()).flat_map(|(n,curr)| n.iter().cloned().zip(curr.iter().cloned())).map(|(n,curr)| {
+                importance_map.extend(next.rows().zip(image.rows()).flat_map(|(n, curr)| n.iter().cloned().zip(curr.iter().cloned())).map(|(n, curr)| {
                     if n.a < curr.a {
                         dispose = gif::DisposalMethod::Background;
                     }
                     // Even if next frame completely overwrites it, it's still somewhat important to display current one
                     // but pixels that will stay unchanged should have higher quality
-                    255 - (colordiff(n,curr) / (255*255*6/170)) as u8
+                    255 - (colordiff(n, curr) / (255 * 255 * 6 / 170)) as u8
                 }));
             };
 
             if screen.is_none() {
-                screen = Some(gif_dispose::Screen::new(image.width(), image.height(), RGBA8::new(0,0,0,0), None));
+                screen = Some(gif_dispose::Screen::new(image.width(), image.height(), RGBA8::new(0, 0, 0, 0), None));
             }
             let screen = screen.as_mut().unwrap();
 
@@ -342,7 +340,7 @@ impl Writer {
             }
 
             let (image8, image8_pal) = {
-                let bg = if has_prev_frame {Some(screen.pixels.as_ref())} else {None};
+                let bg = if has_prev_frame { Some(screen.pixels.as_ref()) } else { None };
                 Self::quantize(image.as_ref(), &importance_map, bg, settings)?
             };
 
@@ -366,9 +364,9 @@ impl Writer {
 #[inline]
 fn colordiff(a: RGBA8, b: RGBA8) -> u32 {
     if a.a == 0 || b.a == 0 {
-        return 255*255*6;
+        return 255 * 255 * 6;
     }
     (i32::from(a.r as i16 - b.r as i16) * i32::from(a.r as i16 - b.r as i16)) as u32 * 2 +
-    (i32::from(a.g as i16 - b.g as i16) * i32::from(a.g as i16 - b.g as i16)) as u32 * 3 +
-    (i32::from(a.b as i16 - b.b as i16) * i32::from(a.b as i16 - b.b as i16)) as u32
+        (i32::from(a.g as i16 - b.g as i16) * i32::from(a.g as i16 - b.g as i16)) as u32 * 3 +
+        (i32::from(a.b as i16 - b.b as i16) * i32::from(a.b as i16 - b.b as i16)) as u32
 }

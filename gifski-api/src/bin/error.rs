@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use gifski;
 use std::io;
 use std::num;
@@ -8,7 +10,6 @@ use ffmpeg;
 mod ffmpeg {
     pub use ::std::fmt::Error;
 }
-
 
 error_chain! {
     types {

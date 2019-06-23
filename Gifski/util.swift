@@ -966,9 +966,9 @@ extension NSView {
 		view.center(inView: superview!)
 	}
 
-	func pinToSuperview(insets: NSEdgeInsets = .zero) {
+	func constrainEdgesToSuperview(with insets: NSEdgeInsets = .zero) {
 		guard let superview = superview else {
-			assertionFailure("There is no superview for this view so we cannot pin it.")
+			assertionFailure("There is no superview for this view")
 			return
 		}
 
@@ -2361,26 +2361,61 @@ extension FloatingPoint {
 // swiftlint:enable all
 
 extension NSEdgeInsets {
-	static var zero: NSEdgeInsets {
-		return NSEdgeInsetsZero
+	static let zero = NSEdgeInsetsZero
+
+	init(
+		top: Double = 0,
+		left: Double = 0,
+		bottom: Double = 0,
+		right: Double = 0
+	) {
+		self.init()
+		self.top = CGFloat(top)
+		self.left = CGFloat(left)
+		self.bottom = CGFloat(bottom)
+		self.right = CGFloat(right)
 	}
 
-	init(all: CGFloat) {
-		self.init(top: all, left: all, bottom: all, right: all)
+	init(all: Double) {
+		self.init(
+			top: all,
+			left: all,
+			bottom: all,
+			right: all
+		)
 	}
 
-	var vertical: CGFloat {
-		return top + bottom
+	var vertical: Double {
+		return Double(top + bottom)
 	}
 
-	var horizontal: CGFloat {
-		return left + right
+	var horizontal: Double {
+		return Double(left + right)
 	}
 }
 
 extension NSControl {
 	func focus() {
 		window?.makeFirstResponder(self)
+	}
+}
+
+
+extension URL {
+	enum MetadataKey {
+		/// The app used to create the file, for example, `Gifski 2.0.0`, `QuickTime Player 10.5`, etc.
+		case itemCreator
+
+		var attributeKey: String {
+			switch self {
+			case .itemCreator:
+				return kMDItemCreator as String
+			}
+		}
+	}
+
+	func setMetadata<T>(key: MetadataKey, value: T) throws {
+		try attributes.set("com.apple.metadata:\(key.attributeKey)", value: value)
 	}
 }
 

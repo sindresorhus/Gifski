@@ -94,12 +94,17 @@ fileprivate final class ToolTipViewController: NSViewController {
 		textField.isSelectable = false
 
 		if let maxWidth = maxWidth {
-			let newSize = textField.sizeThatFits(NSSize(width: CGFloat(maxWidth) - contentInsets.horizontal, height: .greatestFiniteMagnitude))
+			let newSize = textField.sizeThatFits(
+				CGSize(
+					width: CGFloat(maxWidth - contentInsets.horizontal),
+					height: .greatestFiniteMagnitude
+				)
+			)
 			textField.constrain(to: newSize)
 		}
 
 		wrapperView.addSubview(textField)
-		textField.pinToSuperview(insets: contentInsets)
+		textField.constrainEdgesToSuperview(with: contentInsets)
 
 		view = wrapperView
 	}

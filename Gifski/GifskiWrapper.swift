@@ -52,39 +52,59 @@ final class GifskiWrapper {
 
 	init?(settings: GifskiSettings) {
 		var settings = settings
+
 		guard let pointer = gifski_new(&settings) else {
 			return nil
 		}
+
 		self.pointer = pointer
-	}
-
-	deinit {
-		gifski_drop(pointer)
-	}
-
-	func setProgressCallback(context: UnsafeMutableRawPointer, cb: @escaping (@convention(c) (UnsafeMutableRawPointer?) -> Int32)) {
-		gifski_set_progress_callback(pointer, cb, context)
-	}
-
-	// swiftlint:disable:next function_parameter_count
-	func addFrameARGB(index: UInt32, width: UInt32, bytesPerRow: UInt32, height: UInt32, pixels: UnsafePointer<UInt8>, delay: UInt16) throws {
-		try wrap {
-			gifski_add_frame_argb(pointer, index, width, bytesPerRow, height, pixels, delay)
-		}
-	}
-
-	func endAddingFrames() throws {
-		try wrap { gifski_end_adding_frames(pointer) }
-	}
-
-	func write(path: String) throws {
-		try wrap { gifski_write(pointer, path) }
 	}
 
 	private func wrap(_ fn: () -> GifskiError) throws {
 		let result = fn()
+
 		guard result == GIFSKI_OK else {
 			throw GifskiWrapperError(rawValue: result.rawValue) ?? .other
 		}
+	}
+
+	func setProgressCallback(
+		context: UnsafeMutableRawPointer,
+		callback: @escaping (@convention(c) (UnsafeMutableRawPointer?) -> Int32)
+	) {
+		gifski_set_progress_callback(pointer, callback, context)
+	}
+
+	func setWriteCallback(
+		context: UnsafeMutableRawPointer,
+		callback: (@convention(c) (Int, UnsafePointer<UInt8>?, UnsafeMutableRawPointer?) -> Int32)?
+	) {
+		gifski_set_write_callback(pointer, callback, context)
+	}
+
+	// swiftlint:disable:next function_parameter_count
+	func addFrameARGB(
+		index: UInt32,
+		width: UInt32,
+		bytesPerRow: UInt32,
+		height: UInt32,
+		pixels: UnsafePointer<UInt8>,
+		delay: UInt16
+	) throws {
+		try wrap {
+			gifski_add_frame_argb(
+				pointer,
+				index,
+				width,
+				bytesPerRow,
+				height,
+				pixels,
+				delay
+			)
+		}
+	}
+
+	func finish() throws {
+		try wrap { gifski_finish(pointer) }
 	}
 }
