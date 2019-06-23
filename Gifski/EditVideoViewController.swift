@@ -1,7 +1,7 @@
 import Cocoa
 import AVKit
 
-final class SavePanelAccessoryViewController: NSViewController {
+final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {
 		case custom
 		case spacer
