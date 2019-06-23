@@ -29,7 +29,6 @@ final class EditVideoViewController: NSViewController {
 
 	var inputUrl: URL!
 	var videoMetadata: AVURLAsset.VideoMetadata!
-	var onDimensionChange: ((CGSize) -> Void)?
 	var onFramerateChange: ((Int) -> Void)?
 
 	private var resizableDimensions: ResizableDimensions!
@@ -61,7 +60,19 @@ final class EditVideoViewController: NSViewController {
 		setupWidthAndHeightTextFields()
 	}
 
-	override func viewWillAppear() {
+    @IBAction private func convert(_ sender: Any) {
+		let conversion = Gifski.Conversion(
+			input: inputUrl,
+			quality: defaults[.outputQuality],
+			dimensions: resizableDimensions.currentDimensions.value,
+			frameRate: frameRateSlider.integerValue
+		)
+
+		let convert = ConversionViewController(conversion: conversion)
+        push(viewController: convert)
+    }
+
+    override func viewWillAppear() {
 		super.viewWillAppear()
 
 		// Hack to enlarge extended save panel frame. Original frame: `{841,481}`
@@ -77,6 +88,8 @@ final class EditVideoViewController: NSViewController {
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 	}
+
+
 
 	private func setupDimensions() {
 		let minimumScale: CGFloat = 0.01
@@ -211,7 +224,6 @@ final class EditVideoViewController: NSViewController {
 
 			let frameRate = self.frameRateSlider.integerValue
 			self.frameRateLabel.stringValue = "\(frameRate)"
-			self.onFramerateChange?(frameRate)
 			self.estimateFileSize()
 		}
 
@@ -275,7 +287,6 @@ final class EditVideoViewController: NSViewController {
 		updateDimensionsDisplay()
 		estimateFileSize()
 		selectPredefinedSizeBasedOnCurrentDimensions()
-		onDimensionChange?(resizableDimensions.currentDimensions.value)
 	}
 
 	private func estimateFileSize() {
