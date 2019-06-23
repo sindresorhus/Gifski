@@ -12,6 +12,7 @@
 		6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841621FD283B0044F6FE /* DraggableFile.swift */; };
 		8548806522B78E8300E97401 /* IntTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806422B78E8300E97401 /* IntTextField.swift */; };
 		8548806E22B82D1400E97401 /* MenuPopUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806D22B82D1300E97401 /* MenuPopUpButton.swift */; };
+		858380E622BFD0E30086BC98 /* DropVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858380E522BFD0E30086BC98 /* DropVideoViewController.swift */; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
 		85B9CF6422BD3FA00050A2E4 /* Tooltip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */; };
 		9F3340A322431CC3006EF9B5 /* TimeRemainingEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */; };
@@ -33,8 +34,8 @@
 		E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */; };
 		E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* util.swift */; };
 		E3D72324229B9A7500989BDF /* CircularProgress+CheckmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D72323229B9A7500989BDF /* CircularProgress+CheckmarkView.swift */; };
-		E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */; };
-		E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */; };
+		E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */; };
+		E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */; };
 		E3FDC26D203F32DA00C00409 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD61A6201BD3640087160A /* libresolv.tbd */; };
 /* End PBXBuildFile section */
 
@@ -81,6 +82,7 @@
 		6D86841621FD283B0044F6FE /* DraggableFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = DraggableFile.swift; sourceTree = "<group>"; usesTabs = 1; };
 		8548806422B78E8300E97401 /* IntTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = IntTextField.swift; sourceTree = "<group>"; usesTabs = 1; };
 		8548806D22B82D1300E97401 /* MenuPopUpButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MenuPopUpButton.swift; sourceTree = "<group>"; usesTabs = 1; };
+		858380E522BFD0E30086BC98 /* DropVideoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropVideoViewController.swift; sourceTree = "<group>"; };
 		8588EB0C22A424B800030A59 /* ResizableDimensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ResizableDimensions.swift; sourceTree = "<group>"; usesTabs = 1; };
 		85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Tooltip.swift; sourceTree = "<group>"; usesTabs = 1; };
 		9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = TimeRemainingEstimator.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -105,8 +107,8 @@
 		E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = VideoDropView.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3D08F6D1E5D7BFD00F465DF /* util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = util.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3D72323229B9A7500989BDF /* CircularProgress+CheckmarkView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+CheckmarkView.swift"; sourceTree = "<group>"; usesTabs = 1; };
-		E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = SavePanelAccessoryViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
-		E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SavePanelAccessoryViewController.xib; sourceTree = "<group>"; };
+		E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = EditVideoViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = EditVideoViewController.xib; sourceTree = "<group>"; };
 		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; usesTabs = 1; };
 		E3FD61A4201BD2DA0087160A /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = "<group>"; };
 		E3FD61A6201BD3640087160A /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
@@ -196,8 +198,9 @@
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
 				E3A6BD102245345C00F62256 /* Constants.swift */,
 				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
-				E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */,
-				E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */,
+				E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */,
+				E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */,
+				858380E522BFD0E30086BC98 /* DropVideoViewController.swift */,
 				E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */,
 				6D86841621FD283B0044F6FE /* DraggableFile.swift */,
 				6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */,
@@ -320,7 +323,7 @@
 			files = (
 				E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */,
 				E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */,
-				E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */,
+				E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */,
 				E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -382,9 +385,10 @@
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
 				8548806522B78E8300E97401 /* IntTextField.swift in Sources */,
 				E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */,
-				E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */,
+				E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */,
 				6D86841721FD283B0044F6FE /* ConversionCompletedView.swift in Sources */,
 				B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */,
+				858380E622BFD0E30086BC98 /* DropVideoViewController.swift in Sources */,
 				8548806E22B82D1400E97401 /* MenuPopUpButton.swift in Sources */,
 				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
