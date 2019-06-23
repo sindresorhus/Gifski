@@ -310,9 +310,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private func addGifskiMetadata(to url: URL) {
-		let app = "\"\(App.name) \(App.versionWithBuild)\""
-		let itemCreatorKey = kMDItemCreator as String
-		setxattr(url.path, "com.apple.metadata:\(itemCreatorKey)", app, strlen(app), 0, 0)
+		try? url.setMetadata(key: .itemCreator, value: "\(App.name) \(App.versionWithBuild)")
 	}
 }
 

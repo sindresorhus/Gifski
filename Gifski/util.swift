@@ -2383,3 +2383,21 @@ extension NSControl {
 		window?.makeFirstResponder(self)
 	}
 }
+
+extension URL {
+	enum MetadataKey {
+		case itemCreator
+
+		var attributeKey: String {
+			switch self {
+			case .itemCreator:
+				return kMDItemCreator as String
+			}
+		}
+	}
+
+	func setMetadata<T>(key: MetadataKey, value: T) throws {
+		let attributes = ExtendedAttributes(url: self)
+		try attributes.set("com.apple.metadata:\(key.attributeKey)", value: value)
+	}
+}
