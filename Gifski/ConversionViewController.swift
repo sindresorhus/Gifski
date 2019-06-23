@@ -75,6 +75,8 @@ final class ConversionViewController: NSViewController {
 					return
 				}
 
+				self.conversionCompleted()
+				
 				defaults[.successfulConversionsCount] += 1
 				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
 					SKStoreReviewController.requestReview()
@@ -93,5 +95,11 @@ final class ConversionViewController: NSViewController {
 
 	private func cancelConversion() {
 		progress?.cancel()
+	}
+
+	private func conversionCompleted() {
+		DockProgress.resetProgress()
+//		let conversionCompleted = ConversionCompletedViewController()
+//		push(viewController: conversionCompleted)
 	}
 }
