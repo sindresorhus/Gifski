@@ -258,7 +258,7 @@ final class MainWindowController: NSWindowController {
 					self.presentError(error, modalFor: self.window)
 				}
 
-				try? url.setMetadata(key: .itemCreator, value: "\(App.name) \(App.versionWithBuild)")
+				try? inputUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.versionWithBuild)")
 				self.progress?.unpublish()
 				self.isRunning = false
 
