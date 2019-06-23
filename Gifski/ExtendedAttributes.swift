@@ -13,7 +13,7 @@ extension POSIXError {
 	let length = getxattr(fileSystemPath, name, nil, 0, 0, 0)
 
 	guard length >= 0 else {
-	throw POSIXError(errno: errno)
+		throw POSIXError(errno: errno)
 	}
 	```
 	*/
@@ -126,7 +126,7 @@ final class ExtendedAttributes {
 		}
 	}
 
-	/// Get all the extended attribute names
+	/// Get all the extended attribute names.
 	func all() throws -> [String] {
 		try checkIfFileURL()
 
