@@ -72,6 +72,9 @@ extension AppDelegate {
 			return
 		}
 
-//		mainWindowController.convert(url)
+		let dropVideo = DropVideoViewController()
+		mainWindowController.window?.contentViewController?.push(viewController: dropVideo, completion: {
+			dropVideo.convert(url)
+		})
 	}
 }
