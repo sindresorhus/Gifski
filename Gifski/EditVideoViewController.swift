@@ -44,6 +44,13 @@ final class EditVideoViewController: NSViewController {
 		maxWidth: 300
 	)
 
+	convenience init(inputUrl: URL, videoMetadata: AVURLAsset.VideoMetadata) {
+		self.init()
+
+		self.inputUrl = inputUrl
+		self.videoMetadata = videoMetadata
+	}
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
