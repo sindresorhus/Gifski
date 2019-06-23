@@ -2386,6 +2386,7 @@ extension NSControl {
 
 extension URL {
 	enum MetadataKey {
+		/// The app used to create the file, for example, "Word", "QuickTime", etc.
 		case itemCreator
 
 		var attributeKey: String {
