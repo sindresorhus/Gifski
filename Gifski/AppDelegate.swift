@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.servicesProvider = self
 
 		if urlsToConvertOnLaunch != nil {
-			mainWindowController.convert(urlsToConvertOnLaunch)
+//			mainWindowController.convert(urlsToConvertOnLaunch)
 		}
 	}
 
@@ -48,7 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
 		if hasFinishedLaunching {
-			mainWindowController.convert(videoUrl)
+//			mainWindowController.convert(videoUrl)
 		} else {
 			// This method is called before `applicationDidFinishLaunching`,
 			// so we buffer it up a video is "Open with" this app
@@ -74,6 +74,6 @@ extension AppDelegate {
 			return
 		}
 
-		mainWindowController.convert(url)
+//		mainWindowController.convert(url)
 	}
 }

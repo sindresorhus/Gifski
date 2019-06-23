@@ -21,37 +21,37 @@ final class MainWindowController: NSWindowController {
 		$0.isHidden = true
 	}
 
-	private var accessoryViewController: SavePanelAccessoryViewController!
-	private var choosenDimensions: CGSize?
-	private var choosenFrameRate: Int?
+//	private var accessoryViewController: SavePanelAccessoryViewController!
+//	private var choosenDimensions: CGSize?
+//	private var choosenFrameRate: Int?
 
-	private var outUrl: URL!
+//	private var outUrl: URL!
 
-	var isRunning: Bool = false {
-		didSet {
-			videoDropView.isHidden = isRunning
-
-			if let progress = progress, !isRunning {
-				circularProgress.fadeOut(delay: 1) {
-					self.circularProgress.resetProgress()
-					DockProgress.resetProgress()
-
-					if progress.isFinished {
-						self.conversionCompletedView.fileUrl = self.outUrl
-						self.conversionCompletedView.show()
-						self.videoDropView.isDropLabelHidden = true
-					} else {
-						self.videoDropView.isHidden = false
-						self.videoDropView.fadeInVideoDropLabel()
-					}
-				}
-			} else {
-				circularProgress.isHidden = false
-				videoDropView.isDropLabelHidden = true
-				conversionCompletedView.isHidden = true
-			}
-		}
-	}
+	var isRunning: Bool = false //{
+//		didSet {
+//			videoDropView.isHidden = isRunning
+//
+//			if let progress = progress, !isRunning {
+//				circularProgress.fadeOut(delay: 1) {
+//					self.circularProgress.resetProgress()
+//					DockProgress.resetProgress()
+//
+//					if progress.isFinished {
+//						self.conversionCompletedView.fileUrl = self.outUrl
+//						self.conversionCompletedView.show()
+//						self.videoDropView.isDropLabelHidden = true
+//					} else {
+//						self.videoDropView.isHidden = false
+//						self.videoDropView.fadeInVideoDropLabel()
+//					}
+//				}
+//			} else {
+//				circularProgress.isHidden = false
+//				videoDropView.isDropLabelHidden = true
+//				conversionCompletedView.isHidden = true
+//			}
+//		}
+//	}
 
 	convenience init() {
 		let window = NSWindow.centeredWindow(size: .zero)
@@ -76,12 +76,11 @@ final class MainWindowController: NSWindowController {
 			$0.makeVibrant()
 		}
 
-		view?.addSubview(circularProgress)
-		view?.addSubview(timeRemainingLabel)
-		view?.addSubview(videoDropView, positioned: .above, relativeTo: nil)
-		view?.addSubview(conversionCompletedView, positioned: .above, relativeTo: nil)
+//		view?.addSubview(circularProgress)
+//		view?.addSubview(timeRemainingLabel)
+//		view?.addSubview(conversionCompletedView, positioned: .above, relativeTo: nil)
 
-		setupTimeRemainingLabel()
+//		setupTimeRemainingLabel()
 
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
@@ -93,74 +92,74 @@ final class MainWindowController: NSWindowController {
 	/// Reference: https://stackoverflow.com/a/42440020
 	@objc
 	func cancel(_ sender: Any?) {
-		cancelConversion()
+//		cancelConversion()
 	}
 
 	private var progress: Progress?
 	private lazy var timeRemainingEstimator = TimeRemainingEstimator(label: timeRemainingLabel)
 
-	func startConversion(inputUrl: URL, outputUrl: URL) {
-		guard !isRunning else {
-			return
-		}
+//	func startConversion(inputUrl: URL, outputUrl: URL) {
+//		guard !isRunning else {
+//			return
+//		}
+//
+//		outUrl = outputUrl
+//
+//		isRunning = true
+//
+//		progress = Progress(totalUnitCount: 1)
+//		progress?.publish()
+//
+//		circularProgress.progressInstance = progress
+//		DockProgress.progressInstance = progress
+//		timeRemainingEstimator.progress = progress
+//		timeRemainingEstimator.start()
+//
+//		progress?.performAsCurrent(withPendingUnitCount: 1) {
+//			let conversion = Gifski.Conversion(
+//				input: inputUrl,
+//				output: outputUrl,
+//				quality: defaults[.outputQuality],
+//				dimensions: self.choosenDimensions,
+//				frameRate: self.choosenFrameRate
+//			)
+//
+//			Gifski.run(conversion) { error in
+//				self.progress?.unpublish()
+//				self.isRunning = false
+//
+//				if let error = error {
+//					self.progress?.cancel()
+//
+//					switch error {
+//					case .cancelled:
+//						break
+//					default:
+//						self.presentError(error, modalFor: self.window)
+//					}
+//
+//					return
+//				}
+//
+//				defaults[.successfulConversionsCount] += 1
+//				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
+//					SKStoreReviewController.requestReview()
+//				}
+//
+//				if #available(macOS 10.14, *), !NSApp.isActive || self.window?.isVisible == false {
+//					let notification = UNMutableNotificationContent()
+//					notification.title = "Conversion Completed"
+//					notification.subtitle = outputUrl.filename
+//					let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
+//					UNUserNotificationCenter.current().add(request)
+//				}
+//			}
+//		}
+//	}
 
-		outUrl = outputUrl
-
-		isRunning = true
-
-		progress = Progress(totalUnitCount: 1)
-		progress?.publish()
-
-		circularProgress.progressInstance = progress
-		DockProgress.progressInstance = progress
-		timeRemainingEstimator.progress = progress
-		timeRemainingEstimator.start()
-
-		progress?.performAsCurrent(withPendingUnitCount: 1) {
-			let conversion = Gifski.Conversion(
-				input: inputUrl,
-				output: outputUrl,
-				quality: defaults[.outputQuality],
-				dimensions: self.choosenDimensions,
-				frameRate: self.choosenFrameRate
-			)
-
-			Gifski.run(conversion) { error in
-				self.progress?.unpublish()
-				self.isRunning = false
-
-				if let error = error {
-					self.progress?.cancel()
-
-					switch error {
-					case .cancelled:
-						break
-					default:
-						self.presentError(error, modalFor: self.window)
-					}
-
-					return
-				}
-
-				defaults[.successfulConversionsCount] += 1
-				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
-					SKStoreReviewController.requestReview()
-				}
-
-				if #available(macOS 10.14, *), !NSApp.isActive || self.window?.isVisible == false {
-					let notification = UNMutableNotificationContent()
-					notification.title = "Conversion Completed"
-					notification.subtitle = outputUrl.filename
-					let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
-					UNUserNotificationCenter.current().add(request)
-				}
-			}
-		}
-	}
-
-	private func cancelConversion() {
-		progress?.cancel()
-	}
+//	private func cancelConversion() {
+//		progress?.cancel()
+//	}
 
 	@objc
 	func open(_ sender: AnyObject) {
@@ -171,23 +170,23 @@ final class MainWindowController: NSWindowController {
 
 		panel.beginSheetModal(for: window!) {
 			if $0 == .OK {
-				self.convert(panel.url!)
+//				self.convert(panel.url!)
 			}
 		}
 	}
 
-	private func setupTimeRemainingLabel() {
-		guard let view = view else {
-			return
-		}
-
-		timeRemainingLabel.translatesAutoresizingMaskIntoConstraints = false
-
-		NSLayoutConstraint.activate([
-			timeRemainingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-			timeRemainingLabel.topAnchor.constraint(equalTo: circularProgress.bottomAnchor)
-		])
-	}
+//	private func setupTimeRemainingLabel() {
+//		guard let view = view else {
+//			return
+//		}
+//
+//		timeRemainingLabel.translatesAutoresizingMaskIntoConstraints = false
+//
+//		NSLayoutConstraint.activate([
+//			timeRemainingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+//			timeRemainingLabel.topAnchor.constraint(equalTo: circularProgress.bottomAnchor)
+//		])
+//	}
 }
 
 extension MainWindowController: NSMenuItemValidation {
