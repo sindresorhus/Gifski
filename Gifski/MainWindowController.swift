@@ -54,7 +54,9 @@ final class MainWindowController: NSWindowController {
 	}
 
 	convenience init() {
-		let window = NSWindow.centeredWindow(size: CGSize(width: 360, height: 240))
+		let window = NSWindow.centeredWindow(size: .zero)
+		window.contentViewController = DropVideoViewController()
+		window.centerNatural()
 		self.init(window: window)
 
 		with(window) {
