@@ -235,6 +235,9 @@
 Gw
 </string>
                             </buttonCell>
+                            <connections>
+                                <action selector="cancel:" target="-2" id="DBg-kR-WCT"/>
+                            </connections>
                         </button>
                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="coA-lD-jim">
                             <rect key="frame" x="72" y="-3" width="89" height="32"/>

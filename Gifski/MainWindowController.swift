@@ -76,13 +76,6 @@ final class MainWindowController: NSWindowController {
 		DockProgress.style = .circle(radius: 55, color: .themeColor)
 	}
 
-	/// Gets called when the Esc key is pressed.
-	/// Reference: https://stackoverflow.com/a/42440020
-	@objc
-	func cancel(_ sender: Any?) {
-//		cancelConversion()
-	}
-
 	@objc
 	func open(_ sender: AnyObject) {
 		let panel = NSOpenPanel()
@@ -92,7 +85,18 @@ final class MainWindowController: NSWindowController {
 
 		panel.beginSheetModal(for: window!) {
 			if $0 == .OK {
-//				self.convert(panel.url!)
+				self.convert(panel.url!)
+			}
+		}
+	}
+
+	func convert(_ inputUrl: URL) {
+		if let dropVideo = window?.contentViewController as? DropVideoViewController {
+			dropVideo.convert(inputUrl)
+		} else if !(window?.contentViewController is ConversionViewController) {
+			let dropVideo = DropVideoViewController()
+			window?.contentViewController?.push(viewController: dropVideo) {
+				dropVideo.convert(inputUrl)
 			}
 		}
 	}

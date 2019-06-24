@@ -72,6 +72,11 @@ final class EditVideoViewController: NSViewController {
         push(viewController: convert)
     }
 
+    @IBAction private func cancel(_ sender: Any) {
+		let dropVideo = DropVideoViewController()
+		push(viewController: dropVideo)
+    }
+
     override func viewWillAppear() {
 		super.viewWillAppear()
 

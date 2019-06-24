@@ -48,6 +48,13 @@ final class ConversionViewController: NSViewController {
 		start(conversion: conversion)
 	}
 
+	/// Gets called when the Esc key is pressed.
+	/// Reference: https://stackoverflow.com/a/42440020
+	@objc
+	func cancel(_ sender: Any?) {
+		cancelConversion()
+	}
+
 	private func start(conversion: Gifski.Conversion) {
 		guard !isRunning else {
 			return
@@ -73,26 +80,34 @@ final class ConversionViewController: NSViewController {
 
 					self.didComplete(conversion: conversion, gifUrl: gifUrl)
 				} catch Gifski.Error.cancelled {
-					self.progress?.cancel()
+					self.cancelConversion()
 				} catch {
-					self.progress?.cancel()
 					self.presentError(error, modalFor: self.view.window)
+					self.cancelConversion()
 				}
-				self.progress?.unpublish()
 			}
 		}
 	}
 
 	private func cancelConversion() {
 		progress?.cancel()
+		progress?.unpublish()
+
+		let dropView = DropVideoViewController()
+		circularProgress.fadeOut(delay: 1.0) {
+			self.push(viewController: dropView)
+		}
 	}
 
 	private func didComplete(conversion: Gifski.Conversion, gifUrl: URL) {
-		isRunning = false
-		circularProgress.resetProgress()
-		DockProgress.resetProgress()
-
 		let conversionCompleted = ConversionCompletedViewController(conversion: conversion, gifUrl: gifUrl)
-		push(viewController: conversionCompleted)
+		isRunning = false
+		progress?.unpublish()
+
+		circularProgress.fadeOut(delay: 1.0) {
+			self.circularProgress.resetProgress()
+			DockProgress.resetProgress()
+			self.push(viewController: conversionCompleted)
+		}
 	}
 }
