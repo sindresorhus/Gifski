@@ -86,6 +86,7 @@ final class Gifski {
 		var gifData = NSMutableData()
 
 		gifski.setWriteCallback(context: &gifData) { bufferLength, bufferPointer, context in
+			print("write", Date())
 			guard
 				bufferLength > 0,
 				let bufferPointer = bufferPointer
@@ -138,51 +139,55 @@ final class Gifski {
 			}
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
-				guard !progress.isCancelled else {
-					completionHandlerOnce(.failure(.cancelled))
-					return
-				}
-
-				switch result {
-				case let .success(result):
-					let image = result.image
-
-					guard
-						let data = image.dataProvider?.data,
-						let buffer = CFDataGetBytePtr(data)
-					else {
-						completionHandlerOnce(.failure(.generateFrameFailed(
-							NSError.appError(message: "Could not get byte pointer of image data provider")
-						)))
+				DispatchQueue.global().async {
+					guard !progress.isCancelled else {
+						completionHandlerOnce(.failure(.cancelled))
 						return
 					}
 
-					do {
-						try gifski.addFrameARGB(
-							index: UInt32(result.completedCount - 1),
-							width: UInt32(image.width),
-							bytesPerRow: UInt32(image.bytesPerRow),
-							height: UInt32(image.height),
-							pixels: buffer,
-							delay: UInt16(100 / fps)
-						)
-					} catch {
-						completionHandlerOnce(.failure(.addFrameFailed(error)))
-						return
-					}
+					switch result {
+					case let .success(result):
+						let image = result.image
 
-					if result.isFinished {
-						do {
-							try gifski.finish()
-							completionHandlerOnce(.success(gifData as Data))
-						} catch {
-							completionHandlerOnce(.failure(.writeFailed(error)))
+						guard
+							let data = image.dataProvider?.data,
+							let buffer = CFDataGetBytePtr(data)
+							else {
+								completionHandlerOnce(.failure(.generateFrameFailed(
+									NSError.appError(message: "Could not get byte pointer of image data provider")
+									)))
+								return
 						}
+
+						print("generate", result.completedCount - 1, Date())
+
+						do {
+							try gifski.addFrameARGB(
+								index: UInt32(result.completedCount - 1),
+								width: UInt32(image.width),
+								bytesPerRow: UInt32(image.bytesPerRow),
+								height: UInt32(image.height),
+								pixels: buffer,
+								delay: UInt16(100 / fps)
+							)
+						} catch {
+							completionHandlerOnce(.failure(.addFrameFailed(error)))
+							return
+						}
+
+						if result.isFinished {
+							do {
+								try gifski.finish()
+								completionHandlerOnce(.success(gifData as Data))
+							} catch {
+								completionHandlerOnce(.failure(.writeFailed(error)))
+							}
+						}
+					case .failure where result.isCancelled:
+						completionHandlerOnce(.failure(.cancelled))
+					case let .failure(error):
+						completionHandlerOnce(.failure(.generateFrameFailed(error)))
 					}
-				case .failure where result.isCancelled:
-					completionHandlerOnce(.failure(.cancelled))
-				case let .failure(error):
-					completionHandlerOnce(.failure(.generateFrameFailed(error)))
 				}
 			}
 		}
