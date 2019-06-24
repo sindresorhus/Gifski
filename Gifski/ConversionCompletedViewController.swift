@@ -83,7 +83,7 @@ final class ConversionCompletedViewController: NSViewController {
 			infoContainer.widthAnchor.constraint(equalTo: imageContainer.widthAnchor),
 
 			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 18),
-			imageContainer.topAnchor.constraint(greaterThanOrEqualTo: wrapper.topAnchor),
+			imageContainer.topAnchor.constraint(greaterThanOrEqualTo: wrapper.topAnchor, constant: 32),
 
 			draggableFile.centerXAnchor.constraint(equalTo: imageContainer.centerXAnchor),
 			draggableFile.widthAnchor.constraint(equalToConstant: 96),
