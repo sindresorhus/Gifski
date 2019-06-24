@@ -6,9 +6,9 @@ final class DropVideoViewController: NSViewController {
 	private lazy var videoDropView = with(VideoDropView()) {
 		$0.frame.size = CGSize(width: 360, height: 240)
 		$0.dropText = "Drop a Video to Convert to GIF"
-		$0.onComplete = { url in
+		$0.onComplete = { [weak self] url in
 			NSApp.activate(ignoringOtherApps: true)
-			self.convert(url.first!)
+			self?.convert(url.first!)
 		}
 	}
 
