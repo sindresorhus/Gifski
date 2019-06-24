@@ -50,17 +50,7 @@ final class EditVideoViewController: NSViewController {
 		self.videoMetadata = videoMetadata
 	}
 
-	override func viewDidLoad() {
-		super.viewDidLoad()
-
-		formatter.zeroPadsFractionDigits = true
-		setupDimensions()
-		setupDropdowns()
-		setupSliders()
-		setupWidthAndHeightTextFields()
-	}
-
-    @IBAction private func convert(_ sender: Any) {
+	@IBAction private func convert(_ sender: Any) {
 		let conversion = Gifski.Conversion(
 			video: inputUrl,
 			quality: defaults[.outputQuality],
@@ -69,13 +59,24 @@ final class EditVideoViewController: NSViewController {
 		)
 
 		let convert = ConversionViewController(conversion: conversion)
-        push(viewController: convert)
-    }
+		push(viewController: convert)
+	}
 
-    @IBAction private func cancel(_ sender: Any) {
+	@IBAction private func cancel(_ sender: Any) {
 		let dropVideo = DropVideoViewController()
 		push(viewController: dropVideo)
-    }
+	}
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
+
+		formatter.zeroPadsFractionDigits = true
+		setupDimensions()
+		setupDropdowns()
+		setupSliders()
+		setupWidthAndHeightTextFields()
+		setupDropView()
+	}
 
     override func viewWillAppear() {
 		super.viewWillAppear()
@@ -93,8 +94,6 @@ final class EditVideoViewController: NSViewController {
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 	}
-
-
 
 	private func setupDimensions() {
 		let minimumScale: CGFloat = 0.01
@@ -279,6 +278,12 @@ final class EditVideoViewController: NSViewController {
 		}
 
 		updateTextFieldsMinMax()
+	}
+
+	private func setupDropView() {
+		let dropVideo = DropVideoViewController()
+		dropVideo.view.alphaValue = 0.0
+		add(childController: dropVideo)
 	}
 
 	private func updateTextFieldsMinMax() {

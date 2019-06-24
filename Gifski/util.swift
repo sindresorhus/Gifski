@@ -2441,6 +2441,12 @@ extension NSViewController {
 			completion?()
 		})
 	}
+
+	func add(childController: NSViewController) {
+		addChild(childController)
+		view.addSubview(childController.view)
+		childController.view.constrainEdgesToSuperview()
+	}
 }
 
 extension URL {
