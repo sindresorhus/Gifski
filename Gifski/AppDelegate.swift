@@ -6,7 +6,7 @@ import Crashlytics
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
 	var hasFinishedLaunching = false
-	var urlsToConvertOnLaunch: URL!
+	var urlToConvertOnLaunch: URL!
 
 	func applicationWillFinishLaunching(_ notification: Notification) {
 		UserDefaults.standard.register(defaults: [
@@ -26,8 +26,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApplication.shared.isAutomaticCustomizeTouchBarMenuItemEnabled = true
 		NSApp.servicesProvider = self
 
-		if urlsToConvertOnLaunch != nil {
-//			mainWindowController.convert(urlsToConvertOnLaunch)
+		if urlToConvertOnLaunch != nil {
+			mainWindowController.convert(urlToConvertOnLaunch)
 		}
 	}
 
@@ -48,11 +48,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
 		if hasFinishedLaunching {
-//			mainWindowController.convert(videoUrl)
+			mainWindowController.convert(videoUrl)
 		} else {
 			// This method is called before `applicationDidFinishLaunching`,
 			// so we buffer it up a video is "Open with" this app
-			urlsToConvertOnLaunch = videoUrl
+			urlToConvertOnLaunch = videoUrl
 		}
 	}
 
@@ -74,9 +74,6 @@ extension AppDelegate {
 			return
 		}
 
-		let dropVideo = DropVideoViewController()
-		mainWindowController.window?.contentViewController?.push(viewController: dropVideo, completion: {
-			dropVideo.convert(url)
-		})
+		mainWindowController.convert(url)
 	}
 }
