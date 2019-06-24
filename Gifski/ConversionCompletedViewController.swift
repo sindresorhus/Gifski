@@ -1,7 +1,9 @@
 import Cocoa
 import Quartz
+import UserNotifications
+import StoreKit
 
-final class ConversionCompletedView: SSView {
+final class ConversionCompletedViewController: NSViewController {
 	private let draggableFile = with(DraggableFile()) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
 	}
@@ -38,10 +40,6 @@ final class ConversionCompletedView: SSView {
 		$0.spacing = 20
 	}
 
-	private var isConversionCompleted: Bool {
-		return isHidden == false && fileUrl != nil
-	}
-
 	private func createButton(title: String) -> NSButton {
 		return with(NSButton()) {
 			$0.translatesAutoresizingMaskIntoConstraints = false
@@ -51,37 +49,21 @@ final class ConversionCompletedView: SSView {
 	}
 
 	private lazy var showInFinderButton = createButton(title: "Show in Finder")
-
 	private lazy var shareButton = createButton(title: "Share")
 
-	var fileUrl: URL! {
-		didSet {
-			let url = fileUrl!
-			draggableFile.fileUrl = url
-			fileNameLabel.text = url.lastPathComponent
-			fileSizeLabel.text = url.fileSizeFormatted
+	private var conversion: Gifski.Conversion!
+	private var gifUrl: URL!
 
-			showInFinderButton.onAction = { _ in
-				NSWorkspace.shared.activateFileViewerSelecting([url])
-			}
+	convenience init(conversion: Gifski.Conversion, gifUrl: URL) {
+		self.init()
 
-			// TODO: CustomButton doesn't correctly respect `.sendAction()`
-			shareButton.sendAction(on: .leftMouseDown)
-			shareButton.onAction = { _ in
-				NSSharingService.share(items: [url as NSURL], from: self.shareButton)
-			}
-		}
+		self.conversion = conversion
+		self.gifUrl = gifUrl
 	}
 
-	func show() {
-		// We need to manually make self as the first responder, but when the view is hidden it is auto-removed
-		window?.makeFirstResponder(self)
-
-		fadeIn()
-	}
-
-	override func didAppear() {
-		translatesAutoresizingMaskIntoConstraints = false
+	override func loadView() {
+		let wrapper = NSView(frame: CGRect(origin: .zero, size: CGSize(width: 360, height: 240)))
+		wrapper.translatesAutoresizingMaskIntoConstraints = false
 
 		infoContainer.addArrangedSubview(fileNameLabel)
 		infoContainer.addArrangedSubview(fileSizeLabel)
@@ -92,42 +74,71 @@ final class ConversionCompletedView: SSView {
 		buttonsContainer.addArrangedSubview(showInFinderButton)
 		buttonsContainer.addArrangedSubview(shareButton)
 
-		addSubview(imageContainer)
-		addSubview(buttonsContainer)
+		wrapper.addSubview(imageContainer)
+		wrapper.addSubview(buttonsContainer)
 
-		// TODO: Improve the layout constraints. They are not very good.
 		NSLayoutConstraint.activate([
-			bottomAnchor.constraint(equalTo: buttonsContainer.bottomAnchor),
-			widthAnchor.constraint(equalToConstant: 300),
-			centerXAnchor.constraint(equalTo: superview!.centerXAnchor),
-			centerYAnchor.constraint(equalTo: superview!.centerYAnchor, constant: 5),
-
-			imageContainer.topAnchor.constraint(equalTo: topAnchor),
-			imageContainer.widthAnchor.constraint(equalTo: widthAnchor),
-
-			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 18),
+			wrapper.widthAnchor.constraint(equalToConstant: 360),
+			imageContainer.widthAnchor.constraint(equalTo: wrapper.widthAnchor),
 			infoContainer.widthAnchor.constraint(equalTo: imageContainer.widthAnchor),
 
-			buttonsContainer.topAnchor.constraint(equalTo: infoContainer.bottomAnchor, constant: 24),
-			buttonsContainer.heightAnchor.constraint(equalToConstant: 30),
-			buttonsContainer.centerXAnchor.constraint(equalTo: centerXAnchor),
+			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 18),
+			imageContainer.topAnchor.constraint(greaterThanOrEqualTo: wrapper.topAnchor),
 
-			draggableFile.centerXAnchor.constraint(equalTo: centerXAnchor),
+			draggableFile.centerXAnchor.constraint(equalTo: imageContainer.centerXAnchor),
 			draggableFile.widthAnchor.constraint(equalToConstant: 96),
 
 			fileNameLabel.widthAnchor.constraint(equalTo: infoContainer.widthAnchor),
 			fileSizeLabel.widthAnchor.constraint(equalTo: infoContainer.widthAnchor),
 
-			showInFinderButton.heightAnchor.constraint(equalTo: buttonsContainer.heightAnchor),
-			showInFinderButton.widthAnchor.constraint(equalToConstant: 110),
-
 			shareButton.heightAnchor.constraint(equalTo: buttonsContainer.heightAnchor),
-			shareButton.widthAnchor.constraint(equalTo: showInFinderButton.widthAnchor)
+			shareButton.widthAnchor.constraint(equalTo: showInFinderButton.widthAnchor),
+
+			buttonsContainer.heightAnchor.constraint(equalToConstant: 30),
+			buttonsContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: 24),
+			buttonsContainer.centerXAnchor.constraint(equalTo: wrapper.centerXAnchor),
+			buttonsContainer.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -32)
 		])
+		view = wrapper
+	}
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
+
+		let url = gifUrl!
+		draggableFile.fileUrl = url
+		fileNameLabel.text = conversion.video.lastPathComponent
+		fileSizeLabel.text = url.fileSizeFormatted
+
+		showInFinderButton.onAction = { _ in
+			NSWorkspace.shared.activateFileViewerSelecting([url])
+		}
+
+		// TODO: CustomButton doesn't correctly respect `.sendAction()`
+		shareButton.sendAction(on: .leftMouseDown)
+		shareButton.onAction = { _ in
+			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
+		}
+	}
+
+	override func viewDidAppear() {
+		super.viewDidAppear()
+
+		if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
+			SKStoreReviewController.requestReview()
+		}
+
+		if #available(macOS 10.14, *), !NSApp.isActive || self.view.window?.isVisible == false {
+			let notification = UNMutableNotificationContent()
+			notification.title = "Conversion Completed"
+			notification.subtitle = conversion.video.filename
+			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
+			UNUserNotificationCenter.current().add(request)
+		}
 	}
 }
 
-extension ConversionCompletedView: QLPreviewPanelDataSource {
+extension ConversionCompletedViewController: QLPreviewPanelDataSource {
 	@IBAction private func quickLook(_ sender: Any) {
 		quickLookPreviewItems(nil)
 	}
@@ -163,11 +174,11 @@ extension ConversionCompletedView: QLPreviewPanelDataSource {
 	}
 
 	func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
-		return fileUrl as NSURL
+		return gifUrl as NSURL
 	}
 }
 
-extension ConversionCompletedView: QLPreviewPanelDelegate {
+extension ConversionCompletedViewController: QLPreviewPanelDelegate {
 	func previewPanel(_ panel: QLPreviewPanel!, sourceFrameOnScreenFor item: QLPreviewItem!) -> CGRect {
 		return draggableFile.imageView?.boundsInScreenCoordinates ?? .zero
 	}
@@ -177,13 +188,13 @@ extension ConversionCompletedView: QLPreviewPanelDelegate {
 	}
 }
 
-extension ConversionCompletedView: NSMenuItemValidation {
+extension ConversionCompletedViewController: NSMenuItemValidation {
 	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
 		switch menuItem.action {
 		case #selector(quickLook(_:))?:
-			return isConversionCompleted
-		default:
 			return true
+		default:
+			return false
 		}
 	}
 }
