@@ -1,6 +1,4 @@
 import AppKit
-import UserNotifications
-import StoreKit
 
 final class ConversionViewController: NSViewController {
 	private lazy var circularProgress = with(CircularProgress(size: 160.0)) {
@@ -29,20 +27,28 @@ final class ConversionViewController: NSViewController {
 
 	override func loadView() {
 		let wrapper = NSView(frame: CGRect(origin: .zero, size: CGSize(width: 360, height: 240)))
+		wrapper.translatesAutoresizingMaskIntoConstraints = false
 		wrapper.addSubview(circularProgress)
 		wrapper.addSubview(timeRemainingLabel)
 
+		circularProgress.constrain(to: CGSize(widthHeight: circularProgress.frame.width))
 		circularProgress.center(inView: wrapper)
 		NSLayoutConstraint.activate([
-			timeRemainingLabel.topAnchor.constraint(equalTo: circularProgress.bottomAnchor, constant: 8.0),
-			timeRemainingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-			timeRemainingLabel.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: 8.0)
+			timeRemainingLabel.topAnchor.constraint(greaterThanOrEqualTo: circularProgress.bottomAnchor),
+			timeRemainingLabel.centerXAnchor.constraint(equalTo: circularProgress.centerXAnchor),
+			timeRemainingLabel.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -16.0)
 		])
 
 		view = wrapper
 	}
 
-	private func startConversion(inputUrl: URL, outputUrl: URL) {
+	override func viewDidLoad() {
+		super.viewDidLoad()
+
+		start(conversion: conversion)
+	}
+
+	private func start(conversion: Gifski.Conversion) {
 		guard !isRunning else {
 			return
 		}
@@ -60,30 +66,19 @@ final class ConversionViewController: NSViewController {
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			Gifski.run(conversion) { result in
 				do {
-					try result.get().write(to: outputUrl, options: [.atomic])
+					let gifUrl = URL.generateTempGifUrl()
+					try result.get().write(to: gifUrl, options: .atomic)
+					try? gifUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
+					defaults[.successfulConversionsCount] += 1
+
+					self.didComplete(conversion: conversion, gifUrl: gifUrl)
 				} catch Gifski.Error.cancelled {
 					self.progress?.cancel()
 				} catch {
 					self.progress?.cancel()
 					self.presentError(error, modalFor: self.view.window)
 				}
-
-				try? outputUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
 				self.progress?.unpublish()
-				self.isRunning = false
-
-				defaults[.successfulConversionsCount] += 1
-				if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
-					SKStoreReviewController.requestReview()
-				}
-
-				if #available(macOS 10.14, *), !NSApp.isActive || self.view.window?.isVisible == false {
-					let notification = UNMutableNotificationContent()
-					notification.title = "Conversion Completed"
-					notification.subtitle = outputUrl.filename
-					let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
-					UNUserNotificationCenter.current().add(request)
-				}
 			}
 		}
 	}
@@ -92,9 +87,12 @@ final class ConversionViewController: NSViewController {
 		progress?.cancel()
 	}
 
-	private func conversionCompleted() {
+	private func didComplete(conversion: Gifski.Conversion, gifUrl: URL) {
+		isRunning = false
+		circularProgress.resetProgress()
 		DockProgress.resetProgress()
-//		let conversionCompleted = ConversionCompletedViewController()
-//		push(viewController: conversionCompleted)
+
+		let conversionCompleted = ConversionCompletedViewController(conversion: conversion, gifUrl: gifUrl)
+		push(viewController: conversionCompleted)
 	}
 }

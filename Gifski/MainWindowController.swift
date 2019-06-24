@@ -2,15 +2,51 @@ import Cocoa
 import AVFoundation
 import Crashlytics
 
-// This one probably needs to have hidden DropView underneath?
+import UserNotifications
+import StoreKit
+
 final class ConversionCompletedViewController: NSViewController {
+	private lazy var conversionCompletedView = with(ConversionCompletedView()) {
+		$0.frame.size = CGSize(width: 360, height: 240)
+	}
+
+	private var conversion: Gifski.Conversion!
+	private var gifUrl: URL!
+
+	convenience init(conversion: Gifski.Conversion, gifUrl: URL) {
+		self.init()
+
+		self.conversion = conversion
+		self.gifUrl = gifUrl
+	}
+
+	override func loadView() {
+		conversionCompletedView.fileUrl = gifUrl
+		view = conversionCompletedView
+	}
+
+	override func viewDidLoad() {
+		super.viewDidLoad()
+	}
+
+	override func viewDidAppear() {
+		super.viewDidAppear()
+
+		if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
+			SKStoreReviewController.requestReview()
+		}
+
+		if #available(macOS 10.14, *), !NSApp.isActive || self.view.window?.isVisible == false {
+			let notification = UNMutableNotificationContent()
+			notification.title = "Conversion Completed"
+			notification.subtitle = conversion.video.filename
+			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
+			UNUserNotificationCenter.current().add(request)
+		}
+	}
 }
 
 final class MainWindowController: NSWindowController {
-	private lazy var conversionCompletedView = with(ConversionCompletedView()) {
-		$0.isHidden = true
-	}
-
 	convenience init() {
 		let window = NSWindow.centeredWindow(size: .zero)
 		window.contentViewController = DropVideoViewController()

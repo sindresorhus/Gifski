@@ -32,7 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func application(_ application: NSApplication, open urls: [URL]) {
-		guard !(mainWindowController.window?.contentViewController is ConversionViewController) else { return }
+		guard !(mainWindowController.window?.contentViewController is ConversionViewController) else {
+			return
+		}
 
 		guard urls.count == 1 else {
 			NSAlert.showModal(

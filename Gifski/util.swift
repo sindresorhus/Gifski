@@ -2421,7 +2421,12 @@ extension URL {
 
 extension NSViewController {
 	func push(viewController: NSViewController, completion: (() -> Void)? = nil) {
-		let newWindowFrame = NSWindow.centeredOnScreen(rect: viewController.view.frame)
+		guard let window = view.window else {
+			return
+		}
+
+		let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
+		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
 
 		let animation = CABasicAnimation()
 		animation.toValue = newWindowFrame
@@ -2434,5 +2439,14 @@ extension NSViewController {
 			self.view.window?.contentViewController = viewController
 			completion?()
 		})
+	}
+}
+
+extension URL {
+	static func generateTempGifUrl() -> URL {
+		let tempDirectory = FileManager.default.temporaryDirectory
+		let tempName = UUID().uuidString + ".gif"
+
+		return tempDirectory.appendingPathComponent(tempName, isDirectory: false)
 	}
 }
