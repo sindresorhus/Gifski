@@ -2434,9 +2434,10 @@ extension NSViewController {
 
 		NSAnimationContext.runAnimationGroup({ _ in
 			self.view.animator().alphaValue = 0.0
-			self.view.window?.animator().setFrame(newWindowFrame, display: true)
+			window.animator().setFrame(newWindowFrame, display: true)
 		}, completionHandler: {
-			self.view.window?.contentViewController = viewController
+			window.contentViewController = viewController
+			window.makeFirstResponder(viewController)
 			completion?()
 		})
 	}
