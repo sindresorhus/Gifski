@@ -2452,9 +2452,9 @@ extension NSViewController {
 }
 
 extension URL {
-	static func generateTempGifUrl() -> URL {
+	static func generateTempGifUrl(for videoUrl: URL) -> URL {
 		let tempDirectory = FileManager.default.temporaryDirectory
-		let tempName = UUID().uuidString + ".gif"
+		let tempName = videoUrl.filenameWithoutExtension + ".\(FileType.gif.fileExtension)"
 
 		return tempDirectory.appendingPathComponent(tempName, isDirectory: false)
 	}

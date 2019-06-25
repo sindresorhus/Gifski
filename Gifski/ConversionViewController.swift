@@ -73,7 +73,7 @@ final class ConversionViewController: NSViewController {
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			Gifski.run(conversion) { result in
 				do {
-					let gifUrl = URL.generateTempGifUrl()
+					let gifUrl = URL.generateTempGifUrl(for: conversion.video)
 					try result.get().write(to: gifUrl, options: .atomic)
 					try? gifUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
 					defaults[.successfulConversionsCount] += 1
