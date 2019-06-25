@@ -2432,11 +2432,13 @@ extension NSViewController {
 		animation.toValue = newWindowFrame
 		animation.duration = 1.0
 
+		viewController.view.alphaValue = 0.0
 		NSAnimationContext.runAnimationGroup({ _ in
-			self.view.animator().alphaValue = 0.0
+			window.contentViewController?.view.animator().alphaValue = 0.0
 			window.animator().setFrame(newWindowFrame, display: true)
 		}, completionHandler: {
 			window.contentViewController = viewController
+			viewController.view.animator().alphaValue = 1.0
 			window.makeFirstResponder(viewController)
 			completion?()
 		})
