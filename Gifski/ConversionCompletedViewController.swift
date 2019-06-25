@@ -82,6 +82,8 @@ final class ConversionCompletedViewController: NSViewController {
 			imageContainer.widthAnchor.constraint(equalTo: wrapper.widthAnchor),
 			infoContainer.widthAnchor.constraint(equalTo: imageContainer.widthAnchor),
 
+			infoContainer.leftAnchor.constraint(equalTo: wrapper.leftAnchor),
+			infoContainer.rightAnchor.constraint(equalTo: wrapper.rightAnchor),
 			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 18),
 			imageContainer.topAnchor.constraint(greaterThanOrEqualTo: wrapper.topAnchor, constant: 32),
 
@@ -105,20 +107,8 @@ final class ConversionCompletedViewController: NSViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
-		let url = gifUrl!
-		draggableFile.fileUrl = url
-		fileNameLabel.text = conversion.video.lastPathComponent
-		fileSizeLabel.text = url.fileSizeFormatted
-
-		showInFinderButton.onAction = { _ in
-			NSWorkspace.shared.activateFileViewerSelecting([url])
-		}
-
-		// TODO: CustomButton doesn't correctly respect `.sendAction()`
-		shareButton.sendAction(on: .leftMouseDown)
-		shareButton.onAction = { _ in
-			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
-		}
+		setupUI()
+		setupDropView()
 	}
 
 	override func viewDidAppear() {
@@ -135,6 +125,28 @@ final class ConversionCompletedViewController: NSViewController {
 			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
 			UNUserNotificationCenter.current().add(request)
 		}
+	}
+
+	private func setupUI() {
+		let url = gifUrl!
+		draggableFile.fileUrl = url
+		fileNameLabel.text = conversion.video.lastPathComponent
+		fileSizeLabel.text = url.fileSizeFormatted
+
+		showInFinderButton.onAction = { _ in
+			NSWorkspace.shared.activateFileViewerSelecting([url])
+		}
+
+		// TODO: CustomButton doesn't correctly respect `.sendAction()`
+		shareButton.sendAction(on: .leftMouseDown)
+		shareButton.onAction = { _ in
+			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
+		}
+	}
+
+	private func setupDropView() {
+		let dropVideo = DropVideoViewController(dropLabelIsHidden: true)
+		add(childController: dropVideo)
 	}
 }
 

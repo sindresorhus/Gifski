@@ -281,8 +281,7 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func setupDropView() {
-		let dropVideo = DropVideoViewController()
-		dropVideo.view.alphaValue = 0.0
+		let dropVideo = DropVideoViewController(dropLabelIsHidden: true)
 		add(childController: dropVideo)
 	}
 
