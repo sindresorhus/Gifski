@@ -12,6 +12,12 @@ final class DropVideoViewController: NSViewController {
 		}
 	}
 
+	convenience init(dropLabelIsHidden: Bool = false) {
+		self.init()
+
+		videoDropView.isDropLabelHidden = dropLabelIsHidden
+	}
+
 	override func loadView() {
 		view = videoDropView
 	}
