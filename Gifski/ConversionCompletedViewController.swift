@@ -24,20 +24,26 @@ final class ConversionCompletedViewController: NSViewController {
 		$0.alignment = .center
 	}
 
-	private let infoContainer = with(NSStackView()) {
+	private lazy var infoContainer = with(NSStackView()) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.orientation = .vertical
+		$0.addArrangedSubview(fileNameLabel)
+		$0.addArrangedSubview(fileSizeLabel)
 	}
 
-	private let imageContainer = with(NSStackView()) {
+	private lazy var imageContainer = with(NSStackView()) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.orientation = .vertical
+		$0.addArrangedSubview(draggableFile)
+		$0.addArrangedSubview(infoContainer)
 	}
 
-	private let buttonsContainer = with(NSStackView()) {
+	private lazy var buttonsContainer = with(NSStackView()) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.orientation = .horizontal
 		$0.spacing = 20
+		$0.addArrangedSubview(showInFinderButton)
+		$0.addArrangedSubview(shareButton)
 	}
 
 	private func createButton(title: String) -> NSButton {
@@ -64,23 +70,12 @@ final class ConversionCompletedViewController: NSViewController {
 	override func loadView() {
 		let wrapper = NSView(frame: CGRect(origin: .zero, size: CGSize(width: 360, height: 240)))
 		wrapper.translatesAutoresizingMaskIntoConstraints = false
-
-		infoContainer.addArrangedSubview(fileNameLabel)
-		infoContainer.addArrangedSubview(fileSizeLabel)
-
-		imageContainer.addArrangedSubview(draggableFile)
-		imageContainer.addArrangedSubview(infoContainer)
-
-		buttonsContainer.addArrangedSubview(showInFinderButton)
-		buttonsContainer.addArrangedSubview(shareButton)
-
 		wrapper.addSubview(imageContainer)
 		wrapper.addSubview(buttonsContainer)
 
 		NSLayoutConstraint.activate([
 			wrapper.widthAnchor.constraint(equalToConstant: 360),
 			imageContainer.widthAnchor.constraint(equalTo: wrapper.widthAnchor),
-			infoContainer.widthAnchor.constraint(equalTo: imageContainer.widthAnchor),
 
 			infoContainer.leftAnchor.constraint(equalTo: wrapper.leftAnchor),
 			infoContainer.rightAnchor.constraint(equalTo: wrapper.rightAnchor),
