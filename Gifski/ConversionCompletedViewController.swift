@@ -4,59 +4,14 @@ import UserNotifications
 import StoreKit
 
 final class ConversionCompletedViewController: NSViewController {
-	private let draggableFile = with(DraggableFile()) {
-		$0.translatesAutoresizingMaskIntoConstraints = false
-	}
+    @IBOutlet private var draggableFileWrapper: NSView!
+    @IBOutlet private var fileNameLabel: Label!
+    @IBOutlet private var fileSizeLabel: Label!
+    @IBOutlet private var saveAsButton: NSButton!
+    @IBOutlet private var shareButton: NSButton!
+    @IBOutlet private var copyButton: NSButton!
 
-	private let fileNameLabel = with(Label()) {
-		$0.translatesAutoresizingMaskIntoConstraints = false
-		$0.textColor = .labelColor
-		$0.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
-		$0.alignment = .center
-		$0.maximumNumberOfLines = 1
-		$0.cell?.lineBreakMode = .byTruncatingTail
-	}
-
-	private let fileSizeLabel = with(Label()) {
-		$0.translatesAutoresizingMaskIntoConstraints = false
-		$0.textColor = .secondaryLabelColor
-		$0.font = .systemFont(ofSize: 12)
-		$0.alignment = .center
-	}
-
-	private lazy var infoContainer = with(NSStackView()) {
-		$0.translatesAutoresizingMaskIntoConstraints = false
-		$0.orientation = .vertical
-		$0.addArrangedSubview(fileNameLabel)
-		$0.addArrangedSubview(fileSizeLabel)
-	}
-
-	private lazy var imageContainer = with(NSStackView()) {
-		$0.translatesAutoresizingMaskIntoConstraints = false
-		$0.orientation = .vertical
-		$0.addArrangedSubview(draggableFile)
-		$0.addArrangedSubview(infoContainer)
-	}
-
-	private lazy var buttonsContainer = with(NSStackView()) {
-		$0.translatesAutoresizingMaskIntoConstraints = false
-		$0.orientation = .horizontal
-		$0.spacing = 20
-		$0.addArrangedSubview(showInFinderButton)
-		$0.addArrangedSubview(shareButton)
-	}
-
-	private func createButton(title: String) -> NSButton {
-		return with(NSButton()) {
-			$0.translatesAutoresizingMaskIntoConstraints = false
-			$0.title = title
-			$0.bezelStyle = .texturedRounded
-		}
-	}
-
-	private lazy var showInFinderButton = createButton(title: "Show in Finder")
-	private lazy var shareButton = createButton(title: "Share")
-
+    private let draggableFile = DraggableFile()
 	private var conversion: Gifski.Conversion!
 	private var gifUrl: URL!
 
@@ -67,43 +22,12 @@ final class ConversionCompletedViewController: NSViewController {
 		self.gifUrl = gifUrl
 	}
 
-	override func loadView() {
-		let wrapper = NSView(frame: CGRect(origin: .zero, size: CGSize(width: 360, height: 240)))
-		wrapper.translatesAutoresizingMaskIntoConstraints = false
-		wrapper.addSubview(imageContainer)
-		wrapper.addSubview(buttonsContainer)
-
-		NSLayoutConstraint.activate([
-			wrapper.widthAnchor.constraint(equalToConstant: 360),
-			imageContainer.widthAnchor.constraint(equalTo: wrapper.widthAnchor),
-
-			infoContainer.leftAnchor.constraint(equalTo: wrapper.leftAnchor),
-			infoContainer.rightAnchor.constraint(equalTo: wrapper.rightAnchor),
-			infoContainer.topAnchor.constraint(equalTo: draggableFile.bottomAnchor, constant: 18),
-			imageContainer.topAnchor.constraint(greaterThanOrEqualTo: wrapper.topAnchor, constant: 32),
-
-			draggableFile.centerXAnchor.constraint(equalTo: imageContainer.centerXAnchor),
-			draggableFile.widthAnchor.constraint(equalToConstant: 96),
-
-			fileNameLabel.widthAnchor.constraint(equalTo: infoContainer.widthAnchor),
-			fileSizeLabel.widthAnchor.constraint(equalTo: infoContainer.widthAnchor),
-
-			shareButton.heightAnchor.constraint(equalTo: buttonsContainer.heightAnchor),
-			shareButton.widthAnchor.constraint(equalTo: showInFinderButton.widthAnchor),
-
-			buttonsContainer.heightAnchor.constraint(equalToConstant: 30),
-			buttonsContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: 24),
-			buttonsContainer.centerXAnchor.constraint(equalTo: wrapper.centerXAnchor),
-			buttonsContainer.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -32)
-		])
-		view = wrapper
-	}
-
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
 		setupUI()
 		setupDropView()
+		setup(url: gifUrl)
 	}
 
 	override func viewDidAppear() {
@@ -123,19 +47,32 @@ final class ConversionCompletedViewController: NSViewController {
 	}
 
 	private func setupUI() {
-		let url = gifUrl!
+		fileNameLabel.maximumNumberOfLines = 1
+		fileNameLabel.textColor = .labelColor
+		fileNameLabel.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
+
+		fileSizeLabel.maximumNumberOfLines = 1
+		fileSizeLabel.textColor = .secondaryLabelColor
+		fileSizeLabel.font = .systemFont(ofSize: 12)
+
+        draggableFileWrapper.addSubview(draggableFile)
+        draggableFile.constrainEdgesToSuperview()
+	}
+
+	private func setup(url: URL) {
 		draggableFile.fileUrl = url
 		fileNameLabel.text = conversion.video.lastPathComponent
 		fileSizeLabel.text = url.fileSizeFormatted
-
-		showInFinderButton.onAction = { _ in
-			NSWorkspace.shared.activateFileViewerSelecting([url])
-		}
 
 		// TODO: CustomButton doesn't correctly respect `.sendAction()`
 		shareButton.sendAction(on: .leftMouseDown)
 		shareButton.onAction = { _ in
 			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
+		}
+		copyButton.onAction = { _ in
+		}
+
+		saveAsButton.onAction = { _ in
 		}
 	}
 
