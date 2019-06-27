@@ -48,8 +48,8 @@
                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                             </textFieldCell>
                         </textField>
-                        <stackView distribution="fillEqually" orientation="horizontal" alignment="top" spacing="20" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9qZ-H7-TZZ">
-                            <rect key="frame" x="20" y="32" width="320" height="30"/>
+                        <stackView distribution="fillEqually" orientation="horizontal" alignment="top" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9qZ-H7-TZZ">
+                            <rect key="frame" x="30" y="32" width="300" height="30"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="e7w-oB-lHq">
                                     <rect key="frame" x="0.0" y="7" width="93" height="23"/>
@@ -61,14 +61,14 @@
                                     </buttonCell>
                                 </button>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xNp-Z5-9zb">
-                                    <rect key="frame" x="113" y="7" width="94" height="23"/>
+                                    <rect key="frame" x="103" y="7" width="94" height="23"/>
                                     <buttonCell key="cell" type="roundTextured" title="Share" bezelStyle="texturedRounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5vU-7T-yAi">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>
                                 </button>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Olx-b9-5Qw">
-                                    <rect key="frame" x="227" y="7" width="93" height="23"/>
+                                    <rect key="frame" x="207" y="7" width="93" height="23"/>
                                     <buttonCell key="cell" type="roundTextured" title="Save As..." bezelStyle="texturedRounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Kiv-8z-1qn">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
@@ -94,11 +94,11 @@
                         <constraint firstItem="9j4-tJ-yJo" firstAttribute="top" relation="greaterThanOrEqual" secondItem="1a5-4g-xpl" secondAttribute="top" id="9cQ-Vd-LOp"/>
                         <constraint firstItem="gf3-Uh-Jor" firstAttribute="top" secondItem="uI2-zc-34L" secondAttribute="bottom" constant="8" id="F35-Cl-1Me"/>
                         <constraint firstAttribute="trailing" secondItem="uI2-zc-34L" secondAttribute="trailing" constant="20" id="HYG-i4-KLK"/>
-                        <constraint firstItem="9qZ-H7-TZZ" firstAttribute="leading" secondItem="1a5-4g-xpl" secondAttribute="leading" constant="20" id="Ldc-gp-Xwi"/>
+                        <constraint firstItem="9qZ-H7-TZZ" firstAttribute="leading" secondItem="1a5-4g-xpl" secondAttribute="leading" constant="30" id="Ldc-gp-Xwi"/>
                         <constraint firstItem="9j4-tJ-yJo" firstAttribute="centerX" secondItem="1a5-4g-xpl" secondAttribute="centerX" id="OtU-RA-0dQ"/>
                         <constraint firstItem="uI2-zc-34L" firstAttribute="leading" secondItem="1a5-4g-xpl" secondAttribute="leading" constant="20" id="Qx5-xg-Gbi"/>
                         <constraint firstItem="uI2-zc-34L" firstAttribute="top" secondItem="9j4-tJ-yJo" secondAttribute="bottom" constant="16" id="V9g-cw-DZ9"/>
-                        <constraint firstAttribute="trailing" secondItem="9qZ-H7-TZZ" secondAttribute="trailing" constant="20" id="XS8-pv-oaK"/>
+                        <constraint firstAttribute="trailing" secondItem="9qZ-H7-TZZ" secondAttribute="trailing" constant="30" id="XS8-pv-oaK"/>
                         <constraint firstAttribute="width" constant="360" id="fiW-N8-WTM"/>
                         <constraint firstItem="9qZ-H7-TZZ" firstAttribute="top" secondItem="uI2-zc-34L" secondAttribute="bottom" constant="50" id="hm3-2E-M2T"/>
                         <constraint firstItem="gf3-Uh-Jor" firstAttribute="leading" secondItem="uI2-zc-34L" secondAttribute="leading" id="nf3-NY-aCF"/>
