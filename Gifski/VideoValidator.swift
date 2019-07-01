@@ -1,7 +1,7 @@
 import Crashlytics
 import AVKit
 
-struct VideoUrlValidator {
+struct VideoValidator {
 	enum Result {
 		case failure
 		case success(AVURLAsset.VideoMetadata)
