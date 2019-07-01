@@ -1,7 +1,7 @@
 import AppKit
 
 final class VideoDropViewController: NSViewController {
-	private let urlValidator = VideoValidator()
+	private let videoValidator = VideoValidator()
 	private lazy var videoDropView = with(VideoDropView()) {
 		$0.dropText = "Drop a Video to Convert to GIF"
 		$0.onComplete = { [weak self] url in
@@ -23,7 +23,7 @@ final class VideoDropViewController: NSViewController {
 	}
 
 	func convert(_ inputUrl: URL) {
-		guard case let .success(videoMetadata) = urlValidator.validate(inputUrl, in: view.window) else {
+		guard case let .success(videoMetadata) = videoValidator.validate(inputUrl, in: view.window) else {
 			return
 		}
 

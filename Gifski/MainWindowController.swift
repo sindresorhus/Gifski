@@ -3,7 +3,7 @@ import AVFoundation
 import Crashlytics
 
 final class MainWindowController: NSWindowController {
-	private let urlValidator = VideoValidator()
+	private let videoValidator = VideoValidator()
 
 	var isConverting: Bool {
 		return window?.contentViewController is ConversionViewController
@@ -53,7 +53,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	func convert(_ inputUrl: URL) {
-		guard !isConverting, case let .success(videoMetadata) = urlValidator.validate(inputUrl, in: window) else {
+		guard !isConverting, case let .success(videoMetadata) = videoValidator.validate(inputUrl, in: window) else {
 			return
 		}
 
