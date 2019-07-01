@@ -37,7 +37,7 @@ final class ConversionCompletedViewController: NSViewController {
 			SKStoreReviewController.requestReview()
 		}
 
-		if #available(macOS 10.14, *), !NSApp.isActive || self.view.window?.isVisible == false {
+		if #available(macOS 10.14, *), !NSApp.isActive || view.window?.isVisible == false {
 			let notification = UNMutableNotificationContent()
 			notification.title = "Conversion Completed"
 			notification.subtitle = conversion.video.filename

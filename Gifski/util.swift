@@ -97,7 +97,7 @@ class SSView: NSView {
 
 extension NSWindow {
 	// Helper
-	fileprivate static func centeredOnScreen(rect: CGRect) -> CGRect {
+	private static func centeredOnScreen(rect: CGRect) -> CGRect {
 		guard let screen = NSScreen.main else {
 			return rect
 		}

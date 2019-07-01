@@ -29,7 +29,6 @@ final class EditVideoViewController: NSViewController {
 
 	var inputUrl: URL!
 	var videoMetadata: AVURLAsset.VideoMetadata!
-	var onFramerateChange: ((Int) -> Void)?
 
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
@@ -78,7 +77,7 @@ final class EditVideoViewController: NSViewController {
 		setupDropView()
 	}
 
-    override func viewWillAppear() {
+	override func viewWillAppear() {
 		super.viewWillAppear()
 
 		// Hack to enlarge extended save panel frame. Original frame: `{841,481}`
