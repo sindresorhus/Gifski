@@ -44,6 +44,8 @@ final class ConversionCompletedViewController: NSViewController {
 			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
 			UNUserNotificationCenter.current().add(request)
 		}
+
+		draggableFile.layer?.animateScaleMove(fromScale: 3, fromY: view.frame.height + draggableFile.frame.size.height)
 	}
 
 	private func setupUI() {
