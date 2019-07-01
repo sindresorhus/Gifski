@@ -68,11 +68,11 @@ final class ConversionCompletedViewController: NSViewController {
 		fileNameLabel.text = conversion.video.lastPathComponent
 		fileSizeLabel.text = url.fileSizeFormatted
 
-		// TODO: CustomButton doesn't correctly respect `.sendAction()`
 		shareButton.sendAction(on: .leftMouseDown)
 		shareButton.onAction = { _ in
 			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
 		}
+
 		copyButton.onAction = { _ in
 			let pasteboard = NSPasteboard.general
 			pasteboard.clearContents()
