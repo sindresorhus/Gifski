@@ -97,11 +97,11 @@ public final class CircularProgress: NSView {
 
 			DispatchQueue.main.async {
 				self.progressLabel.isHidden = self.progress == 0 && self.isIndeterminate ? self.cancelButton.isHidden : !self.cancelButton.isHidden
-			}
 
-			if !progressLabel.isHidden {
-				progressLabel.string = "\(Int(_progress * 100))%"
-				successView.isHidden = true
+				if !self.progressLabel.isHidden {
+					self.progressLabel.string = "\(Int(self._progress * 100))%"
+					self.successView.isHidden = true
+				}
 			}
 
 			if _progress == 1 {
@@ -404,14 +404,16 @@ public final class CircularProgress: NSView {
 			return _isIndeterminate
 		}
 		set {
-			willChangeValue(for: \.isIndeterminate)
-			_isIndeterminate = newValue
-			didChangeValue(for: \.isIndeterminate)
+			DispatchQueue.main.async {
+				self.willChangeValue(for: \.isIndeterminate)
+				self._isIndeterminate = newValue
+				self.didChangeValue(for: \.isIndeterminate)
 
-			if _isIndeterminate {
-				startIndeterminateState()
-			} else {
-				stopIndeterminateState()
+				if self._isIndeterminate {
+					self.startIndeterminateState()
+				} else {
+					self.stopIndeterminateState()
+				}
 			}
 		}
 	}
