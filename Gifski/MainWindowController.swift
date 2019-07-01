@@ -3,9 +3,13 @@ import AVFoundation
 import Crashlytics
 
 final class MainWindowController: NSWindowController {
+	var isConverting: Bool {
+		return window?.contentViewController is ConversionViewController
+	}
+
 	convenience init() {
 		let window = NSWindow.centeredWindow(size: .zero)
-		window.contentViewController = DropVideoViewController()
+		window.contentViewController = VideoDropViewController()
 		window.centerNatural()
 		self.init(window: window)
 
@@ -47,12 +51,16 @@ final class MainWindowController: NSWindowController {
 	}
 
 	func convert(_ inputUrl: URL) {
-		if let dropVideo = window?.contentViewController as? DropVideoViewController {
-			dropVideo.convert(inputUrl)
-		} else if !(window?.contentViewController is ConversionViewController) {
-			let dropVideo = DropVideoViewController()
-			window?.contentViewController?.push(viewController: dropVideo) {
-				dropVideo.convert(inputUrl)
+		guard !isConverting else {
+			return
+		}
+
+		if let videoDropController = window?.contentViewController as? VideoDropViewController {
+			videoDropController.convert(inputUrl)
+		} else {
+			let videoDropController = VideoDropViewController()
+			window?.contentViewController?.push(viewController: videoDropController) {
+				videoDropController.convert(inputUrl)
 			}
 		}
 	}
@@ -62,7 +70,7 @@ extension MainWindowController: NSMenuItemValidation {
 	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
 		switch menuItem.action {
 		case #selector(open)?:
-			return !(window?.contentViewController is ConversionViewController)
+			return !isConverting
 		default:
 			return true
 		}

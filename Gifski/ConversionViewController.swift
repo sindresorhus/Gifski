@@ -26,7 +26,7 @@ final class ConversionViewController: NSViewController {
 	}
 
 	override func loadView() {
-		let wrapper = NSView(frame: CGRect(origin: .zero, size: CGSize(width: 360, height: 240)))
+		let wrapper = NSView(frame: CGRect(origin: .zero, size: .defaultWindowSize))
 		wrapper.translatesAutoresizingMaskIntoConstraints = false
 		wrapper.addSubview(circularProgress)
 		wrapper.addSubview(timeRemainingLabel)
@@ -93,7 +93,7 @@ final class ConversionViewController: NSViewController {
 		progress?.cancel()
 		progress?.unpublish()
 
-		let dropView = DropVideoViewController()
+		let dropView = VideoDropViewController()
 		circularProgress.fadeOut(delay: 1.0) {
 			self.push(viewController: dropView)
 		}

@@ -32,19 +32,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func application(_ application: NSApplication, open urls: [URL]) {
-		guard !(mainWindowController.window?.contentViewController is ConversionViewController) else {
-			return
-		}
-
-		guard urls.count == 1 else {
+		guard urls.count == 1, let videoUrl = urls.first else {
 			NSAlert.showModal(
 				for: mainWindowController.window,
 				message: "Gifski can only convert a single file at the time."
 			)
 			return
 		}
-
-		let videoUrl = urls.first!
 
 		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
 		if hasFinishedLaunching {

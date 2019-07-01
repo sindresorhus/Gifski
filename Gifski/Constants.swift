@@ -8,3 +8,7 @@ extension Defaults.Keys {
 	static let outputQuality = Key<Double>("outputQuality", default: 1)
 	static let successfulConversionsCount = Key<Int>("successfulConversionsCount", default: 0)
 }
+
+extension CGSize {
+	static let defaultWindowSize = CGSize(width: 360, height: 240)
+}

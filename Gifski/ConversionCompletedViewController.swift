@@ -88,8 +88,8 @@ final class ConversionCompletedViewController: NSViewController {
 	}
 
 	private func setupDropView() {
-		let dropVideo = DropVideoViewController(dropLabelIsHidden: true)
-		add(childController: dropVideo)
+		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
+		add(childController: videoDropController)
 	}
 }
 

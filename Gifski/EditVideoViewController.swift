@@ -63,8 +63,8 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	@IBAction private func cancel(_ sender: Any) {
-		let dropVideo = DropVideoViewController()
-		push(viewController: dropVideo)
+		let videoDropController = VideoDropViewController()
+		push(viewController: videoDropController)
 	}
 
 	override func viewDidLoad() {
@@ -281,8 +281,8 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func setupDropView() {
-		let dropVideo = DropVideoViewController(dropLabelIsHidden: true)
-		add(childController: dropVideo)
+		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
+		add(childController: videoDropController)
 	}
 
 	private func updateTextFieldsMinMax() {
