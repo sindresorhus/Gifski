@@ -83,15 +83,15 @@ struct VideoUrlValidator {
 			let dimensions = asset.dimensions,
 			dimensions.width > 10,
 			dimensions.height > 10
-			else {
-				NSAlert.showModalAndReportToCrashlytics(
-					for: window,
-					message: "The video dimensions must be at least 10×10.",
-					informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
-					debugInfo: asset.debugInfo
-				)
+		else {
+			NSAlert.showModalAndReportToCrashlytics(
+				for: window,
+				message: "The video dimensions must be at least 10×10.",
+				informativeText: "The dimensions of your video are \(asset.dimensions?.formatted ?? "0×0").\n\nIf you think this error is a mistake, please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
+				debugInfo: asset.debugInfo
+			)
 
-				return .failure
+			return .failure
 		}
 
 		return .success(videoMetadata)
