@@ -129,7 +129,6 @@
 			files = (
 				E3807B6022BE315D00388F50 /* libgifski.a in Frameworks */,
 				E3A9400F2182D7BC006981D5 /* Crashlytics.framework in Frameworks */,
-				E3FDC26D203F32DA00C00409 /* libresolv.tbd in Frameworks */,
 				E3A940102182D7BC006981D5 /* Fabric.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -152,7 +151,6 @@
 			children = (
 				E3A9400D2182D7BC006981D5 /* Crashlytics.framework */,
 				E3A9400E2182D7BC006981D5 /* Fabric.framework */,
-				E3FD61A6201BD3640087160A /* libresolv.tbd */,
 				E3FD61A4201BD2DA0087160A /* gifski.h */,
 			);
 			name = Frameworks;
