@@ -27,13 +27,13 @@
                     <rect key="frame" x="0.0" y="0.0" width="360" height="240"/>
                     <subviews>
                         <customView placeholderIntrinsicWidth="96" placeholderIntrinsicHeight="87" translatesAutoresizingMaskIntoConstraints="NO" id="9j4-tJ-yJo">
-                            <rect key="frame" x="132" y="145" width="96" height="87"/>
+                            <rect key="frame" x="132" y="135" width="96" height="87"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="96" id="353-Ah-53J"/>
                             </constraints>
                         </customView>
                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="uI2-zc-34L" customClass="Label" customModule="Gifski" customModuleProvider="target">
-                            <rect key="frame" x="18" y="112" width="324" height="17"/>
+                            <rect key="frame" x="18" y="102" width="324" height="17"/>
                             <textFieldCell key="cell" lineBreakMode="truncatingTail" alignment="center" title="Some video.gif" id="H94-DF-Q6o">
                                 <font key="font" usesAppearanceFont="YES"/>
                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -41,7 +41,7 @@
                             </textFieldCell>
                         </textField>
                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="gf3-Uh-Jor" customClass="Label" customModule="Gifski" customModuleProvider="target">
-                            <rect key="frame" x="18" y="87" width="324" height="17"/>
+                            <rect key="frame" x="18" y="77" width="324" height="17"/>
                             <textFieldCell key="cell" lineBreakMode="truncatingTail" alignment="center" title="12 MB" id="c0z-54-vQR">
                                 <font key="font" metaFont="system"/>
                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -49,7 +49,7 @@
                             </textFieldCell>
                         </textField>
                         <stackView distribution="fillEqually" orientation="horizontal" alignment="top" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9qZ-H7-TZZ">
-                            <rect key="frame" x="30" y="32" width="300" height="30"/>
+                            <rect key="frame" x="30" y="22" width="300" height="30"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="e7w-oB-lHq">
                                     <rect key="frame" x="0.0" y="7" width="93" height="23"/>
@@ -103,7 +103,7 @@
                         <constraint firstItem="9qZ-H7-TZZ" firstAttribute="top" secondItem="uI2-zc-34L" secondAttribute="bottom" constant="50" id="hm3-2E-M2T"/>
                         <constraint firstItem="gf3-Uh-Jor" firstAttribute="leading" secondItem="uI2-zc-34L" secondAttribute="leading" id="nf3-NY-aCF"/>
                         <constraint firstItem="gf3-Uh-Jor" firstAttribute="trailing" secondItem="uI2-zc-34L" secondAttribute="trailing" id="psA-W7-MeV"/>
-                        <constraint firstAttribute="bottom" secondItem="9qZ-H7-TZZ" secondAttribute="bottom" constant="32" id="re2-sU-7h7"/>
+                        <constraint firstAttribute="bottom" secondItem="9qZ-H7-TZZ" secondAttribute="bottom" constant="22" id="re2-sU-7h7"/>
                         <constraint firstAttribute="height" constant="240" id="t2h-Wf-tiy"/>
                     </constraints>
                 </customView>
