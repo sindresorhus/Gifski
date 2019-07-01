@@ -9,24 +9,24 @@ final class VideoDropViewController: NSViewController {
 			self?.convert(url)
 		}
 	}
-	
+
 	convenience init(dropLabelIsHidden: Bool = false) {
 		self.init()
-		
+
 		videoDropView.isDropLabelHidden = dropLabelIsHidden
 	}
-	
+
 	override func loadView() {
 		let view = videoDropView
 		view.frame.size = Constants.defaultWindowSize
 		self.view = view
 	}
-	
+
 	func convert(_ inputUrl: URL) {
 		guard case let .success(videoMetadata) = videoValidator.validate(inputUrl, in: view.window) else {
 			return
 		}
-		
+
 		let editController = EditVideoViewController(inputUrl: inputUrl, videoMetadata: videoMetadata)
 		push(viewController: editController)
 	}

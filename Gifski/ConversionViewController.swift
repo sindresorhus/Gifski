@@ -97,24 +97,28 @@ final class ConversionViewController: NSViewController {
 	}
 
 	private func cancelConversion() {
-		progress?.cancel()
-		progress?.unpublish()
-
-		let dropView = VideoDropViewController()
-		circularProgress.fadeOut(delay: 1.0) {
-			self.push(viewController: dropView)
+		let videoDropController = VideoDropViewController()
+		stopConversion {
+			self.push(viewController: videoDropController)
 		}
 	}
 
 	private func didComplete(conversion: Gifski.Conversion, gifUrl: URL) {
 		let conversionCompleted = ConversionCompletedViewController(conversion: conversion, gifUrl: gifUrl)
+		stopConversion {
+			self.push(viewController: conversionCompleted)
+		}
+	}
+
+	private func stopConversion(_ completion: (() -> Void)? = nil) {
 		isRunning = false
+		progress?.cancel()
 		progress?.unpublish()
+		DockProgress.resetProgress()
 
 		circularProgress.fadeOut(delay: 1.0) {
 			self.circularProgress.resetProgress()
-			DockProgress.resetProgress()
-			self.push(viewController: conversionCompleted)
+			completion?()
 		}
 	}
 }

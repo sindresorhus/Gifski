@@ -21,7 +21,7 @@ final class ConversionCompletedViewController: NSViewController {
 		self.conversion = conversion
 		self.gifUrl = gifUrl
 	}
-	
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
