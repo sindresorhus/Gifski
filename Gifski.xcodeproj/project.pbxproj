@@ -14,6 +14,7 @@
 		858380E622BFD0E30086BC98 /* VideoDropViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858380E522BFD0E30086BC98 /* VideoDropViewController.swift */; };
 		858380EA22BFD38C0086BC98 /* ExtendedAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
+		85A5C44822CA41B500CAA94D /* VideoUrlValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A5C44722CA41B500CAA94D /* VideoUrlValidator.swift */; };
 		85B9CF6422BD3FA00050A2E4 /* Tooltip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */; };
 		85FD156222BFF12B00957AF1 /* ConversionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85FD155D22BFF12B00957AF1 /* ConversionViewController.swift */; };
 		9F3340A322431CC3006EF9B5 /* TimeRemainingEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */; };
@@ -88,6 +89,7 @@
 		858380E522BFD0E30086BC98 /* VideoDropViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDropViewController.swift; sourceTree = "<group>"; };
 		858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ExtendedAttributes.swift; sourceTree = "<group>"; usesTabs = 1; };
 		8588EB0C22A424B800030A59 /* ResizableDimensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ResizableDimensions.swift; sourceTree = "<group>"; usesTabs = 1; };
+		85A5C44722CA41B500CAA94D /* VideoUrlValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoUrlValidator.swift; sourceTree = "<group>"; };
 		85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Tooltip.swift; sourceTree = "<group>"; usesTabs = 1; };
 		85FD155D22BFF12B00957AF1 /* ConversionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConversionViewController.swift; sourceTree = "<group>"; };
 		9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = TimeRemainingEstimator.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -221,6 +223,7 @@
 				8548806D22B82D1300E97401 /* MenuPopUpButton.swift */,
 				85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */,
 				858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */,
+				85A5C44722CA41B500CAA94D /* VideoUrlValidator.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
@@ -401,6 +404,7 @@
 				B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */,
 				858380E622BFD0E30086BC98 /* VideoDropViewController.swift in Sources */,
 				8548806E22B82D1400E97401 /* MenuPopUpButton.swift in Sources */,
+				85A5C44822CA41B500CAA94D /* VideoUrlValidator.swift in Sources */,
 				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
 				6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */,
