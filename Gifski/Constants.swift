@@ -9,6 +9,6 @@ extension Defaults.Keys {
 	static let successfulConversionsCount = Key<Int>("successfulConversionsCount", default: 0)
 }
 
-extension CGSize {
+struct Constants {
 	static let defaultWindowSize = CGSize(width: 360, height: 240)
 }

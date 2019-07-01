@@ -18,7 +18,7 @@ final class VideoDropViewController: NSViewController {
 
 	override func loadView() {
 		let view = videoDropView
-		view.frame.size = .defaultWindowSize
+		view.frame.size = Constants.defaultWindowSize
 		self.view = view
 	}
 

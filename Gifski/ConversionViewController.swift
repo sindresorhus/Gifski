@@ -26,7 +26,7 @@ final class ConversionViewController: NSViewController {
 	}
 
 	override func loadView() {
-		let wrapper = NSView(frame: CGRect(origin: .zero, size: .defaultWindowSize))
+		let wrapper = NSView(frame: CGRect(origin: .zero, size: Constants.defaultWindowSize))
 		wrapper.translatesAutoresizingMaskIntoConstraints = false
 		wrapper.addSubview(circularProgress)
 		wrapper.addSubview(timeRemainingLabel)
