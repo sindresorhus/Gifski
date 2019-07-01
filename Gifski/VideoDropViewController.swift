@@ -7,7 +7,7 @@ final class VideoDropViewController: NSViewController {
 		$0.dropText = "Drop a Video to Convert to GIF"
 		$0.onComplete = { [weak self] url in
 			NSApp.activate(ignoringOtherApps: true)
-			self?.convert(url.first!)
+			self?.convert(url)
 		}
 	}
 
