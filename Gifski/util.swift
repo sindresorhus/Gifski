@@ -2451,12 +2451,3 @@ extension NSViewController {
 		childController.view.constrainEdgesToSuperview()
 	}
 }
-
-extension URL {
-	static func generateTempGifUrl(for videoUrl: URL) -> URL {
-		let tempDirectory = FileManager.default.temporaryDirectory
-		let tempName = videoUrl.filenameWithoutExtension + ".\(FileType.gif.fileExtension)"
-
-		return tempDirectory.appendingPathComponent(tempName, isDirectory: false)
-	}
-}

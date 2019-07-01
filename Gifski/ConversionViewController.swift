@@ -73,7 +73,7 @@ final class ConversionViewController: NSViewController {
 		progress?.performAsCurrent(withPendingUnitCount: 1) {
 			Gifski.run(conversion) { result in
 				do {
-					let gifUrl = URL.generateTempGifUrl(for: conversion.video)
+					let gifUrl = self.generateTempGifUrl(for: conversion.video)
 					try result.get().write(to: gifUrl, options: .atomic)
 					try? gifUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
 					defaults[.successfulConversionsCount] += 1
@@ -87,6 +87,13 @@ final class ConversionViewController: NSViewController {
 				}
 			}
 		}
+	}
+
+	private func generateTempGifUrl(for videoUrl: URL) -> URL {
+		let tempDirectory = FileManager.default.temporaryDirectory
+		let tempName = "\(videoUrl.filenameWithoutExtension).\(FileType.gif.fileExtension)"
+
+		return tempDirectory.appendingPathComponent(tempName, isDirectory: false)
 	}
 
 	private func cancelConversion() {
