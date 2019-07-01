@@ -58,6 +58,8 @@ final class ConversionCompletedViewController: NSViewController {
 		fileSizeLabel.font = .systemFont(ofSize: 12)
 
 		draggableFileWrapper.addSubview(draggableFile)
+		draggableFileWrapper.wantsLayer = true
+		draggableFileWrapper.layer?.masksToBounds = false
 		draggableFile.constrainEdgesToSuperview()
 	}
 
