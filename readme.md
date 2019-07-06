@@ -53,6 +53,13 @@ xcode-select --install
 ```
 
 
+## FAQ
+
+### Can I contribute localizations?
+
+No, we're not interested in localizing the app.
+
+
 ## Built with
 
 - [gifski library](https://github.com/ImageOptim/gifski) - High-quality GIF encoder
