@@ -88,28 +88,30 @@ public final class CircularProgress: NSView {
 			return _progress
 		}
 		set {
-			_progress = newValue.clamped(to: 0...1)
+			DispatchQueue.main.async { [weak self] in
+				guard let self = self else { return }
 
-			// swiftlint:disable:next trailing_closure
-			CALayer.animate(duration: 0.5, timingFunction: .easeOut, animations: {
-				self.progressCircle.progress = self._progress
-			})
+				self._progress = newValue.clamped(to: 0...1)
 
-			DispatchQueue.main.async {
+				// swiftlint:disable:next trailing_closure
+				CALayer.animate(duration: 0.5, timingFunction: .easeOut, animations: {
+					self.progressCircle.progress = self._progress
+				})
+
 				self.progressLabel.isHidden = self.progress == 0 && self.isIndeterminate ? self.cancelButton.isHidden : !self.cancelButton.isHidden
 
 				if !self.progressLabel.isHidden {
 					self.progressLabel.string = "\(Int(self._progress * 100))%"
 					self.successView.isHidden = true
 				}
-			}
 
-			if _progress == 1 {
-				isFinished = true
-			}
+				if self._progress == 1 {
+					self.isFinished = true
+				}
 
-			// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
-			CATransaction.flush()
+				// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
+				CATransaction.flush()
+			}
 		}
 	}
 
@@ -126,16 +128,19 @@ public final class CircularProgress: NSView {
 			return _isFinished
 		}
 		set {
-			_isFinished = newValue
+			DispatchQueue.main.async { [weak self] in
+				guard let self = self else {
+					return
+				}
 
-			if _isFinished {
-				isIndeterminate = false
+				self._isFinished = newValue
 
-				if !isCancelled, showCheckmarkAtHundredPercent {
-					progressLabel.string = ""
-					cancelButton.isHidden = true
+				if self._isFinished {
+					self.isIndeterminate = false
 
-					DispatchQueue.main.async {
+					if !self.isCancelled, self.showCheckmarkAtHundredPercent {
+						self.progressLabel.string = ""
+						self.cancelButton.isHidden = true
 						self.successView.isHidden = false
 					}
 				}
