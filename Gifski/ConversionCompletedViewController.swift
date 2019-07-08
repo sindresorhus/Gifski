@@ -25,9 +25,9 @@ final class ConversionCompletedViewController: NSViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
-		setupUI()
-		setupDropView()
-		setup(url: gifUrl)
+		setUpUI()
+		setUpDropView()
+		setUp(url: gifUrl)
 	}
 
 	override func viewDidAppear() {
@@ -48,7 +48,7 @@ final class ConversionCompletedViewController: NSViewController {
 		draggableFile.layer?.animateScaleMove(fromScale: 3, fromY: view.frame.height + draggableFile.frame.size.height)
 	}
 
-	private func setupUI() {
+	private func setUpUI() {
 		fileNameLabel.maximumNumberOfLines = 1
 		fileNameLabel.textColor = .labelColor
 		fileNameLabel.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
@@ -63,7 +63,7 @@ final class ConversionCompletedViewController: NSViewController {
 		draggableFile.constrainEdgesToSuperview()
 	}
 
-	private func setup(url: URL) {
+	private func setUp(url: URL) {
 		draggableFile.fileUrl = url
 		fileNameLabel.text = conversion.video.lastPathComponent
 		fileSizeLabel.text = url.fileSizeFormatted
@@ -91,7 +91,7 @@ final class ConversionCompletedViewController: NSViewController {
 		}
 	}
 
-	private func setupDropView() {
+	private func setUpDropView() {
 		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
 		add(childController: videoDropController)
 	}
