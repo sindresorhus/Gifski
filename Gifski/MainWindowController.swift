@@ -11,6 +11,8 @@ final class MainWindowController: NSWindowController {
 
 	convenience init() {
 		let window = NSWindow.centeredWindow(size: .zero)
+		window.contentViewController = VideoDropViewController()
+		window.centerNatural()
 		self.init(window: window)
 
 		with(window) {
@@ -29,9 +31,6 @@ final class MainWindowController: NSWindowController {
 			$0.isRestorable = false
 			$0.makeVibrant()
 		}
-
-		window.contentViewController = VideoDropViewController()
-		window.centerNatural()
 		window.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: false)
 

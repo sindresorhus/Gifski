@@ -179,7 +179,15 @@ extension NSView {
 extension NSWindow {
 	func makeVibrant() {
 		if #available(OSX 10.14, *) {
-			contentView?.insertVibrancyView(material: .underWindowBackground)
+			// So there seems to be a visual effect view already created by NSWindow.
+			// If we can attach ourselves to it and make it a vibrant one - awesome.
+			// If not, let's just add our view as a first one so it is vibrant anyways.
+			if let visualEffectView = contentView?.superview?.subviews.compactMap({ $0 as? NSVisualEffectView }).first {
+				visualEffectView.blendingMode = .behindWindow
+				visualEffectView.material = .underWindowBackground
+			} else {
+				contentView?.superview?.insertVibrancyView(material: .underWindowBackground)
+			}
 		}
 	}
 }
