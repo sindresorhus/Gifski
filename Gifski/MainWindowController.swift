@@ -44,9 +44,9 @@ final class MainWindowController: NSWindowController {
 		panel.canCreateDirectories = false
 		panel.allowedFileTypes = System.supportedVideoTypes
 
-		panel.beginSheetModal(for: window!) {
+		panel.beginSheetModal(for: window!) { [weak self] in
 			if $0 == .OK {
-				self.convert(panel.url!)
+				self?.convert(panel.url!)
 			}
 		}
 	}

@@ -23,7 +23,8 @@ final class HoverView: NSView {
 ```
 */
 final class TrackingArea {
-	private let view: NSView
+	private weak var view: NSView?
+
 	private let rect: CGRect
 	private let options: NSTrackingArea.Options
 	private var trackingArea: NSTrackingArea?
@@ -45,7 +46,7 @@ final class TrackingArea {
 	*/
 	func update() {
 		if let oldTrackingArea = trackingArea {
-			view.removeTrackingArea(oldTrackingArea)
+			view?.removeTrackingArea(oldTrackingArea)
 		}
 
 		let newTrackingArea = NSTrackingArea(
@@ -58,7 +59,7 @@ final class TrackingArea {
 			userInfo: nil
 		)
 
-		view.addTrackingArea(newTrackingArea)
+		view?.addTrackingArea(newTrackingArea)
 		trackingArea = newTrackingArea
 	}
 }

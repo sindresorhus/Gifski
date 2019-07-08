@@ -70,8 +70,12 @@ final class ConversionViewController: NSViewController {
 		timeRemainingEstimator.progress = progress
 		timeRemainingEstimator.start()
 
-		progress?.performAsCurrent(withPendingUnitCount: 1) {
+		progress?.performAsCurrent(withPendingUnitCount: 1) { [weak self] in
 			Gifski.run(conversion) { result in
+				guard let self = self else {
+					return
+				}
+				
 				do {
 					let gifUrl = self.generateTempGifUrl(for: conversion.video)
 					try result.get().write(to: gifUrl, options: .atomic)
@@ -98,15 +102,15 @@ final class ConversionViewController: NSViewController {
 
 	private func cancelConversion() {
 		let videoDropController = VideoDropViewController()
-		stopConversion {
-			self.push(viewController: videoDropController)
+		stopConversion { [weak self] in
+			self?.push(viewController: videoDropController)
 		}
 	}
 
 	private func didComplete(conversion: Gifski.Conversion, gifUrl: URL) {
 		let conversionCompleted = ConversionCompletedViewController(conversion: conversion, gifUrl: gifUrl)
-		stopConversion {
-			self.push(viewController: conversionCompleted)
+		stopConversion { [weak self] in
+			self?.push(viewController: conversionCompleted)
 		}
 	}
 
@@ -116,8 +120,8 @@ final class ConversionViewController: NSViewController {
 		progress?.unpublish()
 		DockProgress.resetProgress()
 
-		circularProgress.fadeOut(delay: 1.0) {
-			self.circularProgress.resetProgress()
+		circularProgress.fadeOut(delay: 0.5) { [weak self] in
+			self?.circularProgress.resetProgress()
 			completion?()
 		}
 	}

@@ -69,7 +69,11 @@ final class ConversionCompletedViewController: NSViewController {
 		fileSizeLabel.text = url.fileSizeFormatted
 
 		shareButton.sendAction(on: .leftMouseDown)
-		shareButton.onAction = { _ in
+		shareButton.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
 			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
 		}
 
@@ -79,7 +83,11 @@ final class ConversionCompletedViewController: NSViewController {
 			pasteboard.writeObjects([url as NSURL])
 		}
 
-		saveAsButton.onAction = { _ in
+		saveAsButton.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
 			let inputUrl = self.conversion.video
 			let panel = NSSavePanel()
 			panel.canCreateDirectories = true
