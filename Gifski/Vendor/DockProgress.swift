@@ -63,9 +63,9 @@ public final class DockProgress {
 	// TODO: Make the progress smoother by also animating the steps between each call to `updateDockIcon()`
 	private static func updateDockIcon() {
 		// TODO: If the `progress` is 1, draw the full circle, then schedule another draw in n milliseconds to hide it
-		let icon = (0..<1).contains(progress) ? draw() : appIcon
 		DispatchQueue.main.async {
 			// TODO: Make this better by drawing in the `contentView` directly instead of using an image
+			let icon = (0..<1).contains(progress) ? draw() : appIcon
 			dockImageView.image = icon
 			NSApp.dockTile.display()
 		}
