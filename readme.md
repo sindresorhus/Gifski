@@ -20,7 +20,7 @@ Requires macOS 10.13 or later.
 
 ## Download
 
-[![](https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/macappstore-lrg.svg)](https://itunes.apple.com/no/app/gifski/id1351639930?mt=12)
+[![](https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/macappstore-lrg.svg)](https://apps.apple.com/us/app/gifski/id1351639930?mt=12)
 
 
 ## Features
