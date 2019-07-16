@@ -119,8 +119,7 @@ final class ConversionViewController: NSViewController {
 		progress?.cancel()
 		DockProgress.resetProgress()
 
-		circularProgress.fadeOut(delay: 0.5) { [weak self] in
-			self?.circularProgress.resetProgress()
+		circularProgress.fadeOut(delay: 0.5) {
 			completion?()
 		}
 	}
