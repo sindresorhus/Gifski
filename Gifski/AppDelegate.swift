@@ -23,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		mainWindowController.showWindow(self)
 
 		hasFinishedLaunching = true
-		NSApplication.shared.isAutomaticCustomizeTouchBarMenuItemEnabled = true
+		NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = true
 		NSApp.servicesProvider = self
 
 		if urlToConvertOnLaunch != nil {
