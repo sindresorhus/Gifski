@@ -88,9 +88,7 @@ public final class CircularProgress: NSView {
 			return _progress
 		}
 		set {
-			DispatchQueue.main.async { [weak self] in
-				guard let self = self else { return }
-
+			DispatchQueue.main.async {
 				self._progress = newValue.clamped(to: 0...1)
 
 				// swiftlint:disable:next trailing_closure
@@ -128,11 +126,7 @@ public final class CircularProgress: NSView {
 			return _isFinished
 		}
 		set {
-			DispatchQueue.main.async { [weak self] in
-				guard let self = self else {
-					return
-				}
-
+			DispatchQueue.main.async {
 				self._isFinished = newValue
 
 				if self._isFinished {
