@@ -75,7 +75,7 @@ final class ConversionViewController: NSViewController {
 				guard let self = self else {
 					return
 				}
-				
+
 				do {
 					let gifUrl = self.generateTempGifUrl(for: conversion.video)
 					try result.get().write(to: gifUrl, options: .atomic)
@@ -117,7 +117,6 @@ final class ConversionViewController: NSViewController {
 	private func stopConversion(_ completion: (() -> Void)? = nil) {
 		isRunning = false
 		progress?.cancel()
-		progress?.unpublish()
 		DockProgress.resetProgress()
 
 		circularProgress.fadeOut(delay: 0.5) { [weak self] in
