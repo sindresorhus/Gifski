@@ -101,6 +101,8 @@ final class ConversionViewController: NSViewController {
 	}
 
 	private func cancelConversion() {
+		progress?.cancel()
+
 		let videoDropController = VideoDropViewController()
 		stopConversion { [weak self] in
 			self?.push(viewController: videoDropController)
@@ -116,7 +118,6 @@ final class ConversionViewController: NSViewController {
 
 	private func stopConversion(_ completion: (() -> Void)? = nil) {
 		isRunning = false
-		progress?.cancel()
 		DockProgress.resetProgress()
 
 		circularProgress.fadeOut(delay: 0.5) {
