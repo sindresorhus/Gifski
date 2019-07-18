@@ -2436,10 +2436,6 @@ extension NSViewController {
 		let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
 		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
 
-		let animation = CABasicAnimation()
-		animation.toValue = newWindowFrame
-		animation.duration = 1.0
-
 		viewController.view.alphaValue = 0.0
 		NSAnimationContext.runAnimationGroup({ _ in
 			window.contentViewController?.view.animator().alphaValue = 0.0
