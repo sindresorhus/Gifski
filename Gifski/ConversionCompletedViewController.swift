@@ -89,13 +89,28 @@ final class ConversionCompletedViewController: NSViewController {
 			}
 
 			let inputUrl = self.conversion.video
+
 			let panel = NSSavePanel()
 			panel.canCreateDirectories = true
 			panel.allowedFileTypes = [FileType.gif.identifier]
 			panel.directoryURL = inputUrl.directoryURL
 			panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
 			panel.message = "Choose where to save the GIF"
-			panel.beginSheetModal(for: self.view.window!) { _ in }
+
+			panel.beginSheetModal(for: self.view.window!) { response in
+				guard
+					response == .OK,
+					let outputUrl = panel.url
+				else {
+					return
+				}
+
+				do {
+					try FileManager.default.copyItem(at: url, to: outputUrl)
+				} catch {
+					self.presentError(error)
+				}
+			}
 		}
 	}
 
