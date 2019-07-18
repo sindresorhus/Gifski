@@ -85,6 +85,7 @@ final class EditVideoViewController: NSViewController {
 		heightTextField.nextKeyView = dimensionsTypeDropdown
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
+		predefinedSizesDropdown.focus()
 	}
 
 	private func setupDimensions() {
