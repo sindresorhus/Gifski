@@ -42,8 +42,8 @@ public final class CircularProgress: NSView {
 		$0.activeBackgroundColor = color
 		$0.borderWidth = 0
 		$0.isHidden = true
-		$0.onAction = { _ in
-			self.cancelProgress()
+		$0.onAction = { [weak self] _ in
+			self?.cancelProgress()
 		}
 	}
 
@@ -88,28 +88,28 @@ public final class CircularProgress: NSView {
 			return _progress
 		}
 		set {
-			_progress = newValue.clamped(to: 0...1)
-
-			// swiftlint:disable:next trailing_closure
-			CALayer.animate(duration: 0.5, timingFunction: .easeOut, animations: {
-				self.progressCircle.progress = self._progress
-			})
-
 			DispatchQueue.main.async {
+				self._progress = newValue.clamped(to: 0...1)
+
+				// swiftlint:disable:next trailing_closure
+				CALayer.animate(duration: 0.5, timingFunction: .easeOut, animations: {
+					self.progressCircle.progress = self._progress
+				})
+
 				self.progressLabel.isHidden = self.progress == 0 && self.isIndeterminate ? self.cancelButton.isHidden : !self.cancelButton.isHidden
-			}
 
-			if !progressLabel.isHidden {
-				progressLabel.string = "\(Int(_progress * 100))%"
-				successView.isHidden = true
-			}
+				if !self.progressLabel.isHidden {
+					self.progressLabel.string = "\(Int(self._progress * 100))%"
+					self.successView.isHidden = true
+				}
 
-			if _progress == 1 {
-				isFinished = true
-			}
+				if self._progress == 1 {
+					self.isFinished = true
+				}
 
-			// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
-			CATransaction.flush()
+				// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
+				CATransaction.flush()
+			}
 		}
 	}
 
@@ -126,16 +126,15 @@ public final class CircularProgress: NSView {
 			return _isFinished
 		}
 		set {
-			_isFinished = newValue
+			DispatchQueue.main.async {
+				self._isFinished = newValue
 
-			if _isFinished {
-				isIndeterminate = false
+				if self._isFinished {
+					self.isIndeterminate = false
 
-				if !isCancelled, showCheckmarkAtHundredPercent {
-					progressLabel.string = ""
-					cancelButton.isHidden = true
-
-					DispatchQueue.main.async {
+					if !self.isCancelled, self.showCheckmarkAtHundredPercent {
+						self.progressLabel.string = ""
+						self.cancelButton.isHidden = true
 						self.successView.isHidden = false
 					}
 				}
@@ -149,28 +148,28 @@ public final class CircularProgress: NSView {
 	public var progressInstance: Progress? {
 		didSet {
 			if let progressInstance = progressInstance {
-				progressObserver = progressInstance.observe(\.fractionCompleted) { sender, _ in
-					guard !self.isCancelled && !sender.isFinished else {
+				progressObserver = progressInstance.observe(\.fractionCompleted) { [weak self] sender, _ in
+					guard let self = self, !self.isCancelled && !sender.isFinished else {
 						return
 					}
 
 					self.progress = sender.fractionCompleted
 				}
 
-				finishedObserver = progressInstance.observe(\.isFinished) { sender, _ in
-					guard !self.isCancelled && sender.isFinished else {
+				finishedObserver = progressInstance.observe(\.isFinished) { [weak self] sender, _ in
+					guard let self = self, !self.isCancelled && sender.isFinished else {
 						return
 					}
 
 					self.progress = 1
 				}
 
-				cancelledObserver = progressInstance.observe(\.isCancelled) { sender, _ in
-					self.isCancelled = sender.isCancelled
+				cancelledObserver = progressInstance.observe(\.isCancelled) { [weak self] sender, _ in
+					self?.isCancelled = sender.isCancelled
 				}
 
-				indeterminateObserver = progressInstance.observe(\.isIndeterminate) { sender, _ in
-					self.isIndeterminate = sender.isIndeterminate
+				indeterminateObserver = progressInstance.observe(\.isIndeterminate) { [weak self] sender, _ in
+					self?.isIndeterminate = sender.isIndeterminate
 				}
 
 				isCancellable = progressInstance.isCancellable
@@ -404,14 +403,16 @@ public final class CircularProgress: NSView {
 			return _isIndeterminate
 		}
 		set {
-			willChangeValue(for: \.isIndeterminate)
-			_isIndeterminate = newValue
-			didChangeValue(for: \.isIndeterminate)
+			DispatchQueue.main.async {
+				self.willChangeValue(for: \.isIndeterminate)
+				self._isIndeterminate = newValue
+				self.didChangeValue(for: \.isIndeterminate)
 
-			if _isIndeterminate {
-				startIndeterminateState()
-			} else {
-				stopIndeterminateState()
+				if self._isIndeterminate {
+					self.startIndeterminateState()
+				} else {
+					self.stopIndeterminateState()
+				}
 			}
 		}
 	}

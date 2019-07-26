@@ -179,7 +179,15 @@ extension NSView {
 extension NSWindow {
 	func makeVibrant() {
 		if #available(OSX 10.14, *) {
-			contentView?.insertVibrancyView(material: .underWindowBackground)
+			// So there seems to be a visual effect view already created by NSWindow.
+			// If we can attach ourselves to it and make it a vibrant one - awesome.
+			// If not, let's just add our view as a first one so it is vibrant anyways.
+			if let visualEffectView = contentView?.superview?.subviews.compactMap({ $0 as? NSVisualEffectView }).first {
+				visualEffectView.blendingMode = .behindWindow
+				visualEffectView.material = .underWindowBackground
+			} else {
+				contentView?.superview?.insertVibrancyView(material: .underWindowBackground)
+			}
 		}
 	}
 }
@@ -2400,6 +2408,7 @@ extension NSControl {
 	}
 }
 
+
 extension URL {
 	enum MetadataKey {
 		/// The app used to create the file, for example, `Gifski 2.0.0`, `QuickTime Player 10.5`, etc.
@@ -2415,5 +2424,34 @@ extension URL {
 
 	func setMetadata<T>(key: MetadataKey, value: T) throws {
 		try attributes.set("com.apple.metadata:\(key.attributeKey)", value: value)
+	}
+}
+
+extension NSViewController {
+	func push(viewController: NSViewController, completion: (() -> Void)? = nil) {
+		guard let window = view.window else {
+			return
+		}
+
+		let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
+		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
+
+		viewController.view.alphaValue = 0.0
+		NSAnimationContext.runAnimationGroup({ _ in
+			window.contentViewController?.view.animator().alphaValue = 0.0
+			window.contentViewController = nil
+			window.animator().setFrame(newWindowFrame, display: true)
+		}, completionHandler: {
+			window.contentViewController = viewController
+			viewController.view.animator().alphaValue = 1.0
+			window.makeFirstResponder(viewController)
+			completion?()
+		})
+	}
+
+	func add(childController: NSViewController) {
+		addChild(childController)
+		view.addSubview(childController.view)
+		childController.view.constrainEdgesToSuperview()
 	}
 }

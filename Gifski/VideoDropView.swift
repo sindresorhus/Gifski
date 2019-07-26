@@ -104,7 +104,7 @@ class DropView: SSView {
 
 final class VideoDropView: DropView {
 	// TODO: Any way to make this generic so we can have it in DropView instead?
-	var onComplete: (([URL]) -> Void)?
+	var onComplete: ((URL) -> Void)?
 
 	override var highlightColor: NSColor {
 		return .themeColor
@@ -120,7 +120,7 @@ final class VideoDropView: DropView {
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {
 		if let url = sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).first {
-			onComplete?([url])
+			onComplete?(url)
 			return true
 		}
 

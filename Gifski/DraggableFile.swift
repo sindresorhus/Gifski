@@ -22,8 +22,6 @@ final class DraggableFile: NSImageView {
 
 			heightConstraint.constant = image!.size.maxSize(size: 80).height
 			updateConstraints()
-
-			layer?.animateScaleMove(fromScale: 3, fromY: superview!.superview!.frame.height + frame.size.height)
 		}
 	}
 

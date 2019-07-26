@@ -7,13 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6D86841721FD283B0044F6FE /* ConversionCompletedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */; };
+		6D86841721FD283B0044F6FE /* ConversionCompletedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */; };
 		6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841621FD283B0044F6FE /* DraggableFile.swift */; };
 		8548806522B78E8300E97401 /* IntTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806422B78E8300E97401 /* IntTextField.swift */; };
 		8548806E22B82D1400E97401 /* MenuPopUpButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806D22B82D1300E97401 /* MenuPopUpButton.swift */; };
+		858380E622BFD0E30086BC98 /* VideoDropViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858380E522BFD0E30086BC98 /* VideoDropViewController.swift */; };
 		858380EA22BFD38C0086BC98 /* ExtendedAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
+		85A5C44822CA41B500CAA94D /* VideoValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A5C44722CA41B500CAA94D /* VideoValidator.swift */; };
 		85B9CF6422BD3FA00050A2E4 /* Tooltip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */; };
+		85FD156222BFF12B00957AF1 /* ConversionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85FD155D22BFF12B00957AF1 /* ConversionViewController.swift */; };
 		9F3340A322431CC3006EF9B5 /* TimeRemainingEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */; };
 		B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
@@ -34,8 +37,10 @@
 		E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */; };
 		E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* util.swift */; };
 		E3D72324229B9A7500989BDF /* CircularProgress+CheckmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D72323229B9A7500989BDF /* CircularProgress+CheckmarkView.swift */; };
-		E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */; };
-		E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */; };
+		E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */; };
+		E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */; };
+		E3FDC26D203F32DA00C00409 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E3FD61A6201BD3640087160A /* libresolv.tbd */; };
+		E3FEF31922C52819003AEFED /* ConversionCompletedViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3FEF31422C52819003AEFED /* ConversionCompletedViewController.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,13 +82,16 @@
 
 /* Begin PBXFileReference section */
 		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
-		6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ConversionCompletedView.swift; sourceTree = "<group>"; usesTabs = 1; };
+		6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ConversionCompletedViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		6D86841621FD283B0044F6FE /* DraggableFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = DraggableFile.swift; sourceTree = "<group>"; usesTabs = 1; };
 		8548806422B78E8300E97401 /* IntTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = IntTextField.swift; sourceTree = "<group>"; usesTabs = 1; };
 		8548806D22B82D1300E97401 /* MenuPopUpButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MenuPopUpButton.swift; sourceTree = "<group>"; usesTabs = 1; };
+		858380E522BFD0E30086BC98 /* VideoDropViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = VideoDropViewController.swift; sourceTree = "<group>"; };
 		858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ExtendedAttributes.swift; sourceTree = "<group>"; usesTabs = 1; };
 		8588EB0C22A424B800030A59 /* ResizableDimensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ResizableDimensions.swift; sourceTree = "<group>"; usesTabs = 1; };
+		85A5C44722CA41B500CAA94D /* VideoValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoValidator.swift; sourceTree = "<group>"; };
 		85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Tooltip.swift; sourceTree = "<group>"; usesTabs = 1; };
+		85FD155D22BFF12B00957AF1 /* ConversionViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ConversionViewController.swift; sourceTree = "<group>"; };
 		9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = TimeRemainingEstimator.swift; sourceTree = "<group>"; usesTabs = 1; };
 		B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+Util.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -106,10 +114,12 @@
 		E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = VideoDropView.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3D08F6D1E5D7BFD00F465DF /* util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = util.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3D72323229B9A7500989BDF /* CircularProgress+CheckmarkView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+CheckmarkView.swift"; sourceTree = "<group>"; usesTabs = 1; };
-		E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = SavePanelAccessoryViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
-		E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SavePanelAccessoryViewController.xib; sourceTree = "<group>"; };
+		E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = EditVideoViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = EditVideoViewController.xib; sourceTree = "<group>"; };
 		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; usesTabs = 1; };
 		E3FD61A4201BD2DA0087160A /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = "<group>"; };
+		E3FD61A6201BD3640087160A /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
+		E3FEF31422C52819003AEFED /* ConversionCompletedViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConversionCompletedViewController.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -194,11 +204,14 @@
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
 				E3A6BD102245345C00F62256 /* Constants.swift */,
 				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
-				E3DF3E86203BD2B900055855 /* SavePanelAccessoryViewController.swift */,
-				E3DF3E87203BD2B900055855 /* SavePanelAccessoryViewController.xib */,
+				858380E522BFD0E30086BC98 /* VideoDropViewController.swift */,
+				E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */,
+				E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */,
+				85FD155D22BFF12B00957AF1 /* ConversionViewController.swift */,
+				6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */,
+				E3FEF31422C52819003AEFED /* ConversionCompletedViewController.xib */,
 				E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */,
 				6D86841621FD283B0044F6FE /* DraggableFile.swift */,
-				6D86841121FD283B0044F6FE /* ConversionCompletedView.swift */,
 				9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */,
 				E339F010203820ED003B78FB /* Gifski.swift */,
 				C2040B8820435871004EE259 /* GifskiWrapper.swift */,
@@ -208,6 +221,7 @@
 				8548806D22B82D1300E97401 /* MenuPopUpButton.swift */,
 				85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */,
 				858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */,
+				85A5C44722CA41B500CAA94D /* VideoValidator.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
@@ -319,8 +333,9 @@
 			files = (
 				E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */,
 				E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */,
-				E3DF3E89203BD2B900055855 /* SavePanelAccessoryViewController.xib in Resources */,
+				E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */,
 				E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */,
+				E3FEF31922C52819003AEFED /* ConversionCompletedViewController.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -382,14 +397,17 @@
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
 				8548806522B78E8300E97401 /* IntTextField.swift in Sources */,
 				E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */,
-				E3DF3E88203BD2B900055855 /* SavePanelAccessoryViewController.swift in Sources */,
-				6D86841721FD283B0044F6FE /* ConversionCompletedView.swift in Sources */,
+				E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */,
+				6D86841721FD283B0044F6FE /* ConversionCompletedViewController.swift in Sources */,
 				B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */,
+				858380E622BFD0E30086BC98 /* VideoDropViewController.swift in Sources */,
 				8548806E22B82D1400E97401 /* MenuPopUpButton.swift in Sources */,
+				85A5C44822CA41B500CAA94D /* VideoValidator.swift in Sources */,
 				C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */,
 				6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */,
 				9F3340A322431CC3006EF9B5 /* TimeRemainingEstimator.swift in Sources */,
+				85FD156222BFF12B00957AF1 /* ConversionViewController.swift in Sources */,
 				E3D72324229B9A7500989BDF /* CircularProgress+CheckmarkView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -1,7 +1,7 @@
 import Cocoa
 import AVKit
 
-final class SavePanelAccessoryViewController: NSViewController {
+final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {
 		case custom
 		case spacer
@@ -29,8 +29,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 	var inputUrl: URL!
 	var videoMetadata: AVURLAsset.VideoMetadata!
-	var onDimensionChange: ((CGSize) -> Void)?
-	var onFramerateChange: ((Int) -> Void)?
 
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
@@ -44,6 +42,30 @@ final class SavePanelAccessoryViewController: NSViewController {
 		maxWidth: 300
 	)
 
+	convenience init(inputUrl: URL, videoMetadata: AVURLAsset.VideoMetadata) {
+		self.init()
+
+		self.inputUrl = inputUrl
+		self.videoMetadata = videoMetadata
+	}
+
+	@IBAction private func convert(_ sender: Any) {
+		let conversion = Gifski.Conversion(
+			video: inputUrl,
+			quality: defaults[.outputQuality],
+			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
+			frameRate: frameRateSlider.integerValue
+		)
+
+		let convert = ConversionViewController(conversion: conversion)
+		push(viewController: convert)
+	}
+
+	@IBAction private func cancel(_ sender: Any) {
+		let videoDropController = VideoDropViewController()
+		push(viewController: videoDropController)
+	}
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
@@ -52,13 +74,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		setupDropdowns()
 		setupSliders()
 		setupWidthAndHeightTextFields()
-	}
-
-	override func viewWillAppear() {
-		super.viewWillAppear()
-
-		// Hack to enlarge extended save panel frame. Original frame: `{841,481}`
-		UserDefaults.standard.set("{841, 681}", forKey: "NSNavPanelExpandedSizeForSaveMode")
+		setupDropView()
 	}
 
 	override func viewDidAppear() {
@@ -69,6 +85,7 @@ final class SavePanelAccessoryViewController: NSViewController {
 		heightTextField.nextKeyView = dimensionsTypeDropdown
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
+		predefinedSizesDropdown.focus()
 	}
 
 	private func setupDimensions() {
@@ -204,7 +221,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 
 			let frameRate = self.frameRateSlider.integerValue
 			self.frameRateLabel.stringValue = "\(frameRate)"
-			self.onFramerateChange?(frameRate)
 			self.estimateFileSize()
 		}
 
@@ -257,6 +273,11 @@ final class SavePanelAccessoryViewController: NSViewController {
 		updateTextFieldsMinMax()
 	}
 
+	private func setupDropView() {
+		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
+		add(childController: videoDropController)
+	}
+
 	private func updateTextFieldsMinMax() {
 		let widthMinMax = resizableDimensions.widthMinMax
 		let heightMinMax = resizableDimensions.heightMinMax
@@ -268,7 +289,6 @@ final class SavePanelAccessoryViewController: NSViewController {
 		updateDimensionsDisplay()
 		estimateFileSize()
 		selectPredefinedSizeBasedOnCurrentDimensions()
-		onDimensionChange?(resizableDimensions.currentDimensions.value)
 	}
 
 	private func estimateFileSize() {

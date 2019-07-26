@@ -6,7 +6,7 @@ import Crashlytics
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
 	var hasFinishedLaunching = false
-	var urlsToConvertOnLaunch: URL!
+	var urlToConvertOnLaunch: URL!
 
 	func applicationWillFinishLaunching(_ notification: Notification) {
 		UserDefaults.standard.register(defaults: [
@@ -23,20 +23,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		mainWindowController.showWindow(self)
 
 		hasFinishedLaunching = true
-		NSApplication.shared.isAutomaticCustomizeTouchBarMenuItemEnabled = true
+		NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = true
 		NSApp.servicesProvider = self
 
-		if urlsToConvertOnLaunch != nil {
-			mainWindowController.convert(urlsToConvertOnLaunch)
+		if urlToConvertOnLaunch != nil {
+			mainWindowController.convert(urlToConvertOnLaunch)
 		}
 	}
 
 	func application(_ application: NSApplication, open urls: [URL]) {
-		guard !mainWindowController.isRunning else {
-			return
-		}
-
-		guard urls.count == 1 else {
+		guard urls.count == 1, let videoUrl = urls.first else {
 			NSAlert.showModal(
 				for: mainWindowController.window,
 				message: "Gifski can only convert a single file at the time."
@@ -44,15 +40,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			return
 		}
 
-		let videoUrl = urls.first!
-
 		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
 		if hasFinishedLaunching {
 			mainWindowController.convert(videoUrl)
 		} else {
 			// This method is called before `applicationDidFinishLaunching`,
 			// so we buffer it up a video is "Open with" this app
-			urlsToConvertOnLaunch = videoUrl
+			urlToConvertOnLaunch = videoUrl
 		}
 	}
 
