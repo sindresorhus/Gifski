@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14490.70" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14845" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14490.70"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14845"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -15,6 +15,7 @@
                 <outlet property="saveAsButton" destination="Olx-b9-5Qw" id="LNI-8U-pVi"/>
                 <outlet property="shareButton" destination="xNp-Z5-9zb" id="hqI-fr-pgX"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+                <outlet property="wrapperView" destination="1a5-4g-xpl" id="r0u-I1-MxM"/>
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
@@ -27,13 +28,13 @@
                     <rect key="frame" x="0.0" y="0.0" width="360" height="240"/>
                     <subviews>
                         <customView placeholderIntrinsicWidth="96" placeholderIntrinsicHeight="87" translatesAutoresizingMaskIntoConstraints="NO" id="9j4-tJ-yJo">
-                            <rect key="frame" x="132" y="135" width="96" height="87"/>
+                            <rect key="frame" x="132" y="134" width="96" height="87"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="96" id="353-Ah-53J"/>
                             </constraints>
                         </customView>
                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="uI2-zc-34L" customClass="Label" customModule="Gifski" customModuleProvider="target">
-                            <rect key="frame" x="18" y="102" width="324" height="17"/>
+                            <rect key="frame" x="18" y="102" width="324" height="16"/>
                             <textFieldCell key="cell" lineBreakMode="truncatingTail" alignment="center" title="Some video.gif" id="H94-DF-Q6o">
                                 <font key="font" usesAppearanceFont="YES"/>
                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -41,7 +42,7 @@
                             </textFieldCell>
                         </textField>
                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="gf3-Uh-Jor" customClass="Label" customModule="Gifski" customModuleProvider="target">
-                            <rect key="frame" x="18" y="77" width="324" height="17"/>
+                            <rect key="frame" x="18" y="78" width="324" height="16"/>
                             <textFieldCell key="cell" lineBreakMode="truncatingTail" alignment="center" title="12 MB" id="c0z-54-vQR">
                                 <font key="font" metaFont="system"/>
                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>

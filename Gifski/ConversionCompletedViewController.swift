@@ -10,6 +10,7 @@ final class ConversionCompletedViewController: NSViewController {
 	@IBOutlet private var saveAsButton: NSButton!
 	@IBOutlet private var shareButton: NSButton!
 	@IBOutlet private var copyButton: NSButton!
+	@IBOutlet private var wrapperView: NSView!
 
 	private let draggableFile = DraggableFile()
 	private var conversion: Gifski.Conversion!
@@ -45,10 +46,14 @@ final class ConversionCompletedViewController: NSViewController {
 			UNUserNotificationCenter.current().add(request)
 		}
 
-		draggableFile.layer?.animateScaleMove(fromScale: 3, fromY: view.frame.height + draggableFile.frame.size.height)
+		if wrapperView.isHidden {
+			draggableFile.layer?.animateScaleMove(fromScale: 3, fromY: view.frame.height + draggableFile.frame.size.height)
+			wrapperView.fadeIn(duration: 0.5, delay: 0.15, completion: nil)
+		}
 	}
 
 	private func setUpUI() {
+		wrapperView.isHidden = true
 		fileNameLabel.maximumNumberOfLines = 1
 		fileNameLabel.textColor = .labelColor
 		fileNameLabel.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
