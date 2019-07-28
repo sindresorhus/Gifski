@@ -27,13 +27,18 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
 	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
 
+	@IBOutlet private var playerView: AVPlayerView!
+
 	var inputUrl: URL!
+	var asset: AVURLAsset!
 	var videoMetadata: AVURLAsset.VideoMetadata!
 
+	private var startTime: Double?
+	private var endTime: Double?
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
-
 	private let formatter = ByteCountFormatter()
+	private var trimmingObserver: NSKeyValueObservation?
 
 	private let tooltip = Tooltip(
 		identifier: "savePanelArrowKeys",
@@ -42,16 +47,19 @@ final class EditVideoViewController: NSViewController {
 		maxWidth: 300
 	)
 
-	convenience init(inputUrl: URL, videoMetadata: AVURLAsset.VideoMetadata) {
+	convenience init(inputUrl: URL, asset: AVURLAsset, videoMetadata: AVURLAsset.VideoMetadata) {
 		self.init()
 
 		self.inputUrl = inputUrl
+		self.asset = asset
 		self.videoMetadata = videoMetadata
 	}
 
 	@IBAction private func convert(_ sender: Any) {
 		let conversion = Gifski.Conversion(
 			video: inputUrl,
+			startTime: startTime,
+			endTime: endTime,
 			quality: defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue
@@ -75,6 +83,7 @@ final class EditVideoViewController: NSViewController {
 		setupSliders()
 		setupWidthAndHeightTextFields()
 		setupDropView()
+		setupTrimmingView()
 	}
 
 	override func viewDidAppear() {
@@ -278,6 +287,38 @@ final class EditVideoViewController: NSViewController {
 		add(childController: videoDropController)
 	}
 
+	private func setupTrimmingView() {
+		trimmingObserver = playerView.observe(\AVPlayerView.canBeginTrimming, options: .new) { [weak self] _, change in
+			if let canBeginTrimming = change.newValue, canBeginTrimming {
+				self?.beginTrimming()
+			}
+		}
+		playerView.player = AVPlayer(playerItem: AVPlayerItem(asset: asset))
+	}
+
+	private func beginTrimming() {
+		playerView.beginTrimming { [weak self] result in
+			guard let self = self else {
+				return
+			}
+
+			switch result {
+			case .okButton:
+				if let startTime = self.playerView.player?.currentItem?.reversePlaybackEndTime, let endTime = self.playerView.player?.currentItem?.forwardPlaybackEndTime {
+					self.startTime = startTime.seconds
+					self.endTime = endTime.seconds
+					self.estimateFileSize()
+				}
+			case .cancelButton:
+				// Recreating the player resets the start/end time on trimming view, couldn't find a better way to do it
+				self.playerView.player = AVPlayer(playerItem: AVPlayerItem(asset: self.asset))
+				self.startTime = nil
+				self.endTime = nil
+				self.estimateFileSize()
+			}
+		}
+	}
+
 	private func updateTextFieldsMinMax() {
 		let widthMinMax = resizableDimensions.widthMinMax
 		let heightMinMax = resizableDimensions.heightMinMax
@@ -292,7 +333,14 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func estimateFileSize() {
-		let frameCount = videoMetadata.duration * frameRateSlider.doubleValue
+		let duration: Double = {
+			if let startTime = self.startTime, let endTime = self.endTime {
+				return endTime - startTime
+			} else {
+				return videoMetadata.duration
+			}
+		}()
+		let frameCount = duration * frameRateSlider.doubleValue
 		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
 		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5

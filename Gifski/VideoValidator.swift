@@ -4,7 +4,7 @@ import AVKit
 struct VideoValidator {
 	enum Result {
 		case failure
-		case success(AVURLAsset.VideoMetadata)
+		case success(AVURLAsset, AVURLAsset.VideoMetadata)
 	}
 
 	func validate(_ inputUrl: URL, in window: NSWindow?) -> Result {
@@ -94,6 +94,6 @@ struct VideoValidator {
 			return .failure
 		}
 
-		return .success(videoMetadata)
+		return .success(asset, videoMetadata)
 	}
 }

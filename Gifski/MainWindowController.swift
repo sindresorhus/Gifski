@@ -52,12 +52,12 @@ final class MainWindowController: NSWindowController {
 	}
 
 	func convert(_ inputUrl: URL) {
-		guard !isConverting, case let .success(videoMetadata) = videoValidator.validate(inputUrl, in: window) else {
+		guard !isConverting, case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: window) else {
 			return
 		}
 
-		let editVideoController = EditVideoViewController(inputUrl: inputUrl, videoMetadata: videoMetadata)
-		window?.contentViewController?.push(viewController: editVideoController)
+		let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
+		window?.contentViewController?.push(viewController: editController)
 	}
 }
 
