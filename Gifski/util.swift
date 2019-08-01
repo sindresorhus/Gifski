@@ -2455,3 +2455,20 @@ extension NSViewController {
 		childController.view.constrainEdgesToSuperview()
 	}
 }
+
+extension NSView {
+	/// Get a subview matching a condition
+	func firstSubview(where matches: (NSView) -> Bool, deep: Bool = false) -> NSView? {
+		for subview in subviews {
+			if matches(subview) {
+				return subview
+			}
+
+			if deep, let match = subview.firstSubview(where: matches, deep: deep) {
+				return match
+			}
+		}
+
+		return nil
+	}
+}
