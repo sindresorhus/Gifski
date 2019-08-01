@@ -26,7 +26,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var heightTextField: IntTextField!
 	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
 	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
-
+	@IBOutlet private var cancelButton: NSButton!
 	@IBOutlet private var playerView: TrimmingAVPlayerView!
 
 	var inputUrl: URL!
@@ -90,6 +90,7 @@ final class EditVideoViewController: NSViewController {
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		widthTextField.nextKeyView = heightTextField
 		heightTextField.nextKeyView = dimensionsTypeDropdown
+		qualitySlider.nextKeyView = cancelButton
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 		predefinedSizesDropdown.focus()

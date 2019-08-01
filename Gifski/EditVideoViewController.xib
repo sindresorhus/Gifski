@@ -9,6 +9,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="EditVideoViewController" customModule="Gifski" customModuleProvider="target">
             <connections>
+                <outlet property="cancelButton" destination="AF4-ry-iae" id="N7A-3Z-lGo"/>
                 <outlet property="dimensionsTypeDropdown" destination="aVG-zO-Cd7" id="d67-vF-mqS"/>
                 <outlet property="estimatedSizeLabel" destination="iCr-ZN-9aI" id="ATK-IA-uf5"/>
                 <outlet property="frameRateLabel" destination="5Ke-gz-J2u" id="VaC-Et-vm7"/>
