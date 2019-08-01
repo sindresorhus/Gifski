@@ -3,16 +3,11 @@ import AVKit
 
 import AVFoundation
 
-final class GifskiAVPlayerView: AVPlayerView {
-
-	private var startTime: Double?
-	private var endTime: Double?
-
-	private var startTimeObserver: NSKeyValueObservation?
-	private var endTimeObserver: NSKeyValueObservation?
+final class TrimmingAVPlayerView: AVPlayerView {
+	private var timeRangeObserver: NSKeyValueObservation?
 
 	func observeTrimmedTimeRange(_ updateClosure: @escaping (ClosedRange<Double>) -> Void) {
-		startTimeObserver = player?.currentItem?.observe(\.duration, options: [.new]) { [weak self] item, change in
+		timeRangeObserver = player?.currentItem?.observe(\.duration, options: [.new]) { item, _ in
 			let startTime = item.reversePlaybackEndTime.seconds
 			let endTime = item.forwardPlaybackEndTime.seconds
 			if !startTime.isNaN && !endTime.isNaN {
@@ -90,7 +85,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
 	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
 
-	@IBOutlet private var playerView: GifskiAVPlayerView!
+	@IBOutlet private var playerView: TrimmingAVPlayerView!
 
 	var inputUrl: URL!
 	var asset: AVURLAsset!

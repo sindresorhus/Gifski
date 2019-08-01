@@ -231,7 +231,7 @@
                         <rect key="frame" x="3" y="3" width="757" height="408"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <avPlayerView controlsStyle="inline" translatesAutoresizingMaskIntoConstraints="NO" id="A1n-d0-YYF" customClass="GifskiAVPlayerView" customModule="Gifski" customModuleProvider="target">
+                            <avPlayerView controlsStyle="inline" translatesAutoresizingMaskIntoConstraints="NO" id="A1n-d0-YYF" customClass="TrimmingAVPlayerView" customModule="Gifski" customModuleProvider="target">
                                 <rect key="frame" x="4" y="4" width="749" height="400"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="400" id="ewA-ag-vvp"/>
