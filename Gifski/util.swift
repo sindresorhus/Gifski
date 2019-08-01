@@ -2457,7 +2457,7 @@ extension NSViewController {
 }
 
 extension NSView {
-	/// Get a subview matching a condition
+	/// Get a subview matching a condition.
 	func firstSubview(where matches: (NSView) -> Bool, deep: Bool = false) -> NSView? {
 		for subview in subviews {
 			if matches(subview) {
@@ -2474,13 +2474,23 @@ extension NSView {
 }
 
 extension NSLayoutConstraint {
-	func changing(firstItem: Any? = nil, firstAttribute: Attribute? = nil, relation: Relation? = nil, secondItem: NSView? = nil, secondAttribute: Attribute? = nil, multiplier: Double? = nil, constant: CGFloat? = nil) -> NSLayoutConstraint {
-		return NSLayoutConstraint(item: firstItem ?? self.firstItem,
-								  attribute: firstAttribute ?? self.firstAttribute,
-								  relatedBy: relation ?? self.relation,
-								  toItem: secondItem ?? self.secondItem,
-								  attribute: secondAttribute ?? self.secondAttribute,
-								  multiplier: multiplier.flatMap(CGFloat.init) ?? self.multiplier,
-								  constant: constant ?? self.constant)
+	func changing(
+		firstItem: Any? = nil,
+		firstAttribute: Attribute? = nil,
+		relation: Relation? = nil,
+		secondItem: NSView? = nil,
+		secondAttribute: Attribute? = nil,
+		multiplier: Double? = nil,
+		constant: CGFloat? = nil
+	) -> NSLayoutConstraint {
+		return NSLayoutConstraint(
+			item: firstItem ?? self.firstItem,
+			attribute: firstAttribute ?? self.firstAttribute,
+			relatedBy: relation ?? self.relation,
+			toItem: secondItem ?? self.secondItem,
+			attribute: secondAttribute ?? self.secondAttribute,
+			multiplier: multiplier.flatMap(CGFloat.init) ?? self.multiplier,
+			constant: constant ?? self.constant
+		)
 	}
 }
