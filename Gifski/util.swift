@@ -2474,6 +2474,7 @@ extension NSView {
 }
 
 extension NSLayoutConstraint {
+	/// Returns copy of the constraint with changed properties provided as arguments
 	func changing(
 		firstItem: Any? = nil,
 		firstAttribute: Attribute? = nil,
@@ -2481,16 +2482,28 @@ extension NSLayoutConstraint {
 		secondItem: NSView? = nil,
 		secondAttribute: Attribute? = nil,
 		multiplier: Double? = nil,
-		constant: CGFloat? = nil
+		constant: Double? = nil
 	) -> NSLayoutConstraint {
 		return NSLayoutConstraint(
-			item: firstItem ?? self.firstItem,
+			item: firstItem ?? self.firstItem as Any,
 			attribute: firstAttribute ?? self.firstAttribute,
 			relatedBy: relation ?? self.relation,
 			toItem: secondItem ?? self.secondItem,
 			attribute: secondAttribute ?? self.secondAttribute,
 			multiplier: multiplier.flatMap(CGFloat.init) ?? self.multiplier,
-			constant: constant ?? self.constant
+			constant: constant.flatMap(CGFloat.init) ?? self.constant
 		)
+	}
+}
+
+extension NSObject {
+	/// Returns the class name.
+	class var simpleClassName: String {
+		return String(describing: self)
+	}
+
+	/// Returns the class name of the instance.
+	var simpleClassName: String {
+		return type(of: self).simpleClassName
 	}
 }

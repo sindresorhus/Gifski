@@ -37,7 +37,6 @@ final class EditVideoViewController: NSViewController {
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
 	private let formatter = ByteCountFormatter()
-	private var trimmingObserver: NSKeyValueObservation?
 
 	private let tooltip = Tooltip(
 		identifier: "savePanelArrowKeys",
@@ -288,16 +287,7 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func setUpTrimmingView() {
-		trimmingObserver = playerView.observe(\.canBeginTrimming, options: .new) { [weak self] _, change in
-			if let canBeginTrimming = change.newValue, canBeginTrimming {
-				self?.beginTrimming()
-			}
-		}
 		playerView.player = AVPlayer(playerItem: AVPlayerItem(asset: asset))
-	}
-
-	private func beginTrimming() {
-		playerView.beginTrimming(completionHandler: nil)
 		playerView.observeTrimmedTimeRange { [weak self] timeRange in
 			NSLog("startTime: \(timeRange.lowerBound), endTime: \(timeRange.upperBound)")
 			self?.timeRange = timeRange
