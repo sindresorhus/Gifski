@@ -2472,3 +2472,15 @@ extension NSView {
 		return nil
 	}
 }
+
+extension NSLayoutConstraint {
+	func changing(firstItem: Any? = nil, firstAttribute: Attribute? = nil, relation: Relation? = nil, secondItem: NSView? = nil, secondAttribute: Attribute? = nil, multiplier: Double? = nil, constant: CGFloat? = nil) -> NSLayoutConstraint {
+		return NSLayoutConstraint(item: firstItem ?? self.firstItem,
+								  attribute: firstAttribute ?? self.firstAttribute,
+								  relatedBy: relation ?? self.relation,
+								  toItem: secondItem ?? self.secondItem,
+								  attribute: secondAttribute ?? self.secondAttribute,
+								  multiplier: multiplier.flatMap(CGFloat.init) ?? self.multiplier,
+								  constant: constant ?? self.constant)
+	}
+}

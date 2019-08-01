@@ -1,47 +1,6 @@
 import Cocoa
 import AVKit
 
-import AVFoundation
-
-final class TrimmingAVPlayerView: AVPlayerView {
-	private var timeRangeObserver: NSKeyValueObservation?
-
-	func observeTrimmedTimeRange(_ updateClosure: @escaping (ClosedRange<Double>) -> Void) {
-		timeRangeObserver = player?.currentItem?.observe(\.duration, options: [.new]) { item, _ in
-			let startTime = item.reversePlaybackEndTime.seconds
-			let endTime = item.forwardPlaybackEndTime.seconds
-			if !startTime.isNaN && !endTime.isNaN {
-				updateClosure(startTime...endTime)
-			}
-		}
-	}
-
-	func hideTrimButtons() {
-		let avTrimView = firstSubview(where: { $0.description.contains("AVTrimView") }, deep: true)
-
-		if let avTrimView = avTrimView {
-			let superview = avTrimView.superview
-			if let leftConstraint = superview?.constraints.first(where: { constraint -> Bool in
-				let firstCheck = (constraint.firstItem as? NSView) == avTrimView && constraint.firstAttribute == .right
-				let secondCheck = (constraint.secondItem as? NSView) == avTrimView && constraint.secondAttribute == .right
-				return firstCheck || secondCheck
-			}) {
-				superview?.removeConstraint(leftConstraint)
-				NSLayoutConstraint(item: leftConstraint.firstItem, attribute: .right, relatedBy: leftConstraint.relation, toItem: leftConstraint.secondItem, attribute: leftConstraint.secondAttribute, multiplier: leftConstraint.multiplier, constant: leftConstraint.constant).isActive = true
-			}
-			let subviewsToHide = superview?.subviews
-				.filter { $0 != avTrimView }
-				.first?
-				.subviews
-				.filter { ($0 as? NSButton)?.image == nil }
-			subviewsToHide?.forEach { subview in
-				let button = subview as? NSButton
-				button?.isHidden = true
-			}
-		}
-	}
-}
-
 final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {
 		case custom
