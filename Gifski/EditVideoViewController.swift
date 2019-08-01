@@ -27,16 +27,20 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
 	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
 	@IBOutlet private var cancelButton: NSButton!
-	@IBOutlet private var playerView: TrimmingAVPlayerView!
+	@IBOutlet private var playerViewWrapper: NSView!
 
 	var inputUrl: URL!
 	var asset: AVURLAsset!
 	var videoMetadata: AVURLAsset.VideoMetadata!
 
-	private var timeRange: ClosedRange<Double>?
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
 	private let formatter = ByteCountFormatter()
+	private var playerViewController: TrimmingAVPlayerViewController!
+
+	private var timeRange: ClosedRange<Double>? {
+		return playerViewController?.timeRange
+	}
 
 	private let tooltip = Tooltip(
 		identifier: "savePanelArrowKeys",
@@ -93,7 +97,6 @@ final class EditVideoViewController: NSViewController {
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 		predefinedSizesDropdown.focus()
-		playerView.hideTrimButtons()
 	}
 
 	private func setUpDimensions() {
@@ -287,12 +290,10 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func setUpTrimmingView() {
-		playerView.player = AVPlayer(playerItem: AVPlayerItem(asset: asset))
-		playerView.observeTrimmedTimeRange { [weak self] timeRange in
-			NSLog("startTime: \(timeRange.lowerBound), endTime: \(timeRange.upperBound)")
-			self?.timeRange = timeRange
+		playerViewController = TrimmingAVPlayerViewController(asset: asset) { [weak self] _ in
 			self?.estimateFileSize()
 		}
+		add(childController: playerViewController, to: playerViewWrapper)
 	}
 
 	private func updateTextFieldsMinMax() {

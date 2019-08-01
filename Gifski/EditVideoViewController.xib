@@ -2,7 +2,6 @@
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14854.2" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.AVKitIBPlugin" version="14854.2"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14854.2"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -15,7 +14,7 @@
                 <outlet property="frameRateLabel" destination="5Ke-gz-J2u" id="VaC-Et-vm7"/>
                 <outlet property="frameRateSlider" destination="Rej-Dl-z8Y" id="cIA-dv-KJw"/>
                 <outlet property="heightTextField" destination="bzf-LM-SxO" id="67N-9X-vzq"/>
-                <outlet property="playerView" destination="A1n-d0-YYF" id="GTR-P2-t5V"/>
+                <outlet property="playerViewWrapper" destination="64m-0V-WWu" id="6cd-p2-aMe"/>
                 <outlet property="predefinedSizesDropdown" destination="BWw-q9-45K" id="mLx-BM-G3f"/>
                 <outlet property="qualitySlider" destination="wmm-UU-g6g" id="RlB-Ty-dIN"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
@@ -24,8 +23,8 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customView misplaced="YES" id="Hz6-mo-xeY">
-            <rect key="frame" x="0.0" y="0.0" width="805" height="594"/>
+        <customView id="Hz6-mo-xeY">
+            <rect key="frame" x="0.0" y="0.0" width="805" height="598"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="dmb-Gl-vWp">
@@ -232,18 +231,18 @@
                         <rect key="frame" x="3" y="3" width="757" height="408"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <avPlayerView controlsStyle="inline" translatesAutoresizingMaskIntoConstraints="NO" id="A1n-d0-YYF" customClass="TrimmingAVPlayerView" customModule="Gifski" customModuleProvider="target">
+                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="64m-0V-WWu">
                                 <rect key="frame" x="4" y="4" width="749" height="400"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="400" id="ewA-ag-vvp"/>
+                                    <constraint firstAttribute="height" constant="400" id="u0s-Fn-zEv"/>
                                 </constraints>
-                            </avPlayerView>
+                            </customView>
                         </subviews>
                         <constraints>
-                            <constraint firstAttribute="bottom" secondItem="A1n-d0-YYF" secondAttribute="bottom" constant="4" id="Kx9-SF-0lF"/>
-                            <constraint firstItem="A1n-d0-YYF" firstAttribute="leading" secondItem="A4L-BH-n0C" secondAttribute="leading" constant="4" id="Ldh-lX-Frn"/>
-                            <constraint firstItem="A1n-d0-YYF" firstAttribute="top" secondItem="A4L-BH-n0C" secondAttribute="top" constant="4" id="PTx-LM-SrF"/>
-                            <constraint firstAttribute="trailing" secondItem="A1n-d0-YYF" secondAttribute="trailing" constant="4" id="vrd-V5-1gG"/>
+                            <constraint firstItem="64m-0V-WWu" firstAttribute="top" secondItem="A4L-BH-n0C" secondAttribute="top" constant="4" id="HO9-vY-cPI"/>
+                            <constraint firstItem="64m-0V-WWu" firstAttribute="leading" secondItem="A4L-BH-n0C" secondAttribute="leading" constant="4" id="JRh-uK-w7a"/>
+                            <constraint firstAttribute="trailing" secondItem="64m-0V-WWu" secondAttribute="trailing" constant="4" id="MAJ-QD-W4d"/>
+                            <constraint firstAttribute="bottom" secondItem="64m-0V-WWu" secondAttribute="bottom" constant="4" id="zyJ-EP-ixg"/>
                         </constraints>
                     </view>
                 </box>

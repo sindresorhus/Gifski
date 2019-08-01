@@ -2450,6 +2450,10 @@ extension NSViewController {
 	}
 
 	func add(childController: NSViewController) {
+		add(childController: childController, to: view)
+	}
+
+	func add(childController: NSViewController, to view: NSView) {
 		addChild(childController)
 		view.addSubview(childController.view)
 		childController.view.constrainEdgesToSuperview()
