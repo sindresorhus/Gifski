@@ -1,6 +1,69 @@
 import Cocoa
 import AVKit
 
+import AVFoundation
+
+final class GifskiAVPlayerView: AVPlayerView {
+
+	private var startTime: Double?
+	private var endTime: Double?
+
+	private var startTimeObserver: NSKeyValueObservation?
+	private var endTimeObserver: NSKeyValueObservation?
+
+	func observeTrimmedTimeRange(_ updateClosure: @escaping (ClosedRange<Double>) -> Void) {
+		startTimeObserver = player?.currentItem?.observe(\.duration, options: [.new]) { [weak self] item, change in
+			let startTime = item.reversePlaybackEndTime.seconds
+			let endTime = item.forwardPlaybackEndTime.seconds
+			if !startTime.isNaN && !endTime.isNaN {
+				updateClosure(startTime...endTime)
+			}
+		}
+	}
+
+	func hideTrimButtons() {
+		let avTrimView = firstSubview(where: { $0.description.contains("AVTrimView") }, deep: true)
+
+		if let avTrimView = avTrimView {
+			let superview = avTrimView.superview
+			if let leftConstraint = superview?.constraints.first(where: { constraint -> Bool in
+				let firstCheck = (constraint.firstItem as? NSView) == avTrimView && constraint.firstAttribute == .right
+				let secondCheck = (constraint.secondItem as? NSView) == avTrimView && constraint.secondAttribute == .right
+				return firstCheck || secondCheck
+			}) {
+				superview?.removeConstraint(leftConstraint)
+				NSLayoutConstraint(item: leftConstraint.firstItem, attribute: .right, relatedBy: leftConstraint.relation, toItem: leftConstraint.secondItem, attribute: leftConstraint.secondAttribute, multiplier: leftConstraint.multiplier, constant: leftConstraint.constant).isActive = true
+			}
+			let subviewsToHide = superview?.subviews
+				.filter { $0 != avTrimView }
+				.first?
+				.subviews
+				.filter { ($0 as? NSButton)?.image == nil }
+			subviewsToHide?.forEach { subview in
+				let button = subview as? NSButton
+				button?.isHidden = true
+			}
+		}
+	}
+}
+
+extension NSView {
+	/// Get a subview matching a condition
+	func firstSubview(where matches: (NSView) -> Bool, deep: Bool = false) -> NSView? {
+		for subview in subviews {
+			if matches(subview) {
+				return subview
+			}
+
+			if deep, let match = subview.firstSubview(where: matches, deep: deep) {
+				return match
+			}
+		}
+
+		return nil
+	}
+}
+
 final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {
 		case custom
@@ -27,7 +90,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
 	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
 
-	@IBOutlet private var playerView: AVPlayerView!
+	@IBOutlet private var playerView: GifskiAVPlayerView!
 
 	var inputUrl: URL!
 	var asset: AVURLAsset!
@@ -93,6 +156,7 @@ final class EditVideoViewController: NSViewController {
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 		predefinedSizesDropdown.focus()
+		playerView.hideTrimButtons()
 	}
 
 	private func setUpDimensions() {
@@ -295,25 +359,11 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func beginTrimming() {
-		playerView.beginTrimming { [weak self] result in
-			guard let self = self else {
-				return
-			}
-
-			switch result {
-			case .okButton:
-				if let startTime = self.playerView.player?.currentItem?.reversePlaybackEndTime, let endTime = self.playerView.player?.currentItem?.forwardPlaybackEndTime {
-					self.startTime = startTime.seconds
-					self.endTime = endTime.seconds
-					self.estimateFileSize()
-				}
-			case .cancelButton:
-				// Recreating the player resets the start/end time on trimming view, couldn't find a better way to do it
-				self.playerView.player = AVPlayer(playerItem: AVPlayerItem(asset: self.asset))
-				self.startTime = nil
-				self.endTime = nil
-				self.estimateFileSize()
-			}
+		playerView.beginTrimming(completionHandler: nil)
+		playerView.observeTrimmedTimeRange { [weak self] timeRange in
+			NSLog("startTime: \(timeRange.lowerBound), endTime: \(timeRange.upperBound)")
+			self?.timeRange = timeRange
+			self?.estimateFileSize()
 		}
 	}
 
