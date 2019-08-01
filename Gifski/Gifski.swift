@@ -28,8 +28,7 @@ final class Gifski {
 
 	struct Conversion {
 		let video: URL
-		let startTime: Double?
-		let endTime: Double?
+		let timeRange: ClosedRange<Double>?
 		let quality: Double
 		let dimensions: CGSize?
 		let frameRate: Int?
@@ -38,10 +37,9 @@ final class Gifski {
 		/**
 		- Parameter frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
 		*/
-		init(video: URL, startTime: Double? = nil, endTime: Double? = nil, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil) {
+		init(video: URL, timeRange: ClosedRange<Double>? = nil, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil) {
 			self.video = video
-			self.startTime = startTime
-			self.endTime = endTime
+			self.timeRange = timeRange
 			self.quality = quality
 			self.dimensions = dimensions
 			self.frameRate = frameRate
@@ -133,10 +131,10 @@ final class Gifski {
 			}
 
 			let fps = (conversion.frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
-			let startTime = conversion.startTime ?? 0.0
+			let startTime = conversion.timeRange?.lowerBound ?? 0.0
 			let duration: Double = {
-				if let startTime = conversion.startTime, let endTime = conversion.endTime {
-					return endTime - startTime
+				if let timeRange = conversion.timeRange {
+					return timeRange.upperBound - timeRange.lowerBound
 				} else {
 					return asset.duration.seconds
 				}
