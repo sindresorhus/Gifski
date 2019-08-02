@@ -27,8 +27,29 @@
             <rect key="frame" x="0.0" y="0.0" width="805" height="598"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
+                <box title="Trimming" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="O0D-L4-chv">
+                    <rect key="frame" x="21" y="162" width="763" height="414"/>
+                    <view key="contentView" id="A4L-BH-n0C">
+                        <rect key="frame" x="3" y="3" width="757" height="408"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="64m-0V-WWu">
+                                <rect key="frame" x="4" y="4" width="749" height="400"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="400" id="u0s-Fn-zEv"/>
+                                </constraints>
+                            </customView>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="64m-0V-WWu" firstAttribute="top" secondItem="A4L-BH-n0C" secondAttribute="top" constant="4" id="HO9-vY-cPI"/>
+                            <constraint firstItem="64m-0V-WWu" firstAttribute="leading" secondItem="A4L-BH-n0C" secondAttribute="leading" constant="4" id="JRh-uK-w7a"/>
+                            <constraint firstAttribute="trailing" secondItem="64m-0V-WWu" secondAttribute="trailing" constant="4" id="MAJ-QD-W4d"/>
+                            <constraint firstAttribute="bottom" secondItem="64m-0V-WWu" secondAttribute="bottom" constant="4" id="zyJ-EP-ixg"/>
+                        </constraints>
+                    </view>
+                </box>
                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="dmb-Gl-vWp">
-                    <rect key="frame" x="24" y="453" width="757" height="121"/>
+                    <rect key="frame" x="24" y="37" width="757" height="121"/>
                     <subviews>
                         <box titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="EGL-as-iA7">
                             <rect key="frame" x="-3" y="-4" width="391" height="127"/>
@@ -225,27 +246,6 @@
                         <constraint firstItem="PQ8-dZ-N1k" firstAttribute="top" secondItem="EGL-as-iA7" secondAttribute="top" id="ztS-Is-CSB"/>
                     </constraints>
                 </customView>
-                <box title="Trimming" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="O0D-L4-chv">
-                    <rect key="frame" x="21" y="33" width="763" height="414"/>
-                    <view key="contentView" id="A4L-BH-n0C">
-                        <rect key="frame" x="3" y="3" width="757" height="408"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="64m-0V-WWu">
-                                <rect key="frame" x="4" y="4" width="749" height="400"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="400" id="u0s-Fn-zEv"/>
-                                </constraints>
-                            </customView>
-                        </subviews>
-                        <constraints>
-                            <constraint firstItem="64m-0V-WWu" firstAttribute="top" secondItem="A4L-BH-n0C" secondAttribute="top" constant="4" id="HO9-vY-cPI"/>
-                            <constraint firstItem="64m-0V-WWu" firstAttribute="leading" secondItem="A4L-BH-n0C" secondAttribute="leading" constant="4" id="JRh-uK-w7a"/>
-                            <constraint firstAttribute="trailing" secondItem="64m-0V-WWu" secondAttribute="trailing" constant="4" id="MAJ-QD-W4d"/>
-                            <constraint firstAttribute="bottom" secondItem="64m-0V-WWu" secondAttribute="bottom" constant="4" id="zyJ-EP-ixg"/>
-                        </constraints>
-                    </view>
-                </box>
                 <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hHF-zN-Wqa">
                     <rect key="frame" x="618" y="8" width="163" height="21"/>
                     <subviews>
@@ -284,12 +284,12 @@ DQ
                 </stackView>
             </subviews>
             <constraints>
-                <constraint firstItem="dmb-Gl-vWp" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" constant="24" id="CdH-pF-E9z"/>
-                <constraint firstItem="hHF-zN-Wqa" firstAttribute="top" secondItem="O0D-L4-chv" secondAttribute="bottom" constant="8" id="Ik7-TN-Ier"/>
+                <constraint firstItem="O0D-L4-chv" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" constant="24" id="0c5-JS-PUZ"/>
+                <constraint firstItem="hHF-zN-Wqa" firstAttribute="top" secondItem="dmb-Gl-vWp" secondAttribute="bottom" constant="8" id="Ik7-TN-Ier"/>
                 <constraint firstItem="hHF-zN-Wqa" firstAttribute="trailing" secondItem="PQ8-dZ-N1k" secondAttribute="trailing" id="YKH-2e-sJa"/>
-                <constraint firstItem="O0D-L4-chv" firstAttribute="top" secondItem="dmb-Gl-vWp" secondAttribute="bottom" constant="8" id="bRV-32-757"/>
                 <constraint firstAttribute="trailing" secondItem="dmb-Gl-vWp" secondAttribute="trailing" constant="24" id="dQw-6m-2yr"/>
                 <constraint firstAttribute="bottom" secondItem="hHF-zN-Wqa" secondAttribute="bottom" constant="8" id="hjJ-IT-g7h"/>
+                <constraint firstItem="dmb-Gl-vWp" firstAttribute="top" secondItem="O0D-L4-chv" secondAttribute="bottom" constant="8" id="i6Z-EW-yj5"/>
                 <constraint firstItem="O0D-L4-chv" firstAttribute="trailing" secondItem="dmb-Gl-vWp" secondAttribute="trailing" id="rSm-mQ-HZm"/>
                 <constraint firstItem="dmb-Gl-vWp" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="24" id="sLY-rd-0xq"/>
                 <constraint firstItem="O0D-L4-chv" firstAttribute="leading" secondItem="dmb-Gl-vWp" secondAttribute="leading" id="sNI-Gg-Rs0"/>
