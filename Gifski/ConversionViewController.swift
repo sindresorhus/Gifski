@@ -101,11 +101,9 @@ final class ConversionViewController: NSViewController {
 	}
 
 	private func cancelConversion() {
-		guard progress?.isCancelled == false else {
-			return
+		if progress?.isCancelled == false {
+			progress?.cancel()
 		}
-
-		progress?.cancel()
 
 		let videoDropController = VideoDropViewController()
 		stopConversion { [weak self] in
