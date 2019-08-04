@@ -2,8 +2,9 @@ import AppKit
 
 final class VideoDropViewController: NSViewController {
 	private let videoValidator = VideoValidator()
+
 	private lazy var videoDropView = with(VideoDropView()) {
-		$0.dropText = "Drop a Video to Convert to GIF"
+		$0.dropText = "Drop a Video"
 		$0.onComplete = { [weak self] url in
 			NSApp.activate(ignoringOtherApps: true)
 			self?.convert(url)
