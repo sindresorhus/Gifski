@@ -20,7 +20,7 @@ final class ConversionCompletedViewController: NSViewController {
 		identifier: "conversionCompletedTips",
 		text: "Go ahead and drag the thumbnail to the Finder or Safari! You can also press Space to enlarge the preview.",
 		showOnlyOnce: true,
-		maxWidth: 300
+		maxWidth: 260
 	)
 
 	convenience init(conversion: Gifski.Conversion, gifUrl: URL) {
