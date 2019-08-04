@@ -16,6 +16,13 @@ final class ConversionCompletedViewController: NSViewController {
 	private var conversion: Gifski.Conversion!
 	private var gifUrl: URL!
 
+	private let tooltip = Tooltip(
+		identifier: "conversionCompletedTips",
+		text: "You can drag the below thumbnail as if it's a file, for example, to Finder or Safari. You can press Space to enlarge the preview.",
+		showOnlyOnce: true,
+		maxWidth: 300
+	)
+
 	convenience init(conversion: Gifski.Conversion, gifUrl: URL) {
 		self.init()
 
@@ -49,6 +56,10 @@ final class ConversionCompletedViewController: NSViewController {
 		if wrapperView.isHidden {
 			draggableFile.layer?.animateScaleMove(fromScale: 3, fromY: view.frame.height + draggableFile.frame.size.height)
 			wrapperView.fadeIn(duration: 0.5, delay: 0.15, completion: nil)
+		}
+
+		delay(seconds: 1) {
+			self.tooltip.show(from: self.draggableFile, preferredEdge: .maxY)
 		}
 	}
 

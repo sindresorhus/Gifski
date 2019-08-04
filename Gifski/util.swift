@@ -21,6 +21,11 @@ func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
 }
 
 
+func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
+	DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: closure)
+}
+
+
 struct Meta {
 	static func openSubmitFeedbackPage(message: String? = nil) {
 		let defaultMessage = "<!--\nProvide your feedback here. Include as many details as possible.\nYou can also email me at sindresorhus@gmail.com\n-->"
