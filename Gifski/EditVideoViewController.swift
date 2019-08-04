@@ -26,14 +26,21 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var heightTextField: IntTextField!
 	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
 	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
+	@IBOutlet private var cancelButton: NSButton!
+	@IBOutlet private var playerViewWrapper: NSView!
 
 	var inputUrl: URL!
+	var asset: AVURLAsset!
 	var videoMetadata: AVURLAsset.VideoMetadata!
 
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
-
 	private let formatter = ByteCountFormatter()
+	private var playerViewController: TrimmingAVPlayerViewController!
+
+	private var timeRange: ClosedRange<Double>? {
+		return playerViewController?.timeRange
+	}
 
 	private let tooltip = Tooltip(
 		identifier: "savePanelArrowKeys",
@@ -42,16 +49,18 @@ final class EditVideoViewController: NSViewController {
 		maxWidth: 300
 	)
 
-	convenience init(inputUrl: URL, videoMetadata: AVURLAsset.VideoMetadata) {
+	convenience init(inputUrl: URL, asset: AVURLAsset, videoMetadata: AVURLAsset.VideoMetadata) {
 		self.init()
 
 		self.inputUrl = inputUrl
+		self.asset = asset
 		self.videoMetadata = videoMetadata
 	}
 
 	@IBAction private func convert(_ sender: Any) {
 		let conversion = Gifski.Conversion(
 			video: inputUrl,
+			timeRange: timeRange,
 			quality: defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue
@@ -70,11 +79,12 @@ final class EditVideoViewController: NSViewController {
 		super.viewDidLoad()
 
 		formatter.zeroPadsFractionDigits = true
-		setupDimensions()
-		setupDropdowns()
-		setupSliders()
-		setupWidthAndHeightTextFields()
-		setupDropView()
+		setUpDimensions()
+		setUpDropdowns()
+		setUpSliders()
+		setUpWidthAndHeightTextFields()
+		setUpDropView()
+		setUpTrimmingView()
 	}
 
 	override func viewDidAppear() {
@@ -83,12 +93,13 @@ final class EditVideoViewController: NSViewController {
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		widthTextField.nextKeyView = heightTextField
 		heightTextField.nextKeyView = dimensionsTypeDropdown
+		qualitySlider.nextKeyView = cancelButton
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 		predefinedSizesDropdown.focus()
 	}
 
-	private func setupDimensions() {
+	private func setUpDimensions() {
 		let minimumScale: CGFloat = 0.01
 		let maximumScale: CGFloat = 1
 		let dimensions = Dimensions(type: .pixels, value: videoMetadata.dimensions)
@@ -149,7 +160,7 @@ final class EditVideoViewController: NSViewController {
 		predefinedSizes.append(contentsOf: predefinedPercentDimensions.map { .dimensions($0) })
 	}
 
-	private func setupDropdowns() {
+	private func setUpDropdowns() {
 		predefinedSizesDropdown.removeAllItems()
 
 		for size in predefinedSizes {
@@ -213,7 +224,7 @@ final class EditVideoViewController: NSViewController {
 		dimensionsUpdated()
 	}
 
-	private func setupSliders() {
+	private func setUpSliders() {
 		frameRateSlider.onAction = { [weak self] _ in
 			guard let self = self else {
 				return
@@ -241,7 +252,7 @@ final class EditVideoViewController: NSViewController {
 		qualitySlider.triggerAction()
 	}
 
-	private func setupWidthAndHeightTextFields() {
+	private func setUpWidthAndHeightTextFields() {
 		widthTextField.onBlur = { [weak self] width in
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
 			self?.dimensionsUpdated()
@@ -273,9 +284,16 @@ final class EditVideoViewController: NSViewController {
 		updateTextFieldsMinMax()
 	}
 
-	private func setupDropView() {
+	private func setUpDropView() {
 		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
 		add(childController: videoDropController)
+	}
+
+	private func setUpTrimmingView() {
+		playerViewController = TrimmingAVPlayerViewController(asset: asset) { [weak self] _ in
+			self?.estimateFileSize()
+		}
+		add(childController: playerViewController, to: playerViewWrapper)
 	}
 
 	private func updateTextFieldsMinMax() {
@@ -292,7 +310,14 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func estimateFileSize() {
-		let frameCount = videoMetadata.duration * frameRateSlider.doubleValue
+		let duration: Double = {
+			if let timeRange = self.timeRange {
+				return timeRange.upperBound - timeRange.lowerBound
+			} else {
+				return videoMetadata.duration
+			}
+		}()
+		let frameCount = duration * frameRateSlider.doubleValue
 		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
 		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5

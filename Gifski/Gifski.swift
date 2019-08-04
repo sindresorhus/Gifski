@@ -28,6 +28,7 @@ final class Gifski {
 
 	struct Conversion {
 		let video: URL
+		let timeRange: ClosedRange<Double>?
 		let quality: Double
 		let dimensions: CGSize?
 		let frameRate: Int?
@@ -36,8 +37,9 @@ final class Gifski {
 		/**
 		- Parameter frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
 		*/
-		init(video: URL, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil) {
+		init(video: URL, timeRange: ClosedRange<Double>? = nil, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil) {
 			self.video = video
+			self.timeRange = timeRange
 			self.quality = quality
 			self.dimensions = dimensions
 			self.frameRate = frameRate
@@ -129,12 +131,20 @@ final class Gifski {
 			}
 
 			let fps = (conversion.frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
-			let frameCount = Int(asset.duration.seconds * fps)
+			let startTime = conversion.timeRange?.lowerBound ?? 0.0
+			let duration: Double = {
+				if let timeRange = conversion.timeRange {
+					return timeRange.upperBound - timeRange.lowerBound
+				} else {
+					return asset.duration.seconds
+				}
+			}()
+			let frameCount = Int(duration * fps)
 			progress.totalUnitCount = Int64(frameCount)
 
 			var frameForTimes = [CMTime]()
 			for index in 0..<frameCount {
-				frameForTimes.append(CMTime(seconds: (1 / fps) * Double(index), preferredTimescale: .video))
+				frameForTimes.append(CMTime(seconds: startTime + ((1 / fps) * Double(index)), preferredTimescale: .video))
 			}
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
