@@ -2,12 +2,12 @@
   "images" : [
     {
       "idiom" : "mac",
-      "filename" : "BackgroundImage-1.png",
+      "filename" : "BackgroundImage.png",
       "scale" : "1x"
     },
     {
       "idiom" : "mac",
-      "filename" : "BackgroundImage.png",
+      "filename" : "BackgroundImage@2x.png",
       "scale" : "2x"
     }
   ],
