@@ -11,4 +11,5 @@ extension Defaults.Keys {
 
 struct Constants {
 	static let defaultWindowSize = CGSize(width: 360, height: 240)
+	static let backgroundImage = NSImage(named: "BackgroundImage")!
 }
