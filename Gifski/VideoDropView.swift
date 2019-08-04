@@ -67,6 +67,11 @@ class DropView: SSView {
 	override func draw(_ dirtyRect: CGRect) {
 		super.draw(dirtyRect)
 
+		// We only draw it when the drop view controller is the main view controller.
+		if window?.contentViewController is VideoDropViewController {
+			Constants.backgroundImage.draw(in: dirtyRect)
+		}
+
 		if isDraggingHighlighted {
 			highlightColor.set()
 			let path = NSBezierPath(rect: bounds)
