@@ -41,6 +41,9 @@ final class ConversionCompletedViewController: NSViewController {
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
+		// This is needed for Quick Look to work.
+		self.view.window?.makeFirstResponder(self)
+
 		if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
 			SKStoreReviewController.requestReview()
 		}

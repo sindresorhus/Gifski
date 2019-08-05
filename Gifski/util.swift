@@ -2449,7 +2449,6 @@ extension NSViewController {
 		}, completionHandler: {
 			window.contentViewController = viewController
 			viewController.view.animator().alphaValue = 1.0
-			window.makeFirstResponder(viewController)
 			completion?()
 		})
 	}
