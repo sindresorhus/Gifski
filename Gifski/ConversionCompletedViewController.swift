@@ -81,7 +81,7 @@ final class ConversionCompletedViewController: NSViewController {
 
 	private func setUp(url: URL) {
 		draggableFile.fileUrl = url
-		fileNameLabel.text = conversion.video.lastPathComponent
+		fileNameLabel.text = url.filename
 		fileSizeLabel.text = url.fileSizeFormatted
 
 		shareButton.sendAction(on: .leftMouseDown)
