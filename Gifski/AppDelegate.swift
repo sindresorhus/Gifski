@@ -29,8 +29,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		if urlToConvertOnLaunch != nil {
 			mainWindowController.convert(urlToConvertOnLaunch)
 		}
-
-		mainWindowController.window?.printResponderChainOnChanges()
 	}
 
 	func application(_ application: NSApplication, open urls: [URL]) {
@@ -59,111 +57,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
 		Crashlytics.recordNonFatalError(error: error)
 		return error
-	}
-}
-
-extension NSResponder {
-	/// Get the responder chain as a sequence.
-	var nextResponderChain: AnySequence<NSResponder> {
-		var currentNextResponder = nextResponder
-
-		return AnySequence(AnyIterator<NSResponder> {
-			defer {
-				currentNextResponder = currentNextResponder?.nextResponder
-			}
-
-			return currentNextResponder
-		})
-	}
-}
-
-extension NSWindow {
-	func printResponderChain() {
-		print("Responder chain:")
-
-		print("(Main view controller: \(contentViewController)")
-
-		guard let firstResponder = self.firstResponder else {
-			print("  - None")
-			return
-		}
-
-		print("  - \(firstResponder)")
-
-		for responder in firstResponder.nextResponderChain {
-			print("  - \(responder)")
-		}
-	}
-
-	func printResponderChainOnChanges() {
-		printResponderChain()
-
-		observe(\.firstResponder) { window, _  in
-			window.printResponderChain()
-		}.tiedToLifetimeOf(self)
-	}
-
-	// TODO: Write a similar thing for `NSApplication` that fllows windows by observing `keyWindow`.
-}
-
-
-
-enum AssociationPolicy {
-	case assign
-	case retainNonatomic
-	case copyNonatomic
-	case retain
-	case copy
-
-	fileprivate var rawValue: objc_AssociationPolicy {
-		switch self {
-		case .assign:
-			return .OBJC_ASSOCIATION_ASSIGN
-		case .retainNonatomic:
-			return .OBJC_ASSOCIATION_RETAIN_NONATOMIC
-		case .copyNonatomic:
-			return .OBJC_ASSOCIATION_COPY_NONATOMIC
-		case .retain:
-			return .OBJC_ASSOCIATION_RETAIN
-		case .copy:
-			return .OBJC_ASSOCIATION_COPY
-		}
-	}
-}
-
-final class ObjectAssociation<T: Any> {
-	private let policy: AssociationPolicy
-
-	init(policy: AssociationPolicy = .retainNonatomic) {
-		self.policy = policy
-	}
-
-	subscript(index: Any) -> T? {
-		get {
-			return objc_getAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque()) as! T?
-		} set {
-			objc_setAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque(), newValue, policy.rawValue)
-		}
-	}
-}
-
-private let bindLifetimeAssociatedObjectKey = ObjectAssociation<[AnyObject]>()
-
-// TODO: This needs to hold `target` weakly. Right now it introduces a memory leak, as `of` will also keep `target` alive.
-/// Binds the lifetime of object A to object B, so when B deallocates, so does A, but not before.
-func bindLifetime(of object: AnyObject, to target: AnyObject) {
-	var retainedObjects = bindLifetimeAssociatedObjectKey[target] ?? []
-	retainedObjects.append(object)
-	bindLifetimeAssociatedObjectKey[target] = retainedObjects
-}
-
-extension NSKeyValueObservation {
-	// Note to self: I like this pattern of composability.
-	/// Keeps the observation alive as long as the given object.
-	@discardableResult
-	func tiedToLifetimeOf(_ object: AnyObject) -> NSKeyValueObservation {
-		bindLifetime(of: self, to: object)
-		return self
 	}
 }
 
