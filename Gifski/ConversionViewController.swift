@@ -42,14 +42,20 @@ final class ConversionViewController: NSViewController {
 		view = wrapper
 	}
 
-	override func viewDidLoad() {
-		super.viewDidLoad()
+	override func viewDidAppear() {
+		super.viewDidAppear()
+
+		view.window?.makeFirstResponder(self)
 
 		start(conversion: conversion)
 	}
 
 	/// Gets called when the Esc key is pressed.
-	/// Reference: https://stackoverflow.com/a/42440020
+	override func cancelOperation(_ sender: Any?) {
+		cancelConversion()
+	}
+
+	// TODO: Remove this when we target macOS 10.14.
 	@objc
 	func cancel(_ sender: Any?) {
 		cancelConversion()
