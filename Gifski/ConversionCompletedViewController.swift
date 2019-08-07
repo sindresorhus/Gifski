@@ -125,7 +125,7 @@ final class ConversionCompletedViewController: NSViewController {
 				}
 
 				do {
-					try FileManager.default.copyItem(at: url, to: outputUrl)
+					try FileManager.default.copyItem(at: url, to: outputUrl, overwrite: true)
 				} catch {
 					self.presentError(error)
 				}
