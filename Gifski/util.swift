@@ -2515,3 +2515,18 @@ extension NSObject {
 		return type(of: self).simpleClassName
 	}
 }
+
+extension AVPlayerItem {
+	/// The playable range of the item.
+	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
+	var playbackRange: ClosedRange<Double>? {
+		guard duration.isNumeric else {
+			return nil
+		}
+
+		let startTime = reversePlaybackEndTime.isNumeric ? reversePlaybackEndTime.seconds : 0
+		let endTime = forwardPlaybackEndTime.isNumeric ? forwardPlaybackEndTime.seconds : duration.seconds
+
+		return startTime < endTime ? startTime...endTime : endTime...startTime
+	}
+}
