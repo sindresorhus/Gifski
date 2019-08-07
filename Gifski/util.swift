@@ -2530,3 +2530,14 @@ extension AVPlayerItem {
 		return startTime < endTime ? startTime...endTime : endTime...startTime
 	}
 }
+
+extension FileManager {
+	/// Copy a file and optionally overwrite the destination if it exists.
+	func copyItem(at sourceURL: URL, to destinationURL: URL, overwrite: Bool = false) throws {
+		if overwrite {
+			try? FileManager.default.removeItem(at: destinationURL)
+		}
+
+		try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+	}
+}
