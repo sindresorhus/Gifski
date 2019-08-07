@@ -38,8 +38,10 @@ In the width/height input fields in the save panel, press the arrow up/down keys
 
 ## Screenshots
 
-<img src="Stuff/screenshot.jpg" width="918" height="413">
-<img src="Stuff/screenshot2.jpg" width="918" height="413">
+<img src="Stuff/screenshot.jpg" width="720" height="450">
+<img src="Stuff/screenshot2.jpg" width="720" height="450">
+<img src="Stuff/screenshot3.jpg" width="720" height="450">
+<img src="Stuff/screenshot4.jpg" width="720" height="450">
 
 
 ## Building from source
