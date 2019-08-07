@@ -23,28 +23,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>NSServices</key>
-	<array>
-		<dict>
-			<key>NSMessage</key>
-			<string>convertToGif</string>
-			<key>NSPortName</key>
-			<string>Gifski</string>
-			<key>NSMenuItem</key>
-			<dict>
-				<key>default</key>
-				<string>Convert to GIF with Gifski</string>
-			</dict>
-			<key>NSRequiredContext</key>
-			<dict/>
-			<key>NSSendFileTypes</key>
-			<array>
-				<string>public.mpeg-4</string>
-				<string>com.apple.m4v-video</string>
-				<string>com.apple.quicktime-movie</string> 
-			</array>
-		</dict>
-	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -56,9 +34,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.8.0</string>
+	<string>2.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>17</string>
+	<string>18</string>
 	<key>Fabric</key>
 	<dict>
 		<key>APIKey</key>
@@ -83,5 +61,27 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSServices</key>
+	<array>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Convert to GIF with Gifski</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>convertToGif</string>
+			<key>NSPortName</key>
+			<string>Gifski</string>
+			<key>NSRequiredContext</key>
+			<dict/>
+			<key>NSSendFileTypes</key>
+			<array>
+				<string>public.mpeg-4</string>
+				<string>com.apple.m4v-video</string>
+				<string>com.apple.quicktime-movie</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
