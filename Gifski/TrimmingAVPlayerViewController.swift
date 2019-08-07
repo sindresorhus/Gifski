@@ -57,11 +57,11 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		// Once we change minimum target to 10.15,
 		// observe `\.duration` instead of `\.forwardPlaybackEndTime`.
 		timeRangeObserver = player?.currentItem?.observe(\.forwardPlaybackEndTime, options: .new) { item, _ in
-			let startTime = item.reversePlaybackEndTime.seconds
-			let endTime = item.forwardPlaybackEndTime.seconds
-			if !startTime.isNaN && !endTime.isNaN {
-				updateClosure(startTime...endTime)
+			guard let playbackRange = item.playbackRange else {
+				return
 			}
+
+			updateClosure(playbackRange)
 		}
 	}
 
