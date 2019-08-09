@@ -2517,17 +2517,37 @@ extension NSObject {
 }
 
 extension AVPlayerItem {
-	/// The playable range of the item.
+	/// The duration range of the item.
 	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
-	var playbackRange: ClosedRange<Double>? {
+	var range: ClosedRange<Double>? {
 		guard duration.isNumeric else {
 			return nil
 		}
 
-		let startTime = reversePlaybackEndTime.isNumeric ? reversePlaybackEndTime.seconds : 0
-		let endTime = forwardPlaybackEndTime.isNumeric ? forwardPlaybackEndTime.seconds : duration.seconds
+		return 0...duration.seconds
+	}
 
-		return startTime < endTime ? startTime...endTime : endTime...startTime
+	/// The playable range of the item.
+	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
+	var playbackRange: ClosedRange<Double>? {
+		get {
+			guard let range = self.range else {
+				return nil
+			}
+
+			let startTime = reversePlaybackEndTime.isNumeric ? reversePlaybackEndTime.seconds : range.lowerBound
+			let endTime = forwardPlaybackEndTime.isNumeric ? forwardPlaybackEndTime.seconds : range.upperBound
+
+			return startTime < endTime ? startTime...endTime : endTime...startTime
+		}
+		set {
+			guard let range = newValue else {
+				return
+			}
+
+			forwardPlaybackEndTime = CMTime(seconds: range.upperBound, preferredTimescale: .video)
+			reversePlaybackEndTime = CMTime(seconds: range.lowerBound, preferredTimescale: .video)
+		}
 	}
 }
 
@@ -2539,5 +2559,101 @@ extension FileManager {
 		}
 
 		try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+	}
+}
+
+extension ClosedRange where Bound: AdditiveArithmetic {
+	/// Get the interval between the lower and upper bound.
+	var interval: Bound {
+		return upperBound - lowerBound
+	}
+}
+
+extension ClosedRange {
+	/**
+	Returns true if `self` is a superset of the given range.
+
+	```
+	(1.0...1.5).isSuperset(of: 1.2...1.3)
+	//=> true
+	```
+	*/
+	func isSuperset(of other: ClosedRange<Bound>) -> Bool {
+		return other.isEmpty ||
+			(
+				lowerBound <= other.lowerBound &&
+				other.upperBound <= upperBound
+			)
+	}
+
+	/**
+	Returns true if `self` is a subset of the given range.
+
+	```
+	(1.2...1.3).isSubset(of: 1.0...1.5)
+	//=> true
+	```
+	*/
+	func isSubset(of other: ClosedRange<Bound>) -> Bool {
+		return other.isSuperset(of: self)
+	}
+}
+
+extension ClosedRange where Bound == Double {
+	// TODO: Add support for negative ranges.
+	/**
+	Make a new range where the difference between the lower and upper bound is at least the given amount.
+
+	The use-case for this method is being able to ensure a sub-range inside a range is of a certain size.
+
+	It will first try to expand on both the lower and upper bound, and if not possible, it will expand the lower bound, and if that is not possible, it will expand the upper bound. If the resulting range is larger than the given `wholeRange`, it will be clamped to `wholeRange`.
+
+	- Precondition: The range and the given range must be positive.
+	- Precondition: The range must be a subset of the given range.
+
+	```
+	(1...1.2).minimumRangeDiff(of: 1, in: 0...4)
+	//=> 0.5...1.7
+
+	(0...0.5).minimumRangeDiff(of: 1, in: 0...4)
+	//=> 0...1
+
+	(3.5...4).minimumRangeDiff(of: 1, in: 0...4)
+	//=> 3...4
+
+	(0...0.1).minimumRangeDiff(of: 1, in: 0...4)
+	//=> 0...1
+	```
+	*/
+	func minimumRangeDiff(of diff: Bound, in wholeRange: ClosedRange<Bound>) -> ClosedRange<Bound> {
+		assert(isSubset(of: wholeRange), "`self` must be a subset of the given range")
+		assert(lowerBound >= 0 && upperBound >= 0, "`self` must the positive")
+		assert(wholeRange.lowerBound >= 0 && wholeRange.upperBound >= 0, "The given range must be positive")
+
+		let lower = lowerBound - (diff / 2)
+		let upper = upperBound + (diff / 2)
+
+		if
+			wholeRange.contains(lower),
+			wholeRange.contains(upper)
+		{
+			return lower...upper
+		}
+
+		if
+			!wholeRange.contains(lower),
+			wholeRange.contains(upper)
+		{
+			return wholeRange.lowerBound...diff
+		}
+
+		if
+			wholeRange.contains(lower),
+			!wholeRange.contains(upper)
+		{
+			return (wholeRange.upperBound - diff)...wholeRange.upperBound
+		}
+
+		return self
 	}
 }
