@@ -40,6 +40,11 @@ final class Tooltip: NSPopover {
 		of positioningView: NSView,
 		preferredEdge: NSRectEdge
 	) {
+		guard positioningView.window != nil else {
+			assertionFailure("Tooltip must be shown from a view with a window")
+			return
+		}
+
 		if !showOnlyOnce || (showOnlyOnce && defaults[showKey] < 1) {
 			defaults[showKey] += 1
 			super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
