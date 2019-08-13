@@ -2519,7 +2519,7 @@ extension NSObject {
 extension AVPlayerItem {
 	/// The duration range of the item.
 	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
-	var range: ClosedRange<Double>? {
+	var durationRange: ClosedRange<Double>? {
 		guard duration.isNumeric else {
 			return nil
 		}
@@ -2531,7 +2531,7 @@ extension AVPlayerItem {
 	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
 	var playbackRange: ClosedRange<Double>? {
 		get {
-			guard let range = self.range else {
+			guard let range = durationRange else {
 				return nil
 			}
 
@@ -2563,8 +2563,8 @@ extension FileManager {
 }
 
 extension ClosedRange where Bound: AdditiveArithmetic {
-	/// Get the interval between the lower and upper bound.
-	var interval: Bound {
+	/// Get the length between the lower and upper bound.
+	var length: Bound {
 		return upperBound - lowerBound
 	}
 }
@@ -2602,56 +2602,56 @@ extension ClosedRange {
 extension ClosedRange where Bound == Double {
 	// TODO: Add support for negative ranges.
 	/**
-	Make a new range where the difference between the lower and upper bound is at least the given amount.
+	Make a new range where the length (difference between the lower and upper bound) is at least the given amount.
 
 	The use-case for this method is being able to ensure a sub-range inside a range is of a certain size.
 
-	It will first try to expand on both the lower and upper bound, and if not possible, it will expand the lower bound, and if that is not possible, it will expand the upper bound. If the resulting range is larger than the given `wholeRange`, it will be clamped to `wholeRange`.
+	It will first try to expand on both the lower and upper bound, and if not possible, it will expand the lower bound, and if that is not possible, it will expand the upper bound. If the resulting range is larger than the given `fullRange`, it will be clamped to `fullRange`.
 
 	- Precondition: The range and the given range must be positive.
 	- Precondition: The range must be a subset of the given range.
 
 	```
-	(1...1.2).minimumRangeDiff(of: 1, in: 0...4)
+	(1...1.2).minimumRangeLength(of: 1, in: 0...4)
 	//=> 0.5...1.7
 
-	(0...0.5).minimumRangeDiff(of: 1, in: 0...4)
+	(0...0.5).minimumRangeLength(of: 1, in: 0...4)
 	//=> 0...1
 
-	(3.5...4).minimumRangeDiff(of: 1, in: 0...4)
+	(3.5...4).minimumRangeLength(of: 1, in: 0...4)
 	//=> 3...4
 
-	(0...0.1).minimumRangeDiff(of: 1, in: 0...4)
+	(0...0.1).minimumRangeLength(of: 1, in: 0...4)
 	//=> 0...1
 	```
 	*/
-	func minimumRangeDiff(of diff: Bound, in wholeRange: ClosedRange<Bound>) -> ClosedRange<Bound> {
-		assert(isSubset(of: wholeRange), "`self` must be a subset of the given range")
+	func minimumRangeLength(of length: Bound, in fullRange: ClosedRange<Bound>) -> ClosedRange<Bound> {
+		assert(isSubset(of: fullRange), "`self` must be a subset of the given range")
 		assert(lowerBound >= 0 && upperBound >= 0, "`self` must the positive")
-		assert(wholeRange.lowerBound >= 0 && wholeRange.upperBound >= 0, "The given range must be positive")
+		assert(fullRange.lowerBound >= 0 && fullRange.upperBound >= 0, "The given range must be positive")
 
-		let lower = lowerBound - (diff / 2)
-		let upper = upperBound + (diff / 2)
+		let lower = lowerBound - (length / 2)
+		let upper = upperBound + (length / 2)
 
 		if
-			wholeRange.contains(lower),
-			wholeRange.contains(upper)
+			fullRange.contains(lower),
+			fullRange.contains(upper)
 		{
 			return lower...upper
 		}
 
 		if
-			!wholeRange.contains(lower),
-			wholeRange.contains(upper)
+			!fullRange.contains(lower),
+			fullRange.contains(upper)
 		{
-			return wholeRange.lowerBound...diff
+			return fullRange.lowerBound...length
 		}
 
 		if
-			wholeRange.contains(lower),
-			!wholeRange.contains(upper)
+			fullRange.contains(lower),
+			!fullRange.contains(upper)
 		{
-			return (wholeRange.upperBound - diff)...wholeRange.upperBound
+			return (fullRange.upperBound - length)...fullRange.upperBound
 		}
 
 		return self

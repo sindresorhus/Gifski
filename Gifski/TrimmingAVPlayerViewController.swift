@@ -70,7 +70,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		// observe `\.duration` instead of `\.forwardPlaybackEndTime`.
 		timeRangeObserver = player?.currentItem?.observe(\.forwardPlaybackEndTime, options: .new) { item, _ in
 			guard
-				let fullRange = item.range,
+				let fullRange = item.durationRange,
 				let playbackRange = item.playbackRange
 			else {
 				return
@@ -79,13 +79,13 @@ final class TrimmingAVPlayerView: AVPlayerView {
 			/// Prevent infinite recursion.
 			guard !skipNextUpdate else {
 				skipNextUpdate = false
-				updateClosure(playbackRange.minimumRangeDiff(of: self.minimumTrimDuration, in: fullRange))
+				updateClosure(playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange))
 				return
 			}
 
-			guard playbackRange.interval > self.minimumTrimDuration else {
+			guard playbackRange.length > self.minimumTrimDuration else {
 				skipNextUpdate = true
-				item.playbackRange = playbackRange.minimumRangeDiff(of: self.minimumTrimDuration, in: fullRange)
+				item.playbackRange = playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange)
 				return
 			}
 
