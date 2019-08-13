@@ -61,7 +61,11 @@ final class ConversionCompletedViewController: NSViewController {
 			wrapperView.fadeIn(duration: 0.5, delay: 0.15, completion: nil)
 		}
 
-		delay(seconds: 1) {
+		delay(seconds: 1) { [weak self] in
+			guard let self = self else {
+				return
+			}
+
 			self.tooltip.show(from: self.draggableFile, preferredEdge: .maxY)
 		}
 	}
