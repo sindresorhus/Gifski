@@ -2626,6 +2626,10 @@ extension ClosedRange where Bound == Double {
 	```
 	*/
 	func minimumRangeLength(of length: Bound, in fullRange: ClosedRange<Bound>) -> ClosedRange<Bound> {
+		guard length > self.length else {
+			return self
+		}
+
 		assert(isSubset(of: fullRange), "`self` must be a subset of the given range")
 		assert(lowerBound >= 0 && upperBound >= 0, "`self` must the positive")
 		assert(fullRange.lowerBound >= 0 && fullRange.upperBound >= 0, "The given range must be positive")
