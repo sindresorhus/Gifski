@@ -62,7 +62,9 @@ pub struct GifskiHandle {
     writer: Mutex<Option<Writer>>,
     collector: Mutex<Option<Collector>>,
     progress: Mutex<Option<ProgressCallback>>,
-    write_thread: Mutex<Option<thread::JoinHandle<GifskiError>>>,
+    /// Bool set to true when the thread has been set up,
+    /// prevents re-setting of the thread after finish()
+    write_thread: Mutex<(bool, Option<thread::JoinHandle<GifskiError>>)>,
 }
 
 /// Call to start the process
@@ -84,7 +86,7 @@ pub extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const GifskiHa
     if let Ok((collector, writer)) = new(s) {
         Arc::into_raw(Arc::new(GifskiHandle {
             writer: Mutex::new(Some(writer)),
-            write_thread: Mutex::new(None),
+            write_thread: Mutex::new((false, None)),
             collector: Mutex::new(Some(collector)),
             progress: Mutex::new(None),
         }))
@@ -259,23 +261,22 @@ pub extern "C" fn gifski_set_file_output(handle: *const GifskiHandle, destinatio
     if handle.is_null() {
         return GifskiError::NULL_ARG;
     }
-    // get refcount++ without dropping the handle
-    let g = unsafe {
-        let tmp = Arc::from_raw(handle);
-        let g = Arc::clone(&tmp);
-        let _ = Arc::into_raw(tmp);
-        g
-    };
+    let g = unsafe { retain(handle) };
     let (file, path) = match prepare_for_file_writing(&g, destination) {
         Ok(res) => res,
         Err(err) => return err,
     };
-    *g.write_thread.lock().unwrap() = Some({
+    let mut t = g.write_thread.lock().unwrap();
+    if t.0 {
+        eprintln!("gifski_set_file_output/gifski_set_write_callback has been called already");
+        return GifskiError::INVALID_STATE;
+    }
+    *t = (true, Some(thread::spawn({
         let g = Arc::clone(&g);
-        thread::spawn(move || {
+        move || {
             gifski_write_sync_internal(&g, file, Some(path))
-        })
-    });
+        }
+    })));
     GifskiError::OK
 }
 
@@ -289,7 +290,9 @@ fn prepare_for_file_writing(g: &GifskiHandle, destination: *const c_char) -> Res
     } else {
         return Err(GifskiError::INVALID_INPUT);
     };
-    if g.write_thread.lock().unwrap().is_some() {
+    let t = g.write_thread.lock().unwrap();
+    if t.0 {
+        eprintln!("tried to start writing for the second time, after it has already started");
         return Err(GifskiError::INVALID_STATE);
     }
     match File::create(path) {
@@ -343,20 +346,19 @@ pub extern "C" fn gifski_set_write_callback(handle: *const GifskiHandle, cb: Opt
         Some(cb) => cb,
         None => return GifskiError::NULL_ARG,
     };
-    // get refcount++ without dropping the handle
-    let g = unsafe {
-        let tmp = Arc::from_raw(handle);
-        let g = Arc::clone(&tmp);
-        let _ = Arc::into_raw(tmp);
-        g
-    };
+    let g = unsafe { retain(handle) };
     let writer = CallbackWriter {cb, user_data};
-    *g.write_thread.lock().unwrap() = Some({
+    let mut t = g.write_thread.lock().unwrap();
+    if t.0 {
+        eprintln!("gifski_set_file_output/gifski_set_write_callback has been called already");
+        return GifskiError::INVALID_STATE;
+    }
+    *t = (true, Some(thread::spawn({
         let g = Arc::clone(&g);
-        thread::spawn(move || {
+        move || {
             gifski_write_sync_internal(&g, writer, None)
-        })
-    });
+        }
+    })));
     GifskiError::OK
 }
 
@@ -385,6 +387,14 @@ fn gifski_write_sync_internal<W: Write + Send>(g: &GifskiHandle, file: W, path: 
     }
 }
 
+/// get refcount++ without dropping the handle
+unsafe fn retain<T>(arc_ptr: *const T) -> Arc<T> {
+    let tmp = Arc::from_raw(arc_ptr);
+    let g = Arc::clone(&tmp);
+    let _ = Arc::into_raw(tmp);
+    g
+}
+
 /// The last step:
 ///  - stops accepting any more frames (gifski_add_frame_* calls are blocked)
 ///  - blocks and waits until all already-added frames have finished writing
@@ -401,14 +411,15 @@ pub extern "C" fn gifski_finish(g: *const GifskiHandle) -> GifskiError {
     }
     let g = unsafe { Arc::from_raw(g) };
 
-    // dropping collector (if any) completes writing
+    // dropping of the collector (if any) completes writing
     *g.collector.lock().unwrap() = None;
 
-    let thread = g.write_thread.lock().unwrap().take();
+    let thread = g.write_thread.lock().unwrap().1.take();
     if let Some(thread) = thread {
-        thread.join().unwrap()
+        thread.join().expect("writer thread failed")
     } else {
-        GifskiError::OK // will become INVALID_STATE once sync write is dropped
+        eprintln!("gifski_finish called before any output has been set");
+        GifskiError::OK // this will become INVALID_STATE once sync write support is dropped
     }
 }
 
@@ -434,6 +445,25 @@ fn c_cb() {
 }
 
 #[test]
+fn cant_write_after_finish() {
+    let g = gifski_new(&GifskiSettings {
+        width: 1, height: 1,
+        quality: 100,
+        once: true,
+        fast: false,
+    });
+    assert!(!g.is_null());
+    let mut called = false;
+    unsafe fn cb(_s: usize, _buf: *const u8, user_data: *mut c_void) -> c_int {
+        let called = user_data as *mut bool;
+        *called = true;
+        0
+    }
+    assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), (&mut called) as *mut _ as _));
+    assert_eq!(GifskiError::OTHER, gifski_finish(g));
+}
+
+#[test]
 fn c_write_failure_propagated() {
     let g = gifski_new(&GifskiSettings {
         width: 1, height: 1,
@@ -448,6 +478,22 @@ fn c_write_failure_propagated() {
     assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), ptr::null_mut()));
     assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 5));
     assert_eq!(GifskiError::WRITE_ZERO, gifski_finish(g));
+}
+
+#[test]
+fn cant_write_twice() {
+    let g = gifski_new(&GifskiSettings {
+        width: 1, height: 1,
+        quality: 100,
+        once: true,
+        fast: false,
+    });
+    assert!(!g.is_null());
+    unsafe fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
+        GifskiError::WRITE_ZERO as c_int
+    }
+    assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), ptr::null_mut()));
+    assert_eq!(GifskiError::INVALID_STATE, gifski_set_write_callback(g, Some(cb), ptr::null_mut()));
 }
 
 #[test]
