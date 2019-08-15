@@ -57,7 +57,8 @@ final class Gifski {
 		var progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { (_ result: Result<Data, Error>) -> Void in
-			gifData = nil // resetting state here
+			gifData = nil // Resetting state
+
 			DispatchQueue.main.async {
 				guard !progress.isCancelled else {
 					completionHandler?(.failure(.cancelled))
@@ -178,7 +179,7 @@ final class Gifski {
 					if result.isFinished {
 						do {
 							try gifski.finish()
-							// Force unwrapping here is safe because we nil gifData in one single place in this file.
+							// Force unwrapping here is safe because we nil gifData in one single after this.
 							completionHandlerOnce(.success(gifData! as Data))
 						} catch {
 							completionHandlerOnce(.failure(.writeFailed(error)))
