@@ -44,7 +44,7 @@ final class Gifski {
 		}
 	}
 
-	// This is carefully nil'd and remain private.
+	// This is carefully nil'd and should remain private.
 	private static var gifData: NSMutableData?
 
 	// TODO: Split this method up into smaller methods. It's too large.
