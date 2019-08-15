@@ -46,6 +46,9 @@ final class Gifski {
 		}
 	}
 
+	// This is carefully nil'd and should remain private.
+	private static var gifData: NSMutableData?
+
 	// TODO: Split this method up into smaller methods. It's too large.
 	/**
 	Converts a movie to GIF
@@ -56,6 +59,8 @@ final class Gifski {
 		var progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { (_ result: Result<Data, Error>) -> Void in
+			gifData = nil // Resetting state
+
 			DispatchQueue.main.async {
 				guard !progress.isCancelled else {
 					completionHandler?(.failure(.cancelled))
@@ -85,7 +90,7 @@ final class Gifski {
 			return progress.isCancelled ? 0 : 1
 		}
 
-		var gifData = NSMutableData()
+		gifData = NSMutableData()
 
 		gifski.setWriteCallback(context: &gifData) { bufferLength, bufferPointer, context in
 			guard
@@ -184,7 +189,8 @@ final class Gifski {
 					if result.isFinished {
 						do {
 							try gifski.finish()
-							completionHandlerOnce(.success(gifData as Data))
+							// Force unwrapping here is safe because we nil gifData in one single place after this.
+							completionHandlerOnce(.success(gifData! as Data))
 						} catch {
 							completionHandlerOnce(.failure(.writeFailed(error)))
 						}
