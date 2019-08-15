@@ -44,6 +44,7 @@ final class Gifski {
 		}
 	}
 
+	// This is carefully nil'd and remain private.
 	private static var gifData: NSMutableData?
 
 	// TODO: Split this method up into smaller methods. It's too large.
@@ -56,7 +57,7 @@ final class Gifski {
 		var progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { (_ result: Result<Data, Error>) -> Void in
-			gifData = nil
+			gifData = nil // resetting state here
 			DispatchQueue.main.async {
 				guard !progress.isCancelled else {
 					completionHandler?(.failure(.cancelled))
@@ -177,6 +178,7 @@ final class Gifski {
 					if result.isFinished {
 						do {
 							try gifski.finish()
+							// Force unwrapping here is safe because we nil gifData in one single place in this file.
 							completionHandlerOnce(.success(gifData! as Data))
 						} catch {
 							completionHandlerOnce(.failure(.writeFailed(error)))
