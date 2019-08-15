@@ -179,7 +179,7 @@ final class Gifski {
 					if result.isFinished {
 						do {
 							try gifski.finish()
-							// Force unwrapping here is safe because we nil gifData in one single after this.
+							// Force unwrapping here is safe because we nil gifData in one single place after this.
 							completionHandlerOnce(.success(gifData! as Data))
 						} catch {
 							completionHandlerOnce(.failure(.writeFailed(error)))
