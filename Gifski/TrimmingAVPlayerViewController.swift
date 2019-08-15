@@ -12,6 +12,13 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
+	/// The minimum duration the trimmer can be set to.
+	var minimumTrimDuration = 0.1 {
+		didSet {
+			playerView.minimumTrimDuration = minimumTrimDuration
+		}
+	}
+
 	init(
 		asset: AVURLAsset,
 		controlsStyle: AVPlayerViewControlsStyle = .inline,
@@ -52,12 +59,33 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	private var timeRangeObserver: NSKeyValueObservation?
 	private var trimmingObserver: NSKeyValueObservation?
 
+	/// The minimum duration the trimmer can be set to.
+	var minimumTrimDuration = 0.1
+
 	fileprivate func observeTrimmedTimeRange(_ updateClosure: @escaping (ClosedRange<Double>) -> Void) {
+		var skipNextUpdate = false
+
 		// Observing `.duration` seems buggy on macOS 10.14.
 		// Once we change minimum target to 10.15,
 		// observe `\.duration` instead of `\.forwardPlaybackEndTime`.
 		timeRangeObserver = player?.currentItem?.observe(\.forwardPlaybackEndTime, options: .new) { item, _ in
-			guard let playbackRange = item.playbackRange else {
+			guard
+				let fullRange = item.durationRange,
+				let playbackRange = item.playbackRange
+			else {
+				return
+			}
+
+			/// Prevent infinite recursion.
+			guard !skipNextUpdate else {
+				skipNextUpdate = false
+				updateClosure(playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange))
+				return
+			}
+
+			guard playbackRange.length > self.minimumTrimDuration else {
+				skipNextUpdate = true
+				item.playbackRange = playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange)
 				return
 			}
 
