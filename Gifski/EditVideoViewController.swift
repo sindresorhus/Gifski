@@ -1,344 +1,348 @@
-import AVKit
 import Cocoa
+import AVKit
 
 final class EditVideoViewController: NSViewController {
-    private var estimateWorkItem: DispatchWorkItem?
-    private var gifData: Data?
-    enum PredefinedSizeItem {
-        case custom
-        case spacer
-        case dimensions(ResizableDimensions)
+	enum PredefinedSizeItem {
+		case custom
+		case spacer
+		case dimensions(ResizableDimensions)
 
-        var resizableDimensions: ResizableDimensions? {
-            switch self {
-            case let .dimensions(resizableDimensions):
-                return resizableDimensions
-            default:
-                return nil
-            }
-        }
-    }
+		var resizableDimensions: ResizableDimensions? {
+			switch self {
+			case let .dimensions(resizableDimensions):
+				return resizableDimensions
+			default:
+				return nil
+			}
+		}
+	}
 
-    @IBOutlet private var estimatedSizeLabel: NSTextField!
-    @IBOutlet private var frameRateSlider: NSSlider!
-    @IBOutlet private var frameRateLabel: NSTextField!
-    @IBOutlet private var qualitySlider: NSSlider!
+	@IBOutlet private var estimatedSizeLabel: NSTextField!
+	@IBOutlet private var frameRateSlider: NSSlider!
+	@IBOutlet private var frameRateLabel: NSTextField!
+	@IBOutlet private var qualitySlider: NSSlider!
 
-    @IBOutlet private var widthTextField: IntTextField!
-    @IBOutlet private var heightTextField: IntTextField!
-    @IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
-    @IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
-    @IBOutlet private var cancelButton: NSButton!
-    @IBOutlet private var playerViewWrapper: NSView!
+	@IBOutlet private var widthTextField: IntTextField!
+	@IBOutlet private var heightTextField: IntTextField!
+	@IBOutlet private var predefinedSizesDropdown: MenuPopUpButton!
+	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
+	@IBOutlet private var cancelButton: NSButton!
+	@IBOutlet private var playerViewWrapper: NSView!
 
-    var inputUrl: URL!
-    var asset: AVURLAsset!
-    var videoMetadata: AVURLAsset.VideoMetadata!
+	var inputUrl: URL!
+	var asset: AVURLAsset!
+	var videoMetadata: AVURLAsset.VideoMetadata!
 
-    private var resizableDimensions: ResizableDimensions!
-    private var predefinedSizes: [PredefinedSizeItem]!
-    private let formatter = ByteCountFormatter()
-    private var playerViewController: TrimmingAVPlayerViewController!
+	var estimateWorkItem: DispatchWorkItem?
+	var gifData: Data?
 
-    private var timeRange: ClosedRange<Double>? {
-        return playerViewController?.timeRange
-    }
+	private var resizableDimensions: ResizableDimensions!
+	private var predefinedSizes: [PredefinedSizeItem]!
+	private let formatter = ByteCountFormatter()
+	private var playerViewController: TrimmingAVPlayerViewController!
 
-    private let tooltip = Tooltip(
-        identifier: "savePanelArrowKeys",
-        text: "Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.",
-        showOnlyOnce: true,
-        maxWidth: 300
-    )
+	private var timeRange: ClosedRange<Double>? {
+		return playerViewController?.timeRange
+	}
 
-    convenience init(inputUrl: URL, asset: AVURLAsset, videoMetadata: AVURLAsset.VideoMetadata) {
-        self.init()
+	private let tooltip = Tooltip(
+		identifier: "savePanelArrowKeys",
+		text: "Press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.",
+		showOnlyOnce: true,
+		maxWidth: 300
+	)
 
-        self.inputUrl = inputUrl
-        self.asset = asset
-        self.videoMetadata = videoMetadata
-    }
+	convenience init(inputUrl: URL, asset: AVURLAsset, videoMetadata: AVURLAsset.VideoMetadata) {
+		self.init()
 
-    @IBAction private func convert(_: Any) {
-        let conversion = Gifski.Conversion(
-            video: inputUrl,
-            timeRange: timeRange,
-            quality: defaults[.outputQuality],
-            dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
-            frameRate: frameRateSlider.integerValue
-        )
+		self.inputUrl = inputUrl
+		self.asset = asset
+		self.videoMetadata = videoMetadata
+	}
 
-        if let gifData = gifData {
-            let convert = ConversionViewController(conversion, gifData)
-            push(viewController: convert)
-        } else {
-            let convert = ConversionViewController(conversion, nil)
-            push(viewController: convert)
-        }
-    }
+	@IBAction private func convert(_ sender: Any) {
+		let conversion = Gifski.Conversion(
+			video: inputUrl,
+			timeRange: timeRange,
+			quality: defaults[.outputQuality],
+			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
+			frameRate: frameRateSlider.integerValue
+		)
 
-    @IBAction private func cancel(_: Any) {
-        let videoDropController = VideoDropViewController()
-        push(viewController: videoDropController)
-    }
+		if let gifData = gifData {
+			let convert = ConversionViewController(conversion, gifData)
+			push(viewController: convert)
+		} else {
+			let convert = ConversionViewController(conversion, nil)
+			push(viewController: convert)
+		}
+	}
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+	@IBAction private func cancel(_ sender: Any) {
+		let videoDropController = VideoDropViewController()
+		push(viewController: videoDropController)
+	}
 
-        formatter.zeroPadsFractionDigits = true
-        setUpDimensions()
-        setUpDropdowns()
-        setUpSliders()
-        setUpWidthAndHeightTextFields()
-        setUpDropView()
-        setUpTrimmingView()
-    }
+	override func viewDidLoad() {
+		super.viewDidLoad()
 
-    override func viewDidAppear() {
-        super.viewDidAppear()
+		formatter.zeroPadsFractionDigits = true
+		setUpDimensions()
+		setUpDropdowns()
+		setUpSliders()
+		setUpWidthAndHeightTextFields()
+		setUpDropView()
+		setUpTrimmingView()
+	}
 
-        dimensionsTypeDropdown.nextKeyView = frameRateSlider
-        widthTextField.nextKeyView = heightTextField
-        heightTextField.nextKeyView = dimensionsTypeDropdown
-        qualitySlider.nextKeyView = cancelButton
+	override func viewDidAppear() {
+		super.viewDidAppear()
 
-        tooltip.show(from: widthTextField, preferredEdge: .maxX)
-        predefinedSizesDropdown.focus()
-    }
+		dimensionsTypeDropdown.nextKeyView = frameRateSlider
+		widthTextField.nextKeyView = heightTextField
+		heightTextField.nextKeyView = dimensionsTypeDropdown
+		qualitySlider.nextKeyView = cancelButton
 
-    private func setUpDimensions() {
-        let minimumScale: CGFloat = 0.01
-        let maximumScale: CGFloat = 1
-        let dimensions = Dimensions(type: .pixels, value: videoMetadata.dimensions)
+		tooltip.show(from: widthTextField, preferredEdge: .maxX)
+		predefinedSizesDropdown.focus()
+	}
 
-        resizableDimensions = ResizableDimensions(
-            dimensions: dimensions,
-            minimumScale: minimumScale,
-            maximumScale: maximumScale
-        )
+	private func setUpDimensions() {
+		let minimumScale: CGFloat = 0.01
+		let maximumScale: CGFloat = 1
+		let dimensions = Dimensions(type: .pixels, value: videoMetadata.dimensions)
 
-        var pixelCommonSizes: [CGFloat] = [
-            960,
-            800,
-            640,
-            500,
-            480,
-            320,
-            256,
-            200,
-            160,
-            128,
-            80,
-            64,
-        ]
+		resizableDimensions = ResizableDimensions(
+			dimensions: dimensions,
+			minimumScale: minimumScale,
+			maximumScale: maximumScale
+		)
 
-        if !pixelCommonSizes.contains(dimensions.value.width) {
-            pixelCommonSizes.append(dimensions.value.width)
-            pixelCommonSizes.sort(by: >)
-        }
+		var pixelCommonSizes: [CGFloat] = [
+			960,
+			800,
+			640,
+			500,
+			480,
+			320,
+			256,
+			200,
+			160,
+			128,
+			80,
+			64
+		]
 
-        let pixelDimensions = pixelCommonSizes.map { width -> CGSize in
-            let ratio = width / dimensions.value.width
-            let height = dimensions.value.height * ratio
-            return CGSize(width: width, height: height)
-        }
+		if !pixelCommonSizes.contains(dimensions.value.width) {
+			pixelCommonSizes.append(dimensions.value.width)
+			pixelCommonSizes.sort(by: >)
+		}
 
-        let predefinedPixelDimensions = pixelDimensions
-            .filter { resizableDimensions.validate(newSize: $0) }
-            .map { resizableDimensions.resized(to: $0) }
+		let pixelDimensions = pixelCommonSizes.map { width -> CGSize in
+			let ratio = width / dimensions.value.width
+			let height = dimensions.value.height * ratio
+			return CGSize(width: width, height: height)
+		}
 
-        let percentCommonSizes: [CGFloat] = [
-            50,
-            33,
-            25,
-            20,
-        ]
+		let predefinedPixelDimensions = pixelDimensions
+			.filter { resizableDimensions.validate(newSize: $0) }
+			.map { resizableDimensions.resized(to: $0) }
 
-        let predefinedPercentDimensions = percentCommonSizes
-            .map {
-                resizableDimensions.changed(dimensionsType: .percent)
-                    .resized(to: CGSize(width: $0, height: $0))
-            }
+		let percentCommonSizes: [CGFloat] = [
+			50,
+			33,
+			25,
+			20
+		]
 
-        predefinedSizes = [.custom]
-        predefinedSizes.append(.spacer)
-        predefinedSizes.append(contentsOf: predefinedPixelDimensions.map { .dimensions($0) })
-        predefinedSizes.append(.spacer)
-        predefinedSizes.append(contentsOf: predefinedPercentDimensions.map { .dimensions($0) })
-    }
+		let predefinedPercentDimensions = percentCommonSizes
+			.map {
+				resizableDimensions.changed(dimensionsType: .percent)
+					.resized(to: CGSize(width: $0, height: $0))
+			}
 
-    private func setUpDropdowns() {
-        predefinedSizesDropdown.removeAllItems()
+		predefinedSizes = [.custom]
+		predefinedSizes.append(.spacer)
+		predefinedSizes.append(contentsOf: predefinedPixelDimensions.map { .dimensions($0) })
+		predefinedSizes.append(.spacer)
+		predefinedSizes.append(contentsOf: predefinedPercentDimensions.map { .dimensions($0) })
+	}
 
-        for size in predefinedSizes {
-            switch size {
-            case .custom:
-                predefinedSizesDropdown.addItem(withTitle: "Custom")
-            case .spacer:
-                predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
-            case let .dimensions(dimensions):
-                predefinedSizesDropdown.addItem(withTitle: "\(dimensions)")
-            }
-        }
+	private func setUpDropdowns() {
+		predefinedSizesDropdown.removeAllItems()
 
-        predefinedSizesDropdown.onMenuWillOpen = { [weak self] in
-            self?.predefinedSizesDropdown.item(at: 0)?.title = "Custom"
-        }
+		for size in predefinedSizes {
+			switch size {
+			case .custom:
+				predefinedSizesDropdown.addItem(withTitle: "Custom")
+			case .spacer:
+				predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
+			case let .dimensions(dimensions):
+				predefinedSizesDropdown.addItem(withTitle: "\(dimensions)")
+			}
+		}
 
-        predefinedSizesDropdown.onMenuDidClose = { [weak self] selectedIndex in
-            guard let self = self else {
-                return
-            }
+		predefinedSizesDropdown.onMenuWillOpen = { [weak self] in
+			self?.predefinedSizesDropdown.item(at: 0)?.title = "Custom"
+		}
 
-            let oldOrNewSelectedIndex = selectedIndex ?? self.predefinedSizesDropdown.indexOfSelectedItem
-            if let size = self.predefinedSizes?[safe: oldOrNewSelectedIndex], case .custom = size {
-                // We don't care if it's newly selected index or not, if it's custom, set its size
-                self.updateSelectedItemAsCustomWithSize()
-            } else if let index = selectedIndex, let size = self.predefinedSizes?[safe: index],
-                case let .dimensions(dimensions) = size {
-                // But we care if it's newly selected index for dimensions, we don't want to recalculate
-                // if we don't have to
-                self.resizableDimensions.change(dimensionsType: dimensions.currentDimensions.type)
-                self.resizableDimensions.resize(to: dimensions.currentDimensions.value)
-                self.dimensionsUpdated()
-            }
-        }
+		predefinedSizesDropdown.onMenuDidClose = { [weak self] selectedIndex in
+			guard let self = self else {
+				return
+			}
 
-        dimensionsTypeDropdown.removeAllItems()
-        dimensionsTypeDropdown.addItems(withTitles: DimensionsType.allCases.map { $0.rawValue })
+			let oldOrNewSelectedIndex = selectedIndex ?? self.predefinedSizesDropdown.indexOfSelectedItem
+			if let size = self.predefinedSizes?[safe: oldOrNewSelectedIndex], case .custom = size {
+				// We don't care if it's newly selected index or not, if it's custom, set its size
+				self.updateSelectedItemAsCustomWithSize()
+			} else if let index = selectedIndex, let size = self.predefinedSizes?[safe: index],
+				case .dimensions(let dimensions) = size {
+				// But we care if it's newly selected index for dimensions, we don't want to recalculate
+				// if we don't have to
+				self.resizableDimensions.change(dimensionsType: dimensions.currentDimensions.type)
+				self.resizableDimensions.resize(to: dimensions.currentDimensions.value)
+				self.dimensionsUpdated()
+			}
+		}
 
-        dimensionsTypeDropdown.onMenuDidClose = { [weak self] selectedIndex in
-            guard
-                let self = self,
-                let index = selectedIndex,
-                let item = self.dimensionsTypeDropdown.item(at: index),
-                let dimensionsType = DimensionsType(rawValue: item.title)
-            else {
-                return
-            }
+		dimensionsTypeDropdown.removeAllItems()
+		dimensionsTypeDropdown.addItems(withTitles: DimensionsType.allCases.map { $0.rawValue })
 
-            self.resizableDimensions.change(dimensionsType: dimensionsType)
-            self.dimensionsUpdated()
-            self.updateTextFieldsMinMax()
-        }
+		dimensionsTypeDropdown.onMenuDidClose = { [weak self] selectedIndex in
+			guard
+				let self = self,
+				let index = selectedIndex,
+				let item = self.dimensionsTypeDropdown.item(at: index),
+				let dimensionsType = DimensionsType(rawValue: item.title)
+			else {
+				return
+			}
 
-        if resizableDimensions.currentDimensions.value.width > 640 {
-            predefinedSizesDropdown.selectItem(at: 3)
-        } else {
-            predefinedSizesDropdown.selectItem(at: 2)
-        }
+			self.resizableDimensions.change(dimensionsType: dimensionsType)
+			self.dimensionsUpdated()
+			self.updateTextFieldsMinMax()
+		}
 
-        dimensionsUpdated()
-    }
+		if resizableDimensions.currentDimensions.value.width > 640 {
+			predefinedSizesDropdown.selectItem(at: 3)
+		} else {
+			predefinedSizesDropdown.selectItem(at: 2)
+		}
 
-    private func setUpSliders() {
-        frameRateSlider.onAction = { [weak self] _ in
-            guard let self = self else {
-                return
-            }
+		dimensionsUpdated()
+	}
 
-            let frameRate = self.frameRateSlider.integerValue
-            self.frameRateLabel.stringValue = "\(frameRate)"
-            self.estimateFileSize()
-        }
+	private func setUpSliders() {
+		frameRateSlider.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
 
-        qualitySlider.onAction = { [weak self] _ in
-            guard let self = self else {
-                return
-            }
+			let frameRate = self.frameRateSlider.integerValue
+			self.frameRateLabel.stringValue = "\(frameRate)"
+			self.estimateFileSize()
+		}
 
-            defaults[.outputQuality] = self.qualitySlider.doubleValue
-            self.estimateFileSize()
-        }
+		qualitySlider.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
 
-        frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5 ... 30)
-        frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
-        frameRateSlider.triggerAction()
+			defaults[.outputQuality] = self.qualitySlider.doubleValue
+			self.estimateFileSize()
+		}
 
-        qualitySlider.doubleValue = defaults[.outputQuality]
-        qualitySlider.triggerAction()
-    }
+		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5...30)
+		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
+		frameRateSlider.triggerAction()
 
-    private func setUpWidthAndHeightTextFields() {
-        widthTextField.onBlur = { [weak self] width in
-            self?.resizableDimensions.resize(usingWidth: CGFloat(width))
-            self?.dimensionsUpdated()
-        }
+		qualitySlider.doubleValue = defaults[.outputQuality]
+		qualitySlider.triggerAction()
+	}
 
-        widthTextField.onValueChange = { [weak self] width in
-            guard let self = self else {
-                return
-            }
+	private func setUpWidthAndHeightTextFields() {
+		widthTextField.onBlur = { [weak self] width in
+			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
+			self?.dimensionsUpdated()
+		}
 
-            self.resizableDimensions.resize(usingWidth: CGFloat(width))
-            self.dimensionsUpdated()
-        }
+		widthTextField.onValueChange = { [weak self] width in
+			guard let self = self else {
+				return
+			}
 
-        heightTextField.onBlur = { [weak self] height in
-            self?.resizableDimensions.resize(usingHeight: CGFloat(height))
-            self?.dimensionsUpdated()
-        }
+			self.resizableDimensions.resize(usingWidth: CGFloat(width))
+			self.dimensionsUpdated()
+		}
 
-        heightTextField.onValueChange = { [weak self] height in
-            guard let self = self else {
-                return
-            }
+		heightTextField.onBlur = { [weak self] height in
+			self?.resizableDimensions.resize(usingHeight: CGFloat(height))
+			self?.dimensionsUpdated()
+		}
 
-            self.resizableDimensions.resize(usingHeight: CGFloat(height))
-            self.dimensionsUpdated()
-        }
+		heightTextField.onValueChange = { [weak self] height in
+			guard let self = self else {
+				return
+			}
 
-        updateTextFieldsMinMax()
-    }
+			self.resizableDimensions.resize(usingHeight: CGFloat(height))
+			self.dimensionsUpdated()
+		}
 
-    private func setUpDropView() {
-        let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
-        add(childController: videoDropController)
-    }
+		updateTextFieldsMinMax()
+	}
 
-    private func setUpTrimmingView() {
-        playerViewController = TrimmingAVPlayerViewController(asset: asset) { [weak self] _ in
-            self?.estimateFileSize()
-        }
-        add(childController: playerViewController, to: playerViewWrapper)
-    }
+	private func setUpDropView() {
+		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
+		add(childController: videoDropController)
+	}
 
-    private func updateTextFieldsMinMax() {
-        let widthMinMax = resizableDimensions.widthMinMax
-        let heightMinMax = resizableDimensions.heightMinMax
-        widthTextField.minMax = Int(widthMinMax.lowerBound) ... Int(widthMinMax.upperBound)
-        heightTextField.minMax = Int(heightMinMax.lowerBound) ... Int(heightMinMax.upperBound)
-    }
+	private func setUpTrimmingView() {
+		playerViewController = TrimmingAVPlayerViewController(asset: asset) { [weak self] _ in
+			self?.estimateFileSize()
+		}
+		add(childController: playerViewController, to: playerViewWrapper)
+	}
 
-    private func dimensionsUpdated() {
-        updateDimensionsDisplay()
-        estimateFileSize()
-        selectPredefinedSizeBasedOnCurrentDimensions()
-    }
+	private func updateTextFieldsMinMax() {
+		let widthMinMax = resizableDimensions.widthMinMax
+		let heightMinMax = resizableDimensions.heightMinMax
+		widthTextField.minMax = Int(widthMinMax.lowerBound)...Int(widthMinMax.upperBound)
+		heightTextField.minMax = Int(heightMinMax.lowerBound)...Int(heightMinMax.upperBound)
+	}
+
+	private func dimensionsUpdated() {
+		updateDimensionsDisplay()
+		estimateFileSize()
+		selectPredefinedSizeBasedOnCurrentDimensions()
+	}
+
 	private func estimateFileSize() {
 		// Cancle old estimate
 		estimateWorkItem?.cancel()
+		self.gifData = nil
+		
 		let conversion = Gifski.Conversion(
-							video: inputUrl,
-							timeRange: timeRange,
-							quality: defaults[.outputQuality],
-							dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
-							frameRate: frameRateSlider.integerValue
+			video: inputUrl,
+			timeRange: timeRange,
+			quality: defaults[.outputQuality],
+			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
+			frameRate: frameRateSlider.integerValue
 		)
 
-        let duration: Double = {
-            if let timeRange = self.timeRange {
-                return timeRange.upperBound - timeRange.lowerBound
-            } else {
-                return videoMetadata.duration
-            }
-        }()
-        let frameCount = duration * frameRateSlider.doubleValue
-        let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
-        var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
-        fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
+		let duration: Double = {
+			if let timeRange = self.timeRange {
+				return timeRange.upperBound - timeRange.lowerBound
+			} else {
+				return videoMetadata.duration
+			}
+		}()
+		let frameCount = duration * frameRateSlider.doubleValue
+		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
+		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
+		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
 		estimatedSizeLabel.textColor = NSColor(red: 0.13, green: 0.13, blue: 0.13, alpha: 1.0)
-        estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
+		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
 		estimateWorkItem = DispatchWorkItem {
 			Gifski.run(conversion) { result in
 				do {
@@ -358,34 +362,34 @@ final class EditVideoViewController: NSViewController {
 		DispatchQueue.main.async(execute: workItem)
 	}
 
-    private func updateDimensionsDisplay() {
-        widthTextField.stringValue = String(format: "%.0f", resizableDimensions.currentDimensions.value.width)
-        heightTextField.stringValue = String(format: "%.0f", resizableDimensions.currentDimensions.value.height)
-        dimensionsTypeDropdown.selectItem(withTitle: resizableDimensions.currentDimensions.type.rawValue)
-    }
+	private func updateDimensionsDisplay() {
+		widthTextField.stringValue = String(format: "%.0f", resizableDimensions.currentDimensions.value.width)
+		heightTextField.stringValue = String(format: "%.0f", resizableDimensions.currentDimensions.value.height)
+		dimensionsTypeDropdown.selectItem(withTitle: resizableDimensions.currentDimensions.type.rawValue)
+	}
 
-    private func selectPredefinedSizeBasedOnCurrentDimensions() {
-        // First reset the state
-        predefinedSizesDropdown.selectItem(at: NSNotFound)
+	private func selectPredefinedSizeBasedOnCurrentDimensions() {
+		// First reset the state
+		predefinedSizesDropdown.selectItem(at: NSNotFound)
 
-        // Check if we can select predefined option that has the same dimensions settings
-        if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
-            predefinedSizesDropdown.selectItem(at: index)
-        } else {
-            updateSelectedItemAsCustomWithSize()
-        }
-    }
+		// Check if we can select predefined option that has the same dimensions settings
+		if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
+			predefinedSizesDropdown.selectItem(at: index)
+		} else {
+			updateSelectedItemAsCustomWithSize()
+		}
+	}
 
-    private func updateSelectedItemAsCustomWithSize() {
-        let newType: DimensionsType = resizableDimensions.currentDimensions.type == .percent ? .pixels : .percent
-        let resizableDimensions = self.resizableDimensions.changed(dimensionsType: newType)
-        let selectedCustomTitle = "Custom - \(resizableDimensions.currentDimensions)"
-        predefinedSizesDropdown.item(at: 0)?.title = selectedCustomTitle
-        predefinedSizesDropdown.selectItem(at: 0)
-    }
+	private func updateSelectedItemAsCustomWithSize() {
+		let newType: DimensionsType = resizableDimensions.currentDimensions.type == .percent ? .pixels : .percent
+		let resizableDimensions = self.resizableDimensions.changed(dimensionsType: newType)
+		let selectedCustomTitle = "Custom - \(resizableDimensions.currentDimensions)"
+		predefinedSizesDropdown.item(at: 0)?.title = selectedCustomTitle
+		predefinedSizesDropdown.selectItem(at: 0)
+	}
 
-    private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
-        let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
-        return defaultFrameRate.clamped(to: 5 ... 30)
-    }
+	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
+		let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
+		return defaultFrameRate.clamped(to: 5...30)
+	}
 }
