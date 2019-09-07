@@ -26,9 +26,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = true
 		NSApp.servicesProvider = self
 
-		if urlToConvertOnLaunch != nil {
-			mainWindowController.convert(urlToConvertOnLaunch)
-		}
+		// Start conversion if there is already a url
+		convertVideoUrl()
 	}
 
 	func application(_ application: NSApplication, open urls: [URL]) {
@@ -40,14 +39,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			return
 		}
 
-		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
-		if hasFinishedLaunching {
-			mainWindowController.convert(videoUrl)
-		} else {
-			// This method is called before `applicationDidFinishLaunching`,
-			// so we buffer it up a video is "Open with" this app
-			urlToConvertOnLaunch = videoUrl
-		}
+		urlToConvertOnLaunch = videoUrl
+		convertVideoUrl()
 	}
 
 	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -57,6 +50,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
 		Crashlytics.recordNonFatalError(error: error)
 		return error
+	}
+
+	private func convertVideoUrl() {
+		if let videoUrl = urlToConvertOnLaunch, hasFinishedLaunching {
+			mainWindowController.convert(videoUrl)
+		}
 	}
 }
 
