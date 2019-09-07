@@ -1,17 +1,5 @@
 import Cocoa
 
-extension CGSize {
-	// TODO: This one doesn't really make sense. `aspectFit(:widthHeight)` should do what this does already.
-	func maxSize(size: CGFloat) -> CGSize {
-		var newSize = aspectFit(to: size)
-
-		newSize.width = min(width, newSize.width)
-		newSize.height = min(height, newSize.height)
-
-		return newSize
-	}
-}
-
 final class DraggableFile: NSImageView {
 	private var mouseDownEvent: NSEvent!
 	private var heightConstraint: NSLayoutConstraint!
@@ -20,7 +8,7 @@ final class DraggableFile: NSImageView {
 		didSet {
 			image = NSImage(byReferencing: fileUrl)
 
-			heightConstraint.constant = image!.size.maxSize(size: 80).height
+			heightConstraint.constant = image!.size.aspectFit(to: 80).height
 			updateConstraints()
 		}
 	}
@@ -63,7 +51,7 @@ final class DraggableFile: NSImageView {
 			return
 		}
 
-		let size = image.size.maxSize(size: 96)
+		let size = image.size.aspectFit(to: 96)
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrame = CGRect(origin: CGPoint(x: (frame.size.width - size.width) / 2, y: (frame.size.height - size.height) / 2), size: size)
