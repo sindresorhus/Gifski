@@ -51,7 +51,7 @@ final class DraggableFile: NSImageView {
 			return
 		}
 
-		let size = image.size.aspectFit(to: 96)
+		let size = image.size.aspectFit(to: 80)
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrame = CGRect(origin: CGPoint(x: (frame.size.width - size.width) / 2, y: (frame.size.height - size.height) / 2), size: size)
