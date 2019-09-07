@@ -90,13 +90,28 @@ final class EditVideoViewController: NSViewController {
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
-		dimensionsTypeDropdown.nextKeyView = frameRateSlider
-		widthTextField.nextKeyView = heightTextField
-		heightTextField.nextKeyView = dimensionsTypeDropdown
-		qualitySlider.nextKeyView = cancelButton
-
-		tooltip.show(from: widthTextField, preferredEdge: .maxX)
-		predefinedSizesDropdown.focus()
+//		dimensionsTypeDropdown.nextKeyView = frameRateSlider
+//		widthTextField.nextKeyView = heightTextField
+//		heightTextField.nextKeyView = dimensionsTypeDropdown
+//		qualitySlider.nextKeyView = cancelButton
+//
+//		tooltip.show(from: widthTextField, preferredEdge: .maxX)
+//		predefinedSizesDropdown.focus()
+		
+		makePlayerViewFocused()
+		
+	}
+	
+	private func makePlayerViewFocused() {
+		// Find Player and make it first responder
+		
+		guard let avTrimView = playerViewController.view.firstSubview(where: { $0.simpleClassName == "AVTrimView" }, deep: true) else {
+			predefinedSizesDropdown.focus()
+			return
+		}
+		
+		self.view.window?.makeFirstResponder(avTrimView);
+		
 	}
 
 	private func setUpDimensions() {
@@ -353,5 +368,28 @@ final class EditVideoViewController: NSViewController {
 	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
 		let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
 		return defaultFrameRate.clamped(to: 5...30)
+	}
+	
+	override func keyDown(with event: NSEvent) {
+		switch Int(event.keyCode) {
+		case 53: // ESC Keycode
+			print(event.keyCode)
+			
+			let res = self.view.window?.firstResponder
+			//To avoid hiding of trimView when ESC is pressed
+			if (res?.simpleClassName == "AVTrimView" || res?.simpleClassName == "AVButton") {
+				return
+			}
+			//an unknown button taking focus inside player view, so it was also hiding trimView of ESC
+			if (res?.simpleClassName == "NSButton") {
+				if((res as? NSButton)?.title == "Button"){
+					return
+				}
+			}
+			
+		default:
+			break
+		}
+		super.keyDown(with: event)
 	}
 }

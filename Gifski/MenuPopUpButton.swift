@@ -4,6 +4,9 @@ final class MenuPopUpButton: NSPopUpButton, NSMenuDelegate {
 	override var acceptsFirstResponder: Bool {
 		return true
 	}
+	
+	// Required to make NSPopUpButton focusable
+	override var canBecomeKeyView: Bool { return true }
 
 	/// `selectedIndex` is nil when the user didn't select any index this time (probably quit)
 	var onMenuDidClose: ((_ selectedIndex: Int?) -> Void)?
