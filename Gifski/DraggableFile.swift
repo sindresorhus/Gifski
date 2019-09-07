@@ -1,14 +1,24 @@
 import Cocoa
 
 final class DraggableFile: NSImageView {
+
 	private var mouseDownEvent: NSEvent!
 	private var heightConstraint: NSLayoutConstraint!
+
+	var thumbnailFrameSize: CGFloat = 80 {
+		didSet {
+			if let image = image {
+				heightConstraint.constant = image.size.aspectFit(to: thumbnailFrameSize).height
+				updateConstraints()
+			}
+		}
+	}
 
 	var fileUrl: URL! {
 		didSet {
 			image = NSImage(byReferencing: fileUrl)
 
-			heightConstraint.constant = image!.size.aspectFit(to: 80).height
+			heightConstraint.constant = image!.size.aspectFit(to: thumbnailFrameSize).height
 			updateConstraints()
 		}
 	}
@@ -51,7 +61,7 @@ final class DraggableFile: NSImageView {
 			return
 		}
 
-		let size = image.size.aspectFit(to: 80)
+		let size = image.size.aspectFit(to: thumbnailFrameSize)
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrame = CGRect(origin: CGPoint(x: (frame.size.width - size.width) / 2, y: (frame.size.height - size.height) / 2), size: size)
