@@ -4,6 +4,10 @@ import UserNotifications
 import StoreKit
 
 final class ConversionCompletedViewController: NSViewController {
+
+	/// If set by caller, the back button will go back to the edit video controller with the given values
+	var editVideoProperties: EditVideoViewController.EditVideoProperties?
+
 	@IBOutlet private var draggableFileWrapper: NSView!
 	@IBOutlet private var fileNameLabel: Label!
 	@IBOutlet private var fileSizeLabel: Label!
@@ -141,6 +145,20 @@ final class ConversionCompletedViewController: NSViewController {
 		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
 		add(childController: videoDropController)
 	}
+
+    @IBAction private func backButtonClicked(_ sender: Any) {
+		guard let editVideoProperties = editVideoProperties else {
+			return
+		}
+
+		let vc = EditVideoViewController(editVideoProperties: .init(
+			inputUrl: editVideoProperties.inputUrl,
+			asset: editVideoProperties.asset,
+			videoMetadata: editVideoProperties.videoMetadata
+		))
+
+		push(viewController: vc)
+    }
 }
 
 extension ConversionCompletedViewController: QLPreviewPanelDataSource {

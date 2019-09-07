@@ -17,6 +17,13 @@ final class EditVideoViewController: NSViewController {
 		}
 	}
 
+	struct EditVideoProperties {
+
+		let inputUrl: URL
+		let asset: AVURLAsset
+		let videoMetadata: AVURLAsset.VideoMetadata
+	}
+
 	@IBOutlet private var estimatedSizeLabel: NSTextField!
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
@@ -29,9 +36,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var cancelButton: NSButton!
 	@IBOutlet private var playerViewWrapper: NSView!
 
-	var inputUrl: URL!
-	var asset: AVURLAsset!
-	var videoMetadata: AVURLAsset.VideoMetadata!
+	var editVideoProperties: EditVideoProperties!
 
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
@@ -49,17 +54,15 @@ final class EditVideoViewController: NSViewController {
 		maxWidth: 300
 	)
 
-	convenience init(inputUrl: URL, asset: AVURLAsset, videoMetadata: AVURLAsset.VideoMetadata) {
+	convenience init(editVideoProperties: EditVideoProperties) {
 		self.init()
 
-		self.inputUrl = inputUrl
-		self.asset = asset
-		self.videoMetadata = videoMetadata
+		self.editVideoProperties = editVideoProperties
 	}
 
 	@IBAction private func convert(_ sender: Any) {
 		let conversion = Gifski.Conversion(
-			video: inputUrl,
+			video: editVideoProperties.inputUrl,
 			timeRange: timeRange,
 			quality: defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
@@ -67,6 +70,11 @@ final class EditVideoViewController: NSViewController {
 		)
 
 		let convert = ConversionViewController(conversion: conversion)
+		convert.editVideoProperties = .init(
+			inputUrl: editVideoProperties.inputUrl,
+			asset: editVideoProperties.asset,
+			videoMetadata: editVideoProperties.videoMetadata
+		)
 		push(viewController: convert)
 	}
 
@@ -102,7 +110,7 @@ final class EditVideoViewController: NSViewController {
 	private func setUpDimensions() {
 		let minimumScale: CGFloat = 0.01
 		let maximumScale: CGFloat = 1
-		let dimensions = Dimensions(type: .pixels, value: videoMetadata.dimensions)
+		let dimensions = Dimensions(type: .pixels, value: editVideoProperties.videoMetadata.dimensions)
 
 		resizableDimensions = ResizableDimensions(
 			dimensions: dimensions,
@@ -244,8 +252,8 @@ final class EditVideoViewController: NSViewController {
 			self.estimateFileSize()
 		}
 
-		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5...30)
-		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
+		frameRateSlider.maxValue = editVideoProperties.videoMetadata.frameRate.clamped(to: 5...30)
+		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: editVideoProperties.videoMetadata.frameRate)
 		frameRateSlider.triggerAction()
 
 		qualitySlider.doubleValue = defaults[.outputQuality]
@@ -290,7 +298,7 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func setUpTrimmingView() {
-		playerViewController = TrimmingAVPlayerViewController(asset: asset) { [weak self] _ in
+		playerViewController = TrimmingAVPlayerViewController(asset: editVideoProperties.asset) { [weak self] _ in
 			self?.estimateFileSize()
 		}
 		add(childController: playerViewController, to: playerViewWrapper)
@@ -314,7 +322,7 @@ final class EditVideoViewController: NSViewController {
 			if let timeRange = self.timeRange {
 				return timeRange.upperBound - timeRange.lowerBound
 			} else {
-				return videoMetadata.duration
+				return editVideoProperties.videoMetadata.duration
 			}
 		}()
 		let frameCount = duration * frameRateSlider.doubleValue

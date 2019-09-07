@@ -1,6 +1,11 @@
 import AppKit
+import AVKit
 
 final class ConversionViewController: NSViewController {
+
+	/// If set by caller, a cancel operation will go back to the edit video controller with the given values
+	var editVideoProperties: EditVideoViewController.EditVideoProperties?
+
 	private lazy var circularProgress = with(CircularProgress(size: 160.0)) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.color = .themeColor
@@ -111,14 +116,25 @@ final class ConversionViewController: NSViewController {
 			progress?.cancel()
 		}
 
-		let videoDropController = VideoDropViewController()
+		let vc: NSViewController
+		if let editVideoProperties = editVideoProperties {
+			vc = EditVideoViewController(editVideoProperties: .init(
+				inputUrl: editVideoProperties.inputUrl,
+				asset: editVideoProperties.asset,
+				videoMetadata: editVideoProperties.videoMetadata
+			))
+		} else {
+			vc = VideoDropViewController()
+		}
+
 		stopConversion { [weak self] in
-			self?.push(viewController: videoDropController)
+			self?.push(viewController: vc)
 		}
 	}
 
 	private func didComplete(conversion: Gifski.Conversion, gifUrl: URL) {
 		let conversionCompleted = ConversionCompletedViewController(conversion: conversion, gifUrl: gifUrl)
+		conversionCompleted.editVideoProperties = editVideoProperties
 		stopConversion { [weak self] in
 			self?.push(viewController: conversionCompleted)
 		}

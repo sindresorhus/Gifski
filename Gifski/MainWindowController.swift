@@ -56,7 +56,7 @@ final class MainWindowController: NSWindowController {
 			return
 		}
 
-		let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
+		let editController = EditVideoViewController(editVideoProperties: .init(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata))
 		window?.contentViewController?.push(viewController: editController)
 	}
 }

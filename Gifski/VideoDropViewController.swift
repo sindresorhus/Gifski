@@ -28,7 +28,7 @@ final class VideoDropViewController: NSViewController {
 			return
 		}
 
-		let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
+		let editController = EditVideoViewController(editVideoProperties: .init(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata))
 		push(viewController: editController)
 	}
 }
