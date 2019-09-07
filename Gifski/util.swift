@@ -1939,12 +1939,14 @@ extension NSSharingService {
 }
 
 extension CALayer {
-	// TODO: Make this one more generic by accepting a `x` parameter too.
-	func animateScaleMove(fromScale: CGFloat, fromY: CGFloat) {
+	func animateScaleMove(fromScale: CGFloat, fromX: CGFloat? = nil, fromY: CGFloat? = nil) {
+		let fromX = fromX == nil ? bounds.size.width / 2 : fromX!
+		let fromY = fromY == nil ? bounds.size.height / 2 : fromY!
+
 		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
 
 		var tr = CATransform3DIdentity
-		tr = CATransform3DTranslate(tr, bounds.size.width / 2, fromY, 0)
+		tr = CATransform3DTranslate(tr, fromX, fromY, 0)
 		tr = CATransform3DScale(tr, fromScale, fromScale, 1)
 		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
 
