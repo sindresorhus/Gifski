@@ -16,6 +16,19 @@ final class ConversionCompletedViewController: NSViewController {
 	@IBOutlet private var copyButton: NSButton!
 	@IBOutlet private var wrapperView: NSView!
 
+	private lazy var backButton = with(CustomButton()) { button in
+		button.title = "Start Over"
+		button.backgroundColor = NSColor.clear
+		button.activeBackgroundColor = NSColor.clear
+		button.textColor = NSColor.controlTextColor.with(alpha: 0.7)
+		button.activeTextColor = .controlTextColor
+		button.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
+		button.frame = CGRect(x: 30 + 16, y: self.view.frame.height - (30 + 16), width: 70, height: 16)
+		button.onAction = { [weak self] _ in
+			self?.backButtonClicked()
+		}
+	}
+
 	private let draggableFile = DraggableFile()
 	private var conversion: Gifski.Conversion!
 	private var gifUrl: URL!
@@ -88,6 +101,9 @@ final class ConversionCompletedViewController: NSViewController {
 		draggableFileWrapper.wantsLayer = true
 		draggableFileWrapper.layer?.masksToBounds = false
 		draggableFile.constrainEdgesToSuperview()
+
+		view.addSubview(backButton)
+		backButton.isHidden = false
 	}
 
 	private func setUp(url: URL) {
@@ -146,18 +162,18 @@ final class ConversionCompletedViewController: NSViewController {
 		add(childController: videoDropController)
 	}
 
-    @IBAction private func backButtonClicked(_ sender: Any) {
-		guard let editVideoProperties = editVideoProperties else {
-			return
-		}
+    private func backButtonClicked() {
+        guard let editVideoProperties = editVideoProperties else {
+            return
+        }
 
-		let vc = EditVideoViewController(editVideoProperties: .init(
-			inputUrl: editVideoProperties.inputUrl,
-			asset: editVideoProperties.asset,
-			videoMetadata: editVideoProperties.videoMetadata
-		))
+        let vc = EditVideoViewController(editVideoProperties: .init(
+            inputUrl: editVideoProperties.inputUrl,
+            asset: editVideoProperties.asset,
+            videoMetadata: editVideoProperties.videoMetadata
+        ))
 
-		push(viewController: vc)
+        push(viewController: vc)
     }
 }
 

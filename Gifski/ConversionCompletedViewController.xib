@@ -90,38 +90,35 @@
                                 <real value="3.4028234663852886e+38"/>
                             </customSpacing>
                         </stackView>
-                        <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YTa-9d-i11">
-                            <rect key="frame" x="24" y="182" width="103" height="32"/>
+                        <button translatesAutoresizingMaskIntoConstraints="NO" id="q6O-aK-7yx">
+                            <rect key="frame" x="30" y="194" width="16" height="16"/>
                             <constraints>
-                                <constraint firstAttribute="height" constant="21" id="39d-jo-Tl0"/>
-                                <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="69" id="pop-Np-pgN"/>
+                                <constraint firstAttribute="height" constant="16" id="CZu-qG-nMl"/>
+                                <constraint firstAttribute="width" constant="16" id="J64-ma-G09"/>
                             </constraints>
-                            <buttonCell key="cell" type="push" title="Start Over" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Z9t-xH-Yaj">
+                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSGoBackTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="OVN-nx-HPg">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
-                            <connections>
-                                <action selector="backButtonClicked:" target="-2" id="ffX-js-YlY"/>
-                            </connections>
                         </button>
                     </subviews>
                     <constraints>
+                        <constraint firstItem="q6O-aK-7yx" firstAttribute="leading" secondItem="1a5-4g-xpl" secondAttribute="leading" constant="30" id="3e6-9i-bOf"/>
                         <constraint firstItem="9j4-tJ-yJo" firstAttribute="top" relation="greaterThanOrEqual" secondItem="1a5-4g-xpl" secondAttribute="top" id="9cQ-Vd-LOp"/>
                         <constraint firstItem="gf3-Uh-Jor" firstAttribute="top" secondItem="uI2-zc-34L" secondAttribute="bottom" constant="8" id="F35-Cl-1Me"/>
-                        <constraint firstItem="YTa-9d-i11" firstAttribute="top" secondItem="1a5-4g-xpl" secondAttribute="top" constant="30" id="Gv1-9V-LFq"/>
                         <constraint firstAttribute="trailing" secondItem="uI2-zc-34L" secondAttribute="trailing" constant="20" id="HYG-i4-KLK"/>
                         <constraint firstItem="9qZ-H7-TZZ" firstAttribute="leading" secondItem="1a5-4g-xpl" secondAttribute="leading" constant="30" id="Ldc-gp-Xwi"/>
                         <constraint firstItem="9j4-tJ-yJo" firstAttribute="centerX" secondItem="1a5-4g-xpl" secondAttribute="centerX" id="OtU-RA-0dQ"/>
                         <constraint firstItem="uI2-zc-34L" firstAttribute="leading" secondItem="1a5-4g-xpl" secondAttribute="leading" constant="20" id="Qx5-xg-Gbi"/>
                         <constraint firstItem="uI2-zc-34L" firstAttribute="top" secondItem="9j4-tJ-yJo" secondAttribute="bottom" constant="16" id="V9g-cw-DZ9"/>
                         <constraint firstAttribute="trailing" secondItem="9qZ-H7-TZZ" secondAttribute="trailing" constant="30" id="XS8-pv-oaK"/>
-                        <constraint firstItem="YTa-9d-i11" firstAttribute="leading" secondItem="1a5-4g-xpl" secondAttribute="leading" constant="30" id="bVc-8x-7cO"/>
                         <constraint firstAttribute="width" constant="360" id="fiW-N8-WTM"/>
                         <constraint firstItem="9qZ-H7-TZZ" firstAttribute="top" secondItem="uI2-zc-34L" secondAttribute="bottom" constant="50" id="hm3-2E-M2T"/>
                         <constraint firstItem="gf3-Uh-Jor" firstAttribute="leading" secondItem="uI2-zc-34L" secondAttribute="leading" id="nf3-NY-aCF"/>
                         <constraint firstItem="gf3-Uh-Jor" firstAttribute="trailing" secondItem="uI2-zc-34L" secondAttribute="trailing" id="psA-W7-MeV"/>
                         <constraint firstAttribute="bottom" secondItem="9qZ-H7-TZZ" secondAttribute="bottom" constant="22" id="re2-sU-7h7"/>
                         <constraint firstAttribute="height" constant="240" id="t2h-Wf-tiy"/>
+                        <constraint firstItem="q6O-aK-7yx" firstAttribute="top" secondItem="1a5-4g-xpl" secondAttribute="top" constant="30" id="vDe-Gd-Api"/>
                     </constraints>
                 </customView>
             </subviews>
@@ -134,4 +131,7 @@
             <point key="canvasLocation" x="139" y="189"/>
         </customView>
     </objects>
+    <resources>
+        <image name="NSGoBackTemplate" width="9" height="12"/>
+    </resources>
 </document>
