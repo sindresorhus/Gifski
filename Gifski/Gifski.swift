@@ -49,6 +49,17 @@ final class Gifski {
 	// This is carefully nil'd and should remain private.
 	private static var gifData: NSMutableData?
 
+	private static var writeCallback: ((Int) -> Void)?
+	private static var onNewFrame: ((Int64) -> Void)?
+
+	static func setWriteCallback(_ callback: ((Int) -> Void)?) {
+		writeCallback = callback
+	}
+
+	static func setOnNewFrame(_ callback: ((Int64) -> Void)?) {
+			onNewFrame = callback
+		}
+
 	// TODO: Split this method up into smaller methods. It's too large.
 	/**
 	Converts a movie to GIF
@@ -87,6 +98,7 @@ final class Gifski {
 		gifski.setProgressCallback(context: &progress) { context in
 			let progress = context!.assumingMemoryBound(to: Progress.self).pointee
 			progress.completedUnitCount += 1
+			Gifski.onNewFrame?(progress.completedUnitCount)
 			return progress.isCancelled ? 0 : 1
 		}
 
@@ -102,6 +114,8 @@ final class Gifski {
 
 			let data = context!.assumingMemoryBound(to: NSMutableData.self).pointee
 			data.append(bufferPointer, length: bufferLength)
+
+			Gifski.writeCallback?(bufferLength)
 
 			return 0
 		}
@@ -190,7 +204,11 @@ final class Gifski {
 						do {
 							try gifski.finish()
 							// Force unwrapping here is safe because we nil gifData in one single place after this.
-							completionHandlerOnce(.success(gifData! as Data))
+							guard let gifData = gifData as? Data else {
+								return
+							}
+	
+							completionHandlerOnce(.success(gifData))
 						} catch {
 							completionHandlerOnce(.failure(.writeFailed(error)))
 						}

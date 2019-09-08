@@ -33,8 +33,10 @@ final class EditVideoViewController: NSViewController {
 	var asset: AVURLAsset!
 	var videoMetadata: AVURLAsset.VideoMetadata!
 
-	var estimateWorkItem: DispatchWorkItem?
-	var gifData: Data?
+	private var estimateWorkItem: DispatchWorkItem?
+	private var gifData: Data?
+	private var framesWritten: Int64 = 0
+	private var dataSize: Int64 = 0
 
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
@@ -321,7 +323,9 @@ final class EditVideoViewController: NSViewController {
 		// Cancle old estimate
 		estimateWorkItem?.cancel()
 		self.gifData = nil
-		
+		self.dataSize = 0
+		self.framesWritten = 0
+
 		let conversion = Gifski.Conversion(
 			video: inputUrl,
 			timeRange: timeRange,
@@ -338,18 +342,33 @@ final class EditVideoViewController: NSViewController {
 			}
 		}()
 		let frameCount = duration * frameRateSlider.doubleValue
-		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
-		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
-		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
+
 		estimatedSizeLabel.textColor = NSColor(red: 0.13, green: 0.13, blue: 0.13, alpha: 1.0)
-		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
+		estimatedSizeLabel.stringValue = "Starting Estimation..."
 		estimateWorkItem = DispatchWorkItem {
+			print("Total: \(frameCount)")
+
+			Gifski.setOnNewFrame { framesWritten in
+				DispatchQueue.main.sync {
+					self.estimatedSizeLabel.textColor = NSColor(red: 0.11, green: 0.37, blue: 0.13, alpha: 1.0)
+				}
+
+				if self.dataSize == 0 {
+					return
+				}
+
+				self.framesWritten = framesWritten
+				DispatchQueue.main.sync {
+					self.estimatedSizeLabel.stringValue = "Estimated size: " + self.formatter.string(fromByteCount: Int64(self.dataSize * (Int64(frameCount) / Int64(framesWritten))))
+				}
+			}
+			Gifski.setWriteCallback { size in
+				self.dataSize += Int64(size)
+			}
 			Gifski.run(conversion) { result in
 				do {
 					let data = try result.get()
 					self.gifData = data
-					self.estimatedSizeLabel.textColor = NSColor(red: 0.11, green: 0.37, blue: 0.13, alpha: 1.0)
-					self.estimatedSizeLabel.stringValue = "File size: " + self.formatter.string(fromByteCount: Int64(data.count))
 				} catch {
 					self.presentError(error, modalFor: self.view.window)
 				}

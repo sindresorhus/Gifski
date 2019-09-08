@@ -98,7 +98,7 @@ final class ConversionViewController: NSViewController {
 					cancelConversion()
 				}
 			} else {
-				Gifski.run(conversion) { result in
+				Gifski.run(conversion, completionHandler: { result in
 					do {
 						try result.get().write(to: gifUrl, options: .atomic)
 					} catch Gifski.Error.cancelled {
@@ -111,7 +111,7 @@ final class ConversionViewController: NSViewController {
 					defaults[.successfulConversionsCount] += 1
 
 					self.didComplete(conversion: conversion, gifUrl: gifUrl)
-				}
+				})
 			}
 		}
 	}
