@@ -1,27 +1,21 @@
 import Cocoa
 
-extension CGSize {
-	// TODO: This one doesn't really make sense. `aspectFit(:widthHeight)` should do what this does already.
-	func maxSize(size: CGFloat) -> CGSize {
-		var newSize = aspectFit(to: size)
-
-		newSize.width = min(width, newSize.width)
-		newSize.height = min(height, newSize.height)
-
-		return newSize
-	}
-}
-
 final class DraggableFile: NSImageView {
-	private var mouseDownEvent: NSEvent!
-	private var heightConstraint: NSLayoutConstraint!
+	private let imageMaxSize: CGFloat = 84
 
-	var fileUrl: URL! {
+	var fileUrl: URL? {
 		didSet {
-			image = NSImage(byReferencing: fileUrl)
+			guard
+				let fileUrl = self.fileUrl,
+				let image = NSImage(contentsOf: fileUrl)
+			else {
+				return
+			}
 
-			heightConstraint.constant = image!.size.maxSize(size: 80).height
-			updateConstraints()
+			self.image = image
+
+			let height = image.size.aspectFit(to: imageMaxSize).height
+			heightAnchor.constraint(equalToConstant: height).isActive = true
 		}
 	}
 
@@ -33,14 +27,7 @@ final class DraggableFile: NSImageView {
 		super.init(frame: frame)
 
 		wantsLayer = true
-
 		isEditable = false
-		unregisterDraggedTypes()
-
-		self.heightConstraint = heightAnchor.constraint(equalToConstant: 0)
-		NSLayoutConstraint.activate([
-			heightConstraint
-		])
 
 		shadow = with(NSShadow()) {
 			$0.shadowBlurRadius = 5
@@ -54,29 +41,18 @@ final class DraggableFile: NSImageView {
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	override func mouseDown(with event: NSEvent) {
-		mouseDownEvent = event
-	}
-
 	override func mouseDragged(with event: NSEvent) {
-		guard let image = self.image else {
+		guard
+			let fileUrl = self.fileUrl,
+			let image = self.image
+		else {
 			return
 		}
 
-		let size = image.size.maxSize(size: 96)
-
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
-		let draggingFrame = CGRect(origin: CGPoint(x: (frame.size.width - size.width) / 2, y: (frame.size.height - size.height) / 2), size: size)
-		draggingItem.draggingFrame = draggingFrame
-
-		draggingItem.imageComponentsProvider = {
-			let component = NSDraggingImageComponent(key: .icon)
-			component.contents = image
-			component.frame = CGRect(origin: .zero, size: draggingFrame.size)
-			return [component]
-		}
-
-		beginDraggingSession(with: [draggingItem], event: mouseDownEvent, source: self)
+		let draggingFrame = image.size.aspectFit(to: imageMaxSize).cgRect.centered(in: bounds)
+		draggingItem.setDraggingFrame(draggingFrame, contents: image)
+		beginDraggingSession(with: [draggingItem], event: event, source: self)
 	}
 }
 

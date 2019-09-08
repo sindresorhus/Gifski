@@ -66,6 +66,11 @@ No, we're not interested in localizing the app.
 No, but there's a [cross-platform command-line tool](https://github.com/ImageOptim/gifski) available.
 
 
+## Press
+
+- [Five Mac Apps Worth Checking Out - September 2019 - MacRumors](https://www.macrumors.com/2019/09/04/five-mac-apps-sept-2019/)
+
+
 ## Built with
 
 - [gifski library](https://github.com/ImageOptim/gifski) - High-quality GIF encoder
