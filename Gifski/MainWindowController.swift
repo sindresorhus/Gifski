@@ -6,7 +6,7 @@ final class MainWindowController: NSWindowController {
 	private let videoValidator = VideoValidator()
 
 	var isConverting: Bool {
-		return window?.contentViewController is ConversionViewController
+		window?.contentViewController is ConversionViewController
 	}
 
 	convenience init() {
@@ -31,8 +31,9 @@ final class MainWindowController: NSWindowController {
 			$0.isRestorable = false
 			$0.makeVibrant()
 		}
-		window.makeKeyAndOrderFront(nil)
+
 		NSApp.activate(ignoringOtherApps: false)
+		window.makeKeyAndOrderFront(nil)
 
 		DockProgress.style = .circle(radius: 55, color: .themeColor)
 	}
@@ -52,7 +53,10 @@ final class MainWindowController: NSWindowController {
 	}
 
 	func convert(_ inputUrl: URL) {
-		guard !isConverting, case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: window) else {
+		guard
+			!isConverting,
+			case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: window)
+		else {
 			return
 		}
 

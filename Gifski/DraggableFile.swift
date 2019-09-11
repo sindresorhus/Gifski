@@ -19,9 +19,7 @@ final class DraggableFile: NSImageView {
 		}
 	}
 
-	var imageView: NSView? {
-		return subviews.first
-	}
+	var imageView: NSView? { subviews.first }
 
 	override init(frame: CGRect) {
 		super.init(frame: frame)
@@ -57,7 +55,5 @@ final class DraggableFile: NSImageView {
 }
 
 extension DraggableFile: NSDraggingSource {
-	func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-		return .copy
-	}
+	func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation { .copy }
 }

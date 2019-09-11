@@ -64,8 +64,8 @@ extension NSColor {
 
 
 extension NSColor {
-	func with(alpha: Double) -> NSColor {
-		return withAlphaComponent(CGFloat(alpha))
+	func withAlpha(_ alpha: Double) -> NSColor {
+		withAlphaComponent(CGFloat(alpha))
 	}
 }
 
@@ -82,7 +82,7 @@ extension NSView {
 }
 
 
-/// This is useful as `awakeFromNib` is not called for programatically created views
+/// This is useful as `awakeFromNib` is not called for programatically created views.
 class SSView: NSView {
 	var didAppearWasCalled = false
 
@@ -101,13 +101,13 @@ class SSView: NSView {
 
 
 extension NSWindow {
-	// Helper
+	// Helper.
 	private static func centeredOnScreen(rect: CGRect) -> CGRect {
 		guard let screen = NSScreen.main else {
 			return rect
 		}
 
-		// Looks better than perfectly centered
+		// Looks better than perfectly centered.
 		let yOffset = 0.12
 
 		return rect.centered(in: screen.visibleFrame, xOffsetPercent: 0, yOffsetPercent: yOffset)
@@ -117,7 +117,7 @@ extension NSWindow {
 
 	// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/Gifski/pull/30#discussion_r175337064
 	static var defaultContentRect: CGRect {
-		return centeredOnScreen(rect: defaultContentSize.cgRect)
+		centeredOnScreen(rect: defaultContentSize.cgRect)
 	}
 
 	static let defaultStyleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
@@ -143,7 +143,7 @@ extension NSWindow {
 		self.init(contentRect: contentRect, styleMask: NSWindow.defaultStyleMask, backing: .buffered, defer: true)
 	}
 
-	/// Moves the window to the center of the screen, slightly more in the center than `window#center()`
+	/// Moves the window to the center of the screen, slightly more in the center than `window#center()`.
 	func centerNatural() {
 		setFrame(NSWindow.centeredOnScreen(rect: frame), display: true)
 	}
@@ -151,10 +151,8 @@ extension NSWindow {
 
 
 extension NSWindowController {
-	/// Expose the `view` like in NSViewController
-	var view: NSView? {
-		return window?.contentView
-	}
+	/// Expose the `view` like in NSViewController.
+	var view: NSView? { window?.contentView }
 }
 
 
@@ -199,17 +197,9 @@ extension NSWindow {
 
 
 extension NSWindow {
-	var toolbarView: NSView? {
-		return standardWindowButton(.closeButton)?.superview
-	}
-
-	var titlebarView: NSView? {
-		return toolbarView?.superview
-	}
-
-	var titlebarHeight: Double {
-		return Double(titlebarView?.bounds.height ?? 0)
-	}
+	var toolbarView: NSView? { standardWindowButton(.closeButton)?.superview }
+	var titlebarView: NSView? { toolbarView?.superview }
+	var titlebarHeight: Double { Double(titlebarView?.bounds.height ?? 0) }
 }
 
 
@@ -229,9 +219,7 @@ extension NSView {
 	private final class AddedToSuperviewObserverView: NSView {
 		var onAdded: (() -> Void)?
 
-		override var acceptsFirstResponder: Bool {
-			return false
-		}
+		override var acceptsFirstResponder: Bool { false }
 
 		convenience init() {
 			self.init(frame: .zero)
@@ -247,7 +235,7 @@ extension NSView {
 		}
 	}
 
-	// TODO: Please show me a better way to achieve this than using an invisible view 🙏
+	// TODO: Please show me a better way to achieve this than using an invisible view 🙏.
 	/// Enables you do add contraints and do other initialization without having to subclass the view.
 	func onAddedToSuperview(_ closure: @escaping () -> Void) {
 		let view = AddedToSuperviewObserverView()
@@ -266,7 +254,7 @@ extension NSAlert {
 		detailText: String? = nil,
 		style: NSAlert.Style = .warning
 	) -> NSApplication.ModalResponse {
-		return NSAlert(
+		NSAlert(
 			message: message,
 			informativeText: informativeText,
 			detailText: detailText,
@@ -396,24 +384,24 @@ extension Comparable {
 
 	/// Example: 20.5.clamped(from: 10.3, to: 15)
 	func clamped(from lowerBound: Self, to upperBound: Self) -> Self {
-		return min(max(self, lowerBound), upperBound)
+		min(max(self, lowerBound), upperBound)
 	}
 
 	/// Example: 20.5.clamped(to: 10.3...15)
 	func clamped(to range: ClosedRange<Self>) -> Self {
-		return clamped(from: range.lowerBound, to: range.upperBound)
+		clamped(from: range.lowerBound, to: range.upperBound)
 	}
 
 	/// Example: 20.5.clamped(to: ...10.3)
 	/// => 10.3
 	func clamped(to range: PartialRangeThrough<Self>) -> Self {
-		return min(self, range.upperBound)
+		min(self, range.upperBound)
 	}
 
 	/// Example: 5.5.clamped(to: 10.3...)
 	/// => 10.3
 	func clamped(to range: PartialRangeFrom<Self>) -> Self {
-		return max(self, range.lowerBound)
+		max(self, range.lowerBound)
 	}
 }
 
@@ -421,19 +409,19 @@ extension Strideable where Stride: SignedInteger {
 	/// Example: 20.clamped(to: 5..<10)
 	/// => 9
 	func clamped(to range: CountableRange<Self>) -> Self {
-		return clamped(from: range.lowerBound, to: range.upperBound.advanced(by: -1))
+		clamped(from: range.lowerBound, to: range.upperBound.advanced(by: -1))
 	}
 
 	/// Example: 20.clamped(to: 5...10)
 	/// => 10
 	func clamped(to range: CountableClosedRange<Self>) -> Self {
-		return clamped(from: range.lowerBound, to: range.upperBound)
+		clamped(from: range.lowerBound, to: range.upperBound)
 	}
 
 	/// Example: 20.clamped(to: ..<10)
 	/// => 9
 	func clamped(to range: PartialRangeUpTo<Self>) -> Self {
-		return min(self, range.upperBound.advanced(by: -1))
+		min(self, range.upperBound.advanced(by: -1))
 	}
 }
 
@@ -442,7 +430,7 @@ extension FixedWidthInteger {
 	/// Returns the integer formatted as a human readble file size.
 	/// Example: `2.3 GB`
 	var bytesFormattedAsFileSize: String {
-		return ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
+		ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
 	}
 }
 
@@ -488,7 +476,7 @@ extension String.StringInterpolation {
 }
 
 
-// TODO: Make this a `BinaryFloatingPoint` extension instead
+// TODO: Make this a `BinaryFloatingPoint` extension instead.
 extension Double {
 	/**
 	Converts the number to a string and strips fractional trailing zeros.
@@ -507,26 +495,22 @@ extension Double {
 	```
 	*/
 	var formatted: String {
-	   return truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", self) : String(self)
+		truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", self) : String(self)
 	}
 }
 extension CGFloat {
-	var formatted: String {
-		return Double(self).formatted
-	}
+	var formatted: String { Double(self).formatted }
 }
 
 
 extension CGSize {
 	/// Example: `140×100`
-	var formatted: String {
-		return "\(width.formatted)×\(height.formatted)"
-	}
+	var formatted: String { "\(width.formatted)×\(height.formatted)" }
 }
 
 
 extension NSImage {
-	/// UIImage polyfill
+	/// `UIImage` polyfill.
 	convenience init(cgImage: CGImage) {
 		let size = CGSize(width: cgImage.width, height: cgImage.height)
 		self.init(cgImage: cgImage, size: size)
@@ -535,15 +519,13 @@ extension NSImage {
 
 
 extension CGImage {
-	var nsImage: NSImage {
-		return NSImage(cgImage: self)
-	}
+	var nsImage: NSImage { NSImage(cgImage: self) }
 }
 
 
 extension AVAssetImageGenerator {
 	func image(at time: CMTime) -> NSImage? {
-		return (try? copyCGImage(at: time, actualTime: nil))?.nsImage
+		(try? copyCGImage(at: time, actualTime: nil))?.nsImage
 	}
 }
 
@@ -577,9 +559,7 @@ extension AVAssetTrack {
 	}
 
 	/// Returns the frame rate of the track if it's a video.
-	var frameRate: Double? {
-		return Double(nominalFrameRate)
-	}
+	var frameRate: Double? { Double(nominalFrameRate) }
 
 	/// Returns the aspect ratio of the track if it's a video.
 	var aspectRatio: Double? {
@@ -606,7 +586,8 @@ extension AVAssetTrack {
 		return AVFormat(fourCC: codecString)
 	}
 
-	/// Returns a debug string with the media format. Example: `vide/avc1`
+	/// Returns a debug string with the media format.
+	/// Example: `vide/avc1`
 	var mediaFormat: String {
 		let descriptions = formatDescriptions as! [CMFormatDescription]
 
@@ -726,7 +707,7 @@ enum AVFormat: String {
 	}
 
 	var isAppleProRes: Bool {
-		return [
+		[
 			.appleProResRAWHQ,
 			.appleProResRAW,
 			.appleProRes4444XQ,
@@ -770,7 +751,7 @@ extension AVFormat: CustomStringConvertible {
 
 extension AVFormat: CustomDebugStringConvertible {
 	var debugDescription: String {
-		return "\(description) (\(fourCC.trimmingCharacters(in: .whitespaces)))"
+		"\(description) (\(fourCC.trimmingCharacters(in: .whitespaces)))"
 	}
 }
 
@@ -820,50 +801,32 @@ extension AVAsset {
 	}
 
 	/// Returns a boolean of whether there are any video tracks.
-	var hasVideo: Bool {
-		return !tracks(withMediaType: .video).isEmpty
-	}
+	var hasVideo: Bool { !tracks(withMediaType: .video).isEmpty }
 
 	/// Returns a boolean of whether there are any audio tracks.
-	var hasAudio: Bool {
-		return !tracks(withMediaType: .audio).isEmpty
-	}
+	var hasAudio: Bool { !tracks(withMediaType: .audio).isEmpty }
 
 	/// Returns the first video track if any.
-	var firstVideoTrack: AVAssetTrack? {
-		return tracks(withMediaType: .video).first
-	}
+	var firstVideoTrack: AVAssetTrack? { tracks(withMediaType: .video).first }
 
 	/// Returns the first audio track if any.
-	var firstAudioTrack: AVAssetTrack? {
-		return tracks(withMediaType: .audio).first
-	}
+	var firstAudioTrack: AVAssetTrack? { tracks(withMediaType: .audio).first }
 
 	/// Returns the dimensions of the first video track if any.
-	var dimensions: CGSize? {
-		return firstVideoTrack?.dimensions
-	}
+	var dimensions: CGSize? { firstVideoTrack?.dimensions }
 
 	/// Returns the frame rate of the first video track if any.
-	var frameRate: Double? {
-		return firstVideoTrack?.frameRate
-	}
+	var frameRate: Double? { firstVideoTrack?.frameRate }
 
 	/// Returns the aspect ratio of the first video track if any.
-	var aspectRatio: Double? {
-		return firstVideoTrack?.aspectRatio
-	}
+	var aspectRatio: Double? { firstVideoTrack?.aspectRatio }
 
 	/// Returns the video codec of the first video track if any.
-	var videoCodec: AVFormat? {
-		return firstVideoTrack?.codec
-	}
+	var videoCodec: AVFormat? { firstVideoTrack?.codec }
 
 	/// Returns the audio codec of the first audio track if any.
 	/// Example: `aac`
-	var audioCodec: String? {
-		return firstAudioTrack?.codecString
-	}
+	var audioCodec: String? { firstAudioTrack?.codecString }
 
 	/// The file size of the asset in bytes.
 	/// - Note: If self is an `AVAsset` and not an `AVURLAsset`, the file size will just be an estimate.
@@ -875,9 +838,7 @@ extension AVAsset {
 		return urlAsset.url.fileSize
 	}
 
-	var fileSizeFormatted: String {
-		return fileSize.bytesFormattedAsFileSize
-	}
+	var fileSizeFormatted: String { fileSize.bytesFormattedAsFileSize }
 }
 
 extension AVAsset {
@@ -954,13 +915,9 @@ extension AVURLAsset {
 	}
 }
 extension URL {
-	var videoMetadata: AVURLAsset.VideoMetadata? {
-		return AVURLAsset(url: self).videoMetadata
-	}
+	var videoMetadata: AVURLAsset.VideoMetadata? { AVURLAsset(url: self).videoMetadata }
 
-	var isVideoDecodable: Bool {
-		return AVAsset(url: self).isVideoDecodable
-	}
+	var isVideoDecodable: Bool { AVAsset(url: self).isVideoDecodable }
 }
 
 
@@ -1006,7 +963,7 @@ extension NSView {
 
 
 extension NSControl {
-	/// Trigger the `.action` selector on the control
+	/// Trigger the `.action` selector on the control.
 	func triggerAction() {
 		sendAction(action, to: target)
 	}
@@ -1028,16 +985,16 @@ extension DispatchQueue {
 
 
 extension NSFont {
-	var size: CGFloat {
-		return fontDescriptor.object(forKey: .size) as! CGFloat
+	var size: Double {
+		fontDescriptor.object(forKey: .size) as! Double
 	}
 
 	var traits: [NSFontDescriptor.TraitKey: AnyObject] {
-		return fontDescriptor.object(forKey: .traits) as! [NSFontDescriptor.TraitKey: AnyObject]
+		fontDescriptor.object(forKey: .traits) as! [NSFontDescriptor.TraitKey: AnyObject]
 	}
 
 	var weight: NSFont.Weight {
-		return NSFont.Weight(traits[.weight] as! CGFloat)
+		NSFont.Weight(traits[.weight] as! CGFloat)
 	}
 }
 
@@ -1049,22 +1006,20 @@ let foo = Label(text: "Foo")
 */
 class Label: NSTextField {
 	var text: String {
-		get {
-			return stringValue
-		}
+		get { stringValue }
 		set {
 			stringValue = newValue
 		}
 	}
 
-	/// Allow the it to be disabled like other NSControl's
+	/// Allow the it to be disabled like other `NSControl`'s.
 	override var isEnabled: Bool {
 		didSet {
 			textColor = isEnabled ? .controlTextColor : .disabledControlTextColor
 		}
 	}
 
-	/// Support setting the text later with the `.text` property
+	/// Support setting the text later with the `.text` property.
 	convenience init() {
 		self.init(labelWithString: "")
 	}
@@ -1100,18 +1055,16 @@ final class MonospacedLabel: Label {
 
 	private func setup() {
 		if let font = self.font {
-			self.font = NSFont.monospacedDigitSystemFont(ofSize: font.size, weight: font.weight)
+			self.font = NSFont.monospacedDigitSystemFont(ofSize: CGFloat(font.size), weight: font.weight)
 		}
 	}
 }
 
 
 extension NSView {
-	/// UIKit polyfill
+	/// UIKit polyfill.
 	var center: CGPoint {
-		get {
-			return frame.center
-		}
+		get { frame.center }
 		set {
 			frame.center = newValue
 		}
@@ -1121,8 +1074,8 @@ extension NSView {
 		center = CGPoint(x: rect.midX, y: rect.midY)
 	}
 
-	/// Passing in a window can be useful when the view is not yet added to a window
-	/// If you don't pass in a window, it will use the window the view is in
+	/// Passing in a window can be useful when the view is not yet added to a window.
+	/// If you don't pass in a window, it will use the window the view is in.
 	func centerInWindow(_ window: NSWindow? = nil) {
 		guard let view = (window ?? self.window)?.contentView else {
 			return
@@ -1134,7 +1087,7 @@ extension NSView {
 
 
 /**
-Mark unimplemented functions and have them fail with a useful message
+Mark unimplemented functions and have them fail with a useful message.
 
 ```
 func foo() {
@@ -1146,13 +1099,17 @@ foo()
 ```
 */
 // swiftlint:disable:next unavailable_function
-func unimplemented(function: StaticString = #function, file: String = #file, line: UInt = #line) -> Never {
+func unimplemented(
+	function: StaticString = #function,
+	file: String = #file,
+	line: UInt = #line
+) -> Never {
 	fatalError("\(function) in \(file.nsString.lastPathComponent):\(line) has not been implemented")
 }
 
 
 extension NSPasteboard {
-	/// Get the file URLs from dragged and dropped files
+	/// Get the file URLs from dragged and dropped files.
 	func fileURLs(types: [String] = []) -> [URL] {
 		var options: [NSPasteboard.ReadingOptionKey: Any] = [
 			.urlReadingFileURLsOnly: true
@@ -1162,7 +1119,9 @@ extension NSPasteboard {
 			options[.urlReadingContentsConformToTypes] = types
 		}
 
-		guard let urls = readObjects(forClasses: [NSURL.self], options: options) as? [URL] else {
+		guard
+			let urls = readObjects(forClasses: [NSURL.self], options: options) as? [URL]
+		else {
 			return []
 		}
 
@@ -1171,7 +1130,7 @@ extension NSPasteboard {
 }
 
 
-/// Subclass this in Interface Builder with the title "Send Feedback…"
+/// Subclass this in Interface Builder with the title "Send Feedback…".
 final class FeedbackMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
@@ -1182,7 +1141,7 @@ final class FeedbackMenuItem: NSMenuItem {
 }
 
 
-/// Subclass this in Interface Builder and set the `Url` field there
+/// Subclass this in Interface Builder and set the `Url` field there.
 final class UrlMenuItem: NSMenuItem {
 	@IBInspectable var url: String?
 
@@ -1206,7 +1165,7 @@ final class AssociatedObject<T: Any> {
 }
 
 
-/// Identical to above, but for NSMenuItem
+/// Identical to above, but for NSMenuItem.
 extension NSMenuItem {
 	typealias ActionClosure = ((NSMenuItem) -> Void)
 
@@ -1220,7 +1179,7 @@ extension NSMenuItem {
 	}
 
 	/**
-	Closure version of `.action`
+	Closure version of `.action`.
 
 	```
 	let menuItem = NSMenuItem(title: "Unicorn")
@@ -1231,9 +1190,7 @@ extension NSMenuItem {
 	```
 	*/
 	var onAction: ActionClosure? {
-		get {
-			return AssociatedKeys.onActionClosure[self]
-		}
+		get { AssociatedKeys.onActionClosure[self] }
 		set {
 			AssociatedKeys.onActionClosure[self] = newValue
 			action = #selector(callClosure)
@@ -1256,7 +1213,7 @@ extension NSControl {
 	}
 
 	/**
-	Closure version of `.action`
+	Closure version of `.action`.
 
 	```
 	let button = NSButton(title: "Unicorn", target: nil, action: nil)
@@ -1267,9 +1224,7 @@ extension NSControl {
 	```
 	*/
 	var onAction: ActionClosure? {
-		get {
-			return AssociatedKeys.onActionClosure[self]
-		}
+		get { AssociatedKeys.onActionClosure[self] }
 		set {
 			AssociatedKeys.onActionClosure[self] = newValue
 			action = #selector(callClosure)
@@ -1295,14 +1250,22 @@ extension NSView {
 	view.addSubviewByFadingIn(label)
 	```
 	*/
-	func addSubviewByFadingIn(_ view: NSView, duration: TimeInterval = 1, completion: (() -> Void)? = nil) {
+	func addSubviewByFadingIn(
+		_ view: NSView,
+		duration: TimeInterval = 1,
+		completion: (() -> Void)? = nil
+	) {
 		NSAnimationContext.runAnimationGroup({ context in
 			context.duration = duration
 			animator().addSubview(view)
 		}, completionHandler: completion)
 	}
 
-	func removeSubviewByFadingOut(_ view: NSView, duration: TimeInterval = 1, completion: (() -> Void)? = nil) {
+	func removeSubviewByFadingOut(
+		_ view: NSView,
+		duration: TimeInterval = 1,
+		completion: (() -> Void)? = nil
+	) {
 		NSAnimationContext.runAnimationGroup({ context in
 			context.duration = duration
 			view.animator().removeFromSuperview()
@@ -1326,7 +1289,11 @@ extension NSView {
 		}
 	}
 
-	func fadeIn(duration: TimeInterval = 1, delay: TimeInterval = 0, completion: (() -> Void)? = nil) {
+	func fadeIn(
+		duration: TimeInterval = 1,
+		delay: TimeInterval = 0,
+		completion: (() -> Void)? = nil
+	) {
 		isHidden = true
 
 		NSView.animate(
@@ -1339,7 +1306,11 @@ extension NSView {
 		)
 	}
 
-	func fadeOut(duration: TimeInterval = 1, delay: TimeInterval = 0, completion: (() -> Void)? = nil) {
+	func fadeOut(
+		duration: TimeInterval = 1,
+		delay: TimeInterval = 0,
+		completion: (() -> Void)? = nil
+	) {
 		isHidden = false
 
 		NSView.animate(
@@ -1359,10 +1330,8 @@ extension NSView {
 
 
 extension String {
-	// NSString has some useful properties that String does not
-	var nsString: NSString {
-		return self as NSString
-	}
+	// `NSString` has some useful properties that `String` does not.
+	var nsString: NSString { self as NSString }
 }
 
 
@@ -1375,7 +1344,7 @@ struct App {
 }
 
 
-/// Convenience for opening URLs
+/// Convenience for opening URLs.
 extension URL {
 	func open() {
 		NSWorkspace.shared.open(self)
@@ -1452,18 +1421,12 @@ extension URLComponents {
 
 
 extension URL {
-	var directoryURL: URL {
-		return deletingLastPathComponent()
-	}
+	var directoryURL: URL { deletingLastPathComponent() }
 
-	var directory: String {
-		return directoryURL.path
-	}
+	var directory: String { directoryURL.path }
 
 	var filename: String {
-		get {
-			return lastPathComponent
-		}
+		get { lastPathComponent }
 		set {
 			deleteLastPathComponent()
 			appendPathComponent(newValue)
@@ -1471,9 +1434,7 @@ extension URL {
 	}
 
 	var fileExtension: String {
-		get {
-			return pathExtension
-		}
+		get { pathExtension }
 		set {
 			deletePathExtension()
 			appendPathExtension(newValue)
@@ -1481,9 +1442,7 @@ extension URL {
 	}
 
 	var filenameWithoutExtension: String {
-		get {
-			return deletingPathExtension().lastPathComponent
-		}
+		get { deletingPathExtension().lastPathComponent }
 		set {
 			let ext = pathExtension
 			deleteLastPathComponent()
@@ -1521,31 +1480,23 @@ extension URL {
 	}
 
 	/// File UTI
-	var typeIdentifier: String? {
-		return resourceValue(forKey: .typeIdentifierKey)
-	}
+	var typeIdentifier: String? { resourceValue(forKey: .typeIdentifierKey) }
 
 	/// File size in bytes
-	var fileSize: Int {
-		return resourceValue(forKey: .fileSizeKey) ?? 0
-	}
+	var fileSize: Int { resourceValue(forKey: .fileSizeKey) ?? 0 }
 
 	var fileSizeFormatted: String {
-		return ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
+		ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
 	}
 
-	var exists: Bool {
-		return FileManager.default.fileExists(atPath: path)
-	}
+	var exists: Bool { FileManager.default.fileExists(atPath: path) }
 
-	var isReadable: Bool {
-		return boolResourceValue(forKey: .isReadableKey)
-	}
+	var isReadable: Bool { boolResourceValue(forKey: .isReadableKey) }
 }
 
 extension URL {
 	/**
-	Check if the file conforms to the given type identifier
+	Check if the file conforms to the given type identifier.
 
 	```
 	URL(fileURLWithPath: "video.mp4").conformsTo(typeIdentifier: "public.movie")
@@ -1561,35 +1512,31 @@ extension URL {
 	}
 
 	/// - Important: This doesn't guarantee it's a video. A video container could contain only an audio track. Use the `AVAsset` properties to ensure it's something you can use.
-	var isVideo: Bool {
-		return conformsTo(typeIdentifier: kUTTypeMovie as String)
-	}
+	var isVideo: Bool { conformsTo(typeIdentifier: kUTTypeMovie as String) }
 }
 
 extension CGSize {
-	static func * (lhs: CGSize, rhs: Double) -> CGSize {
-		return CGSize(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
+	static func * (lhs: Self, rhs: Double) -> Self {
+		Self(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
 	}
 
-	static func * (lhs: CGSize, rhs: CGFloat) -> CGSize {
-		return CGSize(width: lhs.width * rhs, height: lhs.height * rhs)
+	static func * (lhs: Self, rhs: CGFloat) -> Self {
+		Self(width: lhs.width * rhs, height: lhs.height * rhs)
 	}
 
 	init(widthHeight: CGFloat) {
 		self.init(width: widthHeight, height: widthHeight)
 	}
 
-	var cgRect: CGRect {
-		return CGRect(origin: .zero, size: self)
-	}
+	var cgRect: CGRect { CGRect(origin: .zero, size: self) }
 
-	func aspectFit(to boundingSize: CGSize) -> CGSize {
+	func aspectFit(to boundingSize: CGSize) -> Self {
 		let ratio = min(boundingSize.width / width, boundingSize.height / height)
 		return self * ratio
 	}
 
-	func aspectFit(to widthHeight: CGFloat) -> CGSize {
-		return aspectFit(to: CGSize(width: widthHeight, height: widthHeight))
+	func aspectFit(to widthHeight: CGFloat) -> Self {
+		aspectFit(to: Self(width: widthHeight, height: widthHeight))
 	}
 }
 
@@ -1605,18 +1552,14 @@ extension CGRect {
 	}
 
 	var x: CGFloat {
-		get {
-			return origin.x
-		}
+		get { origin.x }
 		set {
 			origin.x = newValue
 		}
 	}
 
 	var y: CGFloat {
-		get {
-			return origin.y
-		}
+		get { origin.y }
 		set {
 			origin.y = newValue
 		}
@@ -1625,18 +1568,14 @@ extension CGRect {
 	/// `width` and `height` are defined in Foundation as getters only. We add support for setters too.
 	/// These will not work when imported as a framework: https://bugs.swift.org/browse/SR-4017
 	var width: CGFloat {
-		get {
-			return size.width
-		}
+		get { size.width }
 		set {
 			size.width = newValue
 		}
 	}
 
 	var height: CGFloat {
-		get {
-			return size.height
-		}
+		get { size.height }
 		set {
 			size.height = newValue
 		}
@@ -1645,67 +1584,37 @@ extension CGRect {
 	// MARK: - Edges
 
 	var left: CGFloat {
-		get {
-			return x
-		}
+		get { x }
 		set {
 			x = newValue
 		}
 	}
 
 	var right: CGFloat {
-		get {
-			return x + width
-		}
+		get { x + width }
 		set {
 			x = newValue - width
 		}
 	}
 
-	#if os(macOS)
-		var top: CGFloat {
-			get {
-				return y + height
-			}
-			set {
-				y = newValue - height
-			}
+	var top: CGFloat {
+		get { y + height }
+		set {
+			y = newValue - height
 		}
+	}
 
-		var bottom: CGFloat {
-			get {
-				return y
-			}
-			set {
-				y = newValue
-			}
+	var bottom: CGFloat {
+		get { y }
+		set {
+			y = newValue
 		}
-	#else
-		var top: CGFloat {
-			get {
-				return y
-			}
-			set {
-				y = newValue
-			}
-		}
-
-		var bottom: CGFloat {
-			get {
-				return y + height
-			}
-			set {
-				y = newValue - height
-			}
-		}
-	#endif
+	}
 
 	// MARK: -
 
 	var center: CGPoint {
-		get {
-			return CGPoint(x: midX, y: midY)
-		}
+		get { CGPoint(x: midX, y: midY) }
 		set {
 			origin = CGPoint(
 				x: newValue.x - (size.width / 2),
@@ -1715,28 +1624,28 @@ extension CGRect {
 	}
 
 	var centerX: CGFloat {
-		get {
-			return midX
-		}
+		get { midX }
 		set {
 			center = CGPoint(x: newValue, y: midY)
 		}
 	}
 
 	var centerY: CGFloat {
-		get {
-			return midY
-		}
+		get { midY }
 		set {
 			center = CGPoint(x: midX, y: newValue)
 		}
 	}
 
 	/**
-	Returns a CGRect where `self` is centered in `rect`
+	Returns a `CGRect` where `self` is centered in `rect`.
 	*/
-	func centered(in rect: CGRect, xOffset: Double = 0, yOffset: Double = 0) -> CGRect {
-		return CGRect(
+	func centered(
+		in rect: Self,
+		xOffset: Double = 0,
+		yOffset: Double = 0
+	) -> Self {
+		Self(
 			x: ((rect.width - size.width) / 2) + CGFloat(xOffset),
 			y: ((rect.height - size.height) / 2) + CGFloat(yOffset),
 			width: size.width,
@@ -1745,12 +1654,16 @@ extension CGRect {
 	}
 
 	/**
-	Returns a CGRect where `self` is centered in `rect`
+	Returns a CGRect where `self` is centered in `rect`.
 
 	- Parameters:
-		- xOffsetPercent: The offset in percentage of `rect.width`
+		- xOffsetPercent: The offset in percentage of `rect.width`.
 	*/
-	func centered(in rect: CGRect, xOffsetPercent: Double, yOffsetPercent: Double) -> CGRect {
+	func centered(
+		in rect: Self,
+		xOffsetPercent: Double,
+		yOffsetPercent: Double
+	) -> Self {
 		return centered(
 			in: rect,
 			xOffset: Double(rect.width) * xOffsetPercent,
@@ -1779,12 +1692,8 @@ extension Error {
 		} catch CocoaError.userCancelled {
 			return true
 		} catch {
-			#if os(macOS) || os(iOS) || os(tvOS)
-				let pair = { ($0.domain, $0.code) }(error as NSError)
-				return pair == ("SKErrorDomain", 2)
-			#else
-				return false
-			#endif
+			let pair = { ($0.domain, $0.code) }(error as NSError)
+			return pair == ("SKErrorDomain", 2)
 		}
 	}
 }
@@ -1961,13 +1870,10 @@ extension CALayer {
 }
 
 extension Error {
-	var isNsError: Bool {
-		return type(of: self) is NSError.Type
-	}
+	var isNsError: Bool { Self.self is NSError.Type }
 }
 
 extension NSError {
-	// TODO: Return `Self` here in Swift 5.1
 	class func from(error: Error, userInfo: [String: Any] = [:]) -> NSError {
 		let nsError = error as NSError
 
@@ -1977,7 +1883,6 @@ extension NSError {
 				return nsError
 			}
 
-			// TODO: Use `Self` instead of `NSError` here in Swift 5.1
 			return nsError.appending(userInfo: userInfo)
 		}
 
@@ -2001,7 +1906,11 @@ extension NSError {
 	/**
 	- Parameter domainPostfix: String to append to the `domain`.
 	*/
-	class func appError(message: String, userInfo: [String: Any] = [:], domainPostfix: String? = nil) -> Self {
+	class func appError(
+		message: String,
+		userInfo: [String: Any] = [:],
+		domainPostfix: String? = nil
+	) -> Self {
 		return self.init(
 			domain: domainPostfix != nil ? "\(App.id) - \(domainPostfix!)" : App.id,
 			code: 0,
@@ -2011,8 +1920,7 @@ extension NSError {
 
 	/// Returns a new error with the user info appended.
 	func appending(userInfo newUserInfo: [String: Any]) -> Self {
-		// TODO: Use `Self` here in Swift 5.1
-		return type(of: self).init(
+		return Self(
 			domain: domain,
 			code: code,
 			userInfo: userInfo.appending(newUserInfo)
@@ -2095,7 +2003,7 @@ enum FileType {
 	case tiff
 	case gif
 
-	static func from(fileExtension: String) -> FileType {
+	static func from(fileExtension: String) -> Self {
 		switch fileExtension {
 		case "png":
 			return .png
@@ -2112,8 +2020,8 @@ enum FileType {
 		}
 	}
 
-	static func from(url: URL) -> FileType {
-		return from(fileExtension: url.pathExtension)
+	static func from(url: URL) -> Self {
+		from(fileExtension: url.pathExtension)
 	}
 
 	var name: String {
@@ -2164,7 +2072,7 @@ enum FileType {
 
 extension Sequence {
 	/**
-	Returns the sum of elements in a sequence by mapping the elements with a numerator
+	Returns the sum of elements in a sequence by mapping the elements with a numerator.
 
 	```
 	[1, 2, 3].sum { $0 == 1 ? 10 : $0 }
@@ -2172,7 +2080,7 @@ extension Sequence {
 	```
 	*/
 	func sum<T: Numeric>(_ numerator: (Element) throws -> T) rethrows -> T {
-		var result: T = 0
+		var result = T.zero
 		for element in self {
 			result += try numerator(element)
 		}
@@ -2207,14 +2115,14 @@ extension QLPreviewPanel {
 extension NSView {
 	/// Get the view frame in screen coordinates.
 	var boundsInScreenCoordinates: CGRect? {
-		return window?.convertToScreen(convert(bounds, to: nil))
+		window?.convertToScreen(convert(bounds, to: nil))
 	}
 }
 
 extension Collection {
 	/// Returns the element at the specified index if it is within bounds, otherwise nil.
 	subscript(safe index: Index) -> Element? {
-		return indices.contains(index) ? self[index] : nil
+		indices.contains(index) ? self[index] : nil
 	}
 }
 
@@ -2224,13 +2132,13 @@ protocol Copyable {
 
 extension Copyable {
 	func copy() -> Self {
-		return Self(instance: self)
+		Self(instance: self)
 	}
 }
 
 extension CGSize {
-	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> CGSize {
-		return CGSize(width: width.rounded(rule), height: height.rounded(rule))
+	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> Self {
+		Self(width: width.rounded(rule), height: height.rounded(rule))
 	}
 }
 
@@ -2288,7 +2196,7 @@ extension FloatingPoint {
 	public func isAlmostEqual(
 		to other: Self,
 		tolerance: Self = Self.ulpOfOne.squareRoot()
-		) -> Bool {
+	) -> Bool {
 		// tolerances outside of [.ulpOfOne,1) yield well-defined but useless results,
 		// so this is enforced by an assert rathern than a precondition.
 		assert(tolerance >= .ulpOfOne && tolerance < 1, "tolerance should be in [.ulpOfOne, 1).")
@@ -2398,13 +2306,8 @@ extension NSEdgeInsets {
 		)
 	}
 
-	var vertical: Double {
-		return Double(top + bottom)
-	}
-
-	var horizontal: Double {
-		return Double(left + right)
-	}
+	var vertical: Double { Double(top + bottom) }
+	var horizontal: Double { Double(left + right) }
 }
 
 extension NSControl {
@@ -2491,8 +2394,8 @@ extension NSLayoutConstraint {
 		secondAttribute: Attribute? = nil,
 		multiplier: Double? = nil,
 		constant: Double? = nil
-	) -> NSLayoutConstraint {
-		return NSLayoutConstraint(
+	) -> Self {
+		Self(
 			item: firstItem ?? self.firstItem as Any,
 			attribute: firstAttribute ?? self.firstAttribute,
 			relatedBy: relation ?? self.relation,
@@ -2506,14 +2409,10 @@ extension NSLayoutConstraint {
 
 extension NSObject {
 	/// Returns the class name.
-	class var simpleClassName: String {
-		return String(describing: self)
-	}
+	class var simpleClassName: String { String(describing: self) }
 
 	/// Returns the class name of the instance.
-	var simpleClassName: String {
-		return type(of: self).simpleClassName
-	}
+	var simpleClassName: String { Self.simpleClassName }
 }
 
 extension AVPlayerItem {
@@ -2553,20 +2452,22 @@ extension AVPlayerItem {
 
 extension FileManager {
 	/// Copy a file and optionally overwrite the destination if it exists.
-	func copyItem(at sourceURL: URL, to destinationURL: URL, overwrite: Bool = false) throws {
+	func copyItem(
+		at sourceURL: URL,
+		to destinationURL: URL,
+		overwrite: Bool = false
+	) throws {
 		if overwrite {
-			try? FileManager.default.removeItem(at: destinationURL)
+			try? removeItem(at: destinationURL)
 		}
 
-		try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+		try copyItem(at: sourceURL, to: destinationURL)
 	}
 }
 
 extension ClosedRange where Bound: AdditiveArithmetic {
 	/// Get the length between the lower and upper bound.
-	var length: Bound {
-		return upperBound - lowerBound
-	}
+	var length: Bound { upperBound - lowerBound }
 }
 
 extension ClosedRange {
@@ -2579,7 +2480,7 @@ extension ClosedRange {
 	```
 	*/
 	func isSuperset(of other: ClosedRange<Bound>) -> Bool {
-		return other.isEmpty ||
+		other.isEmpty ||
 			(
 				lowerBound <= other.lowerBound &&
 				other.upperBound <= upperBound
@@ -2595,7 +2496,7 @@ extension ClosedRange {
 	```
 	*/
 	func isSubset(of other: ClosedRange<Bound>) -> Bool {
-		return other.isSuperset(of: self)
+		other.isSuperset(of: self)
 	}
 }
 
@@ -2625,7 +2526,7 @@ extension ClosedRange where Bound == Double {
 	//=> 0...1
 	```
 	*/
-	func minimumRangeLength(of length: Bound, in fullRange: ClosedRange<Bound>) -> ClosedRange<Bound> {
+	func minimumRangeLength(of length: Bound, in fullRange: Self) -> Self {
 		guard length > self.length else {
 			return self
 		}

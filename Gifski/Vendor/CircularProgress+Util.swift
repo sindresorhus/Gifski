@@ -76,9 +76,7 @@ extension CALayer {
 	Can be useful for text layers
 	*/
 	var implicitAnimations: Bool {
-		get {
-			return actions == nil
-		}
+		get { actions == nil }
 		set {
 			if newValue {
 				actions = nil
@@ -137,7 +135,7 @@ extension CAShapeLayer {
 
 
 extension CATextLayer {
-	/// Initializer with better defaults
+	/// Initializer with better defaults.
 	convenience init(text: String, fontSize: Double? = nil, color: NSColor? = nil) {
 		self.init()
 		string = text
@@ -173,9 +171,7 @@ final class ProgressCircleShapeLayer: CAShapeLayer {
 	}
 
 	var progress: Double {
-		get {
-			return Double(strokeEnd)
-		}
+		get { Double(strokeEnd) }
 		set {
 			strokeEnd = CGFloat(newValue)
 		}
