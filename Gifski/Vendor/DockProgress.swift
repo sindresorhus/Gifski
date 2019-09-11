@@ -43,7 +43,7 @@ public final class DockProgress {
 		}
 	}
 
-	/// Reset the `progress` without animating
+	/// Reset the `progress` without animating.
 	public static func resetProgress() {
 		progress = 0
 		previousProgress = 0
@@ -97,11 +97,11 @@ public final class DockProgress {
 		}
 
 		let bar = CGRect(x: 0, y: 20, width: dstRect.width, height: 10)
-		NSColor.white.with(alpha: 0.8).set()
+		NSColor.white.withAlpha(0.8).set()
 		roundedRect(bar)
 
 		let barInnerBg = bar.insetBy(dx: 0.5, dy: 0.5)
-		NSColor.black.with(alpha: 0.8).set()
+		NSColor.black.withAlpha(0.8).set()
 		roundedRect(barInnerBg)
 
 		var barProgress = bar.insetBy(dx: 1, dy: 1)
@@ -212,7 +212,7 @@ public final class DockProgress {
 ///
 
 extension NSBezierPath {
-	/// For making a circle progress indicator
+	/// For making a circle progress indicator.
 	static func progressCircle(radius: Double, center: CGPoint) -> Self {
 		let startAngle: CGFloat = 90
 		let path = self.init()
@@ -234,7 +234,7 @@ extension NSFont {
 
 
 extension NSBezierPath {
-	/// UIKit polyfill
+	/// UIKit polyfill.
 	var cgPath: CGPath {
 		let path = CGMutablePath()
 		var points = [CGPoint](repeating: .zero, count: 3)
@@ -258,7 +258,7 @@ extension NSBezierPath {
 		return path
 	}
 
-	/// UIKit polyfill
+	/// UIKit polyfill.
 	convenience init(roundedRect rect: CGRect, cornerRadius: CGFloat) {
 		self.init(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
 	}

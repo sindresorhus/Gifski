@@ -38,9 +38,7 @@ final class EditVideoViewController: NSViewController {
 	private let formatter = ByteCountFormatter()
 	private var playerViewController: TrimmingAVPlayerViewController!
 
-	private var timeRange: ClosedRange<Double>? {
-		return playerViewController?.timeRange
-	}
+	private var timeRange: ClosedRange<Double>? { playerViewController?.timeRange }
 
 	private let tooltip = Tooltip(
 		identifier: "savePanelArrowKeys",
@@ -49,7 +47,11 @@ final class EditVideoViewController: NSViewController {
 		maxWidth: 300
 	)
 
-	convenience init(inputUrl: URL, asset: AVURLAsset, videoMetadata: AVURLAsset.VideoMetadata) {
+	convenience init(
+		inputUrl: URL,
+		asset: AVURLAsset,
+		videoMetadata: AVURLAsset.VideoMetadata
+	) {
 		self.init()
 
 		self.inputUrl = inputUrl
@@ -61,7 +63,7 @@ final class EditVideoViewController: NSViewController {
 		let conversion = Gifski.Conversion(
 			video: inputUrl,
 			timeRange: timeRange,
-			quality: defaults[.outputQuality],
+			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue
 		)
@@ -89,6 +91,8 @@ final class EditVideoViewController: NSViewController {
 
 	override func viewDidAppear() {
 		super.viewDidAppear()
+
+		view.window?.makeFirstResponder(self)
 
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		widthTextField.nextKeyView = heightTextField
@@ -240,7 +244,7 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			defaults[.outputQuality] = self.qualitySlider.doubleValue
+			Defaults[.outputQuality] = self.qualitySlider.doubleValue
 			self.estimateFileSize()
 		}
 
@@ -248,7 +252,7 @@ final class EditVideoViewController: NSViewController {
 		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
 		frameRateSlider.triggerAction()
 
-		qualitySlider.doubleValue = defaults[.outputQuality]
+		qualitySlider.doubleValue = Defaults[.outputQuality]
 		qualitySlider.triggerAction()
 	}
 
@@ -317,6 +321,7 @@ final class EditVideoViewController: NSViewController {
 				return videoMetadata.duration
 			}
 		}()
+
 		let frameCount = duration * frameRateSlider.doubleValue
 		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
 		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
@@ -331,10 +336,10 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func selectPredefinedSizeBasedOnCurrentDimensions() {
-		// First reset the state
+		// First reset the state.
 		predefinedSizesDropdown.selectItem(at: NSNotFound)
 
-		// Check if we can select predefined option that has the same dimensions settings
+		// Check if we can select predefined option that has the same dimensions settings.
 		if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
 			predefinedSizesDropdown.selectItem(at: index)
 		} else {

@@ -17,9 +17,7 @@ class DropView: SSView {
 		$0.font = NSFont.systemFont(ofSize: 14)
 	}
 
-	var highlightColor: NSColor {
-		return .controlAccentColorPolyfill
-	}
+	var highlightColor: NSColor { .controlAccentColorPolyfill }
 
 	var isDropLabelHidden: Bool = false {
 		didSet {
@@ -111,16 +109,12 @@ final class VideoDropView: DropView {
 	// TODO: Any way to make this generic so we can have it in DropView instead?
 	var onComplete: ((URL) -> Void)?
 
-	override var highlightColor: NSColor {
-		return .themeColor
-	}
+	override var highlightColor: NSColor { .themeColor }
 
-	override var acceptedTypes: [NSPasteboard.PasteboardType] {
-		return [.fileURL]
-	}
+	override var acceptedTypes: [NSPasteboard.PasteboardType] { [.fileURL] }
 
 	override func onEntered(_ sender: NSDraggingInfo) -> Bool {
-		return sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).count == 1
+		sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).count == 1
 	}
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {

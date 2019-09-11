@@ -38,12 +38,12 @@ public final class CircularProgress: NSView {
 
 	private lazy var cancelButton = with(CustomButton.circularButton(title: "╳", radius: Double(radius), center: bounds.center)) {
 		$0.textColor = color
-		$0.backgroundColor = color.with(alpha: 0.1)
+		$0.backgroundColor = color.withAlpha(0.1)
 		$0.activeBackgroundColor = color
 		$0.borderWidth = 0
 		$0.isHidden = true
-		$0.onAction = { [weak self] _ in
-			self?.cancelProgress()
+		$0.onAction = { _ in
+			self.cancelProgress()
 		}
 	}
 
@@ -61,13 +61,10 @@ public final class CircularProgress: NSView {
 	Defaults to the user's accent color. For High Sierra and below it uses a fallback color.
 	*/
 	@IBInspectable public var color: NSColor {
-		get {
-			return _color
-		}
+		get { _color }
 		set {
 			_color = newValue
 			originalColor = newValue
-
 			needsDisplay = true
 		}
 	}
@@ -84,32 +81,30 @@ public final class CircularProgress: NSView {
 	- Note: Can be set from a background thread.
 	*/
 	@IBInspectable public var progress: Double {
-		get {
-			return _progress
-		}
+		get { _progress }
 		set {
+			_progress = newValue.clamped(to: 0...1)
+
+			// swiftlint:disable:next trailing_closure
+			CALayer.animate(duration: 0.5, timingFunction: .easeOut, animations: {
+				self.progressCircle.progress = self._progress
+			})
+
 			DispatchQueue.main.async {
-				self._progress = newValue.clamped(to: 0...1)
-
-				// swiftlint:disable:next trailing_closure
-				CALayer.animate(duration: 0.5, timingFunction: .easeOut, animations: {
-					self.progressCircle.progress = self._progress
-				})
-
 				self.progressLabel.isHidden = self.progress == 0 && self.isIndeterminate ? self.cancelButton.isHidden : !self.cancelButton.isHidden
-
-				if !self.progressLabel.isHidden {
-					self.progressLabel.string = "\(Int(self._progress * 100))%"
-					self.successView.isHidden = true
-				}
-
-				if self._progress == 1 {
-					self.isFinished = true
-				}
-
-				// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
-				CATransaction.flush()
 			}
+
+			if !progressLabel.isHidden {
+				progressLabel.string = "\(Int(_progress * 100))%"
+				successView.isHidden = true
+			}
+
+			if _progress == 1 {
+				isFinished = true
+			}
+
+			// TODO: Figure out why I need to flush here to get the label to update in `Gifski.app`.
+			CATransaction.flush()
 		}
 	}
 
@@ -126,15 +121,16 @@ public final class CircularProgress: NSView {
 			return _isFinished
 		}
 		set {
-			DispatchQueue.main.async {
-				self._isFinished = newValue
+			_isFinished = newValue
 
-				if self._isFinished {
-					self.isIndeterminate = false
+			if _isFinished {
+				isIndeterminate = false
 
-					if !self.isCancelled, self.showCheckmarkAtHundredPercent {
-						self.progressLabel.string = ""
-						self.cancelButton.isHidden = true
+				if !isCancelled, showCheckmarkAtHundredPercent {
+					progressLabel.string = ""
+					cancelButton.isHidden = true
+
+					DispatchQueue.main.async {
 						self.successView.isHidden = false
 					}
 				}
@@ -148,28 +144,28 @@ public final class CircularProgress: NSView {
 	public var progressInstance: Progress? {
 		didSet {
 			if let progressInstance = progressInstance {
-				progressObserver = progressInstance.observe(\.fractionCompleted) { [weak self] sender, _ in
-					guard let self = self, !self.isCancelled && !sender.isFinished else {
+				progressObserver = progressInstance.observe(\.fractionCompleted) { sender, _ in
+					guard !self.isCancelled && !sender.isFinished else {
 						return
 					}
 
 					self.progress = sender.fractionCompleted
 				}
 
-				finishedObserver = progressInstance.observe(\.isFinished) { [weak self] sender, _ in
-					guard let self = self, !self.isCancelled && sender.isFinished else {
+				finishedObserver = progressInstance.observe(\.isFinished) { sender, _ in
+					guard !self.isCancelled && sender.isFinished else {
 						return
 					}
 
 					self.progress = 1
 				}
 
-				cancelledObserver = progressInstance.observe(\.isCancelled) { [weak self] sender, _ in
-					self?.isCancelled = sender.isCancelled
+				cancelledObserver = progressInstance.observe(\.isCancelled) { sender, _ in
+					self.isCancelled = sender.isCancelled
 				}
 
-				indeterminateObserver = progressInstance.observe(\.isIndeterminate) { [weak self] sender, _ in
-					self?.isIndeterminate = sender.isIndeterminate
+				indeterminateObserver = progressInstance.observe(\.isIndeterminate) { sender, _ in
+					self.isIndeterminate = sender.isIndeterminate
 				}
 
 				isCancellable = progressInstance.isCancellable
@@ -208,7 +204,7 @@ public final class CircularProgress: NSView {
 
 	private func updateColors() {
 		let duration = 0.2
-		backgroundCircle.animate(color: color.with(alpha: 0.5).cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
+		backgroundCircle.animate(color: color.withAlpha(0.5).cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
 
 		progressCircle.animate(color: color.cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
 		progressLabel.animate(color: color.cgColor, keyPath: #keyPath(CATextLayer.foregroundColor), duration: duration)
@@ -216,7 +212,7 @@ public final class CircularProgress: NSView {
 		indeterminateCircle.animate(color: color.cgColor, keyPath: #keyPath(CAShapeLayer.strokeColor), duration: duration)
 
 		cancelButton.textColor = color
-		cancelButton.backgroundColor = color.with(alpha: 0.1)
+		cancelButton.backgroundColor = color.withAlpha(0.1)
 		cancelButton.activeBackgroundColor = color
 
 		successView.color = color
@@ -403,16 +399,14 @@ public final class CircularProgress: NSView {
 			return _isIndeterminate
 		}
 		set {
-			DispatchQueue.main.async {
-				self.willChangeValue(for: \.isIndeterminate)
-				self._isIndeterminate = newValue
-				self.didChangeValue(for: \.isIndeterminate)
+			willChangeValue(for: \.isIndeterminate)
+			_isIndeterminate = newValue
+			didChangeValue(for: \.isIndeterminate)
 
-				if self._isIndeterminate {
-					self.startIndeterminateState()
-				} else {
-					self.stopIndeterminateState()
-				}
+			if _isIndeterminate {
+				startIndeterminateState()
+			} else {
+				stopIndeterminateState()
 			}
 		}
 	}
@@ -420,18 +414,16 @@ public final class CircularProgress: NSView {
 	private func startIndeterminateState() {
 		progressCircle.isHidden = true
 		indeterminateCircle.isHidden = false
-
 		progressLabel.isHidden = progress == 0 && isIndeterminate && cancelButton.isHidden
 	}
 
 	private func stopIndeterminateState() {
 		indeterminateCircle.isHidden = true
 		progressCircle.isHidden = false
-
 		progressLabel.isHidden = !cancelButton.isHidden
 	}
 
 	private var shouldHideSuccessView: Bool {
-		return !showCheckmarkAtHundredPercent || !isFinished || isCancelled
+		!showCheckmarkAtHundredPercent || !isFinished || isCancelled
 	}
 }
