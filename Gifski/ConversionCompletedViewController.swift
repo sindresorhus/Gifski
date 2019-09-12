@@ -20,7 +20,7 @@ final class ConversionCompletedViewController: NSViewController {
 		button.title = "Start Over"
 		button.backgroundColor = NSColor.clear
 		button.activeBackgroundColor = NSColor.clear
-		button.textColor = NSColor.controlTextColor.with(alpha: 0.7)
+		button.textColor = NSColor.controlTextColor.withAlpha(0.7)
 		button.activeTextColor = .controlTextColor
 		button.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
 		button.frame = CGRect(x: 30 + 16, y: self.view.frame.height - (30 + 16), width: 70, height: 16)
