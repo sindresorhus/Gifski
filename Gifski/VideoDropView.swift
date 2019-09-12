@@ -20,9 +20,7 @@ class DropView<CompletionType>: SSView {
 		$0.font = NSFont.systemFont(ofSize: 14)
 	}
 
-	var highlightColor: NSColor {
-		return .controlAccentColorPolyfill
-	}
+	var highlightColor: NSColor { .controlAccentColorPolyfill }
 
 	var isDropLabelHidden: Bool = false {
 		didSet {
@@ -112,16 +110,12 @@ class DropView<CompletionType>: SSView {
 
 final class VideoDropView: DropView<URL> {
 
-	override var highlightColor: NSColor {
-		return .themeColor
-	}
+	override var highlightColor: NSColor { .themeColor }
 
-	override var acceptedTypes: [NSPasteboard.PasteboardType] {
-		return [.fileURL]
-	}
+	override var acceptedTypes: [NSPasteboard.PasteboardType] { [.fileURL] }
 
 	override func onEntered(_ sender: NSDraggingInfo) -> Bool {
-		return sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).count == 1
+		sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).count == 1
 	}
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {

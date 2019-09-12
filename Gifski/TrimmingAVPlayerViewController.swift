@@ -2,15 +2,12 @@ import AVKit
 
 /// VC containing AVPlayerView and also extending possibilities for trimming (view) customization.
 final class TrimmingAVPlayerViewController: NSViewController {
-	var playerView: TrimmingAVPlayerView {
-		return view as! TrimmingAVPlayerView
-	}
-
 	private(set) var timeRange: ClosedRange<Double>?
-
 	private let asset: AVURLAsset
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
+
+	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
 
 	/// The minimum duration the trimmer can be set to.
 	var minimumTrimDuration = 0.1 {

@@ -24,7 +24,9 @@ final class VideoDropViewController: NSViewController {
 	}
 
 	func convert(_ inputUrl: URL) {
-		guard case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: view.window) else {
+		guard
+			case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: view.window)
+		else {
 			return
 		}
 

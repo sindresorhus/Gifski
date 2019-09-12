@@ -55,7 +55,10 @@ final class Gifski {
 
 	- Parameter completionHandler: Guaranteed to be called on the main thread
 	*/
-	static func run(_ conversion: Conversion, completionHandler: ((Result<Data, Error>) -> Void)?) {
+	static func run(
+		_ conversion: Conversion,
+		completionHandler: ((Result<Data, Error>) -> Void)?
+	) {
 		var progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { (_ result: Result<Data, Error>) -> Void in

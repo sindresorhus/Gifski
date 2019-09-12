@@ -59,9 +59,9 @@ final class ConversionCompletedViewController: NSViewController {
 		super.viewDidAppear()
 
 		// This is needed for Quick Look to work.
-		self.view.window?.makeFirstResponder(self)
+		view.window?.makeFirstResponder(self)
 
-		if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
+		if #available(macOS 10.14, *), Defaults[.successfulConversionsCount] == 5 {
 			SKStoreReviewController.requestReview()
 		}
 
@@ -194,9 +194,7 @@ extension ConversionCompletedViewController: QLPreviewPanelDataSource {
 		panel.toggle()
 	}
 
-	override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
-		return true
-	}
+	override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool { true }
 
 	override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
 		panel.delegate = self
@@ -208,22 +206,20 @@ extension ConversionCompletedViewController: QLPreviewPanelDataSource {
 		panel.delegate = nil
 	}
 
-	func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
-		return 1
-	}
+	func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int { 1 }
 
 	func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
-		return gifUrl as NSURL
+		gifUrl as NSURL
 	}
 }
 
 extension ConversionCompletedViewController: QLPreviewPanelDelegate {
 	func previewPanel(_ panel: QLPreviewPanel!, sourceFrameOnScreenFor item: QLPreviewItem!) -> CGRect {
-		return draggableFile.imageView?.boundsInScreenCoordinates ?? .zero
+		draggableFile.imageView?.boundsInScreenCoordinates ?? .zero
 	}
 
 	func previewPanel(_ panel: QLPreviewPanel!, transitionImageFor item: QLPreviewItem!, contentRect: UnsafeMutablePointer<CGRect>!) -> Any! {
-		return draggableFile.image
+		draggableFile.image
 	}
 }
 

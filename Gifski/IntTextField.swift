@@ -1,22 +1,18 @@
 import AppKit
 
 final class IntTextField: NSTextField, NSTextFieldDelegate {
-	override var canBecomeKeyView: Bool {
-		return true
-	}
+	override var canBecomeKeyView: Bool { true }
 
-	/// Delta used for arrow navigation
+	/// Delta used for arrow navigation.
 	var delta = 1
 
-	/// Delta used for option + arrow navigation
+	/// Delta used for option + arrow navigation.
 	var alternativeDelta = 10
 
 	var onValueChange: ((Int) -> Void)?
 	var onBlur: ((Int) -> Void)?
 	var minMax: ClosedRange<Int>?
-	var isEmpty: Bool {
-		return stringValue.trimmingCharacters(in: .whitespaces).isEmpty
-	}
+	var isEmpty: Bool { stringValue.trimmingCharacters(in: .whitespaces).isEmpty }
 
 	required init?(coder: NSCoder) {
 		super.init(coder: coder)

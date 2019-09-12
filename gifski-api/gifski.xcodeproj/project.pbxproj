@@ -55,6 +55,8 @@
 			);
 			buildToolPath = "$(HOME)/.cargo/bin/cargo";
 			buildWorkingDirectory = "$(SRCROOT)";
+			dependencies = (
+			);
 			name = Cargo;
 			passBuildSettingsInEnvironment = 1;
 			productName = Cargo;
@@ -113,7 +115,7 @@
 		CA6071C8BFD722D117092DB7 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1100;
 				TargetAttributes = {
 					CA6034DF35B8B3463979F9E1 = {
 						CreatedOnToolsVersion = 9.2;
@@ -175,6 +177,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -240,6 +243,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
