@@ -20,7 +20,7 @@ final class ConversionViewController: NSViewController {
 	private var progress: Progress?
 	private var isRunning = false
 
-	convenience init(_ conversion: Gifski.Conversion, _ gifData: Data?) {
+	convenience init(conversion: Gifski.Conversion, _ gifData: Data?) {
 		self.init()
 
 		self.gifData = gifData
