@@ -15,16 +15,14 @@ final class ConversionViewController: NSViewController {
 
 	private lazy var timeRemainingEstimator = TimeRemainingEstimator(label: timeRemainingLabel)
 
-	private var conversion: Gifski.Conversion!
-	private var gifData: Data?	
 	private var progress: Progress?
 	private var isRunning = false
+	private var source: GifSource?
 
-	convenience init(conversion: Gifski.Conversion, _ gifData: Data?) {
+	convenience init(source: GifSource) {
 		self.init()
-
-		self.gifData = gifData
-		self.conversion = conversion
+		
+		self.source = source
 	}
 
 	override func loadView() {
@@ -49,7 +47,7 @@ final class ConversionViewController: NSViewController {
 
 		view.window?.makeFirstResponder(self)
 
-		start(gifData: gifData, conversion: conversion)
+		start(source: source)
 	}
 
 	/// Gets called when the Esc key is pressed.
@@ -63,8 +61,8 @@ final class ConversionViewController: NSViewController {
 		cancelConversion()
 	}
 
-	private func start(gifData: Data?, conversion: Gifski.Conversion) {
-		guard !isRunning else {
+	private func start(source: GifSource?) {
+		guard !isRunning, let source = source else {
 			return
 		}
 
@@ -82,36 +80,42 @@ final class ConversionViewController: NSViewController {
 			guard let self = self else {
 				return
 			}
-			let gifUrl = self.generateTempGifUrl(for: conversion.video)
-			if let gifData = gifData {
-				do {
-					try gifData.write(to: gifUrl, options: .atomic)
+			
+			let gifUrl: URL
+			switch source {
+				case .conversionNeeded(let conversion):
+					gifUrl = self.generateTempGifUrl(for: conversion!.video)
+					break
+				case .gifDataAvailable(_, let video):
+					gifUrl = self.generateTempGifUrl(for: video)
+					break
+			}
+			switch source {
+				case .conversionNeeded(let conversion):
+					Gifski.run(conversion!, completionHandler: { result in
+						do {
+							try result.get().write(to: gifUrl, options: .atomic)
+						} catch Gifski.Error.cancelled {
+							self.cancelConversion()
+						} catch {
+							self.presentError(error, modalFor: self.view.window)
+							self.cancelConversion()
+						}
+						
+						defaults[.successfulConversionsCount] += 1
 
-					try? gifUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
-					defaults[.successfulConversionsCount] += 1
-
-					self.didComplete(conversion: conversion, gifUrl: gifUrl)
-				} catch Gifski.Error.cancelled {
-					cancelConversion()
-				} catch {
-					presentError(error, modalFor: view.window)
-					cancelConversion()
-				}
-			} else {
-				Gifski.run(conversion, completionHandler: { result in
+						self.didComplete(gifUrl: gifUrl)
+					})
+					break
+				case .gifDataAvailable(let gifData, _):
 					do {
-						try result.get().write(to: gifUrl, options: .atomic)
-					} catch Gifski.Error.cancelled {
-						self.cancelConversion()
+						try gifData.write(to: gifUrl, options: .atomic)
+						self.didComplete(gifUrl: gifUrl)
 					} catch {
-						self.presentError(error, modalFor: self.view.window)
-						self.cancelConversion()
+						presentError(error, modalFor: view.window)
+						cancelConversion()
 					}
-					try? gifUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
-					defaults[.successfulConversionsCount] += 1
-
-					self.didComplete(conversion: conversion, gifUrl: gifUrl)
-				})
+					break
 			}
 		}
 	}
@@ -134,8 +138,24 @@ final class ConversionViewController: NSViewController {
 		}
 	}
 
-	private func didComplete(conversion: Gifski.Conversion, gifUrl: URL) {
-		let conversionCompleted = ConversionCompletedViewController(conversion: conversion, gifUrl: gifUrl)
+	private func didComplete(gifUrl: URL) {
+		let inputUrl: URL
+		
+		switch self.source {
+			case .conversionNeeded(let conversion):
+				inputUrl = conversion!.video
+				break
+			case .gifDataAvailable(_, let url):
+				inputUrl = url
+				break
+			case .none:
+				return
+		}
+		
+		let conversionCompleted = ConversionCompletedViewController(gifUrl: gifUrl, inputUrl: inputUrl)
+		
+		try? gifUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
+		defaults[.successfulConversionsCount] += 1
 		stopConversion { [weak self] in
 			self?.push(viewController: conversionCompleted)
 		}
@@ -149,4 +169,11 @@ final class ConversionViewController: NSViewController {
 			completion?()
 		}
 	}
+}
+
+
+enum GifSource { // I have no Idea what else to call it
+    case conversionNeeded(Gifski.Conversion!)
+	// Data and Video
+    case gifDataAvailable(Data, URL)
 }

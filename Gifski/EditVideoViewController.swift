@@ -63,19 +63,17 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	@IBAction private func convert(_ sender: Any) {
-		let conversion = Gifski.Conversion(
-			video: inputUrl,
-			timeRange: timeRange,
-			quality: defaults[.outputQuality],
-			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
-			frameRate: frameRateSlider.integerValue
-		)
-
 		if let gifData = gifData {
-			let convert = ConversionViewController(conversion, gifData)
+			let convert = ConversionViewController(source: .gifDataAvailable(gifData, inputUrl))
 			push(viewController: convert)
 		} else {
-			let convert = ConversionViewController(conversion, nil)
+			let convert = ConversionViewController(source: .conversionNeeded(Gifski.Conversion(
+				video: inputUrl,
+				timeRange: timeRange,
+				quality: defaults[.outputQuality],
+				dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
+				frameRate: frameRateSlider.integerValue
+			)))
 			push(viewController: convert)
 		}
 	}
@@ -318,14 +316,17 @@ final class EditVideoViewController: NSViewController {
 		estimateFileSize()
 		selectPredefinedSizeBasedOnCurrentDimensions()
 	}
-
-	private func estimateFileSize() {
-		// Cancle old estimate
+	
+	private func cancelEstimationProcess() {
 		estimateWorkItem?.cancel()
 		self.gifData = nil
 		self.dataSize = 0
 		self.framesWritten = 0
+	}
 
+	private func estimateFileSize() {
+		cancelEstimationProcess()
+		
 		let conversion = Gifski.Conversion(
 			video: inputUrl,
 			timeRange: timeRange,
@@ -343,16 +344,12 @@ final class EditVideoViewController: NSViewController {
 		}()
 		let frameCount = duration * frameRateSlider.doubleValue
 
-		estimatedSizeLabel.textColor = NSColor(red: 0.13, green: 0.13, blue: 0.13, alpha: 1.0)
-		estimatedSizeLabel.stringValue = "Starting Estimation..."
+		estimatedSizeLabel.textColor = NSColor(named: "gray")
+		estimatedSizeLabel.stringValue = "..."
 		estimateWorkItem = DispatchWorkItem {
 			print("Total: \(frameCount)")
 
 			Gifski.setOnNewFrame { framesWritten in
-				DispatchQueue.main.sync {
-					self.estimatedSizeLabel.textColor = NSColor(red: 0.11, green: 0.37, blue: 0.13, alpha: 1.0)
-				}
-
 				if self.dataSize == 0 {
 					return
 				}
@@ -369,6 +366,8 @@ final class EditVideoViewController: NSViewController {
 				do {
 					let data = try result.get()
 					self.gifData = data
+					self.estimatedSizeLabel.textColor = NSColor(named: "green")
+					self.estimatedSizeLabel.stringValue = "File size: " + self.formatter.string(fromByteCount: Int64(data.count))
 				} catch {
 					self.presentError(error, modalFor: self.view.window)
 				}

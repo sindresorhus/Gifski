@@ -13,8 +13,8 @@ final class ConversionCompletedViewController: NSViewController {
 	@IBOutlet private var wrapperView: NSView!
 
 	private let draggableFile = DraggableFile()
-	private var conversion: Gifski.Conversion!
 	private var gifUrl: URL!
+	private var inputUrl: URL!
 
 	private let tooltip = Tooltip(
 		identifier: "conversionCompletedTips",
@@ -23,11 +23,11 @@ final class ConversionCompletedViewController: NSViewController {
 		maxWidth: 260
 	)
 
-	convenience init(conversion: Gifski.Conversion, gifUrl: URL) {
+	convenience init(gifUrl: URL, inputUrl: URL) {
 		self.init()
-
-		self.conversion = conversion
+		
 		self.gifUrl = gifUrl
+		self.inputUrl = inputUrl
 	}
 
 	override func viewDidLoad() {
@@ -51,7 +51,7 @@ final class ConversionCompletedViewController: NSViewController {
 		if #available(macOS 10.14, *), !NSApp.isActive || view.window?.isVisible == false {
 			let notification = UNMutableNotificationContent()
 			notification.title = "Conversion Completed"
-			notification.subtitle = conversion.video.filename
+			notification.subtitle = self.inputUrl.filename
 			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
 			UNUserNotificationCenter.current().add(request)
 		}
@@ -111,13 +111,13 @@ final class ConversionCompletedViewController: NSViewController {
 				return
 			}
 
-			let inputUrl = self.conversion.video
+			let inputUrl = self.inputUrl
 
 			let panel = NSSavePanel()
 			panel.canCreateDirectories = true
 			panel.allowedFileTypes = [FileType.gif.identifier]
-			panel.directoryURL = inputUrl.directoryURL
-			panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
+			panel.directoryURL = inputUrl?.directoryURL
+			panel.nameFieldStringValue = inputUrl!.filenameWithoutExtension
 			panel.message = "Choose where to save the GIF"
 
 			panel.beginSheetModal(for: self.view.window!) { response in
