@@ -52,6 +52,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
+	func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+		if mainWindowController.isConverting {
+			let response = NSAlert.showModal(
+				for: mainWindowController.window,
+				message: "Do you want to continue converting?",
+				informativeText: "Gifski is currently converting your video. If you quit, the conversion will be cancelled.",
+				buttonTitles: [
+					"Continue",
+					"Quit"
+				]
+			)
+
+			if response == .alertFirstButtonReturn {
+				return .terminateCancel
+			}
+		}
+
+		return .terminateNow
+	}
+
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
 		Crashlytics.recordNonFatalError(error: error)
 		return error

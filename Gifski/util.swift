@@ -252,13 +252,15 @@ extension NSAlert {
 		message: String,
 		informativeText: String? = nil,
 		detailText: String? = nil,
-		style: NSAlert.Style = .warning
+		style: NSAlert.Style = .warning,
+		buttonTitles: [String] = []
 	) -> NSApplication.ModalResponse {
 		NSAlert(
 			message: message,
 			informativeText: informativeText,
 			detailText: detailText,
-			style: style
+			style: style,
+			buttonTitles: buttonTitles
 		).runModal(for: window)
 	}
 
@@ -266,7 +268,8 @@ extension NSAlert {
 		message: String,
 		informativeText: String? = nil,
 		detailText: String? = nil,
-		style: NSAlert.Style = .warning
+		style: NSAlert.Style = .warning,
+		buttonTitles: [String] = []
 	) {
 		self.init()
 		self.messageText = message
@@ -304,6 +307,8 @@ extension NSAlert {
 				self.informativeText += "\n\(detailText)"
 			}
 		}
+
+		self.addButtons(withTitles: buttonTitles)
 	}
 
 	/// Runs the alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
@@ -318,6 +323,13 @@ extension NSAlert {
 		}
 
 		return NSApp.runModal(for: window)
+	}
+
+	/// Adds buttons with the given titles to the alert.
+	func addButtons(withTitles buttonTitles: [String]) {
+		for buttonTitle in buttonTitles {
+			addButton(withTitle: buttonTitle)
+		}
 	}
 }
 

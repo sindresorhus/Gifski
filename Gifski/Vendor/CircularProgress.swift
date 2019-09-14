@@ -370,7 +370,15 @@ public final class CircularProgress: NSView {
 	}
 
 	override public func mouseEntered(with event: NSEvent) {
-		guard isCancellable && !isCancelled && !isFinished else {
+		guard window?.isShowingModalOrSheet != true else {
+			return
+		}
+
+		guard
+			isCancellable,
+			!isCancelled,
+			!isFinished
+		else {
 			super.mouseEntered(with: event)
 			return
 		}
