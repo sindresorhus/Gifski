@@ -57,7 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			let response = NSAlert.showModal(
 				for: mainWindowController.window,
 				message: "Do you want to continue converting?",
-				informativeText: "Gifski is currently converting your video. If you quit, the conversion will be cancelled.",
+				informativeText: "Gifski is currently converting a video. If you quit, the conversion will be cancelled.",
 				buttonTitles: [
 					"Continue",
 					"Quit"
