@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
@@ -136,7 +136,7 @@
 				};
 			};
 			buildConfigurationList = CA6045D4FC1B1EBBFEF4C27E /* Build configuration list for PBXLegacyTarget "Cargo" */;
-			compatibilityVersion = "Xcode 10.0";
+			compatibilityVersion = "Xcode 11.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (

@@ -569,7 +569,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/opt/gcc/lib/gcc/8,
+					/usr/local/opt/gcc/lib/gcc/9,
 				);
 				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
@@ -608,7 +608,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/opt/gcc/lib/gcc/8,
+					/usr/local/opt/gcc/lib/gcc/9,
 				);
 				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
