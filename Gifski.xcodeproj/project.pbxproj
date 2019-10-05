@@ -22,6 +22,7 @@
 		B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
+		D9CA6EB42348AF7500B5DC15 /* ReplacePresentationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9CA6EB32348AF7500B5DC15 /* ReplacePresentationAnimator.swift */; };
 		E3030388233785C100B8ED1F /* CustomButton+Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3030387233785C100B8ED1F /* CustomButton+Util.swift */; };
 		E30557F0207E521F003401A1 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30557EF207E521F003401A1 /* Defaults.swift */; };
 		E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF122057E24700A80A18 /* CircularProgress.swift */; };
@@ -98,6 +99,7 @@
 		B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+Util.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
+		D9CA6EB32348AF7500B5DC15 /* ReplacePresentationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplacePresentationAnimator.swift; sourceTree = "<group>"; };
 		E3030387233785C100B8ED1F /* CustomButton+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CustomButton+Util.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		E30557EF207E521F003401A1 /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		E317FF122057E24700A80A18 /* CircularProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgress.swift; sourceTree = "<group>"; };
@@ -226,6 +228,7 @@
 				85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */,
 				858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */,
 				85A5C44722CA41B500CAA94D /* VideoValidator.swift */,
+				D9CA6EB32348AF7500B5DC15 /* ReplacePresentationAnimator.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
@@ -389,6 +392,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E30557F0207E521F003401A1 /* Defaults.swift in Sources */,
+				D9CA6EB42348AF7500B5DC15 /* ReplacePresentationAnimator.swift in Sources */,
 				E317FF1C20583E9800A80A18 /* DockProgress.swift in Sources */,
 				E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */,
 				85B9CF6422BD3FA00050A2E4 /* Tooltip.swift in Sources */,
