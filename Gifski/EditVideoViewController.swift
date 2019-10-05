@@ -69,12 +69,12 @@ final class EditVideoViewController: NSViewController {
 		)
 
 		let convert = ConversionViewController(conversion: conversion)
-		push(viewController: convert)
+		present(convert, animator: ReplacePresentationAnimator())
 	}
 
 	@IBAction private func cancel(_ sender: Any) {
 		let videoDropController = VideoDropViewController()
-		push(viewController: videoDropController)
+		present(videoDropController, animator: ReplacePresentationAnimator())
 	}
 
 	override func viewDidLoad() {

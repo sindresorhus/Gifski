@@ -113,14 +113,14 @@ final class ConversionViewController: NSViewController {
 
 		let videoDropController = VideoDropViewController()
 		stopConversion { [weak self] in
-			self?.push(viewController: videoDropController)
+			self?.present(videoDropController, animator: ReplacePresentationAnimator())
 		}
 	}
 
 	private func didComplete(conversion: Gifski.Conversion, gifUrl: URL) {
 		let conversionCompleted = ConversionCompletedViewController(conversion: conversion, gifUrl: gifUrl)
 		stopConversion { [weak self] in
-			self?.push(viewController: conversionCompleted)
+			self?.present(conversionCompleted, animator: ReplacePresentationAnimator())
 		}
 	}
 

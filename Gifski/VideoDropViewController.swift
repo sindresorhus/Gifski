@@ -31,6 +31,6 @@ final class VideoDropViewController: NSViewController {
 		}
 
 		let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
-		push(viewController: editController)
+		present(editController, animator: ReplacePresentationAnimator())
 	}
 }
