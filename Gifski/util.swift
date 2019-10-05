@@ -2348,26 +2348,6 @@ extension URL {
 }
 
 extension NSViewController {
-	func push(viewController: NSViewController, completion: (() -> Void)? = nil) {
-		guard let window = view.window else {
-			return
-		}
-
-		let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
-		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
-
-		viewController.view.alphaValue = 0.0
-		NSAnimationContext.runAnimationGroup({ _ in
-			window.contentViewController?.view.animator().alphaValue = 0.0
-			window.contentViewController = nil
-			window.animator().setFrame(newWindowFrame, display: true)
-		}, completionHandler: {
-			window.contentViewController = viewController
-			viewController.view.animator().alphaValue = 1.0
-			completion?()
-		})
-	}
-
 	func add(childController: NSViewController) {
 		add(childController: childController, to: view)
 	}
