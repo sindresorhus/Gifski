@@ -44,6 +44,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
+		playerView.addCheckerboardView()
 		playerView.hideTrimButtons()
 		playerView.observeTrimmedTimeRange { [weak self] timeRange in
 			self?.timeRange = timeRange
@@ -130,5 +131,10 @@ final class TrimmingAVPlayerView: AVPlayerView {
 			.subviews
 			.filter { ($0 as? NSButton)?.image == nil }
 			.forEach { $0.isHidden = true }
+	}
+
+	fileprivate func addCheckerboardView() {
+		let overlayView = CheckerboardView(frame: frame, clearRect: videoBounds)
+		contentOverlayView?.addSubview(overlayView)
 	}
 }
