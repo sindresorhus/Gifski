@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class CheckerboardView: NSView {
+final class CheckerboardView: NSView {
 	private let gridSize = CGSize(width: 10, height: 10)
 	private let firstColor = NSColor.white
 	private let secondColor = NSColor.lightGray
