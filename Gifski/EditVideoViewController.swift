@@ -93,10 +93,9 @@ final class EditVideoViewController: NSViewController {
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
-		view.window?.makeFirstResponder(self)
+		view.window?.makeFirstResponder(playerViewController.playerView)
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
-		predefinedSizesDropdown.focus()
 	}
 
 	private func setUpDimensions() {
