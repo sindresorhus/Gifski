@@ -69,14 +69,6 @@ extension NSColor {
 	}
 }
 
-// MARK: - Checkerboard Colors
-extension NSColor {
-	enum Checkerboard {
-		static let first = NSColor(named: "CheckerboardFirstColor") ?? NSColor.white
-		static let second = NSColor(named: "CheckerboardSecondColor") ?? NSColor.lightGray
-	}
-}
-
 
 extension NSView {
 	func shake(duration: TimeInterval = 0.3, direction: NSUserInterfaceLayoutOrientation) {

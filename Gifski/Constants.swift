@@ -2,6 +2,11 @@ import Cocoa
 
 extension NSColor {
 	static let themeColor = NSColor.controlAccentColorPolyfill
+
+	enum Checkerboard {
+		static let first = NSColor(named: "CheckerboardFirstColor")!
+		static let second = NSColor(named: "CheckerboardSecondColor")!
+	}
 }
 
 extension Defaults.Keys {
