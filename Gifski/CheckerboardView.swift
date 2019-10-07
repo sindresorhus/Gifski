@@ -9,7 +9,7 @@
 import Cocoa
 
 final class CheckerboardView: NSView {
-	private let gridSize = CGSize(width: 10, height: 10)
+	private let gridSize = CGSize(width: 8, height: 8)
 	private let clearRect: CGRect
 
 	init(frame: CGRect, clearRect: CGRect) {
