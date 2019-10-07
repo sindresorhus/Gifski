@@ -1,7 +1,6 @@
 import Cocoa
 
 class DropView<CompletionType>: SSView {
-
 	var onComplete: ((CompletionType) -> Void)?
 
 	var dropText: String? {
