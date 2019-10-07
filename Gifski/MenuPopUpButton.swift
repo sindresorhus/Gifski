@@ -2,6 +2,7 @@ import AppKit
 
 final class MenuPopUpButton: NSPopUpButton, NSMenuDelegate {
 	override var acceptsFirstResponder: Bool { true }
+	override var canBecomeKeyView: Bool { true }
 
 	/// `selectedIndex` is nil when the user didn't select any index this time (probably quit).
 	var onMenuDidClose: ((_ selectedIndex: Int?) -> Void)?
