@@ -11,6 +11,7 @@ error_chain! {
     errors {
         ThreadSend {}
         Aborted {}
+        Gifsicle {}
     }
     foreign_links {
         Io(io::Error);
