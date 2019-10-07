@@ -9,13 +9,12 @@
 import Cocoa
 
 class CheckerboardView: NSView {
-	let gridSize = CGSize(width: 10, height: 10)
-	let firstColor = NSColor.white
-	let secondColor = NSColor.lightGray
+	private let gridSize = CGSize(width: 10, height: 10)
+	private let firstColor = NSColor.white
+	private let secondColor = NSColor.lightGray
+	private let clearRect: CGRect
 
-	let clearRect: CGRect
-
-	init(frame: NSRect, clearRect: CGRect) {
+	init(frame: CGRect, clearRect: CGRect) {
 		self.clearRect = clearRect
 
 		super.init(frame: frame)
@@ -27,7 +26,7 @@ class CheckerboardView: NSView {
 		super.init(coder: coder)
 	}
 
-	override func draw(_ dirtyRect: NSRect) {
+	override func draw(_ dirtyRect: CGRect) {
 		super.draw(dirtyRect)
 
 		firstColor.setFill()
