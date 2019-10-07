@@ -131,4 +131,15 @@ final class TrimmingAVPlayerView: AVPlayerView {
 			.filter { ($0 as? NSButton)?.image == nil }
 			.forEach { $0.isHidden = true }
 	}
+
+	// MARK: - Keyboard handling
+	let escKeyCode: UInt16 = 53
+
+	override func keyDown(with event: NSEvent) {
+		guard event.keyCode != escKeyCode else {
+			return
+		}
+
+		super.keyDown(with: event)
+	}
 }
