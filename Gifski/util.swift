@@ -2574,3 +2574,8 @@ extension ClosedRange where Bound == Double {
 		return self
 	}
 }
+
+extension BinaryInteger {
+	var isEven: Bool { isMultiple(of: 2) }
+	var isOdd: Bool { !isEven }
+}

@@ -35,7 +35,7 @@ final class CheckerboardView: NSView {
 		secondColor.setFill()
 
 		for y in 0...Int(bounds.size.height / gridSize.height) {
-			for x in 0...Int(bounds.size.width / gridSize.width) where x % 2 == y % 2 {
+			for x in 0...Int(bounds.size.width / gridSize.width) where x.isEven == y.isEven {
 				let origin = CGPoint(x: x * Int(gridSize.width), y: y * Int(gridSize.height))
 				let rect = CGRect(origin: origin, size: gridSize)
 				rect.fill()
