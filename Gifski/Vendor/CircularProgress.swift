@@ -124,13 +124,16 @@ public final class CircularProgress: NSView {
 			_isFinished = newValue
 
 			if _isFinished {
-				isIndeterminate = false
+				DispatchQueue.main.async { [weak self] in
+					guard let self = self else {
+						return
+					}
 
-				if !isCancelled, showCheckmarkAtHundredPercent {
-					progressLabel.string = ""
-					cancelButton.isHidden = true
+					self.isIndeterminate = false
 
-					DispatchQueue.main.async {
+					if !self.isCancelled, self.showCheckmarkAtHundredPercent {
+						self.progressLabel.string = ""
+						self.cancelButton.isHidden = true
 						self.successView.isHidden = false
 					}
 				}
@@ -411,10 +414,16 @@ public final class CircularProgress: NSView {
 			_isIndeterminate = newValue
 			didChangeValue(for: \.isIndeterminate)
 
-			if _isIndeterminate {
-				startIndeterminateState()
-			} else {
-				stopIndeterminateState()
+			DispatchQueue.main.async { [weak self] in
+				guard let self = self else {
+					return
+				}
+
+				if self._isIndeterminate {
+					self.startIndeterminateState()
+				} else {
+					self.stopIndeterminateState()
+				}
 			}
 		}
 	}
