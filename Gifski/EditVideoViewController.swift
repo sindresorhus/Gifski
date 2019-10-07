@@ -87,17 +87,13 @@ final class EditVideoViewController: NSViewController {
 		setUpWidthAndHeightTextFields()
 		setUpDropView()
 		setUpTrimmingView()
+		setUpTabOrder()
 	}
 
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
 		view.window?.makeFirstResponder(self)
-
-		dimensionsTypeDropdown.nextKeyView = frameRateSlider
-		widthTextField.nextKeyView = heightTextField
-		heightTextField.nextKeyView = dimensionsTypeDropdown
-		qualitySlider.nextKeyView = cancelButton
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 		predefinedSizesDropdown.focus()
@@ -298,6 +294,14 @@ final class EditVideoViewController: NSViewController {
 			self?.estimateFileSize()
 		}
 		add(childController: playerViewController, to: playerViewWrapper)
+	}
+
+	private func setUpTabOrder() {
+		widthTextField.nextKeyView = heightTextField
+		heightTextField.nextKeyView = dimensionsTypeDropdown
+		dimensionsTypeDropdown.nextKeyView = frameRateSlider
+		frameRateSlider.nextKeyView = qualitySlider
+		qualitySlider.nextKeyView = cancelButton
 	}
 
 	private func updateTextFieldsMinMax() {
