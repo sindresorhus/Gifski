@@ -82,7 +82,6 @@ public final class CircularProgress: NSView {
 	The progress value in the range `0...1`.
 
 	- Note: The value will be clamped to `0...1`.
-	- Note: Can be set from a background thread.
 	*/
 	@IBInspectable public var progress: Double {
 		get {
@@ -132,12 +131,12 @@ public final class CircularProgress: NSView {
 			_isFinished = newValue
 
 			if _isFinished {
-				self.isIndeterminate = false
+				isIndeterminate = false
 
-				if !self.isCancelled, self.showCheckmarkAtHundredPercent {
-					self.progressLabel.string = ""
-					self.cancelButton.isHidden = true
-					self.successView.isHidden = false
+				if !isCancelled, showCheckmarkAtHundredPercent {
+					progressLabel.string = ""
+					cancelButton.isHidden = true
+					successView.isHidden = false
 				}
 			}
 		}
@@ -439,10 +438,10 @@ public final class CircularProgress: NSView {
 			_isIndeterminate = newValue
 			didChangeValue(for: \.isIndeterminate)
 
-			if self._isIndeterminate {
-				self.startIndeterminateState()
+			if _isIndeterminate {
+				startIndeterminateState()
 			} else {
-				self.stopIndeterminateState()
+				stopIndeterminateState()
 			}
 		}
 	}
