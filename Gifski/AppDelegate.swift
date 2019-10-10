@@ -1,4 +1,5 @@
 import Cocoa
+import UserNotifications
 import Fabric
 import Crashlytics
 
@@ -8,6 +9,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	var hasFinishedLaunching = false
 	var urlToConvertOnLaunch: URL!
 
+	// Possible workaround for crashing bug because of Crashlytics swizzling.
+	var notificationCenter: AnyObject? = {
+		if #available(macOS 10.14, *) {
+			return UNUserNotificationCenter.current()
+		} else {
+			return nil
+		}
+	}()
+
 	func applicationWillFinishLaunching(_ notification: Notification) {
 		UserDefaults.standard.register(defaults: [
 			"NSApplicationCrashOnExceptions": true,
@@ -16,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
+		if #available(macOS 10.14, *) {
+			(notificationCenter as? UNUserNotificationCenter)?.requestAuthorization { _, _ in }
+		}
+
 		#if !DEBUG
 			Fabric.with([Crashlytics.self])
 		#endif
