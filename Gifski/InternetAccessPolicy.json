@@ -1,7 +1,7 @@
 {
 	"ApplicationDescription": "Gifski converts videos to high-quality GIFs.",
 	"DeveloperName": "Sindre Sorhus",
-	"Website": "https://sindresorhus.com/dato",
+	"Website": "https://sindresorhus.com/gifski",
 	"Connections" : [
 		{
 			"Host" : "*.crashlytics.com",
