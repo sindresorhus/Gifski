@@ -110,7 +110,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" preferredMaxLayoutWidth="76" translatesAutoresizingMaskIntoConstraints="NO" id="iPX-cO-cRP">
-                                        <rect key="frame" x="18" y="21" width="79" height="15"/>
+                                        <rect key="frame" x="18" y="20" width="79" height="17"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="Height:" id="stb-YD-0DW">
                                             <font key="font" usesAppearanceFont="YES"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -144,8 +144,7 @@
                                     <constraint firstAttribute="bottom" secondItem="bzf-LM-SxO" secondAttribute="bottom" constant="18" id="CPX-cA-dkM"/>
                                     <constraint firstItem="Jqk-p7-DIM" firstAttribute="leading" secondItem="y55-Nm-2MG" secondAttribute="trailing" constant="6" id="CVR-y9-8pi"/>
                                     <constraint firstItem="CcL-WC-3WC" firstAttribute="firstBaseline" secondItem="BWw-q9-45K" secondAttribute="firstBaseline" id="Cw7-9r-HGT"/>
-                                    <constraint firstItem="iPX-cO-cRP" firstAttribute="baseline" secondItem="bzf-LM-SxO" secondAttribute="firstBaseline" id="E3W-zc-jGw"/>
-                                    <constraint firstItem="iPX-cO-cRP" firstAttribute="baseline" secondItem="bzf-LM-SxO" secondAttribute="baseline" id="Gib-ta-WHe"/>
+                                    <constraint firstItem="iPX-cO-cRP" firstAttribute="firstBaseline" secondItem="bzf-LM-SxO" secondAttribute="firstBaseline" id="E3W-zc-jGw"/>
                                     <constraint firstItem="CcL-WC-3WC" firstAttribute="leading" secondItem="0XA-H7-N8J" secondAttribute="leading" constant="20" symbolic="YES" id="HhJ-ce-3ee"/>
                                     <constraint firstItem="bzf-LM-SxO" firstAttribute="top" secondItem="Jqk-p7-DIM" secondAttribute="bottom" constant="10" symbolic="YES" id="N6v-k0-zlP"/>
                                     <constraint firstItem="BWw-q9-45K" firstAttribute="leading" secondItem="CcL-WC-3WC" secondAttribute="trailing" constant="6" id="R0b-U1-LBo"/>
@@ -208,11 +207,19 @@
                                         </textFieldCell>
                                     </textField>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Mk2-3o-6CT">
-                                        <rect key="frame" x="82" y="19" width="97" height="18"/>
-                                        <buttonCell key="cell" type="check" title="Infinite Loop" bezelStyle="regularSquare" imagePosition="left" inset="2" id="c3l-oV-Y0b">
+                                        <rect key="frame" x="82" y="19" width="53" height="18"/>
+                                        <buttonCell key="cell" type="check" title="Loop" bezelStyle="regularSquare" imagePosition="left" inset="2" id="c3l-oV-Y0b">
                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
+                                        <connections>
+                                            <binding destination="YjB-2D-chi" name="value" keyPath="values.loopGif" id="QO1-Bk-15w">
+                                                <dictionary key="options">
+                                                    <bool key="NSConditionallySetsEnabled" value="NO"/>
+                                                    <integer key="NSNullPlaceholder" value="1"/>
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </button>
                                 </subviews>
                                 <constraints>
@@ -305,5 +312,6 @@ DQ
             </constraints>
             <point key="canvasLocation" x="45.5" y="191"/>
         </customView>
+        <userDefaultsController representsSharedInstance="YES" id="YjB-2D-chi"/>
     </objects>
 </document>

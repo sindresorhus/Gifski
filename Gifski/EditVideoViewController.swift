@@ -251,23 +251,12 @@ final class EditVideoViewController: NSViewController {
 			self.estimateFileSize()
 		}
 
-		loopCheckbox.onAction = { [weak self] _ in
-			guard let self = self else {
-				return
-			}
-
-			Defaults[.loopGif] = self.loopCheckbox.state == .on
-		}
-
 		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5...30)
 		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
 		frameRateSlider.triggerAction()
 
 		qualitySlider.doubleValue = Defaults[.outputQuality]
 		qualitySlider.triggerAction()
-
-		loopCheckbox.state = Defaults[.loopGif] ? .on : .off
-		loopCheckbox.triggerAction()
 	}
 
 	private func setUpWidthAndHeightTextFields() {
