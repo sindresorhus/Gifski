@@ -21,7 +21,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
-	@IBOutlet private var loopButton: NSButton!
+	@IBOutlet private var loopCheckbox: NSButton!
 
 	@IBOutlet private var widthTextField: IntTextField!
 	@IBOutlet private var heightTextField: IntTextField!
@@ -67,7 +67,7 @@ final class EditVideoViewController: NSViewController {
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue,
-			singleIteration: Defaults[.singleIteration]
+			loopGif: Defaults[.loopGif]
 		)
 
 		let convert = ConversionViewController(conversion: conversion)
@@ -99,8 +99,8 @@ final class EditVideoViewController: NSViewController {
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		widthTextField.nextKeyView = heightTextField
 		heightTextField.nextKeyView = dimensionsTypeDropdown
-		qualitySlider.nextKeyView = loopButton
-		loopButton.nextKeyView = cancelButton
+		qualitySlider.nextKeyView = loopCheckbox
+		loopCheckbox.nextKeyView = cancelButton
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 		predefinedSizesDropdown.focus()
@@ -251,12 +251,12 @@ final class EditVideoViewController: NSViewController {
 			self.estimateFileSize()
 		}
 
-		loopButton.onAction = { [weak self] _ in
+		loopCheckbox.onAction = { [weak self] _ in
 			guard let self = self else {
 				return
 			}
 
-			Defaults[.singleIteration] = self.loopButton.state == .off
+			Defaults[.loopGif] = self.loopCheckbox.state == .on
 		}
 
 		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5...30)
@@ -266,8 +266,8 @@ final class EditVideoViewController: NSViewController {
 		qualitySlider.doubleValue = Defaults[.outputQuality]
 		qualitySlider.triggerAction()
 
-		loopButton.state = Defaults[.singleIteration] ? .off : .on
-		loopButton.triggerAction()
+		loopCheckbox.state = Defaults[.loopGif] ? .on : .off
+		loopCheckbox.triggerAction()
 	}
 
 	private func setUpWidthAndHeightTextFields() {

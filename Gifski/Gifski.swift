@@ -32,19 +32,22 @@ final class Gifski {
 		let quality: Double
 		let dimensions: CGSize?
 		let frameRate: Int?
-		let singleIteration: Bool
+		let loopGif: Bool
 
 		// TODO: With Swift 5.1 we can remove the manual `init` and have it synthesized.
 		/**
 		- Parameter frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
 		*/
-		init(video: URL, timeRange: ClosedRange<Double>? = nil, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil, singleIteration: Bool = false) {
+		/**
+		- Parameter loopGif: Whether output should loop infinitely or not.
+		*/
+		init(video: URL, timeRange: ClosedRange<Double>? = nil, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil, loopGif: Bool = true) {
 			self.video = video
 			self.timeRange = timeRange
 			self.quality = quality
 			self.dimensions = dimensions
 			self.frameRate = frameRate
-			self.singleIteration = singleIteration
+			self.loopGif = loopGif
 		}
 	}
 
@@ -80,7 +83,7 @@ final class Gifski {
 			width: UInt32(conversion.dimensions?.width ?? 0),
 			height: UInt32(conversion.dimensions?.height ?? 0),
 			quality: UInt8(conversion.quality * 100),
-			once: conversion.singleIteration,
+			once: !conversion.loopGif,
 			fast: false
 		)
 

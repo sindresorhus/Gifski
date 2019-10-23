@@ -14,7 +14,7 @@
                 <outlet property="frameRateLabel" destination="5Ke-gz-J2u" id="VaC-Et-vm7"/>
                 <outlet property="frameRateSlider" destination="Rej-Dl-z8Y" id="cIA-dv-KJw"/>
                 <outlet property="heightTextField" destination="bzf-LM-SxO" id="67N-9X-vzq"/>
-                <outlet property="loopButton" destination="Mk2-3o-6CT" id="lFW-e9-tIT"/>
+                <outlet property="loopCheckbox" destination="Mk2-3o-6CT" id="jrz-yA-sLw"/>
                 <outlet property="playerViewWrapper" destination="64m-0V-WWu" id="6cd-p2-aMe"/>
                 <outlet property="predefinedSizesDropdown" destination="BWw-q9-45K" id="mLx-BM-G3f"/>
                 <outlet property="qualitySlider" destination="wmm-UU-g6g" id="RlB-Ty-dIN"/>
