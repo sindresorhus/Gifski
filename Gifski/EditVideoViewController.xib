@@ -282,7 +282,7 @@ DQ
                     </customSpacing>
                 </stackView>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="iCr-ZN-9aI">
-                    <rect key="frame" x="22" y="14" width="122" height="16"/>
+                    <rect key="frame" x="22" y="15" width="122" height="16"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" title="Estimated File Size:" id="s0a-Dg-FJd">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -293,8 +293,8 @@ DQ
             <constraints>
                 <constraint firstItem="O0D-L4-chv" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" constant="30" id="0c5-JS-PUZ"/>
                 <constraint firstItem="hHF-zN-Wqa" firstAttribute="top" secondItem="dmb-Gl-vWp" secondAttribute="bottom" constant="10" id="Ik7-TN-Ier"/>
+                <constraint firstItem="AF4-ry-iae" firstAttribute="firstBaseline" secondItem="iCr-ZN-9aI" secondAttribute="firstBaseline" id="MeL-Sc-SMi"/>
                 <constraint firstItem="iCr-ZN-9aI" firstAttribute="leading" secondItem="dmb-Gl-vWp" secondAttribute="leading" id="Nzb-Zq-1nz"/>
-                <constraint firstItem="hHF-zN-Wqa" firstAttribute="centerY" secondItem="iCr-ZN-9aI" secondAttribute="centerY" id="S2X-yd-vbo"/>
                 <constraint firstItem="hHF-zN-Wqa" firstAttribute="trailing" secondItem="PQ8-dZ-N1k" secondAttribute="trailing" id="YKH-2e-sJa"/>
                 <constraint firstAttribute="trailing" secondItem="dmb-Gl-vWp" secondAttribute="trailing" constant="24" id="dQw-6m-2yr"/>
                 <constraint firstAttribute="bottom" secondItem="hHF-zN-Wqa" secondAttribute="bottom" constant="10" id="hjJ-IT-g7h"/>
