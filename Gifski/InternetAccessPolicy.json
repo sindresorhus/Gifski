@@ -1,0 +1,21 @@
+{
+	"ApplicationDescription": "Gifski converts videos to high-quality GIFs.",
+	"DeveloperName": "Sindre Sorhus",
+	"Website": "https://sindresorhus.com/gifski",
+	"Connections" : [
+		{
+			"Host" : "*.crashlytics.com",
+			"NetworkProtocol" : "TCP",
+			"Port" : "443",
+			"Purpose" : "Gifski sends crash reports to this server.",
+			"DenyConsequences" : "If you deny this connection, the developers of Gifski won't be notified of any crashes and they can't fix what they don't know about."
+		}
+	],
+	"Services" : [
+		{
+			"Identifier" : "com.apple.NSURLSession",
+			"Name" : "NSURLSession",
+			"Purpose" : "Gifski uses this helper process to send crash reports."
+		}
+	]
+}
