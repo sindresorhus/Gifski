@@ -12,6 +12,7 @@ extension NSColor {
 extension Defaults.Keys {
 	static let outputQuality = Key<Double>("outputQuality", default: 1)
 	static let successfulConversionsCount = Key<Int>("successfulConversionsCount", default: 0)
+	static let singleIteration = Key<Bool>("singleIteration", default: false)
 }
 
 struct Constants {
