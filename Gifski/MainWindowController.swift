@@ -36,9 +36,6 @@ final class MainWindowController: NSWindowController {
 		window.makeKeyAndOrderFront(nil)
 
 		DockProgress.style = .circle(radius: 55, color: .themeColor)
-
-		let clickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(open(_:)))
-		window.contentViewController?.view.addGestureRecognizer(clickGestureRecognizer)
 	}
 
 	@objc
