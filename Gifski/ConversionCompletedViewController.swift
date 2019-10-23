@@ -23,13 +23,6 @@ final class ConversionCompletedViewController: NSViewController {
 		maxWidth: 260
 	)
 
-	private lazy var copyTooltip = Tooltip(
-		identifier: "copyCompletedTips",
-		text: "GIF copied to clipboard.",
-		showOnlyOnce: false,
-		maxWidth: 260
-	)
-
 	convenience init(conversion: Gifski.Conversion, gifUrl: URL) {
 		self.init()
 
@@ -108,11 +101,17 @@ final class ConversionCompletedViewController: NSViewController {
 			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
 		}
 
-		copyButton.onAction = { [weak self] sender in
+		copyButton.onAction = { [weak self] _ in
 			let pasteboard = NSPasteboard.general
 			pasteboard.clearContents()
 			pasteboard.writeObjects([url as NSURL])
-			self?.copyTooltip.show(from: sender, preferredEdge: .minY)
+
+			self?.copyButton.title = "Copied!"
+			self?.copyButton.isEnabled = false
+			delay(seconds: 1) {
+				self?.copyButton.title = "Copy"
+				self?.copyButton.isEnabled = true
+			}
 		}
 
 		saveAsButton.onAction = { [weak self] _ in
