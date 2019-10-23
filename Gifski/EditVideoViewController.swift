@@ -21,6 +21,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
+	@IBOutlet private var loopButton: NSButton!
 
 	@IBOutlet private var widthTextField: IntTextField!
 	@IBOutlet private var heightTextField: IntTextField!
@@ -65,7 +66,8 @@ final class EditVideoViewController: NSViewController {
 			timeRange: timeRange,
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
-			frameRate: frameRateSlider.integerValue
+			frameRate: frameRateSlider.integerValue,
+			singleIteration: Defaults[.singleIteration]
 		)
 
 		let convert = ConversionViewController(conversion: conversion)
@@ -97,7 +99,8 @@ final class EditVideoViewController: NSViewController {
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		widthTextField.nextKeyView = heightTextField
 		heightTextField.nextKeyView = dimensionsTypeDropdown
-		qualitySlider.nextKeyView = cancelButton
+		qualitySlider.nextKeyView = loopButton
+		loopButton.nextKeyView = cancelButton
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 		predefinedSizesDropdown.focus()
@@ -248,12 +251,23 @@ final class EditVideoViewController: NSViewController {
 			self.estimateFileSize()
 		}
 
+		loopButton.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
+			Defaults[.singleIteration] = self.loopButton.state == .off
+		}
+
 		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5...30)
 		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
 		frameRateSlider.triggerAction()
 
 		qualitySlider.doubleValue = Defaults[.outputQuality]
 		qualitySlider.triggerAction()
+
+		loopButton.state = Defaults[.singleIteration] ? .off : .on
+		loopButton.triggerAction()
 	}
 
 	private func setUpWidthAndHeightTextFields() {
@@ -326,7 +340,7 @@ final class EditVideoViewController: NSViewController {
 		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
 		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
-		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
+		estimatedSizeLabel.stringValue = "Estimated File Size: " + formatter.string(fromByteCount: Int64(fileSize))
 	}
 
 	private func updateDimensionsDisplay() {
