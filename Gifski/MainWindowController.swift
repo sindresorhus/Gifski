@@ -9,6 +9,18 @@ final class MainWindowController: NSWindowController {
 		window?.contentViewController is ConversionViewController
 	}
 
+	private func showWelcomeScreen() {
+		guard App.isFirstLaunch else {
+			return
+		}
+
+		NSAlert.showModal(
+			for: window,
+			message: "Welcome to Gifski!",
+			informativeText: "If you have any feedback, bug reports, or feature requests, use the “Send Feedback” button in the “Help” menu. All submissions are answered by a human and bugs are quickly fixed.\n\nIt's better to submit a bug report through the feedback button than as an App Store review since we cannot contact you for more information in a review."
+		)
+	}
+
 	convenience init() {
 		let window = NSWindow.centeredWindow(size: .zero)
 		window.contentViewController = VideoDropViewController()
@@ -36,6 +48,8 @@ final class MainWindowController: NSWindowController {
 		window.makeKeyAndOrderFront(nil)
 
 		DockProgress.style = .circle(radius: 55, color: .themeColor)
+
+		showWelcomeScreen()
 	}
 
 	@objc

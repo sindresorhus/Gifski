@@ -1353,6 +1353,24 @@ struct App {
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
 	static let build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
 	static let versionWithBuild = "\(version) (\(build))"
+
+	static let isFirstLaunch: Bool = {
+		let key = "SS_hasLaunched"
+
+		// TODO: Remove this at some point.
+		// Prevents showing "first launch" stuff for existing users.
+		guard Defaults[.successfulConversionsCount] == 0 else {
+			UserDefaults.standard.set(true, forKey: key)
+			return false
+		}
+
+		if UserDefaults.standard.bool(forKey: key) {
+			return false
+		} else {
+			UserDefaults.standard.set(true, forKey: key)
+			return true
+		}
+	}()
 }
 
 
