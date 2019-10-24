@@ -17,7 +17,7 @@ final class MainWindowController: NSWindowController {
 		NSAlert.showModal(
 			for: window,
 			message: "Welcome to Gifski!",
-			informativeText: "If you have any feedback, bug reports, or feature requests, use the “Send Feedback” button in the “Help” menu. All submissions are answered by a human and bugs are quickly fixed.\n\nIt's better to submit a bug report through the feedback button than as an App Store review since we cannot contact you for more information in a review."
+			informativeText: "If you have any feedback, bug reports, or feature requests, kindly use the “Send Feedback” button in the “Help” menu. We will respond to all submissions and it is likely that those reported issues will be fixed immediately.\n\nPlease note that it is preferable to submit a bug report through the feedback button than as an App Store review since the review will not allow us to contact you for more information regarding the bug."
 		)
 	}
 
