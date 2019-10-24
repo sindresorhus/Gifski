@@ -101,10 +101,17 @@ final class ConversionCompletedViewController: NSViewController {
 			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
 		}
 
-		copyButton.onAction = { _ in
+		copyButton.onAction = { [weak self] _ in
 			let pasteboard = NSPasteboard.general
 			pasteboard.clearContents()
 			pasteboard.writeObjects([url as NSURL])
+
+			self?.copyButton.title = "Copied!"
+			self?.copyButton.isEnabled = false
+			delay(seconds: 1) {
+				self?.copyButton.title = "Copy"
+				self?.copyButton.isEnabled = true
+			}
 		}
 
 		saveAsButton.onAction = { [weak self] _ in
