@@ -8,7 +8,7 @@
 			"NetworkProtocol" : "TCP",
 			"Port" : "443",
 			"Purpose" : "Gifski sends crash reports to this server.",
-			"DenyConsequences" : "If you deny this connection, the developers of Gifski won't be notified of any crashes and they can't fix what they don't know about."
+			"DenyConsequences" : "If you deny this connection, the Gifski developers won't be notified if the app crashes and thus won't be able to fix it."
 		}
 	],
 	"Services" : [
