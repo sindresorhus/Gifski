@@ -1,4 +1,4 @@
-import Foundation
+import Cocoa
 import AVFoundation
 import Crashlytics
 
@@ -201,7 +201,17 @@ final class Gifski {
 				case .failure where result.isCancelled:
 					completionHandlerOnce(.failure(.cancelled))
 				case let .failure(error):
-					completionHandlerOnce(.failure(.generateFrameFailed(error)))
+					// TODO: Remove this when we've been able to track down the issue.
+					completionHandlerOnce(.failure(.cancelled))
+					DispatchQueue.main.async {
+						NSAlert.showModal(
+							message: "Gifski was unable generate frames from the video",
+							informativeText: "We have been trying to track down this issue for a long time, but we have been unable to reproduce it. It would be awesome if you could send an email to sindresorhus@gmail.com with some information about the video file you tried to convert so we can fix this issue.",
+							detailText: "\(error)"
+						)
+					}
+
+					// completionHandlerOnce(.failure(.generateFrameFailed(error)))
 				}
 			}
 		}
