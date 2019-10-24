@@ -206,7 +206,7 @@ final class Gifski {
 					DispatchQueue.main.async {
 						NSAlert.showModal(
 							message: "Gifski was unable generate frames from the video",
-							informativeText: "We have been trying to track down this issue for a long time, but we have been unable to reproduce it. It would be awesome if you could send an email to sindresorhus@gmail.com with some information about the video file you tried to convert so we can fix this issue.",
+							informativeText: "We have been trying to track down this issue for a long time, but we have been unable to reproduce it. It would be awesome if you could send an email to sindresorhus@gmail.com with the video or some information about the video file you tried to convert so we can fix this issue.",
 							detailText: "\(error)"
 						)
 					}
