@@ -207,8 +207,8 @@
                                         </textFieldCell>
                                     </textField>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Mk2-3o-6CT">
-                                        <rect key="frame" x="82" y="19" width="53" height="18"/>
-                                        <buttonCell key="cell" type="check" title="Loop" bezelStyle="regularSquare" imagePosition="left" inset="2" id="c3l-oV-Y0b">
+                                        <rect key="frame" x="82" y="19" width="102" height="18"/>
+                                        <buttonCell key="cell" type="check" title="Loop Forever" bezelStyle="regularSquare" imagePosition="left" inset="2" id="c3l-oV-Y0b">
                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
