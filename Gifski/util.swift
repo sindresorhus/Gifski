@@ -27,25 +27,20 @@ func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
 
 
 struct Meta {
-	static func openSubmitFeedbackPage(message: String? = nil) {
-		let defaultMessage = "<!--\nProvide your feedback here. Include as many details as possible.\nYou can also email me at sindresorhus@gmail.com\n-->"
-
-		let body =
+	static func openSubmitFeedbackPage() {
+		let metadata =
 			"""
-			\(message ?? defaultMessage)
-
-
-			---
-			\(App.name) \(App.versionWithBuild)
+			\(App.name) \(App.versionWithBuild) - \(App.id)
 			macOS \(System.osVersion)
 			\(System.hardwareModel)
 			"""
 
 		let query: [String: String] = [
-			"body": body
+			"product": App.name,
+			"metadata": metadata
 		]
 
-		URL(string: "https://github.com/sindresorhus/Gifski/issues/new")!.addingDictionaryAsQuery(query).open()
+		URL(string: "https://sindresorhus.com/feedback/")!.addingDictionaryAsQuery(query).open()
 	}
 }
 
