@@ -137,4 +137,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		let overlayView = CheckerboardView(frame: frame, clearRect: videoBounds)
 		contentOverlayView?.addSubview(overlayView)
 	}
+
+	/// Prevent user from dismissing trimming view
+	override func cancelOperation(_ sender: Any?) { }
 }
