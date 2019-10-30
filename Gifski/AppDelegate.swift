@@ -46,7 +46,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func application(_ application: NSApplication, open urls: [URL]) {
-		print(urls[0].absoluteURL)
 		guard urls.count == 1, let videoUrl = urls.first else {
 			NSAlert.showModal(
 				for: mainWindowController.window,
@@ -55,13 +54,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			return
 		}
 
+		var sharedVideoUrl = videoUrl
+		if videoUrl.queryParameters["shareExtension"] == "true" {
+			let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
+			let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(videoUrl.host!.removingPercentEncoding!)
+			sharedVideoUrl = appGroupShareVideUrl!
+		}
+
 		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
 		if hasFinishedLaunching {
-			mainWindowController.convert(videoUrl.absoluteURL)
+			mainWindowController.convert(sharedVideoUrl.absoluteURL)
 		} else {
 			// This method is called before `applicationDidFinishLaunching`,
 			// so we buffer it up a video is "Open with" this app
-			urlToConvertOnLaunch = videoUrl.absoluteURL
+			urlToConvertOnLaunch = sharedVideoUrl.absoluteURL
 		}
 	}
 

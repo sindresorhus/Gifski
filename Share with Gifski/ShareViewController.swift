@@ -17,38 +17,72 @@ class ShareViewController: NSViewController {
         return NSNib.Name("ShareViewController")
     }
 
+	enum Shit: Error {
+		case new
+	}
+
     override func loadView() {
 		super.loadView()
 
-        // Insert code here to customize the view
-        let item = self.extensionContext!.inputItems[0] as! NSExtensionItem
-        if let attachments = item.attachments {
-            NSLog("Attachments = %@", attachments as NSArray)
-        } else {
-            NSLog("No Attachments")
-        }
+		// Show loading screen on webView while we are copying the video
+		let loadingHtml = try! String(contentsOf: Bundle.main.url(forResource: "loadingHtml", withExtension: "html")!)
+		webView.loadHTMLString(loadingHtml, baseURL: nil)
 
-		if let b = item.attachments?.first?.hasItemConformingToTypeIdentifier("public.file-url"), b {
-			print("Rather shitty")
-			item.attachments?.first?.loadFileRepresentation(forTypeIdentifier: "public.file-url") { url, error in
+		guard let item = (self.extensionContext?.inputItems[0] as? NSExtensionItem)?.attachments?.first else {
+			errorOpenMainApp()
+			return
+		}
+
+		var typeIdentifier: String
+		if item.hasItemConformingToTypeIdentifier("public.mpeg-4") {
+			typeIdentifier = "public.mpeg-4"
+		} else if item.hasItemConformingToTypeIdentifier("com.apple.m4v-video") {
+			typeIdentifier = "com.apple.m4v-video"
+		} else if item.hasItemConformingToTypeIdentifier("com.apple.quicktime-movie") {
+			typeIdentifier = "com.apple.quicktime-movie"
+		} else {
+			errorOpenMainApp()
+			return
+		}
+
+		item.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { url, error in
+			DispatchQueue.main.sync {
 				if let url = url {
-					DispatchQueue.main.sync {
-						print(url)
-						if let gifski = URL(string: "gifski://\(url.absoluteString)") {
-							let request = URLRequest(url: gifski)
-							self.webView.navigationDelegate = self
-							self.webView.load(request)
-						}
+					let shareUrl = "\(url.lastPathComponent)"
 
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-							print("Done")
-							// self.extensionContext!.completeRequest(returningItems: [], completionHandler: nil)
-						}
+					let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
+					let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl)
+
+					try? FileManager.default.removeItem(at: appGroupShareVideUrl!)
+					try! FileManager.default.copyItem(at: url, to: appGroupShareVideUrl!)
+
+					if let gifski = URL(string: "gifski://\(shareUrl.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!)?shareExtension=true") {
+						let request = URLRequest(url: gifski)
+						self.webView.navigationDelegate = self
+						self.webView.load(request)
 					}
+
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						self.extensionContext!.completeRequest(returningItems: [], completionHandler: nil)
+					}
+				} else if error != nil {
+					self.errorOpenMainApp()
 				}
 			}
 		}
     }
+
+	private func errorOpenMainApp() {
+		if let gifski = URL(string: "gifski://error?shareExtension=true") {
+			let request = URLRequest(url: gifski)
+			self.webView.navigationDelegate = self
+			self.webView.load(request)
+		}
+
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+			self.extensionContext!.completeRequest(returningItems: [], completionHandler: nil)
+		}
+	}
 }
 
 extension ShareViewController: WKNavigationDelegate {
