@@ -44,6 +44,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
+		playerView.addCheckerboardView()
 		playerView.hideTrimButtons()
 		playerView.observeTrimmedTimeRange { [weak self] timeRange in
 			self?.timeRange = timeRange
@@ -132,14 +133,8 @@ final class TrimmingAVPlayerView: AVPlayerView {
 			.forEach { $0.isHidden = true }
 	}
 
-	// MARK: - Keyboard handling
-	let escKeyCode: UInt16 = 53
-
-	override func keyDown(with event: NSEvent) {
-		guard event.keyCode != escKeyCode else {
-			return
-		}
-
-		super.keyDown(with: event)
+	fileprivate func addCheckerboardView() {
+		let overlayView = CheckerboardView(frame: frame, clearRect: videoBounds)
+		contentOverlayView?.addSubview(overlayView)
 	}
 }

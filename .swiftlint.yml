@@ -13,7 +13,10 @@ whitelist_rules:
   - comma
   - compiler_protocol_init
   - conditional_returns_on_newline
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
   - contains_over_first_not_nil
+  - contains_over_range_nil_comparison
   - control_statement
   - deployment_target
   - discarded_notification_center_observer
@@ -21,8 +24,10 @@ whitelist_rules:
   - discouraged_object_literal
   - discouraged_optional_boolean
   - discouraged_optional_collection
+  - duplicate_enum_cases
   - duplicate_imports
   - dynamic_inline
+  - empty_collection_literal
   - empty_count
   - empty_enum_arguments
   - empty_parameters
@@ -33,6 +38,7 @@ whitelist_rules:
   - fallthrough
   - fatal_error_message
   - first_where
+  - flatmap_over_map_reduce
   - for_where
   - generic_type_name
   - identical_operands
@@ -48,6 +54,7 @@ whitelist_rules:
   - legacy_constant
   - legacy_constructor
   - legacy_hashing
+  - legacy_multiple
   - legacy_nsgeometry_functions
   - legacy_random
   - literal_expression_end_indentation
@@ -59,11 +66,12 @@ whitelist_rules:
   - multiline_literal_brackets
   - multiline_parameters
   - multiline_parameters_brackets
-  - multiple_closures_with_trailing_closure
   - nimble_operator
   - no_extension_access_modifier
   - no_fallthrough_only
+  - no_space_in_method_call
   - notification_center_detachment
+  - nsobject_prefer_isequal
   - number_separator
   - object_literal
   - opening_brace
@@ -76,6 +84,9 @@ whitelist_rules:
   - private_unit_test
   - prohibited_super_call
   - protocol_property_accessors_order
+  - raw_value_for_camel_cased_codable_enum
+  - reduce_boolean
+  - reduce_into
   - redundant_discardable_let
   - redundant_nil_coalescing
   - redundant_objc_attribute
@@ -107,7 +118,9 @@ whitelist_rules:
   - unavailable_function
   - unneeded_break_in_switch
   - unneeded_parentheses_in_closure_argument
+  - unowned_variable_capture
   - untyped_error_in_catch
+  - unused_capture_list
   - unused_closure_parameter
   - unused_control_flow_label
   - unused_enumerated
@@ -119,14 +132,13 @@ whitelist_rules:
   - vertical_whitespace_closing_braces
   - vertical_whitespace_opening_braces
   - void_return
-  - weak_computed_property
   - weak_delegate
   - xct_specific_matcher
   - xctfail_message
   - yoda_condition
 analyzer_rules:
+  - unused_declaration
   - unused_import
-  - unused_private_declaration
 force_cast: warning
 force_unwrapping: warning
 number_separator:
@@ -154,4 +166,5 @@ identifier_name:
     - 'x2'
     - 'y1'
     - 'y2'
-macOS_deployment_target: '10.13'
+deployment_target:
+  macOS_deployment_target: '10.13'

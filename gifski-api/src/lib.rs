@@ -24,7 +24,6 @@ use lodepng;
 use gif_dispose;
 
 #[macro_use] extern crate error_chain;
-use gif::*;
 use rgb::*;
 use imgref::*;
 use imagequant::*;
@@ -36,16 +35,20 @@ use crate::ordqueue::*;
 pub mod progress;
 use crate::progress::*;
 pub mod c_api;
+mod encoderust;
+
+#[cfg(feature = "gifsicle")]
+mod encodegifsicle;
 
 use std::path::PathBuf;
 use std::io::prelude::*;
 use std::sync::Arc;
-use std::borrow::Cow;
+
 use std::thread;
 
 type DecodedImage = CatResult<(ImgVec<RGBA8>, u16)>;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Settings {
     /// Resize to max this width if set
     pub width: Option<u32>,
@@ -57,6 +60,18 @@ pub struct Settings {
     pub once: bool,
     /// Lower quality, but faster encode
     pub fast: bool,
+}
+
+impl Settings {
+    #[cfg(not(feature = "gifsicle"))]
+    pub(crate) fn color_quality(&self) -> u8 {
+        self.quality
+    }
+
+    #[cfg(feature = "gifsicle")]
+    pub(crate) fn color_quality(&self) -> u8 {
+        (self.quality * 2).min(100)
+    }
 }
 
 /// Collect frames that will be encoded
@@ -82,11 +97,11 @@ struct GIFFrame {
     dispose: gif::DisposalMethod,
 }
 
-/// Encoder is initialized after first frame is decoded,
-/// and this explains to Rust that writer `W` is used once for this.
-enum WriteInitState<W: Write> {
-    Uninit(W),
-    Init(Encoder<W>),
+trait Encoder {
+    fn write_frame(&mut self, frame: &GIFFrame, settings: &Settings) -> CatResult<()>;
+    fn finish(&mut self) -> CatResult<()> {
+        Ok(())
+    }
 }
 
 /// Start new encoding
@@ -137,7 +152,8 @@ impl Collector {
             let dst_height = height.map(|h| (h as usize).min(image.height())).unwrap_or(image.height() * dst_width / image.width());
             let mut r = resize::new(image.width(), image.height(), dst_width, dst_height, resize::Pixel::RGBA, resize::Type::Lanczos3);
             let mut dst = vec![RGBA::new(0, 0, 0, 0); dst_width * dst_height];
-            r.resize(image.buf.as_bytes(), dst.as_bytes_mut());
+            assert_eq!(image.buf().len(), image.width() * image.height());
+            r.resize(image.buf().as_bytes(), dst.as_bytes_mut());
             image = ImgVec::new(dst, dst_width, dst_height)
         }
 
@@ -176,15 +192,16 @@ impl Writer {
             liq.set_speed(10);
         }
         let quality = if background.is_some() { // not first frame
-            settings.quality.into()
+            settings.color_quality().into()
         } else {
             100 // the first frame is too important to ruin it
         };
         liq.set_quality(0, quality);
-        let mut img = liq.new_image_stride(image.buf, image.width(), image.height(), image.stride(), 0.)?;
+        let mut img = liq.new_image_stride(image.buf(), image.width(), image.height(), image.stride(), 0.)?;
         img.set_importance_map(importance_map)?;
         if let Some(bg) = background {
-            img.set_background(liq.new_image(bg.buf, bg.width(), bg.height(), 0.)?)?;
+            assert_eq!(bg.width(), bg.stride());
+            img.set_background(liq.new_image(bg.buf(), bg.width(), bg.height(), 0.)?)?;
         }
         img.add_fixed_color(RGBA8::new(0, 0, 0, 0));
         let mut res = liq.quantize(&img)?;
@@ -196,53 +213,14 @@ impl Writer {
         Ok((Img::new(pal_img, img.width(), img.height()), pal))
     }
 
-    fn write_frames<W: Write + Send>(write_queue_iter: OrdQueueIter<Arc<GIFFrame>>, outfile: W, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
-        let mut enc = WriteInitState::Uninit(outfile);
-
+    fn write_frames(write_queue_iter: OrdQueueIter<Arc<GIFFrame>>, enc: &mut dyn Encoder, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         for f in write_queue_iter {
-            let GIFFrame {ref pal, ref image, delay, dispose} = *f;
+            enc.write_frame(&f, settings)?;
             if !reporter.increase() {
                 Err(ErrorKind::Aborted)?
             }
-
-            let mut transparent_index = None;
-            let mut pal_rgb = Vec::with_capacity(3 * pal.len());
-            for (i, p) in pal.into_iter().enumerate() {
-                if p.a == 0 {
-                    transparent_index = Some(i as u8);
-                }
-                pal_rgb.extend_from_slice([p.rgb()].as_bytes());
-            }
-
-            enc = match enc {
-                WriteInitState::Uninit(w) => {
-                    let mut enc = Encoder::new(w, image.width() as u16, image.height() as u16, &[])?;
-                    if !settings.once {
-                        enc.write_extension(gif::ExtensionData::Repetitions(gif::Repeat::Infinite))?;
-                    }
-                    WriteInitState::Init(enc)
-                },
-                x => x,
-            };
-            let enc = match enc {
-                WriteInitState::Init(ref mut r) => r,
-                _ => unreachable!(),
-            };
-
-            enc.write_frame(&Frame {
-                delay,
-                dispose,
-                transparent: transparent_index,
-                needs_user_input: false,
-                top: 0,
-                left: 0,
-                width: image.width() as u16,
-                height: image.height() as u16,
-                interlaced: false,
-                palette: Some(pal_rgb),
-                buffer: Cow::Borrowed(&image.buf),
-            })?;
         }
+        enc.finish()?;
         Ok(())
     }
 
@@ -251,14 +229,38 @@ impl Writer {
     /// `outfile` can be any writer, such as `File` or `&mut Vec`.
     ///
     /// `ProgressReporter.increase()` is called each time a new frame is being written.
-    pub fn write<W: Write + Send>(mut self, outfile: W, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
+    #[allow(unused_mut)]
+    pub fn write<W: Write>(self, mut writer: W, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
+
+        #[cfg(feature = "gifsicle")]
+        {
+            let encoder: &mut dyn Encoder;
+            let mut gifsicle;
+            let mut rustgif;
+            if self.settings.quality < 100 {
+                let loss = (100 - self.settings.quality as u32) * 6;
+                gifsicle = encodegifsicle::Gifsicle::new(loss, &mut writer);
+                encoder = &mut gifsicle;
+            } else {
+                rustgif = encoderust::RustEncoder::new(writer);
+                encoder = &mut rustgif;
+            }
+            self.write_with_encoder(encoder, reporter)
+        }
+        #[cfg(not(feature = "gifsicle"))]
+        {
+            self.write_with_encoder(&mut encoderust::RustEncoder::new(writer), reporter)
+        }
+    }
+
+    fn write_with_encoder(mut self, encoder: &mut dyn Encoder, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         let (write_queue, write_queue_iter) = ordqueue::new(4);
         let queue_iter = self.queue_iter.take().unwrap();
-        let settings = self.settings.clone();
+        let settings = self.settings;
         let make_thread = thread::spawn(move || {
             Self::make_frames(queue_iter, write_queue, &settings)
         });
-        Self::write_frames(write_queue_iter, outfile, &self.settings, reporter)?;
+        Self::write_frames(write_queue_iter, encoder, &self.settings, reporter)?;
         make_thread.join().unwrap()?;
         Ok(())
     }
@@ -272,7 +274,7 @@ impl Writer {
         } else {
             Err("Found no usable frames to encode")?
         };
-        let mut importance_map = vec![255u8; curr_frame.as_ref().unwrap().1.buf.len()];
+        let mut importance_map = vec![255u8; curr_frame.as_ref().unwrap().1.buf().len()];
         let mut next_frame = if let Some(a) = decode_iter.next() {
             Some(a?)
         } else {
@@ -315,7 +317,7 @@ impl Writer {
 
             let has_prev_frame = i > 0 && previous_frame_dispose == gif::DisposalMethod::Keep;
             if has_prev_frame {
-                let q = 100 - settings.quality as u32;
+                let q = 100 - u32::from(settings.color_quality());
                 let min_diff = 80 + q * q;
                 debug_assert_eq!(image.width(), screen.pixels.width());
                 importance_map.chunks_mut(image.width()).zip(screen.pixels.rows().zip(image.rows()))
@@ -366,7 +368,7 @@ fn colordiff(a: RGBA8, b: RGBA8) -> u32 {
     if a.a == 0 || b.a == 0 {
         return 255 * 255 * 6;
     }
-    (i32::from(a.r as i16 - b.r as i16) * i32::from(a.r as i16 - b.r as i16)) as u32 * 2 +
-        (i32::from(a.g as i16 - b.g as i16) * i32::from(a.g as i16 - b.g as i16)) as u32 * 3 +
-        (i32::from(a.b as i16 - b.b as i16) * i32::from(a.b as i16 - b.b as i16)) as u32
+    (i32::from(i16::from(a.r) - i16::from(b.r)) * i32::from(i16::from(a.r) - i16::from(b.r))) as u32 * 2 +
+    (i32::from(i16::from(a.g) - i16::from(b.g)) * i32::from(i16::from(a.g) - i16::from(b.g))) as u32 * 3 +
+    (i32::from(i16::from(a.b) - i16::from(b.b)) * i32::from(i16::from(a.b) - i16::from(b.b))) as u32
 }

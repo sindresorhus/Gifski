@@ -27,25 +27,20 @@ func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
 
 
 struct Meta {
-	static func openSubmitFeedbackPage(message: String? = nil) {
-		let defaultMessage = "<!--\nProvide your feedback here. Include as many details as possible.\nYou can also email me at sindresorhus@gmail.com\n-->"
-
-		let body =
+	static func openSubmitFeedbackPage() {
+		let metadata =
 			"""
-			\(message ?? defaultMessage)
-
-
-			---
-			\(App.name) \(App.versionWithBuild)
+			\(App.name) \(App.versionWithBuild) - \(App.id)
 			macOS \(System.osVersion)
 			\(System.hardwareModel)
 			"""
 
 		let query: [String: String] = [
-			"body": body
+			"product": App.name,
+			"metadata": metadata
 		]
 
-		URL(string: "https://github.com/sindresorhus/Gifski/issues/new")!.addingDictionaryAsQuery(query).open()
+		URL(string: "https://sindresorhus.com/feedback/")!.addingDictionaryAsQuery(query).open()
 	}
 }
 
@@ -1353,6 +1348,24 @@ struct App {
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
 	static let build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
 	static let versionWithBuild = "\(version) (\(build))"
+
+	static let isFirstLaunch: Bool = {
+		let key = "SS_hasLaunched"
+
+		// TODO: Remove this at some point.
+		// Prevents showing "first launch" stuff for existing users.
+		guard Defaults[.successfulConversionsCount] == 0 else {
+			UserDefaults.standard.set(true, forKey: key)
+			return false
+		}
+
+		if UserDefaults.standard.bool(forKey: key) {
+			return false
+		} else {
+			UserDefaults.standard.set(true, forKey: key)
+			return true
+		}
+	}()
 }
 
 
@@ -2573,4 +2586,13 @@ extension ClosedRange where Bound == Double {
 
 		return self
 	}
+}
+
+extension BinaryInteger {
+	var isEven: Bool { isMultiple(of: 2) }
+	var isOdd: Bool { !isEven }
+}
+
+extension AppDelegate {
+	static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
 }

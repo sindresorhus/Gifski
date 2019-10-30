@@ -225,3 +225,12 @@ extension NSWindow {
 		attachedSheet != nil
 	}
 }
+
+
+func assertMainThread(
+	function: StaticString = #function,
+	file: String = #file,
+	line: UInt = #line
+) {
+	assert(Thread.isMainThread, "\(function) in \(file.nsString.lastPathComponent):\(line) must run on the main thread!")
+}

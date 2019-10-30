@@ -21,6 +21,11 @@ final class VideoDropViewController: NSViewController {
 		let view = videoDropView
 		view.frame.size = Constants.defaultWindowSize
 		self.view = view
+
+		if !videoDropView.isDropLabelHidden {
+			let clickGestureRecognizer = NSClickGestureRecognizer(target: self, action: #selector(dropViewClicked(sender:)))
+			view.addGestureRecognizer(clickGestureRecognizer)
+		}
 	}
 
 	func convert(_ inputUrl: URL) {
@@ -32,5 +37,10 @@ final class VideoDropViewController: NSViewController {
 
 		let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
 		push(viewController: editController)
+	}
+
+	@objc
+	private func dropViewClicked(sender: NSGestureRecognizer) {
+		AppDelegate.shared.mainWindowController.open(sender)
 	}
 }

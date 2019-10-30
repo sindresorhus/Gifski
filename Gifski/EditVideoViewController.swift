@@ -21,6 +21,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
+	@IBOutlet private var loopCheckbox: NSButton!
 
 	@IBOutlet private var widthTextField: IntTextField!
 	@IBOutlet private var heightTextField: IntTextField!
@@ -65,7 +66,8 @@ final class EditVideoViewController: NSViewController {
 			timeRange: timeRange,
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
-			frameRate: frameRateSlider.integerValue
+			frameRate: frameRateSlider.integerValue,
+			loopGif: Defaults[.loopGif]
 		)
 
 		let convert = ConversionViewController(conversion: conversion)
@@ -329,7 +331,7 @@ final class EditVideoViewController: NSViewController {
 		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
 		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
-		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
+		estimatedSizeLabel.stringValue = "Estimated File Size: " + formatter.string(fromByteCount: Int64(fileSize))
 	}
 
 	private func updateDimensionsDisplay() {

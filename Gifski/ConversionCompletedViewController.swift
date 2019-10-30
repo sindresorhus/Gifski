@@ -36,6 +36,15 @@ final class ConversionCompletedViewController: NSViewController {
 		setUpUI()
 		setUpDropView()
 		setUp(url: gifUrl)
+
+		if #available(macOS 10.14, *), !NSApp.isActive || view.window?.isVisible == false {
+			let notification = UNMutableNotificationContent()
+			notification.title = "Conversion Completed"
+			notification.subtitle = conversion.video.filename
+			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
+			// UNUserNotificationCenter.current().add(request)
+			(AppDelegate.shared.notificationCenter as? UNUserNotificationCenter)?.add(request)
+		}
 	}
 
 	override func viewDidAppear() {
@@ -43,18 +52,6 @@ final class ConversionCompletedViewController: NSViewController {
 
 		// This is needed for Quick Look to work.
 		view.window?.makeFirstResponder(self)
-
-		if #available(macOS 10.14, *), Defaults[.successfulConversionsCount] == 5 {
-			SKStoreReviewController.requestReview()
-		}
-
-		if #available(macOS 10.14, *), !NSApp.isActive || view.window?.isVisible == false {
-			let notification = UNMutableNotificationContent()
-			notification.title = "Conversion Completed"
-			notification.subtitle = conversion.video.filename
-			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
-			UNUserNotificationCenter.current().add(request)
-		}
 
 		if wrapperView.isHidden {
 			draggableFile.layer?.animateScaleMove(fromScale: 3, fromY: view.frame.height + draggableFile.frame.size.height)
@@ -67,6 +64,10 @@ final class ConversionCompletedViewController: NSViewController {
 			}
 
 			self.tooltip.show(from: self.draggableFile, preferredEdge: .maxY)
+		}
+
+		if #available(macOS 10.14, *), Defaults[.successfulConversionsCount] == 5 {
+			SKStoreReviewController.requestReview()
 		}
 	}
 
@@ -100,10 +101,17 @@ final class ConversionCompletedViewController: NSViewController {
 			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
 		}
 
-		copyButton.onAction = { _ in
+		copyButton.onAction = { [weak self] _ in
 			let pasteboard = NSPasteboard.general
 			pasteboard.clearContents()
 			pasteboard.writeObjects([url as NSURL])
+
+			self?.copyButton.title = "Copied!"
+			self?.copyButton.isEnabled = false
+			delay(seconds: 1) {
+				self?.copyButton.title = "Copy"
+				self?.copyButton.isEnabled = true
+			}
 		}
 
 		saveAsButton.onAction = { [weak self] _ in
