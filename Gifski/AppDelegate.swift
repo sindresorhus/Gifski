@@ -1,4 +1,5 @@
 import Cocoa
+import UserNotifications
 import Fabric
 import Crashlytics
 
@@ -8,6 +9,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	var hasFinishedLaunching = false
 	var urlToConvertOnLaunch: URL!
 
+	// Possible workaround for crashing bug because of Crashlytics swizzling.
+	var notificationCenter: AnyObject? = {
+		if #available(macOS 10.14, *) {
+			return UNUserNotificationCenter.current()
+		} else {
+			return nil
+		}
+	}()
+
 	func applicationWillFinishLaunching(_ notification: Notification) {
 		UserDefaults.standard.register(defaults: [
 			"NSApplicationCrashOnExceptions": true,
@@ -16,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
+		if #available(macOS 10.14, *) {
+			(notificationCenter as? UNUserNotificationCenter)?.requestAuthorization { _, _ in }
+		}
+
 		#if !DEBUG
 			Fabric.with([Crashlytics.self])
 		#endif
@@ -52,6 +66,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
+	func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+		if mainWindowController.isConverting {
+			let response = NSAlert.showModal(
+				for: mainWindowController.window,
+				message: "Do you want to continue converting?",
+				informativeText: "Gifski is currently converting a video. If you quit, the conversion will be cancelled.",
+				buttonTitles: [
+					"Continue",
+					"Quit"
+				]
+			)
+
+			if response == .alertFirstButtonReturn {
+				return .terminateCancel
+			}
+		}
+
+		return .terminateNow
+	}
 
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
 		Crashlytics.recordNonFatalError(error: error)

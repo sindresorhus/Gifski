@@ -214,3 +214,23 @@ extension CABasicAnimation {
 		return animation
 	}
 }
+
+
+extension NSWindow {
+	/// Whether the window or its owning app is showing a modal or sheet.
+	/// This can be useful to disable any unintended interaction underneath it,
+	/// for example, drag and drop or mouse hover.
+	var isShowingModalOrSheet: Bool {
+		NSApp.modalWindow != nil ||
+		attachedSheet != nil
+	}
+}
+
+
+func assertMainThread(
+	function: StaticString = #function,
+	file: String = #file,
+	line: UInt = #line
+) {
+	assert(Thread.isMainThread, "\(function) in \(file.nsString.lastPathComponent):\(line) must run on the main thread!")
+}
