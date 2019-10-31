@@ -89,13 +89,13 @@ final class EditVideoViewController: NSViewController {
 		setUpWidthAndHeightTextFields()
 		setUpDropView()
 		setUpTrimmingView()
-		setUpTabOrder()
 	}
 
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
 		view.window?.makeFirstResponder(playerViewController.playerView)
+		setUpTabOrder()
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
 	}
@@ -298,6 +298,11 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func setUpTabOrder() {
+		if let button = view.window?.firstResponder as? NSButton {
+			button.nextKeyView = predefinedSizesDropdown
+		}
+
+		predefinedSizesDropdown.nextKeyView = widthTextField
 		widthTextField.nextKeyView = heightTextField
 		heightTextField.nextKeyView = dimensionsTypeDropdown
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
