@@ -17,10 +17,6 @@ class ShareViewController: NSViewController {
         return NSNib.Name("ShareViewController")
     }
 
-	enum Shit: Error {
-		case new
-	}
-
     override func loadView() {
 		super.loadView()
 
