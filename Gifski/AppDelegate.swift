@@ -55,10 +55,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 
 		var sharedVideoUrl = videoUrl
-		if videoUrl.queryParameters["shareExtension"] == "true" {
-			let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
-			let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(videoUrl.host!.removingPercentEncoding!)
-			sharedVideoUrl = appGroupShareVideUrl!
+
+		if videoUrl.host == "shareExtension" {
+			if let path = videoUrl.queryParameters["path"] {
+				let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
+				let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(path.removingPercentEncoding!)
+				sharedVideoUrl = appGroupShareVideUrl!
+			} else if let error = videoUrl.queryParameters["error"], error == "true" {
+				NSAlert.showModal(
+					for: mainWindowController.window,
+					message: "An error occured in the share dialog."
+				)
+				return
+			}
 		}
 
 		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.

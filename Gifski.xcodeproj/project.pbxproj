@@ -11,7 +11,6 @@
 		0E7925202329BDBE00058B94 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareViewController.swift */; };
 		0E7925232329BDBE00058B94 /* ShareViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0E7925212329BDBE00058B94 /* ShareViewController.xib */; };
 		0E7925282329BDBE00058B94 /* Share with Gifski.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share with Gifski.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		0EE30AA4236A41CA0083B745 /* loadingHtml.html in Resources */ = {isa = PBXBuildFile; fileRef = 0EE30AA3236A41CA0083B745 /* loadingHtml.html */; };
 		6D86841721FD283B0044F6FE /* ConversionCompletedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */; };
 		6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841621FD283B0044F6FE /* DraggableFile.swift */; };
 		8548806522B78E8300E97401 /* IntTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806422B78E8300E97401 /* IntTextField.swift */; };
@@ -112,7 +111,6 @@
 		0E7925222329BDBE00058B94 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ShareViewController.xib; sourceTree = "<group>"; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0E7925252329BDBE00058B94 /* Share_with_Gifski.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Share_with_Gifski.entitlements; sourceTree = "<group>"; };
-		0EE30AA3236A41CA0083B745 /* loadingHtml.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = loadingHtml.html; sourceTree = "<group>"; };
 		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
 		6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ConversionCompletedViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		6D86841621FD283B0044F6FE /* DraggableFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = DraggableFile.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -183,7 +181,6 @@
 				0E79251D2329BDBE00058B94 /* icon.icns */,
 				0E79251F2329BDBE00058B94 /* ShareViewController.swift */,
 				0E7925212329BDBE00058B94 /* ShareViewController.xib */,
-				0EE30AA3236A41CA0083B745 /* loadingHtml.html */,
 				0E7925242329BDBE00058B94 /* Info.plist */,
 				0E7925252329BDBE00058B94 /* Share_with_Gifski.entitlements */,
 			);
@@ -415,7 +412,6 @@
 			files = (
 				0E7925232329BDBE00058B94 /* ShareViewController.xib in Resources */,
 				0E79251E2329BDBE00058B94 /* icon.icns in Resources */,
-				0EE30AA4236A41CA0083B745 /* loadingHtml.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -556,7 +552,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = 9T4AR9N5WH;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "Share with Gifski/Info.plist";
@@ -586,7 +582,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = 9T4AR9N5WH;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "Share with Gifski/Info.plist";
@@ -727,7 +723,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 21;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = 9T4AR9N5WH;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
