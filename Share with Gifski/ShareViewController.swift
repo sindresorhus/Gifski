@@ -35,7 +35,7 @@ class ShareViewController: NSViewController {
 			return
 		}
 
-		item.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { url, error in
+		item.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { url, _ in
 			guard let url = url else {
 				self.errorOpenMainApp()
 				return
