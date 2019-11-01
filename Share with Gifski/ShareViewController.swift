@@ -40,28 +40,26 @@ class ShareViewController: NSViewController {
 				self.errorOpenMainApp()
 				return
 			}
+			let shareUrl = "\(url.lastPathComponent)"
+
+			let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
+			let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl)
+
+			try? FileManager.default.removeItem(at: appGroupShareVideUrl!)
+			try! FileManager.default.copyItem(at: url, to: appGroupShareVideUrl!)
+
+			let gifski = URL(string: "gifski://shareExtension?path=\(shareUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)")!
 
 			DispatchQueue.main.sync {
-				let shareUrl = "\(url.lastPathComponent)"
-
-				let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
-				let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl)
-
-				try? FileManager.default.removeItem(at: appGroupShareVideUrl!)
-				try! FileManager.default.copyItem(at: url, to: appGroupShareVideUrl!)
-
-				if let gifski = URL(string: "gifski://shareExtension?path=\(shareUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)") {
-					NSWorkspace.shared.open(gifski)
-					self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-				}
+				NSWorkspace.shared.open(gifski)
+				self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
 			}
 		}
     }
 
 	private func errorOpenMainApp() {
-		if let gifski = URL(string: "gifski://shareExtension?error=true") {
-			NSWorkspace.shared.open(gifski)
-			self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-		}
+		let gifski = URL(string: "gifski://shareExtension?error=true")!
+		NSWorkspace.shared.open(gifski)
+		self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
 	}
 }
