@@ -41,7 +41,7 @@
         ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO &quot;com.apple.m4v-video&quot; ||
         ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO &quot;com.apple.quicktime-movie&quot;
     ).@count == $extensionItem.attachments.@count
-).@count &gt;= 1</string>
+).@count == 1</string>
 		</dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>
