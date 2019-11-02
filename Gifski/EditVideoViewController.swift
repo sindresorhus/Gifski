@@ -307,7 +307,8 @@ final class EditVideoViewController: NSViewController {
 		heightTextField.nextKeyView = dimensionsTypeDropdown
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		frameRateSlider.nextKeyView = qualitySlider
-		qualitySlider.nextKeyView = cancelButton
+		qualitySlider.nextKeyView = loopCheckbox
+		loopCheckbox.nextKeyView = cancelButton
 	}
 
 	private func updateTextFieldsMinMax() {
