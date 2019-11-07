@@ -4,13 +4,13 @@ categories = ["multimedia::video", "command-line-utilities"]
 description = "pngquant-based GIF maker for nice-looking animGIFs"
 documentation = "https://docs.rs/gifski"
 homepage = "https://gif.ski"
-include = ["/README.md", "/Cargo.toml", "/src/*.rs", "/src/bin/*.rs"]
+include = ["/README.md", "/Cargo.toml", "/src/**/*.rs", "/src/bin/*.rs"]
 keywords = ["gif", "encoder", "converter", "maker", "gifquant"]
 license = "AGPL-3.0+"
 name = "gifski"
 readme = "README.md"
 repository = "https://github.com/ImageOptim/gifski"
-version = "0.9.2"
+version = "0.9.3"
 autobins = false
 edition = "2018"
 

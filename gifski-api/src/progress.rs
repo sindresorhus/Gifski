@@ -16,14 +16,14 @@ pub struct NoProgress {}
 
 /// For C
 pub struct ProgressCallback {
-    callback: unsafe fn(*mut c_void) -> c_int,
+    callback: unsafe extern fn(*mut c_void) -> c_int,
     arg: *mut c_void,
 }
 
 unsafe impl Send for ProgressCallback {}
 
 impl ProgressCallback {
-    pub fn new(callback: unsafe fn(*mut c_void) -> c_int, arg: *mut c_void) -> Self {
+    pub fn new(callback: unsafe extern fn(*mut c_void) -> c_int, arg: *mut c_void) -> Self {
         Self {
             callback, arg,
         }
