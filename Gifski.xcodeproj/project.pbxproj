@@ -107,7 +107,7 @@
 /* Begin PBXFileReference section */
 		0E79251B2329BDBE00058B94 /* Share with Gifski.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share with Gifski.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E79251D2329BDBE00058B94 /* icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon.icns; sourceTree = "<group>"; };
-		0E79251F2329BDBE00058B94 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		0E79251F2329BDBE00058B94 /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		0E7925222329BDBE00058B94 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ShareViewController.xib; sourceTree = "<group>"; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0E7925252329BDBE00058B94 /* Share_with_Gifski.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Share_with_Gifski.entitlements; sourceTree = "<group>"; };
@@ -529,6 +529,7 @@
 			);
 			name = ShareViewController.xib;
 			sourceTree = "<group>";
+			usesTabs = 1;
 		};
 		E3AE628A1E5CD2F300035A2F /* MainMenu.xib */ = {
 			isa = PBXVariantGroup;
