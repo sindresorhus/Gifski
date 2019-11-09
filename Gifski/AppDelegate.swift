@@ -62,12 +62,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 				let videoUrlString = path.removingPercentEncoding,
 				let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(videoUrlString) {
 				sharedVideoUrl = appGroupShareVideoUrl
-			} else if let error = videoUrl.queryParameters["error"] {
-				NSAlert.showModal(
-					for: mainWindowController.window,
-					message: error
-				)
-				return
 			} else {
 				NSAlert.showModal(
 					for: mainWindowController.window,
