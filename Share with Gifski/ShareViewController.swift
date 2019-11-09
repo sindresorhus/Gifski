@@ -1,21 +1,9 @@
-//
-//  ShareViewController.swift
-//  Share with Gifski
-//
-//  Created by Koray Koska on 12.09.19.
-//  Copyright © 2019 Sindre Sorhus. All rights reserved.
-//
-
 import Cocoa
-import WebKit
 
-class ShareViewController: NSViewController {
+final class ShareViewController: NSViewController {
+	override var nibName: NSNib.Name? { NSNib.Name("ShareViewController") }
 
-    override var nibName: NSNib.Name? {
-        return NSNib.Name("ShareViewController")
-    }
-
-    override func loadView() {
+	override func loadView() {
 		super.loadView()
 
 		guard let item = (self.extensionContext?.inputItems[0] as? NSExtensionItem)?.attachments?.first else {
@@ -40,8 +28,8 @@ class ShareViewController: NSViewController {
 				self.errorOpenMainApp()
 				return
 			}
-			let shareUrl = "\(url.lastPathComponent)"
 
+			let shareUrl = "\(url.lastPathComponent)"
 			let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
 			let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl)
 
@@ -55,7 +43,7 @@ class ShareViewController: NSViewController {
 				self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
 			}
 		}
-    }
+	}
 
 	private func errorOpenMainApp() {
 		let gifski = URL(string: "gifski://shareExtension?error=true")!
