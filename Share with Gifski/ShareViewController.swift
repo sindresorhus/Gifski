@@ -7,7 +7,7 @@ final class ShareViewController: NSViewController {
 		super.loadView()
 
 		guard let item = (self.extensionContext?.inputItems[0] as? NSExtensionItem)?.attachments?.first else {
-			errorOpenMainApp()
+			errorOpenMainApp(message: "Shared item does not contain an attachment")
 			return
 		}
 
@@ -19,13 +19,13 @@ final class ShareViewController: NSViewController {
 		} else if item.hasItemConformingToTypeIdentifier("com.apple.quicktime-movie") {
 			typeIdentifier = "com.apple.quicktime-movie"
 		} else {
-			errorOpenMainApp()
+			errorOpenMainApp(message: "Shared item is not in a valid video format")
 			return
 		}
 
-		item.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { url, _ in
+		item.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { url, error in
 			guard let url = url else {
-				self.errorOpenMainApp()
+				self.errorOpenMainApp(message: error?.localizedDescription ?? "Unknown error")
 				return
 			}
 
@@ -45,8 +45,8 @@ final class ShareViewController: NSViewController {
 		}
 	}
 
-	private func errorOpenMainApp() {
-		let gifski = URL(string: "gifski://shareExtension?error=true")!
+	private func errorOpenMainApp(message: String) {
+		let gifski = URL(string: "gifski://shareExtension?error=\(message)")!
 		NSWorkspace.shared.open(gifski)
 		self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
 	}

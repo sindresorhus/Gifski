@@ -61,10 +61,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 				let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
 				let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(path.removingPercentEncoding!)
 				sharedVideoUrl = appGroupShareVideUrl!
-			} else if let error = videoUrl.queryParameters["error"], error == "true" {
+			} else if let error = videoUrl.queryParameters["error"] {
 				NSAlert.showModal(
 					for: mainWindowController.window,
-					message: "An error occured in the share dialog."
+					message: error
 				)
 				return
 			}
