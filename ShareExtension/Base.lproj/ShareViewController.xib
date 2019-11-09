@@ -6,8 +6,10 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="ShareViewController" customModule="Share_with_Gifski" customModuleProvider="target">
+        <customObject id="-2" userLabel="File's Owner" customClass="ShareViewController" customModule="ShareExtension" customModuleProvider="target">
             <connections>
+                <outlet property="errorButtonOk" destination="BTj-qO-jmK" id="z3Q-2x-3Xh"/>
+                <outlet property="errorLabel" destination="1wb-Ep-YUq" id="Ffo-I9-uNr"/>
                 <outlet property="view" destination="1" id="2"/>
             </connections>
         </customObject>
@@ -15,6 +17,43 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="1">
             <rect key="frame" x="0.0" y="0.0" width="388" height="202"/>
+            <subviews>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1wb-Ep-YUq">
+                    <rect key="frame" x="6" y="89" width="376" height="24"/>
+                    <constraints>
+                        <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="24" id="F0b-Hh-bvT"/>
+                    </constraints>
+                    <textFieldCell key="cell" lineBreakMode="clipping" alignment="center" id="j9m-lT-EgP">
+                        <font key="font" usesAppearanceFont="YES"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BTj-qO-jmK">
+                    <rect key="frame" x="305" y="1" width="81" height="32"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="21" id="IPb-Z0-hfL"/>
+                        <constraint firstAttribute="width" constant="69" id="v7d-8i-huw"/>
+                    </constraints>
+                    <buttonCell key="cell" type="push" title="OK" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="dmg-HE-LAK">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                        <string key="keyEquivalent" base64-UTF8="YES">
+DQ
+</string>
+                    </buttonCell>
+                    <connections>
+                        <action selector="errorButtonOkClicked:" target="-2" id="aap-zb-cNN"/>
+                    </connections>
+                </button>
+            </subviews>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="BTj-qO-jmK" secondAttribute="trailing" constant="8" id="2Vn-bU-lwi"/>
+                <constraint firstAttribute="bottom" secondItem="BTj-qO-jmK" secondAttribute="bottom" constant="8" id="Rap-xl-cH0"/>
+                <constraint firstAttribute="trailing" secondItem="1wb-Ep-YUq" secondAttribute="trailing" constant="8" id="WFK-k0-Ol1"/>
+                <constraint firstItem="1wb-Ep-YUq" firstAttribute="centerY" secondItem="1" secondAttribute="centerY" id="qLl-h3-cDV"/>
+                <constraint firstItem="1wb-Ep-YUq" firstAttribute="leading" secondItem="1" secondAttribute="leading" constant="8" id="qdU-Bf-Nba"/>
+            </constraints>
             <point key="canvasLocation" x="139" y="154"/>
         </customView>
     </objects>
