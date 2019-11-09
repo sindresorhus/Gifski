@@ -45,7 +45,12 @@ final class ShareViewController: NSViewController {
 				return
 			}
 
-			let gifski = URL(string: "gifski://shareExtension?path=\(shareUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)")!
+			guard let gifski = self.createMainAppUrl(
+				queryItems: [URLQueryItem(name: "path", value: shareUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)]
+			) else {
+				self.openMainAppAndPresentError(message: "Could not share video with the main app")
+				return
+			}
 
 			DispatchQueue.main.sync {
 				NSWorkspace.shared.open(gifski)
@@ -55,8 +60,17 @@ final class ShareViewController: NSViewController {
 	}
 
 	private func openMainAppAndPresentError(message: String) {
-		let gifski = URL(string: "gifski://shareExtension?error=\(message)")!
+		let gifski = createMainAppUrl(queryItems: [URLQueryItem(name: "error", value: message)])!
 		NSWorkspace.shared.open(gifski)
 		self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+	}
+
+	private func createMainAppUrl(queryItems: [URLQueryItem] = []) -> URL? {
+		var components = URLComponents()
+		components.scheme = "gifski"
+		components.host = "shareExtension"
+		components.queryItems = queryItems
+
+		return components.url
 	}
 }
