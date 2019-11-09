@@ -37,9 +37,9 @@ Gifski includes a [system service](https://www.computerworld.com/article/2476298
 
 ### Share extension
 
-Gifski includes a share extension that lets you share videos in all compatible formats to Gifski. Just select Gifski from the Share menu of any macOS app.
+Gifski includes a share extension that lets you share videos to Gifski. Just select Gifski from the Share menu of any macOS app.
 
-> Tip: You can share macOS screen recordings with Gifski by clicking on the thumbnail that pops up once you are done recording and selecting "Share" from there.
+> Tip: You can share a macOS screen recording with Gifski by clicking on the thumbnail that pops up once you are done recording and selecting “Share” from there.
 
 
 ## Screenshots
