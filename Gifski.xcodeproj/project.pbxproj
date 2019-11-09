@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		0E7925202329BDBE00058B94 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareViewController.swift */; };
 		0E7925232329BDBE00058B94 /* ShareViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0E7925212329BDBE00058B94 /* ShareViewController.xib */; };
-		0E7925282329BDBE00058B94 /* Share with Gifski.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share with Gifski.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0E7925282329BDBE00058B94 /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6D86841721FD283B0044F6FE /* ConversionCompletedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */; };
 		6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841621FD283B0044F6FE /* DraggableFile.swift */; };
 		8548806522B78E8300E97401 /* IntTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806422B78E8300E97401 /* IntTextField.swift */; };
@@ -54,7 +54,7 @@
 			containerPortal = E3AE627B1E5CD2F300035A2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 0E79251A2329BDBE00058B94;
-			remoteInfo = "Share with Gifski";
+			remoteInfo = "ShareExtension";
 		};
 		E3807B5A22BE315A00388F50 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -86,7 +86,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				0E7925282329BDBE00058B94 /* Share with Gifski.appex in Embed App Extensions */,
+				0E7925282329BDBE00058B94 /* ShareExtension.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -104,7 +104,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0E79251B2329BDBE00058B94 /* Share with Gifski.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share with Gifski.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0E79251B2329BDBE00058B94 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "ShareExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E79251F2329BDBE00058B94 /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		0E7925222329BDBE00058B94 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ShareViewController.xib; sourceTree = "<group>"; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -173,7 +173,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0E79251C2329BDBE00058B94 /* Share with Gifski */ = {
+		0E79251C2329BDBE00058B94 /* ShareExtension */ = {
 			isa = PBXGroup;
 			children = (
 				0E79251F2329BDBE00058B94 /* ShareViewController.swift */,
@@ -181,7 +181,7 @@
 				0E7925242329BDBE00058B94 /* Info.plist */,
 				0E7925252329BDBE00058B94 /* Share_with_Gifski.entitlements */,
 			);
-			path = "Share with Gifski";
+			path = ShareExtension;
 			sourceTree = "<group>";
 		};
 		5A7524AE20D085FB00F12C99 /* Products */ = {
@@ -233,7 +233,7 @@
 			isa = PBXGroup;
 			children = (
 				E3AE62851E5CD2F300035A2F /* Gifski */,
-				0E79251C2329BDBE00058B94 /* Share with Gifski */,
+				0E79251C2329BDBE00058B94 /* ShareExtension */,
 				E3AE62841E5CD2F300035A2F /* Products */,
 				E317EE121F88305800359C57 /* Frameworks */,
 				5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */,
@@ -245,7 +245,7 @@
 			isa = PBXGroup;
 			children = (
 				E3AE62831E5CD2F300035A2F /* Gifski.app */,
-				0E79251B2329BDBE00058B94 /* Share with Gifski.appex */,
+				0E79251B2329BDBE00058B94 /* ShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -287,9 +287,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0E79251A2329BDBE00058B94 /* Share with Gifski */ = {
+		0E79251A2329BDBE00058B94 /* ShareExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0E7925302329BDBE00058B94 /* Build configuration list for PBXNativeTarget "Share with Gifski" */;
+			buildConfigurationList = 0E7925302329BDBE00058B94 /* Build configuration list for PBXNativeTarget "ShareExtension" */;
 			buildPhases = (
 				0E7925172329BDBE00058B94 /* Sources */,
 				0E7925182329BDBE00058B94 /* Frameworks */,
@@ -299,9 +299,9 @@
 			);
 			dependencies = (
 			);
-			name = "Share with Gifski";
-			productName = "Share with Gifski";
-			productReference = 0E79251B2329BDBE00058B94 /* Share with Gifski.appex */;
+			name = "ShareExtension";
+			productName = "ShareExtension";
+			productReference = 0E79251B2329BDBE00058B94 /* ShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		E3AE62821E5CD2F300035A2F /* Gifski */ = {
@@ -373,7 +373,7 @@
 			projectRoot = "";
 			targets = (
 				E3AE62821E5CD2F300035A2F /* Gifski */,
-				0E79251A2329BDBE00058B94 /* Share with Gifski */,
+				0E79251A2329BDBE00058B94 /* ShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -512,7 +512,7 @@
 /* Begin PBXTargetDependency section */
 		0E7925272329BDBE00058B94 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 0E79251A2329BDBE00058B94 /* Share with Gifski */;
+			target = 0E79251A2329BDBE00058B94 /* ShareExtension */;
 			targetProxy = 0E7925262329BDBE00058B94 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -545,14 +545,14 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = "Share with Gifski/Share_with_Gifski.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "ShareExtension/Share_with_Gifski.entitlements";
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = "Share with Gifski/Info.plist";
+				INFOPLIST_FILE = "ShareExtension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -561,7 +561,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sindresorhus.Gifski.ShareExtension";
+				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -575,14 +575,14 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = "Share with Gifski/Share_with_Gifski.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "ShareExtension/Share_with_Gifski.entitlements";
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = "Share with Gifski/Info.plist";
+				INFOPLIST_FILE = "ShareExtension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -590,7 +590,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sindresorhus.Gifski.ShareExtension";
+				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -790,7 +790,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0E7925302329BDBE00058B94 /* Build configuration list for PBXNativeTarget "Share with Gifski" */ = {
+		0E7925302329BDBE00058B94 /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				0E79252A2329BDBE00058B94 /* Debug */,
