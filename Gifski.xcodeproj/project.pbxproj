@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0E79251E2329BDBE00058B94 /* icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 0E79251D2329BDBE00058B94 /* icon.icns */; };
 		0E7925202329BDBE00058B94 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareViewController.swift */; };
 		0E7925232329BDBE00058B94 /* ShareViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0E7925212329BDBE00058B94 /* ShareViewController.xib */; };
 		0E7925282329BDBE00058B94 /* Share with Gifski.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share with Gifski.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -106,7 +105,6 @@
 
 /* Begin PBXFileReference section */
 		0E79251B2329BDBE00058B94 /* Share with Gifski.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share with Gifski.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-		0E79251D2329BDBE00058B94 /* icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = icon.icns; sourceTree = "<group>"; };
 		0E79251F2329BDBE00058B94 /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		0E7925222329BDBE00058B94 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ShareViewController.xib; sourceTree = "<group>"; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -178,7 +176,6 @@
 		0E79251C2329BDBE00058B94 /* Share with Gifski */ = {
 			isa = PBXGroup;
 			children = (
-				0E79251D2329BDBE00058B94 /* icon.icns */,
 				0E79251F2329BDBE00058B94 /* ShareViewController.swift */,
 				0E7925212329BDBE00058B94 /* ShareViewController.xib */,
 				0E7925242329BDBE00058B94 /* Info.plist */,
@@ -411,7 +408,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				0E7925232329BDBE00058B94 /* ShareViewController.xib in Resources */,
-				0E79251E2329BDBE00058B94 /* icon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -565,7 +561,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sindresorhus.Gifski.Share-with-Gifski";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.sindresorhus.Gifski.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -594,7 +590,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sindresorhus.Gifski.Share-with-Gifski";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.sindresorhus.Gifski.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
