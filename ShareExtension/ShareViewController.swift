@@ -3,8 +3,8 @@ import Cocoa
 final class ShareViewController: NSViewController {
 	override var nibName: NSNib.Name? { "ShareViewController" }
 
-    @IBOutlet private weak var errorLabel: NSTextField!
-    @IBOutlet private weak var errorButtonOk: NSButton!
+	@IBOutlet private var errorLabel: NSTextField!
+	@IBOutlet private var errorButtonOk: NSButton!
 
 	// swiftlint:disable:next prohibited_super_call
 	override func loadView() {
@@ -14,7 +14,9 @@ final class ShareViewController: NSViewController {
 		errorLabel.isHidden = true
 		errorButtonOk.isHidden = true
 
-		guard let item = (self.extensionContext?.inputItems[0] as? NSExtensionItem)?.attachments?.first else {
+		guard
+			let item = (extensionContext?.inputItems[0] as? NSExtensionItem)?.attachments?.first
+		else {
 			presentError(message: "The shared item does not contain an attachment")
 			return
 		}
@@ -40,8 +42,10 @@ final class ShareViewController: NSViewController {
 			let shareUrl = "\(url.lastPathComponent)"
 			let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
 
-			guard let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl) else {
-				self.presentError(message: "Could not share video with the main app")
+			guard
+				let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl)
+			else {
+				self.presentError(message: "Could not share the video with the main app")
 				return
 			}
 
@@ -53,10 +57,17 @@ final class ShareViewController: NSViewController {
 				return
 			}
 
-			guard let gifski = self.createMainAppUrl(
-				queryItems: [URLQueryItem(name: "path", value: shareUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)]
-			) else {
-				self.presentError(message: "Could not share video with the main app")
+			guard
+				let gifski = self.createMainAppUrl(
+					queryItems: [
+						URLQueryItem(
+							name: "path",
+							value: shareUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+						)
+					]
+				)
+			else {
+				self.presentError(message: "Could not share the video with the main app")
 				return
 			}
 
@@ -70,7 +81,6 @@ final class ShareViewController: NSViewController {
 	private func presentError(message: String) {
 		errorLabel.isHidden = false
 		errorButtonOk.isHidden = false
-
 		errorLabel.stringValue = message
 	}
 
@@ -79,13 +89,12 @@ final class ShareViewController: NSViewController {
 		components.scheme = "gifski"
 		components.host = "shareExtension"
 		components.queryItems = queryItems
-
 		return components.url
 	}
 
-    // MARK: - Actions
+	// MARK: - Actions
 
-    @IBAction private func errorButtonOkClicked(_ sender: Any) {
-		self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-    }
+	@IBAction private func errorButtonOkClicked(_ sender: Any) {
+		extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+	}
 }
