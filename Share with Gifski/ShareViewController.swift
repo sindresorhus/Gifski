@@ -31,10 +31,19 @@ final class ShareViewController: NSViewController {
 
 			let shareUrl = "\(url.lastPathComponent)"
 			let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
-			let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl)
 
-			try? FileManager.default.removeItem(at: appGroupShareVideUrl!)
-			try! FileManager.default.copyItem(at: url, to: appGroupShareVideUrl!)
+			guard let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl) else {
+				self.openMainAppAndPresentError(message: "Could not share video with the main app")
+				return
+			}
+
+			try? FileManager.default.removeItem(at: appGroupShareVideUrl)
+			do {
+				try FileManager.default.copyItem(at: url, to: appGroupShareVideUrl)
+			} catch {
+				self.openMainAppAndPresentError(message: error.localizedDescription)
+				return
+			}
 
 			let gifski = URL(string: "gifski://shareExtension?path=\(shareUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)")!
 
