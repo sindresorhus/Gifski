@@ -1,7 +1,7 @@
 import Cocoa
 
 final class ShareViewController: NSViewController {
-	override var nibName: NSNib.Name? { NSNib.Name("ShareViewController") }
+	override var nibName: NSNib.Name? { "ShareViewController" }
 
 	// swiftlint:disable:next prohibited_super_call
 	override func loadView() {
