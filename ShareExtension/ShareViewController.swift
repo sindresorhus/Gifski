@@ -7,7 +7,7 @@ final class ShareViewController: NSViewController {
 		super.loadView()
 
 		guard let item = (self.extensionContext?.inputItems[0] as? NSExtensionItem)?.attachments?.first else {
-			openMainAppAndPresentError(message: "Shared item does not contain an attachment")
+			openMainAppAndPresentError(message: "The shared item does not contain an attachment")
 			return
 		}
 
@@ -19,7 +19,7 @@ final class ShareViewController: NSViewController {
 		} else if item.hasItemConformingToTypeIdentifier("com.apple.quicktime-movie") {
 			typeIdentifier = "com.apple.quicktime-movie"
 		} else {
-			openMainAppAndPresentError(message: "Shared item is not in a valid video format")
+			openMainAppAndPresentError(message: "The shared item is not in a valid video format")
 			return
 		}
 
