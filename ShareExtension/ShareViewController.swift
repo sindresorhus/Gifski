@@ -17,7 +17,7 @@ final class ShareViewController: NSViewController {
 		guard
 			let item = (extensionContext?.inputItems[0] as? NSExtensionItem)?.attachments?.first
 		else {
-			presentError(message: "The shared item does not contain an attachment")
+			presentError(message: "The shared item does not contain an attachment.")
 			return
 		}
 
@@ -29,7 +29,7 @@ final class ShareViewController: NSViewController {
 		} else if item.hasItemConformingToTypeIdentifier("com.apple.quicktime-movie") {
 			typeIdentifier = "com.apple.quicktime-movie"
 		} else {
-			presentError(message: "The shared item is not in a valid video format")
+			presentError(message: "The shared item is not in a supported video format.")
 			return
 		}
 
@@ -39,19 +39,19 @@ final class ShareViewController: NSViewController {
 				return
 			}
 
-			let shareUrl = "\(url.lastPathComponent)"
-			let appIdentifierPrefix = Bundle.main.infoDictionary!["AppIdentifierPrefix"] as! String
+			let shareUrl = url.lastPathComponent
 
 			guard
-				let appGroupShareVideUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(appIdentifierPrefix).gifski_video_share_group")?.appendingPathComponent(shareUrl)
+				let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.videoShareGroupIdentifier)?.appendingPathComponent(shareUrl)
 			else {
-				self.presentError(message: "Could not share the video with the main app")
+				self.presentError(message: "Could not share the video with the main app.")
 				return
 			}
 
-			try? FileManager.default.removeItem(at: appGroupShareVideUrl)
+			try? FileManager.default.removeItem(at: appGroupShareVideoUrl)
+
 			do {
-				try FileManager.default.copyItem(at: url, to: appGroupShareVideUrl)
+				try FileManager.default.copyItem(at: url, to: appGroupShareVideoUrl)
 			} catch {
 				self.presentError(message: error.localizedDescription)
 				return
@@ -60,14 +60,11 @@ final class ShareViewController: NSViewController {
 			guard
 				let gifski = self.createMainAppUrl(
 					queryItems: [
-						URLQueryItem(
-							name: "path",
-							value: shareUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-						)
+						URLQueryItem(name: "path", value: shareUrl)
 					]
 				)
 			else {
-				self.presentError(message: "Could not share the video with the main app")
+				self.presentError(message: "Could not share the video with the main app.")
 				return
 			}
 
@@ -84,7 +81,7 @@ final class ShareViewController: NSViewController {
 		errorLabel.stringValue = message
 	}
 
-	private func createMainAppUrl(queryItems: [URLQueryItem] = []) -> URL? {
+	private func createMainAppUrl(queryItems: [URLQueryItem]) -> URL? {
 		var components = URLComponents()
 		components.scheme = "gifski"
 		components.host = "shareExtension"

@@ -45,6 +45,8 @@
 		E3D72324229B9A7500989BDF /* CircularProgress+CheckmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D72323229B9A7500989BDF /* CircularProgress+CheckmarkView.swift */; };
 		E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */; };
 		E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */; };
+		E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FC365B2377FA0000CF7C59 /* Shared.swift */; };
+		E3FC365E2377FA9F00CF7C59 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FC365B2377FA0000CF7C59 /* Shared.swift */; };
 		E3FEF31922C52819003AEFED /* ConversionCompletedViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3FEF31422C52819003AEFED /* ConversionCompletedViewController.xib */; };
 /* End PBXBuildFile section */
 
@@ -147,6 +149,7 @@
 		E3D72323229B9A7500989BDF /* CircularProgress+CheckmarkView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+CheckmarkView.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = EditVideoViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = EditVideoViewController.xib; sourceTree = "<group>"; };
+		E3FC365B2377FA0000CF7C59 /* Shared.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; name = Shared.swift; path = Gifski/Shared.swift; sourceTree = SOURCE_ROOT; usesTabs = 1; };
 		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; usesTabs = 1; };
 		E3FD61A4201BD2DA0087160A /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = "<group>"; };
 		E3FEF31422C52819003AEFED /* ConversionCompletedViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConversionCompletedViewController.xib; sourceTree = "<group>"; };
@@ -255,6 +258,7 @@
 			children = (
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
 				E3A6BD102245345C00F62256 /* Constants.swift */,
+				E3FC365B2377FA0000CF7C59 /* Shared.swift */,
 				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
 				858380E522BFD0E30086BC98 /* VideoDropViewController.swift */,
 				E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */,
@@ -468,6 +472,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E3FC365E2377FA9F00CF7C59 /* Shared.swift in Sources */,
 				0E7925202329BDBE00058B94 /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -494,6 +499,7 @@
 				E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */,
 				E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */,
 				6D86841721FD283B0044F6FE /* ConversionCompletedViewController.swift in Sources */,
+				E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */,
 				B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */,
 				858380E622BFD0E30086BC98 /* VideoDropViewController.swift in Sources */,
 				8548806E22B82D1400E97401 /* MenuPopUpButton.swift in Sources */,

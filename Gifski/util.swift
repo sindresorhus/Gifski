@@ -2358,19 +2358,22 @@ extension URL {
 	func setMetadata<T>(key: MetadataKey, value: T) throws {
 		try attributes.set("com.apple.metadata:\(key.attributeKey)", value: value)
 	}
+}
 
-	var queryParameters: [String: String] {
-		guard
-			let components = URLComponents(url: self, resolvingAgainstBaseURL: true),
-			let queryItems = components.queryItems
-		else {
-			return [:]
-		}
-
-		return queryItems.reduce(into: [String: String]()) { result, item in
+extension URLComponents {
+	var queryDictionary: [String: String] {
+		queryItems?.reduce(into: [String: String]()) { result, item in
 			result[item.name] = item.value
-		}
+		} ?? [:]
 	}
+}
+
+extension URL {
+	var components: URLComponents? {
+		URLComponents(url: self, resolvingAgainstBaseURL: true)
+	}
+
+	var queryDictionary: [String: String] { components?.queryDictionary ?? [:] }
 }
 
 extension NSViewController {
