@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSExtension</key>
@@ -30,14 +30,14 @@
 		<dict>
 			<key>NSExtensionActivationRule</key>
 			<string>SUBQUERY (
-    			extensionItems,
-    			$extensionItem,
+				extensionItems,
+				$extensionItem,
 				SUBQUERY (
 					$extensionItem.attachments,
 					$attachment,
-					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO &quot;public.mpeg-4&quot; ||
-					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO &quot;com.apple.m4v-video&quot; ||
-					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO &quot;com.apple.quicktime-movie&quot;
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.mpeg-4" ||
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.apple.m4v-video" ||
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.apple.quicktime-movie"
 				).@count == $extensionItem.attachments.@count
 			).@count == 1</string>
 		</dict>
