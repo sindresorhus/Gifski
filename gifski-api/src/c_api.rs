@@ -29,7 +29,7 @@ use std::fs::File;
 use std::ffi::CStr;
 use std::path::{PathBuf, Path};
 mod c_api_error;
-use c_api_error::*;
+use self::c_api_error::*;
 
 /// Settings for creating a new encoder instance. See `gifski_new`
 #[repr(C)]
@@ -56,9 +56,13 @@ pub struct ARGB8 {
     pub b: u8,
 }
 
-/// Opaque handle used in methods. Note that the handle pointer is actually `Arc<GifskiHandle>`,
+/// Opaque handle used in methods. Note that the handle pointer is actually `Arc<GifskiHandleInternal>`,
 /// but `Arc::into_raw` is nice enough to point past the counter.
+#[repr(C)]
 pub struct GifskiHandle {
+    _opaque: usize,
+}
+pub struct GifskiHandleInternal {
     writer: Mutex<Option<Writer>>,
     collector: Mutex<Option<Collector>>,
     progress: Mutex<Option<ProgressCallback>>,
@@ -84,12 +88,12 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
     };
 
     if let Ok((collector, writer)) = new(s) {
-        Arc::into_raw(Arc::new(GifskiHandle {
+        Arc::into_raw(Arc::new(GifskiHandleInternal {
             writer: Mutex::new(Some(writer)),
             write_thread: Mutex::new((false, None)),
             collector: Mutex::new(Some(collector)),
             progress: Mutex::new(None),
-        }))
+        })) as *const GifskiHandle
     } else {
         ptr::null_mut()
     }
@@ -105,7 +109,7 @@ pub unsafe extern "C" fn gifski_add_frame_png_file(handle: *const GifskiHandle, 
     if file_path.is_null() {
         return GifskiError::NULL_ARG;
     }
-    let g = match handle.as_ref() {
+    let g = match borrow(handle) {
         Some(g) => g,
         None => return GifskiError::NULL_ARG,
     };
@@ -141,7 +145,7 @@ pub unsafe extern "C" fn gifski_add_frame_rgba(handle: *const GifskiHandle, inde
 }
 
 fn add_frame_rgba(handle: *const GifskiHandle, index: u32, frame: ImgVec<RGBA8>, delay: u16) -> GifskiError {
-    let g = match unsafe { handle.as_ref() } {
+    let g = match unsafe { borrow(handle) } {
         Some(g) => g,
         None => return GifskiError::NULL_ARG,
     };
@@ -195,7 +199,7 @@ pub unsafe extern "C" fn gifski_add_frame_rgb(handle: *const GifskiHandle, index
 /// Optional. Allows deprecated `gifski_write` to finish.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_end_adding_frames(handle: *const GifskiHandle) -> GifskiError {
-    let g = match handle.as_ref() {
+    let g = match borrow(handle) {
         Some(g) => g,
         None => return GifskiError::NULL_ARG,
     };
@@ -218,8 +222,8 @@ pub unsafe extern "C" fn gifski_end_adding_frames(handle: *const GifskiHandle) -
 ///
 /// Must be called before `gifski_set_file_output()` to take effect.
 #[no_mangle]
-pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandle, cb: unsafe fn(*mut c_void) -> c_int, user_data: *mut c_void) {
-    let g = match handle.as_ref() {
+pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandle, cb: unsafe extern fn(*mut c_void) -> c_int, user_data: *mut c_void) {
+    let g = match borrow(handle) {
         Some(g) => g,
         None => return,
     };
@@ -236,7 +240,7 @@ pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandl
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_write(handle: *const GifskiHandle, destination: *const c_char) -> GifskiError {
-    let g = match handle.as_ref() {
+    let g = match borrow(handle) {
         Some(g) => g,
         None => return GifskiError::NULL_ARG,
     };
@@ -277,7 +281,7 @@ pub unsafe extern "C" fn gifski_set_file_output(handle: *const GifskiHandle, des
 }
 
 
-fn prepare_for_file_writing(g: &GifskiHandle, destination: *const c_char) -> Result<(File, PathBuf), GifskiError> {
+fn prepare_for_file_writing(g: &GifskiHandleInternal, destination: *const c_char) -> Result<(File, PathBuf), GifskiError> {
     if destination.is_null() {
         return Err(GifskiError::NULL_ARG);
     }
@@ -298,7 +302,7 @@ fn prepare_for_file_writing(g: &GifskiHandle, destination: *const c_char) -> Res
 }
 
 struct CallbackWriter {
-    cb: unsafe fn(usize, *const u8, *mut c_void) -> c_int,
+    cb: unsafe extern fn(usize, *const u8, *mut c_void) -> c_int,
     user_data: *mut c_void,
 }
 
@@ -334,7 +338,7 @@ impl io::Write for CallbackWriter {
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
-pub unsafe extern "C" fn gifski_set_write_callback(handle: *const GifskiHandle, cb: Option<unsafe fn(usize, *const u8, *mut c_void) -> c_int>, user_data: *mut c_void) -> GifskiError {
+pub unsafe extern "C" fn gifski_set_write_callback(handle: *const GifskiHandle, cb: Option<unsafe extern fn(usize, *const u8, *mut c_void) -> c_int>, user_data: *mut c_void) -> GifskiError {
     if handle.is_null() {
         return GifskiError::NULL_ARG;
     }
@@ -359,7 +363,7 @@ pub unsafe extern "C" fn gifski_set_write_callback(handle: *const GifskiHandle, 
 }
 
 
-fn gifski_write_sync_internal<W: Write + Send>(g: &GifskiHandle, file: W, path: Option<PathBuf>) -> GifskiError {
+fn gifski_write_sync_internal<W: Write + Send>(g: &GifskiHandleInternal, file: W, path: Option<PathBuf>) -> GifskiError {
     if let Some(writer) = g.writer.lock().unwrap().take() {
         let mut tmp;
         let mut progress: &mut dyn ProgressReporter = &mut NoProgress {};
@@ -383,8 +387,14 @@ fn gifski_write_sync_internal<W: Write + Send>(g: &GifskiHandle, file: W, path: 
     }
 }
 
+unsafe fn borrow<'a>(handle: *const GifskiHandle) -> Option<&'a GifskiHandleInternal> {
+    let g = handle as *const GifskiHandleInternal;
+    g.as_ref()
+}
+
 /// get refcount++ without dropping the handle
-unsafe fn retain<T>(arc_ptr: *const T) -> Arc<T> {
+unsafe fn retain(arc_ptr: *const GifskiHandle) -> Arc<GifskiHandleInternal> {
+    let arc_ptr = arc_ptr as *const GifskiHandleInternal;
     let tmp = Arc::from_raw(arc_ptr);
     let g = Arc::clone(&tmp);
     let _ = Arc::into_raw(tmp);
@@ -405,7 +415,7 @@ pub unsafe extern "C" fn gifski_finish(g: *const GifskiHandle) -> GifskiError {
     if g.is_null() {
         return GifskiError::NULL_ARG;
     }
-    let g = Arc::from_raw(g);
+    let g = Arc::from_raw(g as *const GifskiHandleInternal);
 
     // dropping of the collector (if any) completes writing
     *g.collector.lock().unwrap() = None;
@@ -429,7 +439,7 @@ fn c_cb() {
     })};
     assert!(!g.is_null());
     let mut called = false;
-    unsafe fn cb(_s: usize, _buf: *const u8, user_data: *mut c_void) -> c_int {
+    unsafe extern fn cb(_s: usize, _buf: *const u8, user_data: *mut c_void) -> c_int {
         let called = user_data as *mut bool;
         *called = true;
         0
@@ -452,7 +462,7 @@ fn cant_write_after_finish() {
     })};
     assert!(!g.is_null());
     let mut called = false;
-    unsafe fn cb(_s: usize, _buf: *const u8, user_data: *mut c_void) -> c_int {
+    unsafe extern fn cb(_s: usize, _buf: *const u8, user_data: *mut c_void) -> c_int {
         let called = user_data as *mut bool;
         *called = true;
         0
@@ -472,7 +482,7 @@ fn c_write_failure_propagated() {
         fast: false,
     })};
     assert!(!g.is_null());
-    unsafe fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
+    unsafe extern fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
         GifskiError::WRITE_ZERO as c_int
     }
     unsafe {
@@ -491,7 +501,7 @@ fn cant_write_twice() {
         fast: false,
     })};
     assert!(!g.is_null());
-    unsafe fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
+    unsafe extern fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
         GifskiError::WRITE_ZERO as c_int
     }
     unsafe {
@@ -516,7 +526,7 @@ fn c_incomplete() {
     unsafe {
         assert_eq!(GifskiError::NULL_ARG, gifski_add_frame_rgba(g, 0, 1, 1, ptr::null(), 5));
     }
-    fn cb(_: *mut c_void) -> c_int {
+    extern fn cb(_: *mut c_void) -> c_int {
         1
     }
     unsafe {
