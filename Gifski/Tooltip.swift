@@ -5,7 +5,7 @@ final class Tooltip: NSPopover {
 	private let showOnlyOnce: Bool
 
 	private var showKey: Defaults.Key<Int> {
-		return Defaults.Key<Int>("__Tooltip__\(identifier)", default: 0)
+		Defaults.Key<Int>("__Tooltip__\(identifier)", default: 0)
 	}
 
 	init(
@@ -20,7 +20,12 @@ final class Tooltip: NSPopover {
 		self.showOnlyOnce = showOnlyOnce
 		super.init()
 
-		setupContent(text: text, closeOnClick: closeOnClick, contentInsets: contentInsets, maxWidth: maxWidth)
+		setupContent(
+			text: text,
+			closeOnClick: closeOnClick,
+			contentInsets: contentInsets,
+			maxWidth: maxWidth
+		)
 	}
 
 	required init?(coder: NSCoder) {
@@ -28,11 +33,20 @@ final class Tooltip: NSPopover {
 		self.showOnlyOnce = false
 		super.init(coder: coder)
 
-		setupContent(text: "", closeOnClick: true, contentInsets: .zero, maxWidth: nil)
+		setupContent(
+			text: "",
+			closeOnClick: true,
+			contentInsets: .zero,
+			maxWidth: nil
+		)
 	}
 
 	func show(from positioningView: NSView, preferredEdge: NSRectEdge) {
-		show(relativeTo: positioningView.bounds, of: positioningView, preferredEdge: preferredEdge)
+		show(
+			relativeTo: positioningView.bounds,
+			of: positioningView,
+			preferredEdge: preferredEdge
+		)
 	}
 
 	override func show(
@@ -45,9 +59,14 @@ final class Tooltip: NSPopover {
 			return
 		}
 
-		if !showOnlyOnce || (showOnlyOnce && defaults[showKey] < 1) {
-			defaults[showKey] += 1
-			super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
+		if !showOnlyOnce || (showOnlyOnce && Defaults[showKey] < 1) {
+			Defaults[showKey] += 1
+
+			super.show(
+				relativeTo: positioningRect,
+				of: positioningView,
+				preferredEdge: preferredEdge
+			)
 		}
 	}
 
@@ -62,6 +81,7 @@ final class Tooltip: NSPopover {
 				self?.close()
 			}
 		}
+
 		behavior = closeOnClick ? .semitransient : .applicationDefined
 	}
 }

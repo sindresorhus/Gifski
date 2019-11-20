@@ -73,20 +73,12 @@ final class TimeRemainingEstimator {
 		}
 	}
 
-	private var finishedBuffering: Bool {
-		return secondsElapsed > bufferDuration
-	}
-
-	private var shouldShowEstimation: Bool {
-		return secondsRemaining > skipThreshold
-	}
-
-	private var secondsElapsed: TimeInterval {
-		return Date().timeIntervalSince(startTime)
-	}
+	private var finishedBuffering: Bool { secondsElapsed > bufferDuration }
+	private var shouldShowEstimation: Bool { secondsRemaining > skipThreshold }
+	private var secondsElapsed: TimeInterval { Date().timeIntervalSince(startTime) }
 
 	private var secondsRemaining: TimeInterval {
-		return (secondsElapsed / percentComplete) * (1 - percentComplete)
+		(secondsElapsed / percentComplete) * (1 - percentComplete)
 	}
 
 	private var label: Label

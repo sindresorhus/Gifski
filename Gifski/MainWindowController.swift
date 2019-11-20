@@ -6,7 +6,19 @@ final class MainWindowController: NSWindowController {
 	private let videoValidator = VideoValidator()
 
 	var isConverting: Bool {
-		return window?.contentViewController is ConversionViewController
+		window?.contentViewController is ConversionViewController
+	}
+
+	private func showWelcomeScreen() {
+		guard App.isFirstLaunch else {
+			return
+		}
+
+		NSAlert.showModal(
+			for: window,
+			message: "Welcome to Gifski!",
+			informativeText: "If you have any feedback, bug reports, or feature requests, kindly use the “Send Feedback” button in the “Help” menu. We will respond to all submissions and reported issues will be dealt with swiftly.\n\nPlease note that it is preferable that you submit a bug report through the feedback button rather than as an App Store review since the App Store will not allow us to contact you for more information regarding the bug."
+		)
 	}
 
 	convenience init() {
@@ -31,10 +43,13 @@ final class MainWindowController: NSWindowController {
 			$0.isRestorable = false
 			$0.makeVibrant()
 		}
-		window.makeKeyAndOrderFront(nil)
+
 		NSApp.activate(ignoringOtherApps: false)
+		window.makeKeyAndOrderFront(nil)
 
 		DockProgress.style = .circle(radius: 55, color: .themeColor)
+
+		showWelcomeScreen()
 	}
 
 	@objc
@@ -52,7 +67,10 @@ final class MainWindowController: NSWindowController {
 	}
 
 	func convert(_ inputUrl: URL) {
-		guard !isConverting, case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: window) else {
+		guard
+			!isConverting,
+			case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: window)
+		else {
 			return
 		}
 

@@ -8,9 +8,5 @@
 	<array>
 		<string>$(TeamIdentifierPrefix)gifski_video_share_group</string>
 	</array>
-	<key>com.apple.security.files.user-selected.read-write</key>
-	<true/>
-	<key>com.apple.security.network.client</key>
-	<true/>
 </dict>
 </plist>

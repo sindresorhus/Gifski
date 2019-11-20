@@ -3,10 +3,13 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0E7925202329BDBE00058B94 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareViewController.swift */; };
+		0E7925232329BDBE00058B94 /* ShareViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0E7925212329BDBE00058B94 /* ShareViewController.xib */; };
+		0E7925282329BDBE00058B94 /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6D86841721FD283B0044F6FE /* ConversionCompletedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */; };
 		6D86841821FD283B0044F6FE /* DraggableFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D86841621FD283B0044F6FE /* DraggableFile.swift */; };
 		8548806522B78E8300E97401 /* IntTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806422B78E8300E97401 /* IntTextField.swift */; };
@@ -22,6 +25,8 @@
 		B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
+		D957BCDE234941C200A9A9F9 /* CheckerboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */; };
+		E3030388233785C100B8ED1F /* CustomButton+Util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3030387233785C100B8ED1F /* CustomButton+Util.swift */; };
 		E30557F0207E521F003401A1 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30557EF207E521F003401A1 /* Defaults.swift */; };
 		E317FF132057E24700A80A18 /* CircularProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF122057E24700A80A18 /* CircularProgress.swift */; };
 		E317FF1C20583E9800A80A18 /* DockProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = E317FF1B20583E9800A80A18 /* DockProgress.swift */; };
@@ -40,10 +45,19 @@
 		E3D72324229B9A7500989BDF /* CircularProgress+CheckmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D72323229B9A7500989BDF /* CircularProgress+CheckmarkView.swift */; };
 		E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */; };
 		E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */; };
+		E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FC365B2377FA0000CF7C59 /* Shared.swift */; };
+		E3FC365E2377FA9F00CF7C59 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FC365B2377FA0000CF7C59 /* Shared.swift */; };
 		E3FEF31922C52819003AEFED /* ConversionCompletedViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3FEF31422C52819003AEFED /* ConversionCompletedViewController.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0E7925262329BDBE00058B94 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E3AE627B1E5CD2F300035A2F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0E79251A2329BDBE00058B94;
+			remoteInfo = ShareExtension;
+		};
 		E3807B5A22BE315A00388F50 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */;
@@ -68,6 +82,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		0E7925292329BDBE00058B94 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0E7925282329BDBE00058B94 /* ShareExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E34798D21F882FB3003F9142 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -81,6 +106,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0E79251B2329BDBE00058B94 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0E79251F2329BDBE00058B94 /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
+		0E7925222329BDBE00058B94 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ShareViewController.xib; sourceTree = "<group>"; };
+		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0E7925252329BDBE00058B94 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
 		6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ConversionCompletedViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		6D86841621FD283B0044F6FE /* DraggableFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = DraggableFile.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -97,6 +127,8 @@
 		B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+Util.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
+		D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CheckerboardView.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E3030387233785C100B8ED1F /* CustomButton+Util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CustomButton+Util.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		E30557EF207E521F003401A1 /* Defaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Defaults.swift; sourceTree = "<group>"; };
 		E317FF122057E24700A80A18 /* CircularProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgress.swift; sourceTree = "<group>"; };
 		E317FF1B20583E9800A80A18 /* DockProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DockProgress.swift; sourceTree = "<group>"; };
@@ -117,12 +149,20 @@
 		E3D72323229B9A7500989BDF /* CircularProgress+CheckmarkView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = "CircularProgress+CheckmarkView.swift"; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = EditVideoViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = EditVideoViewController.xib; sourceTree = "<group>"; };
+		E3FC365B2377FA0000CF7C59 /* Shared.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; name = Shared.swift; path = Gifski/Shared.swift; sourceTree = SOURCE_ROOT; usesTabs = 1; };
 		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; usesTabs = 1; };
 		E3FD61A4201BD2DA0087160A /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = "<group>"; };
 		E3FEF31422C52819003AEFED /* ConversionCompletedViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConversionCompletedViewController.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		0E7925182329BDBE00058B94 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E3AE62801E5CD2F300035A2F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -136,6 +176,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0E79251C2329BDBE00058B94 /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				0E79251F2329BDBE00058B94 /* ShareViewController.swift */,
+				0E7925212329BDBE00058B94 /* ShareViewController.xib */,
+				0E7925242329BDBE00058B94 /* Info.plist */,
+				0E7925252329BDBE00058B94 /* ShareExtension.entitlements */,
+			);
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
 		5A7524AE20D085FB00F12C99 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -164,6 +215,8 @@
 				B576D24F22294F9900A9B75C /* CircularProgress+Util.swift */,
 				E317FF1B20583E9800A80A18 /* DockProgress.swift */,
 				E30557EF207E521F003401A1 /* Defaults.swift */,
+				E3A940112182DCE5006981D5 /* CustomButton.swift */,
+				E3030387233785C100B8ED1F /* CustomButton+Util.swift */,
 			);
 			path = Vendor;
 			sourceTree = "<group>";
@@ -183,6 +236,7 @@
 			isa = PBXGroup;
 			children = (
 				E3AE62851E5CD2F300035A2F /* Gifski */,
+				0E79251C2329BDBE00058B94 /* ShareExtension */,
 				E3AE62841E5CD2F300035A2F /* Products */,
 				E317EE121F88305800359C57 /* Frameworks */,
 				5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */,
@@ -194,6 +248,7 @@
 			isa = PBXGroup;
 			children = (
 				E3AE62831E5CD2F300035A2F /* Gifski.app */,
+				0E79251B2329BDBE00058B94 /* ShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -203,6 +258,7 @@
 			children = (
 				E3AE62861E5CD2F300035A2F /* AppDelegate.swift */,
 				E3A6BD102245345C00F62256 /* Constants.swift */,
+				E3FC365B2377FA0000CF7C59 /* Shared.swift */,
 				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
 				858380E522BFD0E30086BC98 /* VideoDropViewController.swift */,
 				E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */,
@@ -216,7 +272,7 @@
 				9F3340A222431CC3006EF9B5 /* TimeRemainingEstimator.swift */,
 				E339F010203820ED003B78FB /* Gifski.swift */,
 				C2040B8820435871004EE259 /* GifskiWrapper.swift */,
-				E3A940112182DCE5006981D5 /* CustomButton.swift */,
+				D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */,
 				8588EB0C22A424B800030A59 /* ResizableDimensions.swift */,
 				8548806422B78E8300E97401 /* IntTextField.swift */,
 				8548806D22B82D1300E97401 /* MenuPopUpButton.swift */,
@@ -235,6 +291,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		0E79251A2329BDBE00058B94 /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0E7925302329BDBE00058B94 /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				0E7925172329BDBE00058B94 /* Sources */,
+				0E7925182329BDBE00058B94 /* Frameworks */,
+				0E7925192329BDBE00058B94 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareExtension;
+			productName = ShareExtension;
+			productReference = 0E79251B2329BDBE00058B94 /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		E3AE62821E5CD2F300035A2F /* Gifski */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E3AE62901E5CD2F300035A2F /* Build configuration list for PBXNativeTarget "Gifski" */;
@@ -245,10 +318,12 @@
 				E3AE62811E5CD2F300035A2F /* Resources */,
 				E34798D21F882FB3003F9142 /* Embed Frameworks */,
 				E3A9400C2182D718006981D5 /* Crashlytics */,
+				0E7925292329BDBE00058B94 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0E7925272329BDBE00058B94 /* PBXTargetDependency */,
 			);
 			name = Gifski;
 			productName = "HEIC Converter";
@@ -261,10 +336,13 @@
 		E3AE627B1E5CD2F300035A2F /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 0820;
+				LastSwiftUpdateCheck = 1100;
 				LastUpgradeCheck = 0930;
 				ORGANIZATIONNAME = "Sindre Sorhus";
 				TargetAttributes = {
+					0E79251A2329BDBE00058B94 = {
+						CreatedOnToolsVersion = 11.0;
+					};
 					E3AE62821E5CD2F300035A2F = {
 						CreatedOnToolsVersion = 8.2.1;
 						LastSwiftMigration = 1020;
@@ -280,7 +358,7 @@
 				};
 			};
 			buildConfigurationList = E3AE627E1E5CD2F300035A2F /* Build configuration list for PBXProject "Gifski" */;
-			compatibilityVersion = "Xcode 10.0";
+			compatibilityVersion = "Xcode 11.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -299,6 +377,7 @@
 			projectRoot = "";
 			targets = (
 				E3AE62821E5CD2F300035A2F /* Gifski */,
+				0E79251A2329BDBE00058B94 /* ShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -328,6 +407,14 @@
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0E7925192329BDBE00058B94 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0E7925232329BDBE00058B94 /* ShareViewController.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E3AE62811E5CD2F300035A2F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -381,6 +468,15 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0E7925172329BDBE00058B94 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E3FC365E2377FA9F00CF7C59 /* Shared.swift in Sources */,
+				0E7925202329BDBE00058B94 /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E3AE627F1E5CD2F300035A2F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -394,13 +490,16 @@
 				E3A6BD112245345C00F62256 /* Constants.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
 				8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */,
+				D957BCDE234941C200A9A9F9 /* CheckerboardView.swift in Sources */,
 				858380EA22BFD38C0086BC98 /* ExtendedAttributes.swift in Sources */,
+				E3030388233785C100B8ED1F /* CustomButton+Util.swift in Sources */,
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
 				85BF910922F3279300AD3FF6 /* TrimmingAVPlayerViewController.swift in Sources */,
 				8548806522B78E8300E97401 /* IntTextField.swift in Sources */,
 				E3A940122182DCE5006981D5 /* CustomButton.swift in Sources */,
 				E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */,
 				6D86841721FD283B0044F6FE /* ConversionCompletedViewController.swift in Sources */,
+				E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */,
 				B576D25422294F9900A9B75C /* CircularProgress+Util.swift in Sources */,
 				858380E622BFD0E30086BC98 /* VideoDropViewController.swift in Sources */,
 				8548806E22B82D1400E97401 /* MenuPopUpButton.swift in Sources */,
@@ -416,7 +515,24 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		0E7925272329BDBE00058B94 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0E79251A2329BDBE00058B94 /* ShareExtension */;
+			targetProxy = 0E7925262329BDBE00058B94 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXVariantGroup section */
+		0E7925212329BDBE00058B94 /* ShareViewController.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				0E7925222329BDBE00058B94 /* Base */,
+			);
+			name = ShareViewController.xib;
+			sourceTree = "<group>";
+			usesTabs = 1;
+		};
 		E3AE628A1E5CD2F300035A2F /* MainMenu.xib */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -428,6 +544,67 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		0E79252A2329BDBE00058B94 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 26;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 2.3.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		0E79252B2329BDBE00058B94 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 26;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 2.3.0;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		E3AE628E1E5CD2F300035A2F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -483,6 +660,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				VALID_ARCHS = x86_64;
 			};
 			name = Debug;
@@ -534,6 +712,7 @@
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
 				VALID_ARCHS = x86_64;
 			};
 			name = Release;
@@ -541,12 +720,14 @@
 		E3AE62911E5CD2F300035A2F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Gifski/Gifski.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -562,8 +743,9 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/opt/gcc/lib/gcc/8,
+					/usr/local/opt/gcc/lib/gcc/9,
 				);
+				MARKETING_VERSION = 2.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -578,12 +760,14 @@
 		E3AE62921E5CD2F300035A2F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Gifski/Gifski.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -599,8 +783,9 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/opt/gcc/lib/gcc/8,
+					/usr/local/opt/gcc/lib/gcc/9,
 				);
+				MARKETING_VERSION = 2.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -613,6 +798,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0E7925302329BDBE00058B94 /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0E79252A2329BDBE00058B94 /* Debug */,
+				0E79252B2329BDBE00058B94 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E3AE627E1E5CD2F300035A2F /* Build configuration list for PBXProject "Gifski" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

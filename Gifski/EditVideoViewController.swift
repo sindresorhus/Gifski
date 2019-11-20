@@ -21,6 +21,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
+	@IBOutlet private var loopCheckbox: NSButton!
 
 	@IBOutlet private var widthTextField: IntTextField!
 	@IBOutlet private var heightTextField: IntTextField!
@@ -38,9 +39,7 @@ final class EditVideoViewController: NSViewController {
 	private let formatter = ByteCountFormatter()
 	private var playerViewController: TrimmingAVPlayerViewController!
 
-	private var timeRange: ClosedRange<Double>? {
-		return playerViewController?.timeRange
-	}
+	private var timeRange: ClosedRange<Double>? { playerViewController?.timeRange }
 
 	private let tooltip = Tooltip(
 		identifier: "savePanelArrowKeys",
@@ -49,7 +48,11 @@ final class EditVideoViewController: NSViewController {
 		maxWidth: 300
 	)
 
-	convenience init(inputUrl: URL, asset: AVURLAsset, videoMetadata: AVURLAsset.VideoMetadata) {
+	convenience init(
+		inputUrl: URL,
+		asset: AVURLAsset,
+		videoMetadata: AVURLAsset.VideoMetadata
+	) {
 		self.init()
 
 		self.inputUrl = inputUrl
@@ -61,9 +64,10 @@ final class EditVideoViewController: NSViewController {
 		let conversion = Gifski.Conversion(
 			video: inputUrl,
 			timeRange: timeRange,
-			quality: defaults[.outputQuality],
+			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
-			frameRate: frameRateSlider.integerValue
+			frameRate: frameRateSlider.integerValue,
+			loopGif: Defaults[.loopGif]
 		)
 
 		let convert = ConversionViewController(conversion: conversion)
@@ -90,13 +94,10 @@ final class EditVideoViewController: NSViewController {
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
-		dimensionsTypeDropdown.nextKeyView = frameRateSlider
-		widthTextField.nextKeyView = heightTextField
-		heightTextField.nextKeyView = dimensionsTypeDropdown
-		qualitySlider.nextKeyView = cancelButton
+		view.window?.makeFirstResponder(playerViewController.playerView)
+		setUpTabOrder()
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
-		predefinedSizesDropdown.focus()
 	}
 
 	private func setUpDimensions() {
@@ -240,7 +241,7 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			defaults[.outputQuality] = self.qualitySlider.doubleValue
+			Defaults[.outputQuality] = self.qualitySlider.doubleValue
 			self.estimateFileSize()
 		}
 
@@ -248,7 +249,7 @@ final class EditVideoViewController: NSViewController {
 		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
 		frameRateSlider.triggerAction()
 
-		qualitySlider.doubleValue = defaults[.outputQuality]
+		qualitySlider.doubleValue = Defaults[.outputQuality]
 		qualitySlider.triggerAction()
 	}
 
@@ -296,6 +297,20 @@ final class EditVideoViewController: NSViewController {
 		add(childController: playerViewController, to: playerViewWrapper)
 	}
 
+	private func setUpTabOrder() {
+		if let button = view.window?.firstResponder as? NSButton {
+			button.nextKeyView = predefinedSizesDropdown
+		}
+
+		predefinedSizesDropdown.nextKeyView = widthTextField
+		widthTextField.nextKeyView = heightTextField
+		heightTextField.nextKeyView = dimensionsTypeDropdown
+		dimensionsTypeDropdown.nextKeyView = frameRateSlider
+		frameRateSlider.nextKeyView = qualitySlider
+		qualitySlider.nextKeyView = loopCheckbox
+		loopCheckbox.nextKeyView = cancelButton
+	}
+
 	private func updateTextFieldsMinMax() {
 		let widthMinMax = resizableDimensions.widthMinMax
 		let heightMinMax = resizableDimensions.heightMinMax
@@ -317,11 +332,12 @@ final class EditVideoViewController: NSViewController {
 				return videoMetadata.duration
 			}
 		}()
+
 		let frameCount = duration * frameRateSlider.doubleValue
 		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
 		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
-		estimatedSizeLabel.stringValue = "Estimated size: " + formatter.string(fromByteCount: Int64(fileSize))
+		estimatedSizeLabel.stringValue = "Estimated File Size: " + formatter.string(fromByteCount: Int64(fileSize))
 	}
 
 	private func updateDimensionsDisplay() {
@@ -331,10 +347,10 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func selectPredefinedSizeBasedOnCurrentDimensions() {
-		// First reset the state
+		// First reset the state.
 		predefinedSizesDropdown.selectItem(at: NSNotFound)
 
-		// Check if we can select predefined option that has the same dimensions settings
+		// Check if we can select predefined option that has the same dimensions settings.
 		if let index = predefinedSizes.firstIndex(where: { $0.resizableDimensions?.currentDimensions == resizableDimensions.currentDimensions }) {
 			predefinedSizesDropdown.selectItem(at: index)
 		} else {

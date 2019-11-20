@@ -10,8 +10,8 @@ struct Dimensions: Equatable, CustomStringConvertible {
 	let type: DimensionsType
 	let value: CGSize
 
-	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> Dimensions {
-		return Dimensions(type: type, value: value.rounded(rule))
+	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> Self {
+		Self(type: type, value: value.rounded(rule))
 	}
 
 	var description: String {
@@ -25,13 +25,13 @@ struct Dimensions: Equatable, CustomStringConvertible {
 }
 
 final class ResizableDimensions: Copyable {
-	/// Minimum scaling, 1.0 being the original size
+	/// Minimum scaling, 1.0 being the original size.
 	let minimumScale: CGFloat
 
-	/// Maximum scaling, 1.0 being the original size
+	/// Maximum scaling, 1.0 being the original size.
 	let maximumScale: CGFloat
 
-	/// Width bounds for currentDimensions
+	/// Width bounds for `currentDimensions`.
 	var widthMinMax: ClosedRange<CGFloat> {
 		let multiplier = self.multiplier(for: currentDimensions.type)
 		let min = (minimumScale * multiplier.width).rounded()
@@ -39,7 +39,7 @@ final class ResizableDimensions: Copyable {
 		return min...max
 	}
 
-	/// Height bounds for currentDimensions
+	/// Height bounds for `currentDimensions`.
 	var heightMinMax: ClosedRange<CGFloat> {
 		let multiplier = self.multiplier(for: currentDimensions.type)
 		let min = (minimumScale * multiplier.height).rounded()
@@ -51,7 +51,11 @@ final class ResizableDimensions: Copyable {
 	private let originalDimensions: Dimensions
 	private var currentScale: CGFloat
 
-	init(dimensions: Dimensions, minimumScale: CGFloat? = nil, maximumScale: CGFloat? = nil) {
+	init(
+		dimensions: Dimensions,
+		minimumScale: CGFloat? = nil,
+		maximumScale: CGFloat? = nil
+	) {
 		self.originalDimensions = dimensions.rounded()
 		self.currentDimensions = self.originalDimensions
 		self.minimumScale = minimumScale ?? 0.01
@@ -71,10 +75,9 @@ final class ResizableDimensions: Copyable {
 		currentDimensions = calculateDimensions(for: dimensionsType)
 	}
 
-	func changed(dimensionsType: DimensionsType) -> ResizableDimensions {
+	func changed(dimensionsType: DimensionsType) -> Self {
 		let resizableDimensions = copy()
 		resizableDimensions.change(dimensionsType: dimensionsType)
-
 		return resizableDimensions
 	}
 
@@ -99,7 +102,6 @@ final class ResizableDimensions: Copyable {
 	func resized(to newDimensions: CGSize) -> ResizableDimensions {
 		let resizableDimensions = copy()
 		resizableDimensions.resize(to: newDimensions)
-
 		return resizableDimensions
 	}
 

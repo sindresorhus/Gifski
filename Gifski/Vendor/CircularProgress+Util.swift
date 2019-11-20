@@ -76,9 +76,7 @@ extension CALayer {
 	Can be useful for text layers
 	*/
 	var implicitAnimations: Bool {
-		get {
-			return actions == nil
-		}
+		get { actions == nil }
 		set {
 			if newValue {
 				actions = nil
@@ -137,7 +135,7 @@ extension CAShapeLayer {
 
 
 extension CATextLayer {
-	/// Initializer with better defaults
+	/// Initializer with better defaults.
 	convenience init(text: String, fontSize: Double? = nil, color: NSColor? = nil) {
 		self.init()
 		string = text
@@ -173,9 +171,7 @@ final class ProgressCircleShapeLayer: CAShapeLayer {
 	}
 
 	var progress: Double {
-		get {
-			return Double(strokeEnd)
-		}
+		get { Double(strokeEnd) }
 		set {
 			strokeEnd = CGFloat(newValue)
 		}
@@ -217,4 +213,24 @@ extension CABasicAnimation {
 		animation.timingFunction = CAMediaTimingFunction(name: .linear)
 		return animation
 	}
+}
+
+
+extension NSWindow {
+	/// Whether the window or its owning app is showing a modal or sheet.
+	/// This can be useful to disable any unintended interaction underneath it,
+	/// for example, drag and drop or mouse hover.
+	var isShowingModalOrSheet: Bool {
+		NSApp.modalWindow != nil ||
+		attachedSheet != nil
+	}
+}
+
+
+func assertMainThread(
+	function: StaticString = #function,
+	file: String = #file,
+	line: UInt = #line
+) {
+	assert(Thread.isMainThread, "\(function) in \(file.nsString.lastPathComponent):\(line) must run on the main thread!")
 }

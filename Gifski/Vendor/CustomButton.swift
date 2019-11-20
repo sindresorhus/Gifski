@@ -1,138 +1,13 @@
+// Vendored from: https://github.com/sindresorhus/CustomButton
 import Cocoa
 
-// TODO(sindresorhus): I plan to extract this into a reusable package when it's more mature.
-
-/**
-Convenience class for adding a tracking area to a view.
-
-```
-final class HoverView: NSView {
-	private lazy var trackingArea = TrackingArea(
-		for: self,
-		options: [
-			.mouseEnteredAndExited,
-			.activeInActiveApp
-		]
-	)
-
-	override func updateTrackingAreas() {
-		super.updateTrackingAreas()
-		trackingArea.update()
-	}
-}
-```
-*/
-final class TrackingArea {
-	private weak var view: NSView?
-
-	private let rect: CGRect
-	private let options: NSTrackingArea.Options
-	private var trackingArea: NSTrackingArea?
-
-	/**
-	- Parameters:
-		- view: The view to add tracking to.
-		- rect: The area inside the view to track. Defaults to the whole view (`view.bounds`).
-	*/
-	init(for view: NSView, rect: CGRect? = nil, options: NSTrackingArea.Options = []) {
-		self.view = view
-		self.rect = rect ?? view.bounds
-		self.options = options
-	}
-
-	/**
-	Updates the tracking area.
-	This should be called in your `NSView#updateTrackingAreas()` method.
-	*/
-	func update() {
-		if let oldTrackingArea = trackingArea {
-			view?.removeTrackingArea(oldTrackingArea)
-		}
-
-		let newTrackingArea = NSTrackingArea(
-			rect: rect,
-			options: [
-				.mouseEnteredAndExited,
-				.activeInActiveApp
-			],
-			owner: view,
-			userInfo: nil
-		)
-
-		view?.addTrackingArea(newTrackingArea)
-		trackingArea = newTrackingArea
-	}
-}
-
-final class AnimationDelegate: NSObject, CAAnimationDelegate {
-	var didStopHandler: ((Bool) -> Void)?
-
-	func animationDidStop(_ animation: CAAnimation, finished flag: Bool) {
-		didStopHandler?(flag)
-	}
-}
-
-extension CALayer {
-	// TODO: Find a way to use a strongly-typed KeyPath here.
-	// TODO: Accept NSColor instead of CGColor.
-	func animate(color: CGColor, keyPath: String, duration: Double) {
-		guard (value(forKey: keyPath) as! CGColor?) != color else {
-			return
-		}
-
-		let animation = CABasicAnimation(keyPath: keyPath)
-		animation.fromValue = value(forKey: keyPath)
-		animation.toValue = color
-		animation.duration = duration
-		animation.fillMode = .forwards
-		animation.isRemovedOnCompletion = false
-		add(animation, forKey: keyPath) { [weak self] _ in
-			self?.setValue(color, forKey: keyPath)
-		}
-	}
-
-	func add(_ animation: CAAnimation, forKey key: String?, completion: @escaping ((Bool) -> Void)) {
-		let animationDelegate = AnimationDelegate()
-		animationDelegate.didStopHandler = completion
-		animation.delegate = animationDelegate
-		add(animation, forKey: key)
-	}
-}
-
-extension CGPoint {
-	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> CGPoint {
-		return CGPoint(x: x.rounded(rule), y: y.rounded(rule))
-	}
-}
-
-extension CGRect {
-	func roundedOrigin(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> CGRect {
-		var rect = self
-		rect.origin = rect.origin.rounded(rule)
-		return rect
-	}
-}
-
-extension CGSize {
-	/// Returns a CGRect with `self` centered in it.
-	func centered(in rect: CGRect) -> CGRect {
-		return CGRect(
-			x: (rect.width - width) / 2,
-			y: (rect.height - height) / 2,
-			width: width,
-			height: height
-		)
-	}
-}
-
-// TODO: Add padding option
 @IBDesignable
 open class CustomButton: NSButton {
 	private let titleLayer = CATextLayer()
 	private var isMouseDown = false
 
 	static func circularButton(title: String, radius: Double, center: CGPoint) -> CustomButton {
-		return with(CustomButton()) {
+		with(CustomButton()) {
 			$0.title = title
 			$0.frame = CGRect(x: Double(center.x) - radius, y: Double(center.y) - radius, width: radius * 2, height: radius * 2)
 			$0.cornerRadius = radius
@@ -140,11 +15,9 @@ open class CustomButton: NSButton {
 		}
 	}
 
-	override open var wantsUpdateLayer: Bool {
-		return true
-	}
+	override open var wantsUpdateLayer: Bool { true }
 
-	@IBInspectable override open var title: String {
+	@IBInspectable override public var title: String {
 		didSet {
 			setTitle()
 		}
@@ -246,13 +119,13 @@ open class CustomButton: NSButton {
 		}
 	}
 
-	override open var font: NSFont? {
+	override public var font: NSFont? {
 		didSet {
 			setTitle()
 		}
 	}
 
-	override open var isEnabled: Bool {
+	override public var isEnabled: Bool {
 		didSet {
 			alphaValue = isEnabled ? 1 : 0.6
 		}
@@ -272,7 +145,7 @@ open class CustomButton: NSButton {
 		setup()
 	}
 
-	// Ensure the button doesn't draw its default contents
+	// Ensure the button doesn't draw its default contents.
 	override open func draw(_ dirtyRect: CGRect) {}
 	override open func drawFocusRingMask() {}
 
@@ -323,17 +196,15 @@ open class CustomButton: NSButton {
 	/// Gets or sets the color generation closure for the provided key path.
 	///
 	/// - Parameter keyPath: The key path that specifies the color related property.
-	subscript(colorGenerator keyPath: KeyPath<CustomButton, NSColor>) -> ColorGenerator? {
-		get {
-			return colorGenerators[keyPath]
-		}
+	public subscript(colorGenerator keyPath: KeyPath<CustomButton, NSColor>) -> ColorGenerator? {
+		get { colorGenerators[keyPath] }
 		set {
 			colorGenerators[keyPath] = newValue
 		}
 	}
 
 	private func color(for keyPath: KeyPath<CustomButton, NSColor>) -> NSColor {
-		return colorGenerators[keyPath]?() ?? self[keyPath: keyPath]
+		colorGenerators[keyPath]?() ?? self[keyPath: keyPath]
 	}
 
 	override open func updateLayer() {
@@ -381,7 +252,7 @@ open class CustomButton: NSButton {
 	}
 
 	override open func hitTest(_ point: CGPoint) -> NSView? {
-		return isEnabled ? super.hitTest(point) : nil
+		isEnabled ? super.hitTest(point) : nil
 	}
 
 	override open func mouseDown(with event: NSEvent) {
@@ -412,7 +283,5 @@ open class CustomButton: NSButton {
 }
 
 extension CustomButton: NSViewLayerContentScaleDelegate {
-	public func layer(_ layer: CALayer, shouldInheritContentsScale newScale: CGFloat, from window: NSWindow) -> Bool {
-		return true
-	}
+	public func layer(_ layer: CALayer, shouldInheritContentsScale newScale: CGFloat, from window: NSWindow) -> Bool { true }
 }

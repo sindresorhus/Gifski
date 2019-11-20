@@ -86,7 +86,7 @@ final class ConversionViewController: NSViewController {
 					let gifUrl = self.generateTempGifUrl(for: conversion.video)
 					try result.get().write(to: gifUrl, options: .atomic)
 					try? gifUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
-					defaults[.successfulConversionsCount] += 1
+					Defaults[.successfulConversionsCount] += 1
 
 					self.didComplete(conversion: conversion, gifUrl: gifUrl)
 				} catch Gifski.Error.cancelled {

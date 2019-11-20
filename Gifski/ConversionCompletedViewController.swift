@@ -36,25 +36,22 @@ final class ConversionCompletedViewController: NSViewController {
 		setUpUI()
 		setUpDropView()
 		setUp(url: gifUrl)
-	}
-
-	override func viewDidAppear() {
-		super.viewDidAppear()
-
-		// This is needed for Quick Look to work.
-		self.view.window?.makeFirstResponder(self)
-
-		if #available(macOS 10.14, *), defaults[.successfulConversionsCount] == 5 {
-			SKStoreReviewController.requestReview()
-		}
 
 		if #available(macOS 10.14, *), !NSApp.isActive || view.window?.isVisible == false {
 			let notification = UNMutableNotificationContent()
 			notification.title = "Conversion Completed"
 			notification.subtitle = conversion.video.filename
 			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
-			UNUserNotificationCenter.current().add(request)
+			// UNUserNotificationCenter.current().add(request)
+			(AppDelegate.shared.notificationCenter as? UNUserNotificationCenter)?.add(request)
 		}
+	}
+
+	override func viewDidAppear() {
+		super.viewDidAppear()
+
+		// This is needed for Quick Look to work.
+		view.window?.makeFirstResponder(self)
 
 		if wrapperView.isHidden {
 			draggableFile.layer?.animateScaleMove(fromScale: 3, fromY: view.frame.height + draggableFile.frame.size.height)
@@ -67,6 +64,10 @@ final class ConversionCompletedViewController: NSViewController {
 			}
 
 			self.tooltip.show(from: self.draggableFile, preferredEdge: .maxY)
+		}
+
+		if #available(macOS 10.14, *), Defaults[.successfulConversionsCount] == 5 {
+			SKStoreReviewController.requestReview()
 		}
 	}
 
@@ -100,10 +101,17 @@ final class ConversionCompletedViewController: NSViewController {
 			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
 		}
 
-		copyButton.onAction = { _ in
+		copyButton.onAction = { [weak self] _ in
 			let pasteboard = NSPasteboard.general
 			pasteboard.clearContents()
 			pasteboard.writeObjects([url as NSURL])
+
+			self?.copyButton.title = "Copied!"
+			self?.copyButton.isEnabled = false
+			delay(seconds: 1) {
+				self?.copyButton.title = "Copy"
+				self?.copyButton.isEnabled = true
+			}
 		}
 
 		saveAsButton.onAction = { [weak self] _ in
@@ -160,9 +168,7 @@ extension ConversionCompletedViewController: QLPreviewPanelDataSource {
 		panel.toggle()
 	}
 
-	override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
-		return true
-	}
+	override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool { true }
 
 	override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
 		panel.delegate = self
@@ -174,22 +180,20 @@ extension ConversionCompletedViewController: QLPreviewPanelDataSource {
 		panel.delegate = nil
 	}
 
-	func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
-		return 1
-	}
+	func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int { 1 }
 
 	func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
-		return gifUrl as NSURL
+		gifUrl as NSURL
 	}
 }
 
 extension ConversionCompletedViewController: QLPreviewPanelDelegate {
 	func previewPanel(_ panel: QLPreviewPanel!, sourceFrameOnScreenFor item: QLPreviewItem!) -> CGRect {
-		return draggableFile.imageView?.boundsInScreenCoordinates ?? .zero
+		draggableFile.imageView?.boundsInScreenCoordinates ?? .zero
 	}
 
 	func previewPanel(_ panel: QLPreviewPanel!, transitionImageFor item: QLPreviewItem!, contentRect: UnsafeMutablePointer<CGRect>!) -> Any! {
-		return draggableFile.image
+		draggableFile.image
 	}
 }
 

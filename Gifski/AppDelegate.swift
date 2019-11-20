@@ -1,4 +1,5 @@
 import Cocoa
+import UserNotifications
 import Fabric
 import Crashlytics
 
@@ -8,6 +9,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	var hasFinishedLaunching = false
 	var urlToConvertOnLaunch: URL!
 
+	// Possible workaround for crashing bug because of Crashlytics swizzling.
+	var notificationCenter: AnyObject? = {
+		if #available(macOS 10.14, *) {
+			return UNUserNotificationCenter.current()
+		} else {
+			return nil
+		}
+	}()
+
 	func applicationWillFinishLaunching(_ notification: Notification) {
 		UserDefaults.standard.register(defaults: [
 			"NSApplicationCrashOnExceptions": true,
@@ -16,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
+		if #available(macOS 10.14, *) {
+			(notificationCenter as? UNUserNotificationCenter)?.requestAuthorization { _, _ in }
+		}
+
 		#if !DEBUG
 			Fabric.with([Crashlytics.self])
 		#endif
@@ -30,8 +44,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		convertVideoUrl()
 	}
 
+	/// Returns `nil` if it should not continue.
+	func extractSharedVideoUrlIfAny(from url: URL) -> URL? {
+		guard url.host == "shareExtension" else {
+			return url
+		}
+
+		guard
+			let path = url.queryDictionary["path"],
+			let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.videoShareGroupIdentifier)?.appendingPathComponent(path)
+		else {
+			NSAlert.showModal(
+				for: mainWindowController.window,
+				message: "Could not retrieve the shared video."
+			)
+			return nil
+		}
+
+		return appGroupShareVideoUrl
+	}
+
 	func application(_ application: NSApplication, open urls: [URL]) {
-		guard urls.count == 1, let videoUrl = urls.first else {
+		guard
+			urls.count == 1,
+			let videoUrl = urls.first
+		else {
 			NSAlert.showModal(
 				for: mainWindowController.window,
 				message: "Gifski can only convert a single file at the time."
@@ -39,12 +76,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			return
 		}
 
-		urlToConvertOnLaunch = videoUrl
-		convertVideoUrl()
+		guard let videoUrl2 = extractSharedVideoUrlIfAny(from: videoUrl) else {
+			return
+		}
+
+		// TODO: Simplify this. Make a function that calls the input when the app finished launching, or right away if it already has.
+		if hasFinishedLaunching {
+			mainWindowController.convert(videoUrl2)
+		} else {
+			// This method is called before `applicationDidFinishLaunching`,
+			// so we buffer it up a video is "Open with" this app
+			urlToConvertOnLaunch = videoUrl2
+		}
 	}
 
-	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-		return true
+	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
+	func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+		if mainWindowController.isConverting {
+			let response = NSAlert.showModal(
+				for: mainWindowController.window,
+				message: "Do you want to continue converting?",
+				informativeText: "Gifski is currently converting a video. If you quit, the conversion will be cancelled.",
+				buttonTitles: [
+					"Continue",
+					"Quit"
+				]
+			)
+
+			if response == .alertFirstButtonReturn {
+				return .terminateCancel
+			}
+		}
+
+		return .terminateNow
 	}
 
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {

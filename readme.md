@@ -35,6 +35,12 @@ In the width/height input fields in the save panel, press the arrow up/down keys
 
 Gifski includes a [system service](https://www.computerworld.com/article/2476298/os-x-a-quick-guide-to-services-on-your-mac.html) that lets you quickly convert a video to GIF from the **Services** menu in any app that provides a compatible video file.
 
+### Share extension
+
+Gifski includes a share extension that lets you share videos to Gifski. Just select Gifski from the Share menu of any macOS app.
+
+> Tip: You can share a macOS screen recording with Gifski by clicking on the thumbnail that pops up once you are done recording and selecting “Share” from there.
+
 
 ## Screenshots
 
@@ -50,7 +56,7 @@ To build the app in Xcode, you need to have [Rust](https://www.rust-lang.org) an
 
 ```sh
 curl https://sh.rustup.rs -sSf | sh
-brew install gcc@8 SwiftLint
+brew install gcc@9 SwiftLint
 xcode-select --install
 ```
 

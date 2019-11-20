@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
@@ -49,12 +49,14 @@
 /* Begin PBXLegacyTarget section */
 		CA60FB6F97415B50F10B8D0B /* Cargo */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "build $(CARGO_FLAGS)";
+			buildArgumentsString = "build --features=gifsicle $(CARGO_FLAGS)";
 			buildConfigurationList = CA6045D4FC1B1EBBFEF4C27E /* Build configuration list for PBXLegacyTarget "Cargo" */;
 			buildPhases = (
 			);
 			buildToolPath = "$(HOME)/.cargo/bin/cargo";
 			buildWorkingDirectory = "$(SRCROOT)";
+			dependencies = (
+			);
 			name = Cargo;
 			passBuildSettingsInEnvironment = 1;
 			productName = Cargo;
@@ -113,7 +115,7 @@
 		CA6071C8BFD722D117092DB7 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1100;
 				TargetAttributes = {
 					CA6034DF35B8B3463979F9E1 = {
 						CreatedOnToolsVersion = 9.2;
@@ -134,7 +136,7 @@
 				};
 			};
 			buildConfigurationList = CA6045D4FC1B1EBBFEF4C27E /* Build configuration list for PBXLegacyTarget "Cargo" */;
-			compatibilityVersion = "Xcode 10.0";
+			compatibilityVersion = "Xcode 11.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -175,6 +177,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -240,6 +243,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;

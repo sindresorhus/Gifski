@@ -2,15 +2,12 @@ import AVKit
 
 /// VC containing AVPlayerView and also extending possibilities for trimming (view) customization.
 final class TrimmingAVPlayerViewController: NSViewController {
-	var playerView: TrimmingAVPlayerView {
-		return view as! TrimmingAVPlayerView
-	}
-
 	private(set) var timeRange: ClosedRange<Double>?
-
 	private let asset: AVURLAsset
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
+
+	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
 
 	/// The minimum duration the trimmer can be set to.
 	var minimumTrimDuration = 0.1 {
@@ -47,6 +44,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	override func viewDidAppear() {
 		super.viewDidAppear()
 
+		playerView.addCheckerboardView()
 		playerView.hideTrimButtons()
 		playerView.observeTrimmedTimeRange { [weak self] timeRange in
 			self?.timeRange = timeRange
@@ -134,4 +132,12 @@ final class TrimmingAVPlayerView: AVPlayerView {
 			.filter { ($0 as? NSButton)?.image == nil }
 			.forEach { $0.isHidden = true }
 	}
+
+	fileprivate func addCheckerboardView() {
+		let overlayView = CheckerboardView(frame: frame, clearRect: videoBounds)
+		contentOverlayView?.addSubview(overlayView)
+	}
+
+	/// Prevent user from dismissing trimming view
+	override func cancelOperation(_ sender: Any?) { }
 }

@@ -1,4 +1,4 @@
-import Foundation
+import Cocoa
 import AVFoundation
 import Crashlytics
 
@@ -32,17 +32,22 @@ final class Gifski {
 		let quality: Double
 		let dimensions: CGSize?
 		let frameRate: Int?
+		let loopGif: Bool
 
 		// TODO: With Swift 5.1 we can remove the manual `init` and have it synthesized.
 		/**
 		- Parameter frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
 		*/
-		init(video: URL, timeRange: ClosedRange<Double>? = nil, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil) {
+		/**
+		- Parameter loopGif: Whether output should loop infinitely or not.
+		*/
+		init(video: URL, timeRange: ClosedRange<Double>? = nil, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil, loopGif: Bool = true) {
 			self.video = video
 			self.timeRange = timeRange
 			self.quality = quality
 			self.dimensions = dimensions
 			self.frameRate = frameRate
+			self.loopGif = loopGif
 		}
 	}
 
@@ -55,7 +60,10 @@ final class Gifski {
 
 	- Parameter completionHandler: Guaranteed to be called on the main thread
 	*/
-	static func run(_ conversion: Conversion, completionHandler: ((Result<Data, Error>) -> Void)?) {
+	static func run(
+		_ conversion: Conversion,
+		completionHandler: ((Result<Data, Error>) -> Void)?
+	) {
 		var progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { (_ result: Result<Data, Error>) -> Void in
@@ -75,7 +83,7 @@ final class Gifski {
 			width: UInt32(conversion.dimensions?.width ?? 0),
 			height: UInt32(conversion.dimensions?.height ?? 0),
 			quality: UInt8(conversion.quality * 100),
-			once: false,
+			once: !conversion.loopGif,
 			fast: false
 		)
 
@@ -198,7 +206,17 @@ final class Gifski {
 				case .failure where result.isCancelled:
 					completionHandlerOnce(.failure(.cancelled))
 				case let .failure(error):
-					completionHandlerOnce(.failure(.generateFrameFailed(error)))
+					// TODO: Remove this when we've been able to track down the issue.
+					completionHandlerOnce(.failure(.cancelled))
+					DispatchQueue.main.async {
+						NSAlert.showModal(
+							message: "Gifski was unable generate frames from the video",
+							informativeText: "We have been trying to track down this issue for a long time, but we have been unable to reproduce it. It would be awesome if you could send an email to sindresorhus@gmail.com with the video or some information about the video file you tried to convert so we can fix this issue.",
+							detailText: "\(error)"
+						)
+					}
+
+					// completionHandlerOnce(.failure(.generateFrameFailed(error)))
 				}
 			}
 		}
