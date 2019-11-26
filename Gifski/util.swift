@@ -959,63 +959,6 @@ extension NSView {
 		view.center(inView: superview!)
 	}
 
-	/// A type which is used to map logical edges to its representing `NSView` layout anchors.
-	/// This type can be used for all AutoLayout functions.
-	struct ConstraintEdge {
-		enum Vertical {
-			case top
-			case bottom
-
-			func constraintKeyPath() -> KeyPath<NSView, NSLayoutYAxisAnchor> {
-				switch self {
-				case .top:
-					return \.topAnchor
-				case .bottom:
-					return \.bottomAnchor
-				}
-			}
-		}
-
-		enum Horizontal {
-			case left
-			case right
-
-			func constraintKeyPath() -> KeyPath<NSView, NSLayoutXAxisAnchor> {
-				switch self {
-				case .left:
-					return \.leftAnchor
-				case .right:
-					return \.rightAnchor
-				}
-			}
-		}
-	}
-
-	/// Sets constraints to match the given edges of this view and the given view.
-	///
-	/// - parameter verticalEdge: The vertical edge to match with the given view.
-	/// - parameter horizontalEdge: The horizontal edge to match with the given view.
-	/// - parameter padding: The constant for the constraint.
-	func constrainToEdges(verticalEdge: ConstraintEdge.Vertical? = nil, horizontalEdge: ConstraintEdge.Horizontal? = nil, view: NSView, padding: Double = 0) {
-		translatesAutoresizingMaskIntoConstraints = false
-
-		var constraints = [NSLayoutConstraint]()
-
-		if let verticalEdge = verticalEdge {
-			constraints.append(
-				self[keyPath: verticalEdge.constraintKeyPath()].constraint(equalTo: view[keyPath: verticalEdge.constraintKeyPath()], constant: CGFloat(padding))
-			)
-		}
-
-		if let horizontalEdge = horizontalEdge {
-			constraints.append(
-				self[keyPath: horizontalEdge.constraintKeyPath()].constraint(equalTo: view[keyPath: horizontalEdge.constraintKeyPath()], constant: CGFloat(padding))
-			)
-		}
-
-		NSLayoutConstraint.activate(constraints)
-	}
-
 	func constrainEdgesToSuperview(with insets: NSEdgeInsets = .zero) {
 		guard let superview = superview else {
 			assertionFailure("There is no superview for this view")
@@ -1038,6 +981,75 @@ extension NSView {
 			widthAnchor.constraint(equalToConstant: size.width),
 			heightAnchor.constraint(equalToConstant: size.height)
 		])
+	}
+}
+
+
+extension NSView {
+	/**
+	Used to map logical edges to its representing `NSView` layout anchors.
+	This type can be used for all auto-layout functions.
+	*/
+	struct ConstraintEdge {
+		enum Vertical {
+			case top
+			case bottom
+
+			fileprivate var constraintKeyPath: KeyPath<NSView, NSLayoutYAxisAnchor> {
+				switch self {
+				case .top:
+					return \.topAnchor
+				case .bottom:
+					return \.bottomAnchor
+				}
+			}
+		}
+
+		enum Horizontal {
+			case left
+			case right
+
+			fileprivate var constraintKeyPath: KeyPath<NSView, NSLayoutXAxisAnchor> {
+				switch self {
+				case .left:
+					return \.leftAnchor
+				case .right:
+					return \.rightAnchor
+				}
+			}
+		}
+	}
+
+	/**
+	Sets constraints to match the given edges of this view and the given view.
+
+	- parameter verticalEdge: The vertical edge to match with the given view.
+	- parameter horizontalEdge: The horizontal edge to match with the given view.
+	- parameter padding: The constant for the constraint.
+	*/
+	func constrainToEdges(
+		verticalEdge: ConstraintEdge.Vertical? = nil,
+		horizontalEdge: ConstraintEdge.Horizontal? = nil,
+		view: NSView,
+		padding: Double = 0
+	) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		var constraints = [NSLayoutConstraint]()
+
+		if let verticalEdge = verticalEdge {
+			constraints.append(
+				self[keyPath: verticalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: verticalEdge.constraintKeyPath], constant: CGFloat(padding))
+			)
+		}
+
+		if let horizontalEdge = horizontalEdge {
+			constraints.append(
+				self[keyPath: horizontalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: horizontalEdge.constraintKeyPath], constant: CGFloat(padding))
+			)
+		}
+
+		NSLayoutConstraint.activate(constraints)
 	}
 }
 
@@ -1945,16 +1957,24 @@ extension NSSharingService {
 	}
 }
 
+extension Double {
+	var cgFloat: CGFloat { CGFloat(self) }
+}
+
+extension CGFloat {
+	var double: Double { Double(self) }
+}
+
 extension CALayer {
-	func animateScaleMove(fromScale: CGFloat, fromX: CGFloat? = nil, fromY: CGFloat? = nil) {
-		let fromX = fromX == nil ? bounds.size.width / 2 : fromX!
-		let fromY = fromY == nil ? bounds.size.height / 2 : fromY!
+	func animateScaleMove(fromScale: Double, fromX: Double? = nil, fromY: Double? = nil) {
+		let fromX = fromX?.cgFloat ?? bounds.size.width / 2
+		let fromY = fromY?.cgFloat ?? bounds.size.height / 2
 
 		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
 
 		var tr = CATransform3DIdentity
 		tr = CATransform3DTranslate(tr, fromX, fromY, 0)
-		tr = CATransform3DScale(tr, fromScale, fromScale, 1)
+		tr = CATransform3DScale(tr, CGFloat(fromScale), CGFloat(fromScale), 1)
 		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
 
 		springAnimation.damping = 15
@@ -2686,4 +2706,44 @@ extension BinaryInteger {
 
 extension AppDelegate {
 	static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
+}
+
+
+final class LaunchCompletions {
+	private static var shouldAddObserver = true
+	private static var shouldRunInstantly = false
+	private static var finishedLaunchingCompletions = [() -> Void]()
+
+	static func add(_ completion: @escaping () -> Void) {
+		finishedLaunchingCompletions.append(completion)
+
+		if shouldAddObserver {
+			NotificationCenter.default.addObserver(
+				self,
+				selector: #selector(runFinishedLaunchingCompletions),
+				name: NSApplication.didFinishLaunchingNotification,
+				object: nil
+			)
+
+			shouldAddObserver = false
+		}
+
+		if shouldRunInstantly {
+			runFinishedLaunchingCompletions()
+		}
+	}
+
+	static func applicationDidLaunch() {
+		shouldAddObserver = false
+		shouldRunInstantly = true
+	}
+
+	@objc
+	private static func runFinishedLaunchingCompletions() {
+		for completion in finishedLaunchingCompletions {
+			completion()
+		}
+
+		finishedLaunchingCompletions = []
+	}
 }

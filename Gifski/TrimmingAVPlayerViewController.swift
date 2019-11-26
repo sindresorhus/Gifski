@@ -139,5 +139,5 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	}
 
 	/// Prevent user from dismissing trimming view
-	override func cancelOperation(_ sender: Any?) { }
+	override func cancelOperation(_ sender: Any?) {}
 }

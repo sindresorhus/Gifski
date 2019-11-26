@@ -1,15 +1,15 @@
 import Cocoa
 
 final class DraggableFile: NSImageView {
-
-	private var mouseDownEvent: NSEvent!
-
 	var thumbnailFrameSize: CGFloat = 84 {
+		// FIXME: This is actually never set.
 		didSet {
-			if let image = image {
-				let height = image.size.aspectFit(to: thumbnailFrameSize).height
-				heightAnchor.constraint(equalToConstant: height).isActive = true
+			guard let image = image else {
+				return
 			}
+
+			let height = image.size.aspectFit(to: thumbnailFrameSize).height
+			heightAnchor.constraint(equalToConstant: height).isActive = true
 		}
 	}
 

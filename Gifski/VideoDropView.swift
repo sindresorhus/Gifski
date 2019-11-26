@@ -108,7 +108,6 @@ class DropView<CompletionType>: SSView {
 }
 
 final class VideoDropView: DropView<URL> {
-
 	override var highlightColor: NSColor { .themeColor }
 
 	override var acceptedTypes: [NSPasteboard.PasteboardType] { [.fileURL] }
