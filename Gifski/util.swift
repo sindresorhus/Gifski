@@ -938,9 +938,57 @@ extension NSView {
 		])
 	}
 
+	func centerX(inView view: NSView) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			centerXAnchor.constraint(equalTo: view.centerXAnchor)
+		])
+	}
+
+	func centerY(inView view: NSView) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			centerYAnchor.constraint(equalTo: view.centerYAnchor)
+		])
+	}
+
 	func addSubviewToCenter(_ view: NSView) {
 		addSubview(view)
 		view.center(inView: superview!)
+	}
+
+	func constraintTopBottom(bottomView view: NSView) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			topAnchor.constraint(greaterThanOrEqualTo: view.bottomAnchor)
+		])
+	}
+
+	func constraintBottomTop(topView view: NSView) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			bottomAnchor.constraint(lessThanOrEqualTo: view.topAnchor)
+		])
+	}
+
+	func constraintTopConstant(withView view: NSView, constant: CGFloat = 0) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			topAnchor.constraint(equalTo: view.topAnchor, constant: constant)
+		])
+	}
+
+	func constraintBottomConstant(withView view: NSView, constant: CGFloat = 0) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: constant)
+		])
 	}
 
 	func constrainEdgesToSuperview(with insets: NSEdgeInsets = .zero) {
