@@ -967,6 +967,32 @@ extension NSView {
 		])
 	}
 
+	enum ConstraintEdge {
+		case top
+		case bottom
+		case left
+		case right
+	}
+
+	func constrainToEdge(_ edge: ConstraintEdge, view: UIView, padding: Double = 0) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		let insets = alignmentRectInsets
+
+		switch edge {
+		case .top:
+			insets.top = padding
+		case .bottom:
+			insets.bottom = padding
+		case .left:
+			insets.left = padding
+		case .right:
+			insets.right = padding
+		}
+
+		alignmentRectInsets = insets
+	}
+
 	func constraintBottomConstant(withView view: NSView, constant: CGFloat = 0) {
 		translatesAutoresizingMaskIntoConstraints = false
 
