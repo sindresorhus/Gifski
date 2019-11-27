@@ -34,9 +34,9 @@ final class ConversionViewController: NSViewController {
 		circularProgress.constrain(to: CGSize(widthHeight: circularProgress.frame.width))
 		circularProgress.center(inView: wrapper)
 		timeRemainingLabel.centerX(inView: circularProgress)
-		timeRemainingLabel.constraintBottomConstant(withView: wrapper, constant: -16.0)
+		timeRemainingLabel.constrainToEdges(verticalEdge: .bottom, view: wrapper, padding: -16)
 		NSLayoutConstraint.activate([
-			timeRemainingLabel.topAnchor.constraint(greaterThanOrEqualTo: timeRemainingLabel.bottomAnchor)
+			timeRemainingLabel.topAnchor.constraint(greaterThanOrEqualTo: circularProgress.bottomAnchor)
 		])
 
 		view = wrapper

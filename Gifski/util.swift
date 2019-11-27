@@ -959,46 +959,61 @@ extension NSView {
 		view.center(inView: superview!)
 	}
 
-	func constraintTopConstant(withView view: NSView, constant: CGFloat = 0) {
-		translatesAutoresizingMaskIntoConstraints = false
+	/// A type which is used to map logical edges to its representing `NSView` layout anchors.
+	/// This type can be used for all AutoLayout functions.
+	struct ConstraintEdge {
+		enum Vertical {
+			case top
+			case bottom
 
-		NSLayoutConstraint.activate([
-			topAnchor.constraint(equalTo: view.topAnchor, constant: constant)
-		])
-	}
-
-	enum ConstraintEdge {
-		case top
-		case bottom
-		case left
-		case right
-	}
-
-	func constrainToEdge(_ edge: ConstraintEdge, view: UIView, padding: Double = 0) {
-		translatesAutoresizingMaskIntoConstraints = false
-
-		let insets = alignmentRectInsets
-
-		switch edge {
-		case .top:
-			insets.top = padding
-		case .bottom:
-			insets.bottom = padding
-		case .left:
-			insets.left = padding
-		case .right:
-			insets.right = padding
+			func constraintKeyPath() -> KeyPath<NSView, NSLayoutYAxisAnchor> {
+				switch self {
+				case .top:
+					return \.topAnchor
+				case .bottom:
+					return \.bottomAnchor
+				}
+			}
 		}
 
-		alignmentRectInsets = insets
+		enum Horizontal {
+			case left
+			case right
+
+			func constraintKeyPath() -> KeyPath<NSView, NSLayoutXAxisAnchor> {
+				switch self {
+				case .left:
+					return \.leftAnchor
+				case .right:
+					return \.rightAnchor
+				}
+			}
+		}
 	}
 
-	func constraintBottomConstant(withView view: NSView, constant: CGFloat = 0) {
+	/// Sets constraints to match the given edges of this view and the given view.
+	///
+	/// - parameter verticalEdge: The vertical edge to match with the given view.
+	/// - parameter horizontalEdge: The horizontal edge to match with the given view.
+	/// - parameter padding: The constant for the constraint.
+	func constrainToEdges(verticalEdge: ConstraintEdge.Vertical? = nil, horizontalEdge: ConstraintEdge.Horizontal? = nil, view: NSView, padding: Double = 0) {
 		translatesAutoresizingMaskIntoConstraints = false
 
-		NSLayoutConstraint.activate([
-			
-		])
+		var constraints = [NSLayoutConstraint]()
+
+		if let verticalEdge = verticalEdge {
+			constraints.append(
+				self[keyPath: verticalEdge.constraintKeyPath()].constraint(equalTo: view[keyPath: verticalEdge.constraintKeyPath()], constant: CGFloat(padding))
+			)
+		}
+
+		if let horizontalEdge = horizontalEdge {
+			constraints.append(
+				self[keyPath: horizontalEdge.constraintKeyPath()].constraint(equalTo: view[keyPath: horizontalEdge.constraintKeyPath()], constant: CGFloat(padding))
+			)
+		}
+
+		NSLayoutConstraint.activate(constraints)
 	}
 
 	func constrainEdgesToSuperview(with insets: NSEdgeInsets = .zero) {
