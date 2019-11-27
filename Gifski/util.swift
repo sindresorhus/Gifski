@@ -959,22 +959,6 @@ extension NSView {
 		view.center(inView: superview!)
 	}
 
-	func constraintTopBottom(bottomView view: NSView) {
-		translatesAutoresizingMaskIntoConstraints = false
-
-		NSLayoutConstraint.activate([
-			topAnchor.constraint(greaterThanOrEqualTo: view.bottomAnchor)
-		])
-	}
-
-	func constraintBottomTop(topView view: NSView) {
-		translatesAutoresizingMaskIntoConstraints = false
-
-		NSLayoutConstraint.activate([
-			bottomAnchor.constraint(lessThanOrEqualTo: view.topAnchor)
-		])
-	}
-
 	func constraintTopConstant(withView view: NSView, constant: CGFloat = 0) {
 		translatesAutoresizingMaskIntoConstraints = false
 
@@ -987,7 +971,7 @@ extension NSView {
 		translatesAutoresizingMaskIntoConstraints = false
 
 		NSLayoutConstraint.activate([
-			bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: constant)
+			
 		])
 	}
 
