@@ -7,8 +7,6 @@ import Crashlytics
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
 
-	private var finishedLaunchingCompletions: [() -> Void] = []
-
 	// Possible workaround for crashing bug because of Crashlytics swizzling.
 	var notificationCenter: AnyObject? = {
 		if #available(macOS 10.14, *) {
@@ -39,8 +37,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = true
 		NSApp.servicesProvider = self
 
-		// Start conversion if there is already a url
-		runFinishedLaunchingCompletions()
+		// Set launch completions option if the notification center could not be set up already
+		LaunchCompletions.applicationDidLaunch()
 	}
 
 	/// Returns `nil` if it should not continue.
@@ -80,7 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 
 		// Start video conversion on launch
-		onFinishedLaunching { [weak self] in
+		LaunchCompletions.add { [weak self] in
 			self?.mainWindowController.convert(videoUrl2)
 		}
 	}
@@ -111,16 +109,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		Crashlytics.recordNonFatalError(error: error)
 		return error
 	}
-
-	private func runFinishedLaunchingCompletions() {
-		for completion in finishedLaunchingCompletions {
-			completion()
-		}
-	}
-
-	private func onFinishedLaunching(_ completion: @escaping () -> Void) {
-		finishedLaunchingCompletions.append(completion)
-	}
 }
 
 extension AppDelegate {
@@ -132,5 +120,42 @@ extension AppDelegate {
 		}
 
 		mainWindowController.convert(url)
+	}
+}
+
+class LaunchCompletions {
+	private static var shouldAddObserver = true
+	private static var shouldRunInstantly = false
+	private static var finishedLaunchingCompletions: [() -> Void] = []
+
+	static func add(_ completion: @escaping () -> Void) {
+		finishedLaunchingCompletions.append(completion)
+
+		if shouldAddObserver {
+			NotificationCenter.default.addObserver(
+				self,
+				selector: #selector(runFinishedLaunchingCompletions),
+				name: NSApplication.didFinishLaunchingNotification,
+				object: nil
+			)
+			shouldAddObserver = false
+		}
+		if shouldRunInstantly {
+			runFinishedLaunchingCompletions()
+		}
+	}
+
+	static func applicationDidLaunch() {
+		shouldAddObserver = false
+		shouldRunInstantly = true
+	}
+
+	@objc
+	private static func runFinishedLaunchingCompletions() {
+		for completion in finishedLaunchingCompletions {
+			completion()
+		}
+
+		finishedLaunchingCompletions = []
 	}
 }
