@@ -246,8 +246,11 @@ final class EditVideoViewController: NSViewController {
 			self.estimateFileSize()
 		}
 
-		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: Constants.allowedFrameRate)
-		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
+		// We round it so that `29.970` becomes `30` for practical reasons.
+		let frameRate = videoMetadata.frameRate.rounded()
+
+		frameRateSlider.maxValue = frameRate.clamped(to: Constants.allowedFrameRate)
+		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
 		frameRateSlider.triggerAction()
 
 		qualitySlider.doubleValue = Defaults[.outputQuality]
