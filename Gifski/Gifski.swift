@@ -132,7 +132,15 @@ final class Gifski {
 				]
 			)
 
-			guard asset.isReadable else {
+			guard
+				asset.isReadable,
+				let assetFrameRate = asset.frameRate,
+				let firstVideoTrack = asset.firstVideoTrack,
+
+				// We use the duration of the first video track since the total duration of the asset can actually be longer than the video track. If we use the total duration and the video is shorter, we'll get errors in `generateCGImagesAsynchronously` (#119).
+				// We already extract the video into a new asset in `VideoValidator` if the first video track is shorter than the asset duration, so the handling here is not strictly necessary but kept just to be safe.
+				let videoTrackRange = firstVideoTrack.timeRange.range
+			else {
 				// This can happen if the user selects a file, and then the file becomes
 				// unavailable or deleted before the "Convert" button is clicked.
 				completionHandlerOnce(.failure(.unreadableFile))
@@ -153,15 +161,11 @@ final class Gifski {
 				generator.cancelAllCGImageGeneration()
 			}
 
-			let fps = (conversion.frameRate.map { Double($0) } ?? asset.videoMetadata!.frameRate).clamped(to: 5...30)
-			let startTime = conversion.timeRange?.lowerBound ?? 0.0
-			let duration: Double = {
-				if let timeRange = conversion.timeRange {
-					return timeRange.upperBound - timeRange.lowerBound
-				} else {
-					return asset.duration.seconds
-				}
-			}()
+			let fps = (conversion.frameRate.map { Double($0) } ?? assetFrameRate).clamped(to: Constants.allowedFrameRate)
+			let videoRange = conversion.timeRange?.clamped(to: videoTrackRange) ?? videoTrackRange
+			let startTime = videoRange.lowerBound
+			let duration = videoRange.length
+
 			let frameCount = Int(duration * fps)
 			progress.totalUnitCount = Int64(frameCount)
 
@@ -216,17 +220,7 @@ final class Gifski {
 				case .failure where result.isCancelled:
 					completionHandlerOnce(.failure(.cancelled))
 				case let .failure(error):
-					// TODO: Remove this when we've been able to track down the issue.
-					completionHandlerOnce(.failure(.cancelled))
-					DispatchQueue.main.async {
-						NSAlert.showModal(
-							message: "Gifski was unable generate frames from the video",
-							informativeText: "We have been trying to track down this issue for a long time, but we have been unable to reproduce it. It would be awesome if you could send an email to sindresorhus@gmail.com with the video or some information about the video file you tried to convert so we can fix this issue.",
-							detailText: "\(error)"
-						)
-					}
-
-					// completionHandlerOnce(.failure(.generateFrameFailed(error)))
+					completionHandlerOnce(.failure(.generateFrameFailed(error)))
 				}
 			}
 		}
