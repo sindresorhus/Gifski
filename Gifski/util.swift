@@ -1,6 +1,7 @@
 import Cocoa
 import AVFoundation
 import class Quartz.QLPreviewPanel
+import Defaults
 
 /**
 Convenience function for initializing an object and modifying its properties
@@ -110,7 +111,6 @@ extension NSWindow {
 
 	static let defaultContentSize = CGSize(width: 480, height: 300)
 
-	// TODO: Find a way to stack windows, so additional windows are not placed exactly on top of previous ones: https://github.com/sindresorhus/Gifski/pull/30#discussion_r175337064
 	static var defaultContentRect: CGRect {
 		centeredOnScreen(rect: defaultContentSize.cgRect)
 	}
@@ -230,8 +230,6 @@ extension NSView {
 		}
 	}
 
-	// TODO: Please show me a better way to achieve this than using an invisible view 🙏.
-	/// Enables you do add contraints and do other initialization without having to subclass the view.
 	func onAddedToSuperview(_ closure: @escaping () -> Void) {
 		let view = AddedToSuperviewObserverView()
 		view.onAdded = closure
@@ -1291,7 +1289,7 @@ extension NSMenuItem {
 	}
 
 	@objc
-	private func callClosure(_ sender: NSMenuItem) {
+	private func callClosureGifski(_ sender: NSMenuItem) {
 		onAction?(sender)
 	}
 
@@ -1310,7 +1308,7 @@ extension NSMenuItem {
 		get { AssociatedKeys.onActionClosure[self] }
 		set {
 			AssociatedKeys.onActionClosure[self] = newValue
-			action = #selector(callClosure)
+			action = #selector(callClosureGifski)
 			target = self
 		}
 	}
@@ -1325,7 +1323,7 @@ extension NSControl {
 	}
 
 	@objc
-	private func callClosure(_ sender: NSControl) {
+	private func callClosureGifski(_ sender: NSControl) {
 		onAction?(sender)
 	}
 
@@ -1344,7 +1342,7 @@ extension NSControl {
 		get { AssociatedKeys.onActionClosure[self] }
 		set {
 			AssociatedKeys.onActionClosure[self] = newValue
-			action = #selector(callClosure)
+			action = #selector(callClosureGifski)
 			target = self
 		}
 	}

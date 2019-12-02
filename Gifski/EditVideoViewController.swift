@@ -1,5 +1,6 @@
 import Cocoa
 import AVKit
+import Defaults
 
 final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {

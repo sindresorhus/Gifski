@@ -1,4 +1,7 @@
 import AppKit
+import CircularProgress
+import DockProgress
+import Defaults
 
 final class ConversionViewController: NSViewController {
 	private lazy var circularProgress = with(CircularProgress(size: 160.0)) {

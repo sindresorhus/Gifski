@@ -1,4 +1,5 @@
 import Cocoa
+import Defaults
 
 extension NSColor {
 	static let themeColor = NSColor.controlAccentColorPolyfill

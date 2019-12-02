@@ -1,6 +1,7 @@
 import Cocoa
 import AVFoundation
 import Crashlytics
+import DockProgress
 
 final class MainWindowController: NSWindowController {
 	private let videoValidator = VideoValidator()
@@ -47,7 +48,7 @@ final class MainWindowController: NSWindowController {
 		NSApp.activate(ignoringOtherApps: false)
 		window.makeKeyAndOrderFront(nil)
 
-		DockProgress.style = .circle(radius: 55, color: .themeColor)
+		DockProgress.style = .circle(radius: 55)
 
 		showWelcomeScreen()
 	}

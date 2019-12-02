@@ -1,4 +1,5 @@
 import AppKit
+import Defaults
 
 final class Tooltip: NSPopover {
 	private let identifier: String
