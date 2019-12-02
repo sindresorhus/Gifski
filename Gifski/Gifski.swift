@@ -61,8 +61,8 @@ final class Gifski {
 		}
 	}
 
-	// This is carefully nil'd and should remain private.
-	private static var gifData: NSMutableData?
+	private var gifData = NSMutableData()
+	private var progress: Progress!
 
 	// TODO: Split this method up into smaller methods. It's too large.
 	/**
@@ -70,17 +70,15 @@ final class Gifski {
 
 	- Parameter completionHandler: Guaranteed to be called on the main thread
 	*/
-	static func run(
+	func run(
 		_ conversion: Conversion,
 		completionHandler: ((Result<Data, Error>) -> Void)?
 	) {
-		var progress = Progress(parent: .current())
+		progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { (_ result: Result<Data, Error>) -> Void in
-			gifData = nil // Resetting state
-
 			DispatchQueue.main.async {
-				guard !progress.isCancelled else {
+				guard !self.progress.isCancelled else {
 					completionHandler?(.failure(.cancelled))
 					return
 				}
@@ -107,8 +105,6 @@ final class Gifski {
 			progress.completedUnitCount += 1
 			return progress.isCancelled ? 0 : 1
 		}
-
-		gifData = NSMutableData()
 
 		gifski.setWriteCallback(context: &gifData) { bufferLength, bufferPointer, context in
 			guard
@@ -149,7 +145,7 @@ final class Gifski {
 			generator.requestedTimeToleranceBefore = .zero
 			generator.appliesPreferredTrackTransform = true
 
-			progress.cancellationHandler = {
+			self.progress.cancellationHandler = {
 				generator.cancelAllCGImageGeneration()
 			}
 
@@ -163,15 +159,19 @@ final class Gifski {
 				}
 			}()
 			let frameCount = Int(duration * fps)
-			progress.totalUnitCount = Int64(frameCount)
+			self.progress.totalUnitCount = Int64(frameCount)
 
 			var frameForTimes = [CMTime]()
 			for index in 0..<frameCount {
 				frameForTimes.append(CMTime(seconds: startTime + ((1 / fps) * Double(index)), preferredTimescale: .video))
 			}
 
-			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { result in
-				guard !progress.isCancelled else {
+			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { [weak self] result in
+				guard let self = self else {
+					return
+				}
+
+				guard !self.progress.isCancelled else {
 					completionHandlerOnce(.failure(.cancelled))
 					return
 				}
@@ -207,8 +207,7 @@ final class Gifski {
 					if result.isFinished {
 						do {
 							try gifski.finish()
-							// Force unwrapping here is safe because we nil gifData in one single place after this.
-							completionHandlerOnce(.success(gifData! as Data))
+							completionHandlerOnce(.success(self.gifData as Data))
 						} catch {
 							completionHandlerOnce(.failure(.writeFailed(error)))
 						}
