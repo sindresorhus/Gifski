@@ -57,7 +57,10 @@ struct VideoValidator {
 		}
 
 		// We already specify the UTIs we support, so this can only happen on invalid video files or unsupported codecs.
-		guard asset.isVideoDecodable else {
+		guard
+			asset.isVideoDecodable,
+			let firstVideoTrack = asset.firstVideoTrack
+		else {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video file is not supported.",
@@ -91,6 +94,25 @@ struct VideoValidator {
 			)
 
 			return .failure
+		}
+
+		// If the video track duration is shorter than the total asset duration, we extract the video track into a new asset to prevent problems later on.
+		guard firstVideoTrack.isFullDuration else {
+			guard
+				let newAsset = firstVideoTrack.extractToNewAsset(),
+				let newVideoMetadata = newAsset.videoMetadata
+			else {
+				NSAlert.showModalAndReportToCrashlytics(
+					for: window,
+					message: "Cannot read the video.",
+					informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
+					debugInfo: asset.debugInfo
+				)
+
+				return .failure
+			}
+
+			return .success(newAsset, newVideoMetadata)
 		}
 
 		return .success(asset, videoMetadata)

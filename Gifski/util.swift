@@ -619,6 +619,31 @@ extension AVAssetTrack {
 	}
 }
 
+extension AVAssetTrack {
+	/// Whether the track's duration is the same as the total asset duration.
+	var isFullDuration: Bool { timeRange.duration == asset?.duration }
+
+	/**
+	Extract the track into a new AVAsset.
+
+	This can be useful if you only want the video or audio of an asset. For example, sometimes the video track duration is shorter than the total asset duration. Extracting the track into a new asset ensures the asset duration is only as long as the video track duration.
+	*/
+	func extractToNewAsset() -> AVAsset? {
+		let composition = AVMutableComposition()
+
+		guard
+			let track = composition.addMutableTrack(withMediaType: mediaType, preferredTrackID: kCMPersistentTrackID_Invalid),
+			((try? track.insertTimeRange(CMTimeRange(start: .zero, duration: timeRange.duration), of: self, at: .zero)) != nil)
+		else {
+			return nil
+		}
+
+		track.preferredTransform = preferredTransform
+
+		return composition
+	}
+}
+
 
 /*
 > FOURCC is short for "four character code" - an identifier for a video codec, compression format, color or pixel format used in media files.
