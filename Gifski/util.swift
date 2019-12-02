@@ -897,7 +897,7 @@ extension AVAsset {
 
 
 /// Video metadata
-extension AVURLAsset {
+extension AVAsset {
 	struct VideoMetadata {
 		let dimensions: CGSize
 		let duration: Double
@@ -917,12 +917,12 @@ extension AVURLAsset {
 			dimensions: dimensions,
 			duration: duration.seconds,
 			frameRate: frameRate,
-			fileSize: url.fileSize
+			fileSize: fileSize
 		)
 	}
 }
 extension URL {
-	var videoMetadata: AVURLAsset.VideoMetadata? { AVURLAsset(url: self).videoMetadata }
+	var videoMetadata: AVAsset.VideoMetadata? { AVURLAsset(url: self).videoMetadata }
 
 	var isVideoDecodable: Bool { AVAsset(url: self).isVideoDecodable }
 }
@@ -2551,16 +2551,37 @@ extension NSObject {
 	var simpleClassName: String { Self.simpleClassName }
 }
 
-extension AVPlayerItem {
-	/// The duration range of the item.
-	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
+extension CMTime {
+	/// Get the `CMTime` as a duration from zero to the seconds value of `self`.
+	/// Can be `nil` when the `.duration` is not available, for example, when an asset has not yet been fully loaded or if it's a live stream.
 	var durationRange: ClosedRange<Double>? {
-		guard duration.isNumeric else {
+		guard isNumeric else {
 			return nil
 		}
 
-		return 0...duration.seconds
+		return 0...seconds
 	}
+}
+
+extension CMTimeRange {
+	/// Get `self` as a range in seconds.
+	/// Can be `nil` when the range is not available, for example, when an asset has not yet been fully loaded or if it's a live stream.
+	var range: ClosedRange<Double>? {
+		guard
+			start.isNumeric,
+			end.isNumeric
+		else {
+			return nil
+		}
+
+		return start.seconds...end.seconds
+	}
+}
+
+extension AVPlayerItem {
+	/// The duration range of the item.
+	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
+	var durationRange: ClosedRange<Double>? { duration.durationRange }
 
 	/// The playable range of the item.
 	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.

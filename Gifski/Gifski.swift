@@ -5,6 +5,7 @@ import Crashlytics
 final class Gifski {
 	enum Error: LocalizedError {
 		case invalidSettings
+		case unreadableFile
 		case generateFrameFailed(Swift.Error)
 		case addFrameFailed(Swift.Error)
 		case writeFailed(Swift.Error)
@@ -14,6 +15,8 @@ final class Gifski {
 			switch self {
 			case .invalidSettings:
 				return "Invalid settings"
+			case .unreadableFile:
+				return "The selected file is no longer readable"
 			case let .generateFrameFailed(error):
 				return "Failed to generate frame: \(error.localizedDescription)"
 			case let .addFrameFailed(error):
@@ -36,12 +39,19 @@ final class Gifski {
 
 		// TODO: With Swift 5.1 we can remove the manual `init` and have it synthesized.
 		/**
-		- Parameter frameRate: Clamped to 5...30. Uses the frame rate of `input` if not specified.
+		- Parameter frameRate: Clamped to `5...30`. Uses the frame rate of `input` if not specified.
 		*/
 		/**
 		- Parameter loopGif: Whether output should loop infinitely or not.
 		*/
-		init(video: URL, timeRange: ClosedRange<Double>? = nil, quality: Double = 1, dimensions: CGSize? = nil, frameRate: Int? = nil, loopGif: Bool = true) {
+		init(
+			video: URL,
+			timeRange: ClosedRange<Double>? = nil,
+			quality: Double = 1,
+			dimensions: CGSize? = nil,
+			frameRate: Int? = nil,
+			loopGif: Bool = true
+		) {
 			self.video = video
 			self.timeRange = timeRange
 			self.quality = quality
@@ -117,15 +127,15 @@ final class Gifski {
 		DispatchQueue.global(qos: .utility).async {
 			let asset = AVURLAsset(
 				url: conversion.video,
-				options: [AVURLAssetPreferPreciseDurationAndTimingKey: true]
+				options: [
+					AVURLAssetPreferPreciseDurationAndTimingKey: true
+				]
 			)
 
 			guard asset.isReadable else {
 				// This can happen if the user selects a file, and then the file becomes
 				// unavailable or deleted before the "Convert" button is clicked.
-				completionHandlerOnce(.failure(.generateFrameFailed(
-					NSError.appError(message: "The selected file is no longer readable")
-				)))
+				completionHandlerOnce(.failure(.unreadableFile))
 				return
 			}
 

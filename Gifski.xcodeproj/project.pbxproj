@@ -317,8 +317,8 @@
 				E3AE62801E5CD2F300035A2F /* Frameworks */,
 				E3AE62811E5CD2F300035A2F /* Resources */,
 				E34798D21F882FB3003F9142 /* Embed Frameworks */,
-				E3A9400C2182D718006981D5 /* Crashlytics */,
 				0E7925292329BDBE00058B94 /* Embed App Extensions */,
+				E3A9400C2182D718006981D5 /* Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -447,7 +447,7 @@
 		};
 		E3A9400C2182D718006981D5 /* Crashlytics */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 8;
 			files = (
 			);
 			inputFileListPaths = (
@@ -460,7 +460,7 @@
 			);
 			outputPaths = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
+			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
 			shellScript = "\"${PROJECT_DIR}/Frameworks/Fabric.framework/run\" 82cbd166420c4577d13935b0fb0da5ea7adccee6 2d9650c15bf3dcae89ddd0601959bf286e0ce336254ed554d42533b37c6d1c76\n";
 			showEnvVarsInLog = 0;

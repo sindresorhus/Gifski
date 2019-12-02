@@ -31,8 +31,8 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var playerViewWrapper: NSView!
 
 	var inputUrl: URL!
-	var asset: AVURLAsset!
-	var videoMetadata: AVURLAsset.VideoMetadata!
+	var asset: AVAsset!
+	var videoMetadata: AVAsset.VideoMetadata!
 
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
@@ -50,8 +50,8 @@ final class EditVideoViewController: NSViewController {
 
 	convenience init(
 		inputUrl: URL,
-		asset: AVURLAsset,
-		videoMetadata: AVURLAsset.VideoMetadata
+		asset: AVAsset,
+		videoMetadata: AVAsset.VideoMetadata
 	) {
 		self.init()
 
@@ -245,7 +245,7 @@ final class EditVideoViewController: NSViewController {
 			self.estimateFileSize()
 		}
 
-		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: 5...30)
+		frameRateSlider.maxValue = videoMetadata.frameRate.clamped(to: Constants.allowedFrameRate)
 		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: videoMetadata.frameRate)
 		frameRateSlider.triggerAction()
 
@@ -291,7 +291,7 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func setUpTrimmingView() {
-		playerViewController = TrimmingAVPlayerViewController(asset: asset) { [weak self] _ in
+		playerViewController = TrimmingAVPlayerViewController(playerItem: AVPlayerItem(asset: asset)) { [weak self] _ in
 			self?.estimateFileSize()
 		}
 		add(childController: playerViewController, to: playerViewWrapper)
@@ -368,6 +368,6 @@ final class EditVideoViewController: NSViewController {
 
 	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
 		let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
-		return defaultFrameRate.clamped(to: 5...30)
+		return defaultFrameRate.clamped(to: Constants.allowedFrameRate)
 	}
 }

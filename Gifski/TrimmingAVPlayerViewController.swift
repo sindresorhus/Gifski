@@ -3,7 +3,7 @@ import AVKit
 /// VC containing AVPlayerView and also extending possibilities for trimming (view) customization.
 final class TrimmingAVPlayerViewController: NSViewController {
 	private(set) var timeRange: ClosedRange<Double>?
-	private let asset: AVURLAsset
+	private let playerItem: AVPlayerItem
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
@@ -17,11 +17,11 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	}
 
 	init(
-		asset: AVURLAsset,
+		playerItem: AVPlayerItem,
 		controlsStyle: AVPlayerViewControlsStyle = .inline,
 		timeRangeDidChange: ((ClosedRange<Double>) -> Void)? = nil
 	) {
-		self.asset = asset
+		self.playerItem = playerItem
 		self.controlsStyle = controlsStyle
 		self.timeRangeDidChange = timeRangeDidChange
 		super.init(nibName: nil, bundle: nil)
@@ -34,7 +34,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 	override func loadView() {
 		let playerView = TrimmingAVPlayerView()
-		playerView.player = AVPlayer(playerItem: AVPlayerItem(asset: asset))
+		playerView.player = AVPlayer(playerItem: playerItem)
 		playerView.controlsStyle = controlsStyle
 		playerView.setupTrimmingObserver()
 
