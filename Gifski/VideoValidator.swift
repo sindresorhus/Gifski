@@ -96,7 +96,7 @@ struct VideoValidator {
 			return .failure
 		}
 
-		// If the video track duration is shorter than the total asset duration, we extract the video track into a new asset to prevent problems later on.
+		// If the video track duration is shorter than the total asset duration, we extract the video track into a new asset to prevent problems later on. If we don't do this, the video will show as black in the trim view at the duration where there's no video track, and it will confuse users. Also, if the user trims the video to just the black no video track part, the conversion would continue, but there's nothing to convert, so it would be stuck at 0%.
 		guard firstVideoTrack.isFullDuration else {
 			guard
 				let newAsset = firstVideoTrack.extractToNewAsset(),
