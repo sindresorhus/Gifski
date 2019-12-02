@@ -84,6 +84,7 @@ final class EditVideoViewController: NSViewController {
 		super.viewDidLoad()
 
 		formatter.zeroPadsFractionDigits = true
+		estimatedSizeLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .regular)
 		setUpDimensions()
 		setUpDropdowns()
 		setUpSliders()
