@@ -1,7 +1,17 @@
 import Cocoa
 
 final class DraggableFile: NSImageView {
-	private let imageMaxSize: CGFloat = 84
+
+	private var mouseDownEvent: NSEvent!
+
+	var thumbnailFrameSize: CGFloat = 84 {
+		didSet {
+			if let image = image {
+				let height = image.size.aspectFit(to: thumbnailFrameSize).height
+				heightAnchor.constraint(equalToConstant: height).isActive = true
+			}
+		}
+	}
 
 	var fileUrl: URL? {
 		didSet {
@@ -14,7 +24,7 @@ final class DraggableFile: NSImageView {
 
 			self.image = image
 
-			let height = image.size.aspectFit(to: imageMaxSize).height
+			let height = image.size.aspectFit(to: thumbnailFrameSize).height
 			heightAnchor.constraint(equalToConstant: height).isActive = true
 		}
 	}
@@ -48,7 +58,7 @@ final class DraggableFile: NSImageView {
 		}
 
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
-		let draggingFrame = image.size.aspectFit(to: imageMaxSize).cgRect.centered(in: bounds)
+		let draggingFrame = image.size.aspectFit(to: thumbnailFrameSize).cgRect.centered(in: bounds)
 		draggingItem.setDraggingFrame(draggingFrame, contents: image)
 		beginDraggingSession(with: [draggingItem], event: event, source: self)
 	}

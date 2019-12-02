@@ -938,9 +938,82 @@ extension NSView {
 		])
 	}
 
+	func centerX(inView view: NSView) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			centerXAnchor.constraint(equalTo: view.centerXAnchor)
+		])
+	}
+
+	func centerY(inView view: NSView) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			centerYAnchor.constraint(equalTo: view.centerYAnchor)
+		])
+	}
+
 	func addSubviewToCenter(_ view: NSView) {
 		addSubview(view)
 		view.center(inView: superview!)
+	}
+
+	/// A type which is used to map logical edges to its representing `NSView` layout anchors.
+	/// This type can be used for all AutoLayout functions.
+	struct ConstraintEdge {
+		enum Vertical {
+			case top
+			case bottom
+
+			func constraintKeyPath() -> KeyPath<NSView, NSLayoutYAxisAnchor> {
+				switch self {
+				case .top:
+					return \.topAnchor
+				case .bottom:
+					return \.bottomAnchor
+				}
+			}
+		}
+
+		enum Horizontal {
+			case left
+			case right
+
+			func constraintKeyPath() -> KeyPath<NSView, NSLayoutXAxisAnchor> {
+				switch self {
+				case .left:
+					return \.leftAnchor
+				case .right:
+					return \.rightAnchor
+				}
+			}
+		}
+	}
+
+	/// Sets constraints to match the given edges of this view and the given view.
+	///
+	/// - parameter verticalEdge: The vertical edge to match with the given view.
+	/// - parameter horizontalEdge: The horizontal edge to match with the given view.
+	/// - parameter padding: The constant for the constraint.
+	func constrainToEdges(verticalEdge: ConstraintEdge.Vertical? = nil, horizontalEdge: ConstraintEdge.Horizontal? = nil, view: NSView, padding: Double = 0) {
+		translatesAutoresizingMaskIntoConstraints = false
+
+		var constraints = [NSLayoutConstraint]()
+
+		if let verticalEdge = verticalEdge {
+			constraints.append(
+				self[keyPath: verticalEdge.constraintKeyPath()].constraint(equalTo: view[keyPath: verticalEdge.constraintKeyPath()], constant: CGFloat(padding))
+			)
+		}
+
+		if let horizontalEdge = horizontalEdge {
+			constraints.append(
+				self[keyPath: horizontalEdge.constraintKeyPath()].constraint(equalTo: view[keyPath: horizontalEdge.constraintKeyPath()], constant: CGFloat(padding))
+			)
+		}
+
+		NSLayoutConstraint.activate(constraints)
 	}
 
 	func constrainEdgesToSuperview(with insets: NSEdgeInsets = .zero) {
@@ -1873,12 +1946,14 @@ extension NSSharingService {
 }
 
 extension CALayer {
-	// TODO: Make this one more generic by accepting a `x` parameter too.
-	func animateScaleMove(fromScale: CGFloat, fromY: CGFloat) {
+	func animateScaleMove(fromScale: CGFloat, fromX: CGFloat? = nil, fromY: CGFloat? = nil) {
+		let fromX = fromX == nil ? bounds.size.width / 2 : fromX!
+		let fromY = fromY == nil ? bounds.size.height / 2 : fromY!
+
 		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
 
 		var tr = CATransform3DIdentity
-		tr = CATransform3DTranslate(tr, bounds.size.width / 2, fromY, 0)
+		tr = CATransform3DTranslate(tr, fromX, fromY, 0)
 		tr = CATransform3DScale(tr, fromScale, fromScale, 1)
 		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
 

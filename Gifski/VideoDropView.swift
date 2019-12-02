@@ -1,6 +1,8 @@
 import Cocoa
 
-class DropView: SSView {
+class DropView<CompletionType>: SSView {
+	var onComplete: ((CompletionType) -> Void)?
+
 	var dropText: String? {
 		didSet {
 			if let text = dropText {
@@ -105,9 +107,7 @@ class DropView: SSView {
 	}
 }
 
-final class VideoDropView: DropView {
-	// TODO: Any way to make this generic so we can have it in DropView instead?
-	var onComplete: ((URL) -> Void)?
+final class VideoDropView: DropView<URL> {
 
 	override var highlightColor: NSColor { .themeColor }
 
