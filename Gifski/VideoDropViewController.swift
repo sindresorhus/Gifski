@@ -1,10 +1,35 @@
 import AppKit
+import SwiftUI
+
+@available(macOS 10.15, *)
+struct DropCenterView: View {
+	var body: some View {
+		VStack {
+			Text("Drop a Video")
+			Text("or")
+				.font(.system(size: 10))
+				.italic()
+				.padding(.top, 6)
+			Button(action: {
+				AppDelegate.shared.mainWindowController.presentOpenPanel()
+			}) {
+				Text("Open")
+			}
+		}
+			.foregroundColor(.secondary)
+	}
+}
 
 final class VideoDropViewController: NSViewController {
 	private let videoValidator = VideoValidator()
 
 	private lazy var videoDropView = with(VideoDropView()) {
-		$0.dropText = "Drop a Video"
+		if #available(macOS 10.15, *) {
+			$0.dropView = NSHostingView(rootView: DropCenterView())
+		} else {
+			$0.dropText = "Drop a Video"
+		}
+
 		$0.onComplete = { [weak self] url in
 			NSApp.activate(ignoringOtherApps: true)
 			self?.convert(url)
