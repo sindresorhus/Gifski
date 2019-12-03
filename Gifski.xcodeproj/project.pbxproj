@@ -726,6 +726,12 @@
 					/usr/local/opt/gcc/lib/gcc/9,
 				);
 				MARKETING_VERSION = 2.3.0;
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					Combine,
+					"-weak_framework",
+					SwiftUI,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -766,6 +772,12 @@
 					/usr/local/opt/gcc/lib/gcc/9,
 				);
 				MARKETING_VERSION = 2.3.0;
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					Combine,
+					"-weak_framework",
+					SwiftUI,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
