@@ -14,6 +14,8 @@ class DropView<CompletionType>: SSView {
 		}
 	}
 
+	var dropView: NSView?
+
 	private let dropLabel = with(Label()) {
 		$0.textColor = .secondaryLabelColor
 		$0.font = NSFont.systemFont(ofSize: 14)
@@ -24,11 +26,13 @@ class DropView<CompletionType>: SSView {
 	var isDropLabelHidden: Bool = false {
 		didSet {
 			dropLabel.isHidden = isDropLabelHidden
+			dropView?.isHidden = isDropLabelHidden
 		}
 	}
 
 	func fadeInVideoDropLabel() {
 		dropLabel.fadeIn()
+		dropView?.fadeIn()
 	}
 
 	var acceptedTypes: [NSPasteboard.PasteboardType] {
@@ -54,6 +58,10 @@ class DropView<CompletionType>: SSView {
 
 	override func didAppear() {
 		addSubviewToCenter(dropLabel)
+
+		if let dropView = dropView {
+			addSubviewToCenter(dropView)
+		}
 	}
 
 	override func layout() {

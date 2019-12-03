@@ -53,8 +53,7 @@ final class MainWindowController: NSWindowController {
 		showWelcomeScreen()
 	}
 
-	@objc
-	func open(_ sender: AnyObject) {
+	func presentOpenPanel() {
 		let panel = NSOpenPanel()
 		panel.canChooseDirectories = false
 		panel.canCreateDirectories = false
@@ -65,6 +64,11 @@ final class MainWindowController: NSWindowController {
 				self?.convert(panel.url!)
 			}
 		}
+	}
+
+	@objc
+	func open(_ sender: AnyObject) {
+		presentOpenPanel()
 	}
 
 	func convert(_ inputUrl: URL) {
