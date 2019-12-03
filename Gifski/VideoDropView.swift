@@ -14,11 +14,7 @@ class DropView<CompletionType>: SSView {
 		}
 	}
 
-	var dropView: NSView? {
-		didSet {
-			dropView?.isHidden = dropView == nil
-		}
-	}
+	var dropView: NSView?
 
 	private let dropLabel = with(Label()) {
 		$0.textColor = .secondaryLabelColor
