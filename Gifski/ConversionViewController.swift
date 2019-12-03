@@ -21,6 +21,7 @@ final class ConversionViewController: NSViewController {
 	private var conversion: Gifski.Conversion!
 	private var progress: Progress?
 	private var isRunning = false
+	private let gifski = Gifski()
 
 	convenience init(conversion: Gifski.Conversion) {
 		self.init()
@@ -80,7 +81,7 @@ final class ConversionViewController: NSViewController {
 		timeRemainingEstimator.start()
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) { [weak self] in
-			Gifski.run(conversion) { result in
+			gifski.run(conversion) { result in
 				guard let self = self else {
 					return
 				}
