@@ -140,10 +140,13 @@ final class ConversionCompletedViewController: NSViewController {
 					return
 				}
 
-				do {
-					try FileManager.default.copyItem(at: url, to: outputUrl, overwrite: true)
-				} catch {
-					self.presentError(error)
+				// Give the system time to close the sheet.
+				DispatchQueue.main.async {
+					do {
+						try FileManager.default.copyItem(at: url, to: outputUrl, overwrite: true)
+					} catch {
+						self.presentError(error)
+					}
 				}
 			}
 		}

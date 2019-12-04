@@ -60,7 +60,12 @@ final class MainWindowController: NSWindowController {
 		panel.allowedFileTypes = System.supportedVideoTypes
 
 		panel.beginSheetModal(for: window!) { [weak self] in
-			if $0 == .OK {
+			guard $0 == .OK else {
+				return
+			}
+
+			// Give the system time to close the sheet.
+			DispatchQueue.main.async {
 				self?.convert(panel.url!)
 			}
 		}
