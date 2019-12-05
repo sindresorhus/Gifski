@@ -167,4 +167,4 @@ identifier_name:
     - 'y1'
     - 'y2'
 deployment_target:
-  macOS_deployment_target: '10.13'
+  macOS_deployment_target: '10.14'

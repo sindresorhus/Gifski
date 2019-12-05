@@ -38,13 +38,13 @@ final class ConversionCompletedViewController: NSViewController {
 		setUpDropView()
 		setUp(url: gifUrl)
 
-		if #available(macOS 10.14, *), !NSApp.isActive || view.window?.isVisible == false {
+		if !NSApp.isActive || view.window?.isVisible == false {
 			let notification = UNMutableNotificationContent()
 			notification.title = "Conversion Completed"
 			notification.subtitle = conversion.video.filename
 			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
 			// UNUserNotificationCenter.current().add(request)
-			(AppDelegate.shared.notificationCenter as? UNUserNotificationCenter)?.add(request)
+			AppDelegate.shared.notificationCenter.add(request)
 		}
 	}
 
@@ -70,7 +70,7 @@ final class ConversionCompletedViewController: NSViewController {
 			self.tooltip.show(from: self.draggableFile, preferredEdge: .maxY)
 		}
 
-		if #available(macOS 10.14, *), Defaults[.successfulConversionsCount] == 5 {
+		if Defaults[.successfulConversionsCount] == 5 {
 			SKStoreReviewController.requestReview()
 		}
 	}

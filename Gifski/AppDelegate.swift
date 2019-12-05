@@ -8,13 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
 
 	// Possible workaround for crashing bug because of Crashlytics swizzling.
-	var notificationCenter: AnyObject? = {
-		if #available(macOS 10.14, *) {
-			return UNUserNotificationCenter.current()
-		} else {
-			return nil
-		}
-	}()
+	let notificationCenter = UNUserNotificationCenter.current()
 
 	func applicationWillFinishLaunching(_ notification: Notification) {
 		UserDefaults.standard.register(defaults: [
@@ -24,13 +18,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
-		if #available(macOS 10.14, *) {
-			(notificationCenter as? UNUserNotificationCenter)?.requestAuthorization { _, _ in }
-		}
-
 		#if !DEBUG
 			Fabric.with([Crashlytics.self])
 		#endif
+
+		notificationCenter.requestAuthorization { _, _ in }
 
 		mainWindowController.showWindow(self)
 

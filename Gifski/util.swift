@@ -46,26 +46,6 @@ struct Meta {
 }
 
 
-/// macOS 10.14 polyfills
-extension NSColor {
-	static let controlAccentColorPolyfill: NSColor = {
-		if #available(macOS 10.14, *) {
-			return NSColor.controlAccentColor
-		} else {
-			// swiftlint:disable:next object_literal
-			return NSColor(red: 0.10, green: 0.47, blue: 0.98, alpha: 1)
-		}
-	}()
-}
-
-
-extension NSColor {
-	func withAlpha(_ alpha: Double) -> NSColor {
-		withAlphaComponent(CGFloat(alpha))
-	}
-}
-
-
 extension NSView {
 	func shake(duration: TimeInterval = 0.3, direction: NSUserInterfaceLayoutOrientation) {
 		let translation = direction == .horizontal ? "x" : "y"
@@ -176,16 +156,14 @@ extension NSView {
 
 extension NSWindow {
 	func makeVibrant() {
-		if #available(OSX 10.14, *) {
-			// So there seems to be a visual effect view already created by NSWindow.
-			// If we can attach ourselves to it and make it a vibrant one - awesome.
-			// If not, let's just add our view as a first one so it is vibrant anyways.
-			if let visualEffectView = contentView?.superview?.subviews.compactMap({ $0 as? NSVisualEffectView }).first {
-				visualEffectView.blendingMode = .behindWindow
-				visualEffectView.material = .underWindowBackground
-			} else {
-				contentView?.superview?.insertVibrancyView(material: .underWindowBackground)
-			}
+		// So there seems to be a visual effect view already created by NSWindow.
+		// If we can attach ourselves to it and make it a vibrant one - awesome.
+		// If not, let's just add our view as a first one so it is vibrant anyways.
+		if let visualEffectView = contentView?.superview?.subviews.compactMap({ $0 as? NSVisualEffectView }).first {
+			visualEffectView.blendingMode = .behindWindow
+			visualEffectView.material = .underWindowBackground
+		} else {
+			contentView?.superview?.insertVibrancyView(material: .underWindowBackground)
 		}
 	}
 }
@@ -273,32 +251,28 @@ extension NSAlert {
 		}
 
 		if let detailText = detailText {
-			if #available(macOS 10.14, *) {
-				let scrollView = NSTextView.scrollableTextView()
+			let scrollView = NSTextView.scrollableTextView()
 
-				// We're setting the frame manually here as it's impossible to use auto-layout,
-				// since it has nothing to constrain to. This will eventually be rewritten in SwiftUI anyway.
-				scrollView.frame = CGRect(width: 300, height: 120)
+			// We're setting the frame manually here as it's impossible to use auto-layout,
+			// since it has nothing to constrain to. This will eventually be rewritten in SwiftUI anyway.
+			scrollView.frame = CGRect(width: 300, height: 120)
 
-				scrollView.onAddedToSuperview {
-					if let messageTextField = (scrollView.superview?.superview?.subviews.first { $0 is NSTextField }) {
-						scrollView.frame.width = messageTextField.frame.width
-					} else {
-						assertionFailure("Couldn't detect the message textfield view of the NSAlert panel")
-					}
+			scrollView.onAddedToSuperview {
+				if let messageTextField = (scrollView.superview?.superview?.subviews.first { $0 is NSTextField }) {
+					scrollView.frame.width = messageTextField.frame.width
+				} else {
+					assertionFailure("Couldn't detect the message textfield view of the NSAlert panel")
 				}
-
-				let textView = scrollView.documentView as! NSTextView
-				textView.drawsBackground = false
-				textView.isEditable = false
-				textView.font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
-				textView.textColor = .secondaryLabelColor
-				textView.string = detailText
-
-				self.accessoryView = scrollView
-			} else {
-				self.informativeText += "\n\(detailText)"
 			}
+
+			let textView = scrollView.documentView as! NSTextView
+			textView.drawsBackground = false
+			textView.isEditable = false
+			textView.font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+			textView.textColor = .secondaryLabelColor
+			textView.string = detailText
+
+			self.accessoryView = scrollView
 		}
 
 		self.addButtons(withTitles: buttonTitles)

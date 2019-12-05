@@ -59,12 +59,6 @@ final class ConversionViewController: NSViewController {
 		cancelConversion()
 	}
 
-	// TODO: Remove this when we target macOS 10.14.
-	@objc
-	func cancel(_ sender: Any?) {
-		cancelConversion()
-	}
-
 	private func start(conversion: Gifski.Conversion) {
 		guard !isRunning else {
 			return

@@ -15,7 +15,7 @@ Gifski supports all the video formats that macOS supports (`.mp4` or `.mov` with
 
 **[Blog post](https://blog.sindresorhus.com/gifski-972692460aa5)** &nbsp;&nbsp; **[Product Hunt](https://www.producthunt.com/posts/gifski-2)**
 
-Requires macOS 10.13 or later.
+Requires macOS 10.14 or later.
 
 
 ## Download
