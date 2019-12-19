@@ -109,9 +109,9 @@ final class ConversionViewController: NSViewController {
 			progress?.cancel()
 		}
 
-		let videoDropController = VideoDropViewController()
 		stopConversion { [weak self] in
-			self?.push(viewController: videoDropController)
+			// It's safe to force-unwrap as there's no scenario where it will be nil.
+			self?.push(viewController: AppDelegate.shared.previousEditViewController!)
 		}
 	}
 

@@ -59,6 +59,8 @@ final class EditVideoViewController: NSViewController {
 		self.inputUrl = inputUrl
 		self.asset = asset
 		self.videoMetadata = videoMetadata
+
+		AppDelegate.shared.previousEditViewController = self
 	}
 
 	@IBAction private func convert(_ sender: Any) {
