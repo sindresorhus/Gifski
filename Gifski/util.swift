@@ -2765,3 +2765,21 @@ final class LaunchCompletions {
 		finishedLaunchingCompletions = []
 	}
 }
+
+
+@IBDesignable
+class BackButton: NSButton {
+	convenience init() {
+		self.init()
+		commonInit()
+	}
+
+	override func awakeFromNib() {
+		super.awakeFromNib()
+		commonInit()
+	}
+
+	private func commonInit() {
+		self.image = NSImage(named: NSImage.goBackTemplateName)
+	}
+}

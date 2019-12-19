@@ -10,10 +10,8 @@ struct DropCenterView: View {
 				.font(.system(size: 10))
 				.italic()
 				.padding(.top, 6)
-			Button(action: {
+			Button("Open") {
 				AppDelegate.shared.mainWindowController.presentOpenPanel()
-			}) {
-				Text("Open")
 			}
 		}
 			.foregroundColor(.secondary)

@@ -156,6 +156,11 @@ final class ConversionCompletedViewController: NSViewController {
 		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
 		add(childController: videoDropController)
 	}
+
+	@IBAction private func backButton(_ sender: NSButton) {
+		// It's safe to force-unwrap as there's no scenario where it will be nil.
+		push(viewController: AppDelegate.shared.previousEditViewController!)
+	}
 }
 
 extension ConversionCompletedViewController: QLPreviewPanelDataSource {
