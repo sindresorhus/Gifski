@@ -2783,3 +2783,61 @@ class BackButton: NSButton {
 		self.image = NSImage(named: NSImage.goBackTemplateName)
 	}
 }
+
+
+extension NSResponder {
+	// This method is internally implemented on `NSResponder` as `Error` is generic which comes with many limitations.
+	fileprivate func presentErrorAsSheet(
+		_ error: Error,
+		for window: NSWindow,
+		didPresent: (() -> Void)?
+	) {
+		final class DelegateHandler {
+			var didPresent: (() -> Void)?
+
+			@objc
+			func didPresentHandler() {
+				didPresent?()
+			}
+		}
+
+		let delegate = DelegateHandler()
+		delegate.didPresent = didPresent
+
+		presentError(
+			error,
+			modalFor: window,
+			delegate: delegate,
+			didPresent: #selector(delegate.didPresentHandler),
+			contextInfo: nil
+		)
+	}
+}
+
+extension Error {
+	/// Present the error as an async sheet on the given window.
+	/// - Note: This exists because the built-in `NSResponder#presentError(forModal:)` method requires too many arguments, selector as callback, and it says it's modal but it's not blocking, which is surprising.
+	func presentAsSheet(for window: NSWindow, didPresent: (() -> Void)?) {
+		NSApp.presentErrorAsSheet(self, for: window, didPresent: didPresent)
+	}
+
+	/// Present the error as a blocking modal sheet on the given window.
+	/// If the window is nil, the error will be presented in an app-level modal dialog.
+	func presentAsModalSheet(for window: NSWindow?) {
+		guard let window = window else {
+			presentAsModal()
+			return
+		}
+
+		presentAsSheet(for: window) {
+			NSApp.stopModal()
+		}
+
+		NSApp.runModal(for: window)
+	}
+
+	/// Present the error as a blocking app-level modal dialog.
+	func presentAsModal() {
+		NSApp.presentError(self)
+	}
+}

@@ -90,7 +90,7 @@ final class ConversionViewController: NSViewController {
 				} catch Gifski.Error.cancelled {
 					self.cancelConversion()
 				} catch {
-					self.presentError(error, modalFor: self.view.window)
+					error.presentAsModalSheet(for: self.view.window)
 					self.cancelConversion()
 				}
 			}
