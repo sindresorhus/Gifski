@@ -1,0 +1,48 @@
+Convert videos to high-quality GIFs.
+
+It converts videos to animated GIFs that use thousands of colors per frame. This is made possible by some fancy features for efficient cross-frame palettes and temporal dithering.
+
+
+# Features
+
+- Video trimming
+- Precise control of dimensions
+- Copy, share, or drag the GIF
+- Share extension
+- System service
+- Optionally produce smaller lower quality GIFs
+
+
+# To convert, either:
+
+- Drag and drop your HEIC images onto the window or the Dock icon.
+- Click the “Open” button in the window (macOS 10.15 and later) or in the “File” menu and then choose your HEIC images.
+- Right-click your HEIC images in Finder and select this app in the “Open With” menu.
+
+Gifski supports all the video formats that macOS supports (.mp4 or .mov with H264, HEVC, ProRes, etc). The QuickTime Animation format is not supported. Use ProRes 4444 XQ instead. It's more efficient, more widely supported, and like QuickTime Animation, it also supports alpha channel.
+
+
+# Share extension
+
+Gifski includes a share extension that lets you share videos to Gifski. Just select Gifski from the Share menu of any macOS app.
+
+You can share a macOS screen recording with Gifski by clicking on the thumbnail that pops up once you are done recording and selecting “Share” from there.
+
+
+# System service
+
+Gifski includes a system service that lets you quickly convert a video to GIF from the “Services” menu in any app that provides a compatible video file.
+
+
+# Tips
+
+## Change GIF dimensions with the keyboard
+
+In the width/height input fields in the editor view, press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.
+
+
+# FAQ
+
+## Can you support 60 FPS?
+
+We're working on it, but it will take some time as it's not as easy as it sounds.
