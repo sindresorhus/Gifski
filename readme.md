@@ -43,7 +43,7 @@ In the width/height input fields in the editor view, press the arrow up/down key
 
 ## Screenshots
 
-<img src="Stuff/screenshot.jpg" width="720" height="450">
+<img src="Stuff/screenshot1.jpg" width="720" height="450">
 <img src="Stuff/screenshot2.jpg" width="720" height="450">
 <img src="Stuff/screenshot3.jpg" width="720" height="450">
 <img src="Stuff/screenshot4.jpg" width="720" height="450">
@@ -90,6 +90,11 @@ No, but there's a [cross-platform command-line tool](https://github.com/ImageOpt
 - [Lars-Jørgen Kristiansen](https://github.com/LarsJK)
 - [Boy van Amstel](https://github.com/boyvanamstel)
 - [Łukasz Mróz](https://github.com/sunshinejr)
+
+## Related
+
+- [Plash](https://github.com/sindresorhus/Plash) - Make any website your desktop wallpaper
+- [More apps…](https://sindresorhus.com/apps)
 
 ## License
 
