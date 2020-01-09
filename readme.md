@@ -79,7 +79,7 @@ No, but there's a [cross-platform command-line tool](https://github.com/ImageOpt
 ## Built with
 
 - [gifski library](https://github.com/ImageOptim/gifski) - High-quality GIF encoder
-- [Defaults](https://github.com/sindresorhus/Defaults/blob/master/readme.md) - Swifty and modern UserDefaults
+- [Defaults](https://github.com/sindresorhus/Defaults) - Swifty and modern UserDefaults
 - [CircularProgress](https://github.com/sindresorhus/CircularProgress) - Circular progress indicator for your macOS app
 - [DockProgress](https://github.com/sindresorhus/DockProgress) - Show progress in your app's Dock icon
 

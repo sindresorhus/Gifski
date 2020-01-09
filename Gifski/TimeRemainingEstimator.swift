@@ -81,7 +81,7 @@ final class TimeRemainingEstimator {
 		(secondsElapsed / percentComplete) * (1 - percentComplete)
 	}
 
-	private var label: Label
+	private let label: Label
 	private var startTime = Date()
 	private var progressObserver: NSKeyValueObservation?
 	private var cancelObserver: NSKeyValueObservation?

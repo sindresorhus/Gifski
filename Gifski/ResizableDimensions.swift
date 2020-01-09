@@ -121,7 +121,7 @@ final class ResizableDimensions: Copyable {
 	}
 
 	private func scalesEqual(_ scale1: CGFloat, _ scale2: CGFloat) -> Bool {
-		return scale1.isAlmostEqual(to: scale2, tolerance: 0.001)
+		scale1.isAlmostEqual(to: scale2, tolerance: 0.001)
 	}
 
 	private func calculateDimensions(for type: DimensionsType) -> Dimensions {
@@ -134,15 +134,15 @@ final class ResizableDimensions: Copyable {
 	}
 
 	private func calculateScale(usingWidth width: CGFloat) -> CGFloat {
-		return width / multiplier(for: currentDimensions.type).width
+		width / multiplier(for: currentDimensions.type).width
 	}
 
 	private func calculateScale(usingHeight height: CGFloat) -> CGFloat {
-		return height / multiplier(for: currentDimensions.type).height
+		height / multiplier(for: currentDimensions.type).height
 	}
 
 	private func validated(scale: CGFloat) -> CGFloat {
-		return scale.clamped(to: minimumScale...maximumScale)
+		scale.clamped(to: minimumScale...maximumScale)
 	}
 
 	private func multiplier(for type: DimensionsType) -> CGSize {

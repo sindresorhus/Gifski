@@ -18,6 +18,7 @@ whitelist_rules:
   - contains_over_first_not_nil
   - contains_over_range_nil_comparison
   - control_statement
+  - custom_rules
   - deployment_target
   - discarded_notification_center_observer
   - discouraged_direct_init
@@ -34,6 +35,7 @@ whitelist_rules:
   - empty_parentheses_with_trailing_closure
   - empty_string
   - empty_xctest_method
+  - enum_case_associated_value_count
   - explicit_init
   - fallthrough
   - fatal_error_message
@@ -77,14 +79,15 @@ whitelist_rules:
   - opening_brace
   - operator_usage_whitespace
   - operator_whitespace
+  - orphaned_doc_comment
   - overridden_super_call
   - pattern_matching_keywords
+  - prefer_self_type_over_type_of_self
   - private_action
   - private_outlet
   - private_unit_test
   - prohibited_super_call
   - protocol_property_accessors_order
-  - raw_value_for_camel_cased_codable_enum
   - reduce_boolean
   - reduce_into
   - redundant_discardable_let
@@ -106,15 +109,12 @@ whitelist_rules:
   - switch_case_alignment
   - switch_case_on_newline
   - syntactic_sugar
-  # TODO: Enable this again!
-  # - todo
   - toggle_bool
   - trailing_closure
   - trailing_comma
   - trailing_newline
   - trailing_semicolon
   - trailing_whitespace
-  - type_name
   - unavailable_function
   - unneeded_break_in_switch
   - unneeded_parentheses_in_closure_argument
@@ -168,3 +168,16 @@ identifier_name:
     - 'y2'
 deployment_target:
   macOS_deployment_target: '10.14'
+custom_rules:
+  no_nsrect:
+    regex: '\bNSRect\b'
+    match_kinds: typeidentifier
+    message: 'Use CGRect instead of NSRect'
+  no_nssize:
+    regex: '\bNSSize\b'
+    match_kinds: typeidentifier
+    message: 'Use CGSize instead of NSSize'
+  no_nspoint:
+    regex: '\bNSPoint\b'
+    match_kinds: typeidentifier
+    message: 'Use CGPoint instead of NSPoint'

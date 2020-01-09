@@ -176,14 +176,20 @@ extension NSWindow {
 }
 
 
+// swiftlint:disable:next identifier_name
+private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
+	// Adjust sheet position so it goes below the traffic lights.
+	if window.styleMask.contains(.fullSizeContentView) {
+		return rect.offsetBy(dx: 0, dy: CGFloat(-window.titlebarHeight))
+	}
+
+	return rect
+}
+
+/// - Note: Ensure you set `window.delegate = self` in the NSWindowController subclass.
 extension NSWindowController: NSWindowDelegate {
 	public func window(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
-		// Adjust sheet position so it goes below the traffic lights
-		if window.styleMask.contains(.fullSizeContentView) {
-			return rect.offsetBy(dx: 0, dy: CGFloat(-window.titlebarHeight))
-		}
-
-		return rect
+		__windowSheetPosition(window, willPositionSheet: sheet, using: rect)
 	}
 }
 
@@ -215,6 +221,7 @@ extension NSView {
 	}
 }
 
+
 extension NSAlert {
 	/// Show an alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
 	@discardableResult
@@ -223,7 +230,7 @@ extension NSAlert {
 		message: String,
 		informativeText: String? = nil,
 		detailText: String? = nil,
-		style: NSAlert.Style = .warning,
+		style: Style = .warning,
 		buttonTitles: [String] = []
 	) -> NSApplication.ModalResponse {
 		NSAlert(
@@ -239,7 +246,7 @@ extension NSAlert {
 		message: String,
 		informativeText: String? = nil,
 		detailText: String? = nil,
-		style: NSAlert.Style = .warning,
+		style: Style = .warning,
 		buttonTitles: [String] = []
 	) {
 		self.init()
@@ -350,11 +357,13 @@ extension AVAssetImageGenerator {
 
 extension CMTimeScale {
 	/**
+	Apple-recommended scale for video.
+
 	```
-	CMTime(seconds: 1 / fps, preferredTimescale: .video)
+	CMTime(seconds: (1 / fps), preferredTimescale: .video)
 	```
 	*/
-	static var video: CMTimeScale = 600 // This is what Apple recommends
+	static let video: CMTimeScale = 600
 }
 
 
@@ -477,6 +486,7 @@ extension Double {
 		truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", self) : String(self)
 	}
 }
+
 extension CGFloat {
 	var formatted: String { Double(self).formatted }
 }
@@ -507,6 +517,7 @@ extension AVAssetImageGenerator {
 		(try? copyCGImage(at: time, actualTime: nil))?.nsImage
 	}
 }
+
 
 extension AVAsset {
 	func image(at time: CMTime) -> NSImage? {
@@ -553,8 +564,11 @@ extension AVAssetTrack {
 	/// `avc1` (video)
 	/// `aac` (audio)
 	var codecString: String? {
-		let descriptions = formatDescriptions as! [CMFormatDescription]
-		return descriptions.map { CMFormatDescriptionGetMediaSubType($0).toString() }.first
+		guard let rawDescription = formatDescriptions.first else {
+			return nil
+		}
+
+		return CMFormatDescriptionGetMediaSubType(rawDescription as! CMFormatDescription).toString()
 	}
 
 	var codec: AVFormat? {
@@ -591,6 +605,7 @@ extension AVAssetTrack {
 	}
 }
 
+
 extension AVAssetTrack {
 	/// Whether the track's duration is the same as the total asset duration.
 	var isFullDuration: Bool { timeRange.duration == asset?.duration }
@@ -623,13 +638,27 @@ extension AVAssetTrack {
 extension FourCharCode {
 	/// Create a String representation of a FourCC.
 	func toString() -> String {
+		let a_ = self >> 24
+		let b_ = self >> 16
+		let c_ = self >> 8
+		let d_ = self
+
 		let bytes: [CChar] = [
-			CChar((self >> 24) & 0xff),
-			CChar((self >> 16) & 0xff),
-			CChar((self >> 8) & 0xff),
-			CChar(self & 0xff),
+			CChar(a_ & 0xff),
+			CChar(b_ & 0xff),
+			CChar(c_ & 0xff),
+			CChar(d_ & 0xff),
 			0
 		]
+
+		// Swift type-checking is too slow for this...
+		//		let bytes: [CChar] = [
+		//			CChar((self >> 24) & 0xff),
+		//			CChar((self >> 16) & 0xff),
+		//			CChar((self >> 8) & 0xff),
+		//			CChar(self & 0xff),
+		//			0
+		//		]
 
 		return String(cString: bytes).trimmingCharacters(in: .whitespaces)
 	}
@@ -893,7 +922,7 @@ extension AVAsset {
 }
 
 
-/// Video metadata
+/// Video metadata.
 extension AVAsset {
 	struct VideoMetadata {
 		let dimensions: CGSize
@@ -1130,7 +1159,8 @@ class Label: NSTextField {
 	}
 }
 
-/// Use it in Interface Builder as a class or programmatically
+
+/// Use it in Interface Builder as a class or programmatically.
 final class MonospacedLabel: Label {
 	override init(frame: CGRect) {
 		super.init(frame: frame)
@@ -1200,7 +1230,7 @@ func unimplemented(
 extension NSPasteboard {
 	/// Get the file URLs from dragged and dropped files.
 	func fileURLs(types: [String] = []) -> [URL] {
-		var options: [NSPasteboard.ReadingOptionKey: Any] = [
+		var options: [ReadingOptionKey: Any] = [
 			.urlReadingFileURLsOnly: true
 		]
 
@@ -1223,6 +1253,7 @@ extension NSPasteboard {
 final class FeedbackMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
+
 		onAction = { _ in
 			Meta.openSubmitFeedbackPage()
 		}
@@ -1236,6 +1267,7 @@ final class UrlMenuItem: NSMenuItem {
 
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
+
 		onAction = { _ in
 			NSWorkspace.shared.open(URL(string: self.url!)!)
 		}
@@ -1246,7 +1278,7 @@ final class UrlMenuItem: NSMenuItem {
 final class AssociatedObject<T: Any> {
 	subscript(index: Any) -> T? {
 		get {
-			return objc_getAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque()) as! T?
+			objc_getAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque()) as! T?
 		} set {
 			objc_setAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque(), newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 		}
@@ -1324,6 +1356,7 @@ extension NSControl {
 
 
 extension CAMediaTimingFunction {
+	// TODO: Use `Self` here when using Swift 5.2.
 	static let `default` = CAMediaTimingFunction(name: .default)
 	static let linear = CAMediaTimingFunction(name: .linear)
 	static let easeIn = CAMediaTimingFunction(name: .easeIn)
@@ -1457,6 +1490,7 @@ extension URL {
 		NSWorkspace.shared.open(self)
 	}
 }
+
 extension String {
 	/*
 	```
@@ -1504,7 +1538,7 @@ private func escapeQuery(_ query: String) -> String {
 
 extension Dictionary where Key: ExpressibleByStringLiteral, Value: ExpressibleByStringLiteral {
 	var asQueryItems: [URLQueryItem] {
-		return map {
+		map {
 			URLQueryItem(
 				name: escapeQuery($0 as! String),
 				value: escapeQuery($1 as! String)
@@ -1528,7 +1562,7 @@ extension URLComponents {
 
 
 extension URL {
-	var directoryURL: URL { deletingLastPathComponent() }
+	var directoryURL: Self { deletingLastPathComponent() }
 
 	var directory: String { directoryURL.path }
 
@@ -1551,20 +1585,20 @@ extension URL {
 	var filenameWithoutExtension: String {
 		get { deletingPathExtension().lastPathComponent }
 		set {
-			let ext = pathExtension
+			let fileExtension = pathExtension
 			deleteLastPathComponent()
 			appendPathComponent(newValue)
-			appendPathExtension(ext)
+			appendPathExtension(fileExtension)
 		}
 	}
 
-	func changingFileExtension(to fileExtension: String) -> URL {
+	func changingFileExtension(to fileExtension: String) -> Self {
 		var url = self
 		url.fileExtension = fileExtension
 		return url
 	}
 
-	func addingDictionaryAsQuery(_ dict: [String: String]) -> URL {
+	func addingDictionaryAsQuery(_ dict: [String: String]) -> Self {
 		var components = URLComponents(url: self, resolvingAgainstBaseURL: false)!
 		components.addDictionaryAsQuery(dict)
 		return components.url ?? self
@@ -1586,10 +1620,10 @@ extension URL {
 		return values.allValues[key] as? Bool ?? defaultValue
 	}
 
-	/// File UTI
+	/// File UTI.
 	var typeIdentifier: String? { resourceValue(forKey: .typeIdentifierKey) }
 
-	/// File size in bytes
+	/// File size in bytes.
 	var fileSize: Int { resourceValue(forKey: .fileSizeKey) ?? 0 }
 
 	var fileSizeFormatted: String {
@@ -1600,6 +1634,7 @@ extension URL {
 
 	var isReadable: Bool { boolResourceValue(forKey: .isReadableKey) }
 }
+
 
 extension URL {
 	/**
@@ -1622,20 +1657,21 @@ extension URL {
 	var isVideo: Bool { conformsTo(typeIdentifier: kUTTypeMovie as String) }
 }
 
+
 extension CGSize {
 	static func * (lhs: Self, rhs: Double) -> Self {
-		Self(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
+		.init(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
 	}
 
 	static func * (lhs: Self, rhs: CGFloat) -> Self {
-		Self(width: lhs.width * rhs, height: lhs.height * rhs)
+		.init(width: lhs.width * rhs, height: lhs.height * rhs)
 	}
 
 	init(widthHeight: CGFloat) {
 		self.init(width: widthHeight, height: widthHeight)
 	}
 
-	var cgRect: CGRect { CGRect(origin: .zero, size: self) }
+	var cgRect: CGRect { .init(origin: .zero, size: self) }
 
 	func aspectFit(to boundingSize: CGSize) -> Self {
 		let ratio = min(boundingSize.width / width, boundingSize.height / height)
@@ -1646,6 +1682,7 @@ extension CGSize {
 		aspectFit(to: Self(width: widthHeight, height: widthHeight))
 	}
 }
+
 
 extension CGRect {
 	init(origin: CGPoint = .zero, width: CGFloat, height: CGFloat) {
@@ -1752,7 +1789,7 @@ extension CGRect {
 		xOffset: Double = 0,
 		yOffset: Double = 0
 	) -> Self {
-		Self(
+		.init(
 			x: ((rect.width - size.width) / 2) + CGFloat(xOffset),
 			y: ((rect.height - size.height) / 2) + CGFloat(yOffset),
 			width: size.width,
@@ -1771,7 +1808,7 @@ extension CGRect {
 		xOffsetPercent: Double,
 		yOffsetPercent: Double
 	) -> Self {
-		return centered(
+		centered(
 			in: rect,
 			xOffset: Double(rect.width) * xOffsetPercent,
 			yOffset: Double(rect.height) * yOffsetPercent
@@ -1779,8 +1816,9 @@ extension CGRect {
 	}
 }
 
+
 public protocol CancellableError: Error {
-	/// Returns true if this Error represents a cancelled condition
+	/// Returns true if this Error represents a cancelled condition.
 	var isCancelled: Bool { get }
 }
 
@@ -1827,6 +1865,7 @@ extension Result {
 		}
 	}
 }
+
 
 // TODO: Find a way to reduce the number of overloads for `wrap()`.
 final class Once {
@@ -1892,7 +1931,7 @@ final class Once {
 	// TODO: Support any number of arguments when Swift supports variadics.
 	/// Wraps a single-argument function.
 	func wrap<T, U>(_ function: @escaping ((T) -> U)) -> ((T) -> U) {
-		return { parameter in
+		return { parameter in // swiftlint:disable:this implicit_return
 			self.run {
 				function(parameter)
 			}
@@ -1914,7 +1953,7 @@ final class Once {
 
 	/// Wraps a single-argument throwing function.
 	func wrap<T, U>(_ function: @escaping ((T) throws -> U)) -> ((T) throws -> U) {
-		return { parameter in
+		return { parameter in // swiftlint:disable:this implicit_return
 			try self.run {
 				try function(parameter)
 			}
@@ -1935,6 +1974,7 @@ final class Once {
 	}
 }
 
+
 extension NSResponder {
 	/// Presents the error in the given window if it's not nil, otherwise falls back to an app-modal dialog.
 	open func presentError(_ error: Error, modalFor window: NSWindow?) {
@@ -1947,12 +1987,14 @@ extension NSResponder {
 	}
 }
 
+
 extension NSSharingService {
-	class func share(items: [Any], from button: NSButton, preferredEdge: NSRectEdge = .maxX) {
+	static func share(items: [Any], from button: NSButton, preferredEdge: NSRectEdge = .maxX) {
 		let sharingServicePicker = NSSharingServicePicker(items: items)
 		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: preferredEdge)
 	}
 }
+
 
 extension Double {
 	var cgFloat: CGFloat { CGFloat(self) }
@@ -1961,6 +2003,7 @@ extension Double {
 extension CGFloat {
 	var double: Double { Double(self) }
 }
+
 
 extension CALayer {
 	func animateScaleMove(fromScale: Double, fromX: Double? = nil, fromY: Double? = nil) {
@@ -1986,12 +2029,14 @@ extension CALayer {
 	}
 }
 
+
 extension Error {
 	var isNsError: Bool { Self.self is NSError.Type }
 }
 
+
 extension NSError {
-	class func from(error: Error, userInfo: [String: Any] = [:]) -> NSError {
+	static func from(error: Error, userInfo: [String: Any] = [:]) -> NSError {
 		let nsError = error as NSError
 
 		// Since Error and NSError are often bridged between each other, we check if it was originally an NSError and then return that.
@@ -2013,7 +2058,7 @@ extension NSError {
 		// This gets `Error.generateFrameFailed` from `Error.generateFrameFailed(Error Domain=AVFoundationErrorDomain Code=-11832 […]`.
 		let errorName = "\(error)".split(separator: "(").first ?? ""
 
-		return self.init(
+		return .init(
 			domain: "\(App.id) - \(nsError.domain)\(errorName.isEmpty ? "" : ".")\(errorName)",
 			code: nsError.code,
 			userInfo: userInfo
@@ -2023,12 +2068,12 @@ extension NSError {
 	/**
 	- Parameter domainPostfix: String to append to the `domain`.
 	*/
-	class func appError(
+	static func appError(
 		message: String,
 		userInfo: [String: Any] = [:],
 		domainPostfix: String? = nil
 	) -> Self {
-		return self.init(
+		.init(
 			domain: domainPostfix != nil ? "\(App.id) - \(domainPostfix!)" : App.id,
 			code: 0,
 			userInfo: [NSLocalizedDescriptionKey: message]
@@ -2037,13 +2082,14 @@ extension NSError {
 
 	/// Returns a new error with the user info appended.
 	func appending(userInfo newUserInfo: [String: Any]) -> Self {
-		return Self(
+		.init(
 			domain: domain,
 			code: code,
 			userInfo: userInfo.appending(newUserInfo)
 		)
 	}
 }
+
 
 extension Dictionary {
 	/// Adds the elements of the given dictionary to a copy of self and returns that.
@@ -2059,59 +2105,61 @@ extension Dictionary {
 	}
 }
 
+
 #if canImport(Crashlytics)
-	import Crashlytics
+import Crashlytics
 
-	extension Crashlytics {
-		/// A better error recording method. Captures more debug info.
-		static func recordNonFatalError(error: Error, userInfo: [String: Any] = [:]) {
-			#if !DEBUG
-				// This forces Crashlytics to actually provide some useful info for Swift errors
-				let nsError = NSError.from(error: error, userInfo: userInfo)
+extension Crashlytics {
+	/// A better error recording method. Captures more debug info.
+	static func recordNonFatalError(error: Error, userInfo: [String: Any] = [:]) {
+		#if !DEBUG
+		// This forces Crashlytics to actually provide some useful info for Swift errors.
+		let nsError = NSError.from(error: error, userInfo: userInfo)
 
-				sharedInstance().recordError(nsError)
-			#endif
-		}
-
-		static func recordNonFatalError(title: String? = nil, message: String) {
-			#if !DEBUG
-				sharedInstance().recordError(NSError.appError(message: message, domainPostfix: title))
-			#endif
-		}
-
-		/// Set a value for a for a key to be associated with your crash data which will be visible in Crashlytics.
-		static func record(key: String, value: Any?) {
-			#if !DEBUG
-				sharedInstance().setObjectValue(value, forKey: key)
-			#endif
-		}
+		sharedInstance().recordError(nsError)
+		#endif
 	}
 
-	extension NSAlert {
-		/// Show a modal alert sheet on a window, or as an app-model alert if the given window is nil, and also report it as a non-fatal error to Crashlytics.
-		@discardableResult
-		static func showModalAndReportToCrashlytics(
-			for window: NSWindow? = nil,
-			message: String,
-			informativeText: String? = nil,
-			style: NSAlert.Style = .warning,
-			debugInfo: String
-		) -> NSApplication.ModalResponse {
-			Crashlytics.recordNonFatalError(
-				title: message,
-				message: debugInfo
-			)
-
-			return NSAlert.showModal(
-				for: window,
-				message: message,
-				informativeText: informativeText,
-				detailText: debugInfo,
-				style: style
-			)
-		}
+	static func recordNonFatalError(title: String? = nil, message: String) {
+		#if !DEBUG
+		sharedInstance().recordError(NSError.appError(message: message, domainPostfix: title))
+		#endif
 	}
+
+	/// Set a value for a for a key to be associated with your crash data which will be visible in Crashlytics.
+	static func record(key: String, value: Any?) {
+		#if !DEBUG
+		sharedInstance().setObjectValue(value, forKey: key)
+		#endif
+	}
+}
+
+extension NSAlert {
+	/// Show a modal alert sheet on a window, or as an app-model alert if the given window is nil, and also report it as a non-fatal error to Crashlytics.
+	@discardableResult
+	static func showModalAndReportToCrashlytics(
+		for window: NSWindow? = nil,
+		message: String,
+		informativeText: String? = nil,
+		style: Style = .warning,
+		debugInfo: String
+	) -> NSApplication.ModalResponse {
+		Crashlytics.recordNonFatalError(
+			title: message,
+			message: debugInfo
+		)
+
+		return Self.showModal(
+			for: window,
+			message: message,
+			informativeText: informativeText,
+			detailText: debugInfo,
+			style: style
+		)
+	}
+}
 #endif
+
 
 enum FileType {
 	case png
@@ -2187,6 +2235,7 @@ enum FileType {
 	}
 }
 
+
 extension Sequence {
 	/**
 	Returns the sum of elements in a sequence by mapping the elements with a numerator.
@@ -2196,14 +2245,17 @@ extension Sequence {
 	//=> 15
 	```
 	*/
-	func sum<T: Numeric>(_ numerator: (Element) throws -> T) rethrows -> T {
+	func sum<T: AdditiveArithmetic>(_ numerator: (Element) throws -> T) rethrows -> T {
 		var result = T.zero
+
 		for element in self {
 			result += try numerator(element)
 		}
+
 		return result
 	}
 }
+
 
 extension BinaryFloatingPoint {
 	func rounded(
@@ -2213,11 +2265,20 @@ extension BinaryFloatingPoint {
 		guard decimalPlaces >= 0 else {
 			return self
 		}
+
 		var divisor: Self = 1
 		for _ in 0..<decimalPlaces { divisor *= 10 }
+
 		return (self * divisor).rounded(rule) / divisor
 	}
 }
+
+extension CGSize {
+	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> Self {
+		Self(width: width.rounded(rule), height: height.rounded(rule))
+	}
+}
+
 
 extension QLPreviewPanel {
 	func toggle() {
@@ -2229,6 +2290,7 @@ extension QLPreviewPanel {
 	}
 }
 
+
 extension NSView {
 	/// Get the view frame in screen coordinates.
 	var boundsInScreenCoordinates: CGRect? {
@@ -2236,12 +2298,14 @@ extension NSView {
 	}
 }
 
+
 extension Collection {
 	/// Returns the element at the specified index if it is within bounds, otherwise nil.
 	subscript(safe index: Index) -> Element? {
 		indices.contains(index) ? self[index] : nil
 	}
 }
+
 
 protocol Copyable {
 	init(instance: Self)
@@ -2253,11 +2317,6 @@ extension Copyable {
 	}
 }
 
-extension CGSize {
-	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> Self {
-		Self(width: width.rounded(rule), height: height.rounded(rule))
-	}
-}
 
 // Source: https://github.com/apple/swift-evolution/blob/9940e45977e2006a29eccccddf6b62305758c5c3/proposals/0259-approximately-equal.md
 // swiftlint:disable all
@@ -2398,6 +2457,7 @@ extension FloatingPoint {
 }
 // swiftlint:enable all
 
+
 extension NSEdgeInsets {
 	static let zero = NSEdgeInsetsZero
 
@@ -2427,6 +2487,7 @@ extension NSEdgeInsets {
 	var horizontal: Double { Double(left + right) }
 }
 
+
 extension NSControl {
 	func focus() {
 		window?.makeFirstResponder(self)
@@ -2452,6 +2513,7 @@ extension URL {
 	}
 }
 
+
 extension URLComponents {
 	var queryDictionary: [String: String] {
 		queryItems?.reduce(into: [String: String]()) { result, item in
@@ -2467,6 +2529,7 @@ extension URL {
 
 	var queryDictionary: [String: String] { components?.queryDictionary ?? [:] }
 }
+
 
 extension NSViewController {
 	func push(viewController: NSViewController, completion: (() -> Void)? = nil) {
@@ -2500,6 +2563,7 @@ extension NSViewController {
 	}
 }
 
+
 extension NSView {
 	/// Get a subview matching a condition.
 	func firstSubview(where matches: (NSView) -> Bool, deep: Bool = false) -> NSView? {
@@ -2517,8 +2581,9 @@ extension NSView {
 	}
 }
 
+
 extension NSLayoutConstraint {
-	/// Returns copy of the constraint with changed properties provided as arguments
+	/// Returns copy of the constraint with changed properties provided as arguments.
 	func changing(
 		firstItem: Any? = nil,
 		firstAttribute: Attribute? = nil,
@@ -2528,7 +2593,7 @@ extension NSLayoutConstraint {
 		multiplier: Double? = nil,
 		constant: Double? = nil
 	) -> Self {
-		Self(
+		.init(
 			item: firstItem ?? self.firstItem as Any,
 			attribute: firstAttribute ?? self.firstAttribute,
 			relatedBy: relation ?? self.relation,
@@ -2540,13 +2605,15 @@ extension NSLayoutConstraint {
 	}
 }
 
+
 extension NSObject {
 	/// Returns the class name.
-	class var simpleClassName: String { String(describing: self) }
+	static let simpleClassName = String(describing: self)
 
 	/// Returns the class name of the instance.
 	var simpleClassName: String { Self.simpleClassName }
 }
+
 
 extension CMTime {
 	/// Get the `CMTime` as a duration from zero to the seconds value of `self`.
@@ -2559,6 +2626,7 @@ extension CMTime {
 		return 0...seconds
 	}
 }
+
 
 extension CMTimeRange {
 	/// Get `self` as a range in seconds.
@@ -2574,6 +2642,7 @@ extension CMTimeRange {
 		return start.seconds...end.seconds
 	}
 }
+
 
 extension AVPlayerItem {
 	/// The duration range of the item.
@@ -2604,6 +2673,7 @@ extension AVPlayerItem {
 	}
 }
 
+
 extension FileManager {
 	/// Copy a file and optionally overwrite the destination if it exists.
 	func copyItem(
@@ -2618,6 +2688,7 @@ extension FileManager {
 		try copyItem(at: sourceURL, to: destinationURL)
 	}
 }
+
 
 extension ClosedRange where Bound: AdditiveArithmetic {
 	/// Get the length between the lower and upper bound.
@@ -2717,13 +2788,15 @@ extension ClosedRange where Bound == Double {
 	}
 }
 
+
 extension BinaryInteger {
 	var isEven: Bool { isMultiple(of: 2) }
 	var isOdd: Bool { !isEven }
 }
 
+
 extension AppDelegate {
-	static var shared: AppDelegate { NSApp.delegate as! AppDelegate }
+	static let shared = NSApp.delegate as! AppDelegate
 }
 
 
@@ -2768,7 +2841,7 @@ final class LaunchCompletions {
 
 
 @IBDesignable
-class BackButton: NSButton {
+final class BackButton: NSButton {
 	convenience init() {
 		self.init()
 		commonInit()

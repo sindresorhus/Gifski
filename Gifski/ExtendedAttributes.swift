@@ -2,7 +2,7 @@ import AppKit
 
 extension POSIXError {
 	/// Create an error from the global C `errno`.
-	static var fromErrno: Self { self.init(errno: errno) }
+	static let fromErrno = Self(errno: errno)
 
 	/**
 	Create an error from the given C `errno`.
@@ -162,5 +162,5 @@ final class ExtendedAttributes {
 
 
 extension URL {
-	var attributes: ExtendedAttributes { ExtendedAttributes(url: self) }
+	var attributes: ExtendedAttributes { .init(url: self) }
 }
