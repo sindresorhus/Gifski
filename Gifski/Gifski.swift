@@ -157,7 +157,7 @@ final class Gifski {
 				generator.cancelAllCGImageGeneration()
 			}
 
-			let fps = (conversion.frameRate.map { Double($0) } ?? assetFrameRate).clamped(to: Constants.allowedFrameRate)
+			let fps = (conversion.frameRate.map { Double($0) } ?? assetFrameRate).clamped(to: 5...50 /*Constants.allowedFrameRate*/) // Has to be manually clamped to 50 until https://github.com/sindresorhus/Gifski/issues/161 is resolved.
 			let videoRange = conversion.timeRange?.clamped(to: videoTrackRange) ?? videoTrackRange
 			let startTime = videoRange.lowerBound
 			let duration = videoRange.length
