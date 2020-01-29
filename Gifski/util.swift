@@ -2607,10 +2607,11 @@ extension NSLayoutConstraint {
 
 
 extension NSObject {
-	/// Returns the class name.
-	static let simpleClassName = String(describing: self)
+	// Note: It's intentionally a getter to get the dynamic self.
+	/// Returns the class name without module name.
+	static var simpleClassName: String { String(describing: self) }
 
-	/// Returns the class name of the instance.
+	/// Returns the class name of the instance without module name.
 	var simpleClassName: String { Self.simpleClassName }
 }
 
