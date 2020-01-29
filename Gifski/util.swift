@@ -2541,6 +2541,11 @@ extension NSViewController {
 		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
 
 		viewController.view.alphaValue = 0.0
+
+		// Workaround for macOS first responder quirk. Still in macOS 10.15.3.
+		// Reproduce: Without the below, if you click convert, hide the window, show the window when the conversion is done, and then drag and drop a new file, the width/height text fields are now not editable.
+		window.makeFirstResponder(viewController)
+
 		NSAnimationContext.runAnimationGroup({ _ in
 			window.contentViewController?.view.animator().alphaValue = 0.0
 			window.contentViewController = nil
