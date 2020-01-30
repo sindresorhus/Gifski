@@ -1,7 +1,7 @@
-use std::collections::BinaryHeap;
-use std::cmp::Ordering;
-use std::sync::mpsc;
 use crate::error::*;
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
+use std::sync::mpsc;
 
 pub struct OrdQueue<T> {
     sender: mpsc::SyncSender<ReverseTuple<T>>,
