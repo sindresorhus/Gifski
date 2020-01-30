@@ -60,6 +60,10 @@ xcode-select --install
 
 ## FAQ
 
+### The generated GIFs are huge!
+
+The GIF image format is very space inefficient. It works best with short video clips. Try reducing the dimensions, FPS, or quality.
+
 ### Can I contribute localizations?
 
 No, we're not interested in localizing the app.
