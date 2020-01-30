@@ -44,6 +44,6 @@ In the width/height input fields in the editor view, press the arrow up/down key
 
 ■ FAQ
 
-‣ Can you support 60 FPS?
+‣ The generated GIFs are huge!
 
-We're working on it, but it will take some time as it's not as easy as it sounds.
+The GIF image format is very space inefficient. It works best with short video clips.
