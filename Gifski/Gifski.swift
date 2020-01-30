@@ -2,6 +2,8 @@ import Cocoa
 import AVFoundation
 import Crashlytics
 
+var conversionCount = 0
+
 final class Gifski {
 	enum Error: LocalizedError {
 		case invalidSettings
@@ -74,6 +76,10 @@ final class Gifski {
 		_ conversion: Conversion,
 		completionHandler: ((Result<Data, Error>) -> Void)?
 	) {
+		// For debugging.
+		conversionCount += 1
+		let debugKey = "Conversion \(conversionCount)"
+
 		progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { (_ result: Result<Data, Error>) -> Void in
@@ -128,6 +134,27 @@ final class Gifski {
 				]
 			)
 
+			Crashlytics.record(
+				key: "\(debugKey): Is readable?",
+				value: asset.isReadable
+			)
+			Crashlytics.record(
+				key: "\(debugKey): First video track",
+				value: asset.firstVideoTrack
+			)
+			Crashlytics.record(
+				key: "\(debugKey): First video track time range",
+				value: asset.firstVideoTrack?.timeRange
+			)
+			Crashlytics.record(
+				key: "\(debugKey): Duration",
+				value: asset.duration.seconds
+			)
+			Crashlytics.record(
+				key: "\(debugKey): AVAsset debug info",
+				value: asset.debugInfo
+			)
+
 			guard
 				asset.isReadable,
 				let assetFrameRate = asset.frameRate,
@@ -144,7 +171,7 @@ final class Gifski {
 			}
 
 			Crashlytics.record(
-				key: "Conversion: AVAsset debug info",
+				key: "\(debugKey): AVAsset debug info2",
 				value: asset.debugInfo
 			)
 
@@ -177,6 +204,23 @@ final class Gifski {
 					)
 				)
 			}
+
+			Crashlytics.record(
+				key: "\(debugKey): fps",
+				value: fps
+			)
+			Crashlytics.record(
+				key: "\(debugKey): videoRange",
+				value: videoRange
+			)
+			Crashlytics.record(
+				key: "\(debugKey): frameCount",
+				value: frameCount
+			)
+			Crashlytics.record(
+				key: "\(debugKey): frameForTimes",
+				value: frameForTimes.map { $0.seconds }
+			)
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { [weak self] result in
 				guard let self = self else {

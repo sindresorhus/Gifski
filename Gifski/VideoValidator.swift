@@ -64,7 +64,7 @@ struct VideoValidator {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video file is not supported.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
+				informativeText: "I'm trying to figure out why this happens. It would be amazing if you could email the below details to sindresorhus@gmail.com",
 				debugInfo: asset.debugInfo
 			)
 
@@ -111,6 +111,11 @@ struct VideoValidator {
 
 				return .failure
 			}
+
+			Crashlytics.record(
+				key: "Extracted video to new asset",
+				value: true
+			)
 
 			return .success(newAsset, newVideoMetadata)
 		}
