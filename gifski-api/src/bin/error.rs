@@ -3,8 +3,6 @@
 use gifski;
 use std::io;
 use std::num;
-#[cfg(feature = "video")]
-use ffmpeg;
 
 #[cfg(not(feature = "video"))]
 mod ffmpeg {

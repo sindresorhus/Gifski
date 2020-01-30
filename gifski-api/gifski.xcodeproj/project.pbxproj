@@ -115,7 +115,7 @@
 		CA6071C8BFD722D117092DB7 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1100;
+				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					CA6034DF35B8B3463979F9E1 = {
 						CreatedOnToolsVersion = 9.2;

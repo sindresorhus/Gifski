@@ -101,36 +101,45 @@ typedef enum GifskiError GifskiError;
 gifski *gifski_new(const GifskiSettings *settings);
 
 /**
- * File path must be ASCII or valid UTF-8. This function is asynchronous.
- * Delay is in 1/100ths of a second.
+ * Adds a frame to the animation. This function is asynchronous.
+ *
+ * File path must be valid UTF-8.
+ *
+ * `frame_number` orders frames (consecutive numbers starting from 0).
+ * You can add frames in any order, and they will be sorted by their `frame_number`.
+ *
+ * Presentation timestamp (PTS) is time in seconds, since start of the file, when this frame is to be displayed.
+ * For a 20fps video it could be `frame_number/20.0`.
+ * First frame must have PTS=0, and frames must not be more than 1 second apart.
+ *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
 GifskiError gifski_add_frame_png_file(gifski *handle,
-                                      uint32_t index,
+                                      uint32_t frame_number,
                                       const char *file_path,
-                                      uint16_t delay);
+                                      double presentation_timestamp);
 
 /**
+ * Adds a frame to the animation. This function is asynchronous.
+ *
  * `pixels` is an array width×height×4 bytes large.
  * The array is copied, so you can free/reuse it immediately after this function returns.
  *
- * `index` is the frame number, counting from 0.
- * You can add frames in any order (if you need to), and they will be sorted by their index.
+ * `frame_number` orders frames (consecutive numbers starting from 0).
+ * You can add frames in any order, and they will be sorted by their `frame_number`.
  *
- * Delay is in 1/100ths of a second. 5 is 20fps.
+ * Presentation timestamp (PTS) is time in seconds, since start of the file, when this frame is to be displayed.
+ * For a 20fps video it could be `frame_number/20.0`.
+ * First frame must have PTS=0, and frames must not be more than 1 second apart.
  *
- *
- * While you add frames, `gifski_set_file_output()` should have been called already.
- * If `gifski_set_file_output()` hasn't been called, it may make `gifski_add_frame_*` block and wait for
- * writing to start.
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
 GifskiError gifski_add_frame_rgba(gifski *handle,
-                                  uint32_t index,
+                                  uint32_t frame_number,
                                   uint32_t width,
                                   uint32_t height,
-                                  const unsigned char pixels[],
-                                  uint16_t delay);
+                                  const unsigned char *pixels,
+                                  double presentation_timestamp);
 
 /** Same as `gifski_add_frame_rgba`, except it expects components in ARGB order.
 
@@ -138,12 +147,12 @@ Bytes per row must be multiple of 4, and greater or equal width×4.
 If the bytes per row value is invalid (e.g. an odd number), frames may look sheared/skewed.
 */
 GifskiError gifski_add_frame_argb(gifski *handle,
-                                  uint32_t index,
+                                  uint32_t frame_number,
                                   uint32_t width,
                                   uint32_t bytes_per_row,
                                   uint32_t height,
-                                  const unsigned char pixels[],
-                                  uint16_t delay);
+                                  const unsigned char *pixels,
+                                  double presentation_timestamp);
 
 /** Same as `gifski_add_frame_rgba`, except it expects RGB components (3 bytes per pixel)
 
@@ -151,12 +160,12 @@ Bytes per row must be multiple of 3, and greater or equal width×3.
 If the bytes per row value is invalid (not multiple of 3), frames may look sheared/skewed.
 */
 GifskiError gifski_add_frame_rgb(gifski *handle,
-                                 uint32_t index,
+                                 uint32_t frame_number,
                                  uint32_t width,
                                  uint32_t bytes_per_row,
                                  uint32_t height,
-                                 const unsigned char pixels[],
-                                 uint16_t delay);
+                                 const unsigned char *pixels,
+                                 double presentation_timestamp);
 
 /**
  * Get a callback for frame processed, and abort processing if desired.

@@ -1,7 +1,7 @@
 use crate::CatResult;
-use std::os::raw::c_int;
-use std::io;
 use std::fmt;
+use std::io;
+use std::os::raw::c_int;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -27,8 +27,8 @@ pub enum GifskiError {
 
 impl Into<io::Error> for GifskiError {
     fn into(self) -> io::Error {
-        use GifskiError::*;
         use std::io::ErrorKind as EK;
+        use GifskiError::*;
         match self {
             OK => panic!("wrong err code"),
             NOT_FOUND => EK::NotFound,
@@ -47,7 +47,7 @@ impl Into<io::Error> for GifskiError {
 impl From<c_int> for GifskiError {
     fn from(res: c_int) -> Self {
         use GifskiError::*;
-        match res{
+        match res {
             x if x == OK as c_int => OK,
             x if x == NULL_ARG as c_int => NULL_ARG,
             x if x == INVALID_STATE as c_int => INVALID_STATE,
@@ -104,7 +104,7 @@ impl From<io::ErrorKind> for GifskiError {
 impl std::error::Error for GifskiError {}
 
 impl fmt::Display for GifskiError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
 }

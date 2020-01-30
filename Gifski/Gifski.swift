@@ -166,8 +166,16 @@ final class Gifski {
 			self.progress.totalUnitCount = Int64(frameCount)
 
 			var frameForTimes = [CMTime]()
+			let frameStep = 1 / fps
 			for index in 0..<frameCount {
-				frameForTimes.append(CMTime(seconds: startTime + ((1 / fps) * Double(index)), preferredTimescale: .video))
+				let presentationTimestamp = startTime + (frameStep * Double(index))
+
+				frameForTimes.append(
+					CMTime(
+						seconds: presentationTimestamp,
+						preferredTimescale: .video
+					)
+				)
 			}
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { [weak self] result in
@@ -196,12 +204,12 @@ final class Gifski {
 
 					do {
 						try gifski.addFrameARGB(
-							index: UInt32(result.completedCount - 1),
+							frameNumber: UInt32(result.completedCount - 1),
 							width: UInt32(image.width),
 							bytesPerRow: UInt32(image.bytesPerRow),
 							height: UInt32(image.height),
 							pixels: buffer,
-							delay: UInt16(100 / fps)
+							presentationTimestamp: result.actualTime.seconds
 						)
 					} catch {
 						completionHandlerOnce(.failure(.addFrameFailed(error)))

@@ -1,8 +1,8 @@
 #![allow(deprecated)]
 
-use std::io;
-use imagequant;
 use gif_dispose;
+use imagequant;
+use std::io;
 
 error_chain! {
     types {

@@ -1,10 +1,10 @@
-use crate::Encoder;
 use crate::error::*;
+use crate::Encoder;
 use crate::GIFFrame;
 use crate::Settings;
 use gifsicle::*;
-use std::ptr;
 use std::io::Write;
+use std::ptr;
 
 pub(crate) struct Gifsicle<'w> {
     gfs: *mut Gif_Stream,
@@ -76,7 +76,7 @@ impl Encoder for Gifsicle<'_> {
             };
             gfs.screen_width = image.width() as _;
             gfs.screen_height = image.height() as _;
-            gfs.loopcount = if settings.once {1} else {0}; // 0 means infinite
+            gfs.loopcount = if settings.once { 1 } else { -1 };
             unsafe {
                 self.gif_writer = Gif_IncrementalWriteFileInit(gfs, &self.info, ptr::null_mut());
                 if self.gif_writer.is_null() {
@@ -98,7 +98,7 @@ impl Encoder for Gifsicle<'_> {
             gif::DisposalMethod::Previous => Disposal::Previous,
         } as _;
 
-        g.local = unsafe {Gif_NewFullColormap(0, pal.len() as _)}; // it's owned by the image
+        g.local = unsafe { Gif_NewFullColormap(0, pal.len() as _) }; // it's owned by the image
         for (i, c) in pal.iter().enumerate() {
             if c.a == 0 {
                 g.transparent = i as _;
