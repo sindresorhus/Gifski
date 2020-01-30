@@ -81,7 +81,7 @@ final class ConversionViewController: NSViewController {
 				}
 
 				do {
-					let gifUrl = self.generateTempGifUrl(for: conversion.video)
+					let gifUrl = try self.generateTemporaryGifUrl(for: conversion.video)
 					try result.get().write(to: gifUrl, options: .atomic)
 					try? gifUrl.setMetadata(key: .itemCreator, value: "\(App.name) \(App.version)")
 					Defaults[.successfulConversionsCount] += 1
@@ -97,11 +97,18 @@ final class ConversionViewController: NSViewController {
 		}
 	}
 
-	private func generateTempGifUrl(for videoUrl: URL) -> URL {
-		let tempDirectory = FileManager.default.temporaryDirectory
-		let tempName = "\(videoUrl.filenameWithoutExtension).\(FileType.gif.fileExtension)"
+	private func generateTemporaryGifUrl(for videoUrl: URL) throws -> URL {
+		let temporaryDirectory = try FileManager.default.url(
+			for: .itemReplacementDirectory,
+			in: .userDomainMask,
+			// We force it to be on the main disk as we don't want the generated GIF to disappear, for example, if the source URL is on a USB drive, which could be ejected at any time.
+			appropriateFor: FileManager.default.homeDirectoryForCurrentUser,
+			create: true
+		)
 
-		return tempDirectory.appendingPathComponent(tempName, isDirectory: false)
+		let filename = "\(videoUrl.filenameWithoutExtension).\(FileType.gif.fileExtension)"
+
+		return temporaryDirectory.appendingPathComponent(filename, isDirectory: false)
 	}
 
 	private func cancelConversion() {
