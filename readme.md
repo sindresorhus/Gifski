@@ -9,7 +9,7 @@
 	<br>
 </div>
 
-This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts videos to GIF animations using [`pngquant`](https://pngquant.org)'s fancy features for efficient cross-frame palettes and temporal dithering. It produces animated GIFs that use thousands of colors per frame.
+This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts videos to GIF animations using [`pngquant`](https://pngquant.org)'s fancy features for efficient cross-frame palettes and temporal dithering. It produces animated GIFs that use thousands of colors per frame and up to 60 FPS (useful for showing off design work on Dribbble).
 
 You can also produce smaller lower quality GIFs when needed with the “Quality” slider, thanks to [`gifsicle`](https://github.com/kohler/gifsicle).
 
@@ -59,6 +59,10 @@ xcode-select --install
 ```
 
 ## FAQ
+
+### The generated GIFs are huge!
+
+The GIF image format is very space inefficient. It works best with short video clips. Try reducing the dimensions, FPS, or quality.
 
 ### Can I contribute localizations?
 
