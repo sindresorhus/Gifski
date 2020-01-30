@@ -84,22 +84,22 @@ final class GifskiWrapper {
 
 	// swiftlint:disable:next function_parameter_count
 	func addFrameARGB(
-		index: UInt32,
+		frameNumber: UInt32,
 		width: UInt32,
 		bytesPerRow: UInt32,
 		height: UInt32,
 		pixels: UnsafePointer<UInt8>,
-		delay: UInt16
+		presentationTimestamp: Double
 	) throws {
 		try wrap {
 			gifski_add_frame_argb(
 				pointer,
-				index,
+				frameNumber,
 				width,
 				bytesPerRow,
 				height,
 				pixels,
-				delay
+				presentationTimestamp
 			)
 		}
 	}

@@ -1,5 +1,5 @@
-use gifski::Collector;
 use crate::error::*;
+use gifski::Collector;
 
 pub trait Source: Send {
     fn total_frames(&self) -> u64;

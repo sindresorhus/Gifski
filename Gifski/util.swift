@@ -2541,6 +2541,11 @@ extension NSViewController {
 		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
 
 		viewController.view.alphaValue = 0.0
+
+		// Workaround for macOS first responder quirk. Still in macOS 10.15.3.
+		// Reproduce: Without the below, if you click convert, hide the window, show the window when the conversion is done, and then drag and drop a new file, the width/height text fields are now not editable.
+		window.makeFirstResponder(viewController)
+
 		NSAnimationContext.runAnimationGroup({ _ in
 			window.contentViewController?.view.animator().alphaValue = 0.0
 			window.contentViewController = nil
@@ -2607,10 +2612,11 @@ extension NSLayoutConstraint {
 
 
 extension NSObject {
-	/// Returns the class name.
-	static let simpleClassName = String(describing: self)
+	// Note: It's intentionally a getter to get the dynamic self.
+	/// Returns the class name without module name.
+	static var simpleClassName: String { String(describing: self) }
 
-	/// Returns the class name of the instance.
+	/// Returns the class name of the instance without module name.
 	var simpleClassName: String { Self.simpleClassName }
 }
 
