@@ -76,7 +76,7 @@ impl Encoder for Gifsicle<'_> {
             };
             gfs.screen_width = image.width() as _;
             gfs.screen_height = image.height() as _;
-            gfs.loopcount = if settings.once { 1 } else { -1 };
+            gfs.loopcount = if settings.once { 1 } else { 0 }; // 0 is correct, -1 is not
             unsafe {
                 self.gif_writer = Gif_IncrementalWriteFileInit(gfs, &self.info, ptr::null_mut());
                 if self.gif_writer.is_null() {
