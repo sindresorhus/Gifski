@@ -5,11 +5,11 @@ use std::path::PathBuf;
 
 pub struct Lodecoder {
     frames: Vec<PathBuf>,
-    fps: usize,
+    fps: f32,
 }
 
 impl Lodecoder {
-    pub fn new(frames: Vec<PathBuf>, fps: usize) -> Self {
+    pub fn new(frames: Vec<PathBuf>, fps: f32) -> Self {
         Self { frames, fps }
     }
 }

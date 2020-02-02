@@ -17,10 +17,6 @@
 */
 #![doc(html_logo_url = "https://gif.ski/icon.png")]
 
-use gif;
-use imagequant;
-use lodepng;
-
 #[macro_use] extern crate error_chain;
 use imagequant::*;
 use imgref::*;
@@ -41,7 +37,7 @@ mod encodegifsicle;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::sync::Arc;
-
+use std::sync::mpsc;
 use std::thread;
 
 type DecodedImage = CatResult<(ImgVec<RGBA8>, f64)>;
@@ -218,7 +214,7 @@ impl Writer {
         Ok((Img::new(pal_img, img.width(), img.height()), pal))
     }
 
-    fn write_frames(write_queue_iter: OrdQueueIter<Arc<GIFFrame>>, enc: &mut dyn Encoder, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
+    fn write_frames(write_queue_iter: mpsc::Receiver<Arc<GIFFrame>>, enc: &mut dyn Encoder, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         for f in write_queue_iter {
             enc.write_frame(&f, settings)?;
             if !reporter.increase() {
@@ -259,7 +255,7 @@ impl Writer {
     }
 
     fn write_with_encoder(mut self, encoder: &mut dyn Encoder, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
-        let (write_queue, write_queue_iter) = ordqueue::new(4);
+        let (write_queue, write_queue_iter) = mpsc::sync_channel(4);
         let queue_iter = self.queue_iter.take().unwrap();
         let settings = self.settings;
         let make_thread = thread::spawn(move || {
@@ -270,30 +266,32 @@ impl Writer {
         Ok(())
     }
 
-    fn make_frames(queue_iter: OrdQueueIter<DecodedImage>, mut write_queue: OrdQueue<Arc<GIFFrame>>, settings: &Settings) -> CatResult<()> {
-        let mut decode_iter = queue_iter.enumerate().map(|(i, tmp)| tmp.map(|(image, delay)| (i, image, delay)));
-
+    fn make_frames(mut decode_iter: OrdQueueIter<DecodedImage>, write_queue: mpsc::SyncSender<Arc<GIFFrame>>, settings: &Settings) -> CatResult<()> {
         let mut screen = None;
-        let mut curr_frame = decode_iter.next().transpose()?;
         let mut next_frame = decode_iter.next().transpose()?;
 
-        let mut importance_map = match &curr_frame {
-            Some(curr_frame) => vec![255_u8; curr_frame.1.buf().len()],
+        let mut importance_map = match &next_frame {
+            Some(next_frame) => vec![255_u8; next_frame.0.buf().len()],
             None => return Err("Found no usable frames to encode".into()),
         };
 
         let mut previous_frame_dispose = gif::DisposalMethod::Background;
-        let mut previous_frame_delay = 2;
+        let mut previous_frame_delay = 3;
         let mut pts_in_delay_units = 0_u64;
-
-        while let Some((i, image, _)) = curr_frame.take() {
+        let mut i = 0;
+        while let Some((image, _)) = {
+            // that's not the while loop, that block gets the next element
+            let curr_frame = next_frame.take();
+            next_frame = decode_iter.next().transpose()?;
+            curr_frame
+        } {
             // To convert PTS to delay it's necessary to know when the next frame is to be displayed
-            let delay = if let Some((_, _, next_pts)) = next_frame {
+            let delay = if let Some((_, next_pts)) = next_frame {
                 let next_pts_in_delay_units = (next_pts * 100.0).round() as u64;
                 if next_pts_in_delay_units > pts_in_delay_units {
-                    (next_pts_in_delay_units - pts_in_delay_units).min(100) as u16
+                    (next_pts_in_delay_units - pts_in_delay_units).min(10000) as u16
                 } else {
-                    1
+                    continue; // skip frames with duplicate/invalid PTS
                 }
             } else {
                 previous_frame_delay // for the last frame just assume constant framerate
@@ -302,7 +300,7 @@ impl Writer {
             previous_frame_delay = delay;
 
             let mut dispose = gif::DisposalMethod::Keep;
-            if let Some((_, ref next, _)) = next_frame {
+            if let Some((ref next, _)) = next_frame {
                 if next.width() != image.width() || next.height() != image.height() {
                     return Err(format!("Frame {} has wrong size ({}×{}, expected {}×{})", i+1,
                         next.width(), next.height(), image.width(), image.height()).into());
@@ -318,6 +316,9 @@ impl Writer {
                     // but pixels that will stay unchanged should have higher quality
                     255 - (colordiff(n, curr) / (255 * 255 * 6 / 170)) as u8
                 }));
+            } else {
+                // Last frame should reset to background to avoid breaking transparent looped anims
+                dispose = gif::DisposalMethod::Background;
             };
 
             let screen = screen.get_or_insert_with(|| gif_dispose::Screen::new(image.width(), image.height(), RGBA8::new(0, 0, 0, 0), None));
@@ -349,6 +350,7 @@ impl Writer {
                         }
                     });
             }
+            previous_frame_dispose = dispose;
 
             let (image8, image8_pal) = {
                 let bg = if has_prev_frame { Some(screen.pixels.as_ref()) } else { None };
@@ -363,12 +365,9 @@ impl Writer {
                 delay,
             });
 
-            write_queue.push(i, frame.clone())?;
+            write_queue.send(frame.clone()).map_err(|_| ErrorKind::ThreadSend)?;
+            i += 1;
             screen.blit(Some(&frame.pal), dispose, 0, 0, frame.image.as_ref(), transparent_index)?;
-
-            curr_frame = next_frame.take();
-            next_frame = decode_iter.next().transpose()?;
-            previous_frame_dispose = dispose;
         }
 
         Ok(())

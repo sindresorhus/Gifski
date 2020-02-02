@@ -22,7 +22,7 @@ impl Source for FfmpegDecoder {
 }
 
 impl FfmpegDecoder {
-    pub fn new(path: &Path, fps: usize) -> BinResult<Self> {
+    pub fn new(path: &Path, fps: f32) -> BinResult<Self> {
         ffmpeg::init().chain_err(|| "Unable to initialize ffmpeg")?;
         let input_context = ffmpeg::format::input(&path)
             .chain_err(|| format!("Unable to open video file {}", path.display()))?;

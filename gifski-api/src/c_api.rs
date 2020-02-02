@@ -105,8 +105,8 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
 /// You can add frames in any order, and they will be sorted by their `frame_number`.
 ///
 /// Presentation timestamp (PTS) is time in seconds, since start of the file, when this frame is to be displayed.
-/// For a 20fps video it could be `frame_number/20.0`.
-/// First frame must have PTS=0, and frames must not be more than 1 second apart.
+/// For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
+/// Frames with duplicate or out-of-order PTS will be skipped.
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
@@ -134,8 +134,8 @@ pub unsafe extern "C" fn gifski_add_frame_png_file(handle: *const GifskiHandle, 
 /// Pixels is an array width×height×4 bytes large. The array is copied, so you can free/reuse it immediately.
 ///
 /// Presentation timestamp (PTS) is time in seconds, since start of the file (at 0), when this frame is to be displayed.
-/// For 20fps video it could be `frame_number/20.0`.
-/// First frame must have PTS=0, and frames must not be more than 1 second apart.
+/// For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
+/// Frames with duplicate or out-of-order PTS will be skipped.
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]

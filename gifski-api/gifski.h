@@ -109,8 +109,8 @@ gifski *gifski_new(const GifskiSettings *settings);
  * You can add frames in any order, and they will be sorted by their `frame_number`.
  *
  * Presentation timestamp (PTS) is time in seconds, since start of the file, when this frame is to be displayed.
- * For a 20fps video it could be `frame_number/20.0`.
- * First frame must have PTS=0, and frames must not be more than 1 second apart.
+ * For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
+ * Frames with duplicate or out-of-order PTS will be skipped.
  *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
@@ -129,8 +129,8 @@ GifskiError gifski_add_frame_png_file(gifski *handle,
  * You can add frames in any order, and they will be sorted by their `frame_number`.
  *
  * Presentation timestamp (PTS) is time in seconds, since start of the file, when this frame is to be displayed.
- * For a 20fps video it could be `frame_number/20.0`.
- * First frame must have PTS=0, and frames must not be more than 1 second apart.
+ * For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
+ * Frames with duplicate or out-of-order PTS will be skipped.
  *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
