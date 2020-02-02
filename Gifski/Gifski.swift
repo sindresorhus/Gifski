@@ -222,6 +222,9 @@ final class Gifski {
 				value: frameForTimes.map { $0.seconds }
 			)
 
+			var frameNumber = 0
+			var previousActualTime: CMTime?
+
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { [weak self] result in
 				guard let self = self else {
 					return
@@ -236,6 +239,26 @@ final class Gifski {
 				case let .success(result):
 					let image = result.image
 
+					func finalizeIfNeeded() {
+						if result.isFinished {
+							do {
+								try gifski.finish()
+								completionHandlerOnce(.success(self.gifData as Data))
+							} catch {
+								completionHandlerOnce(.failure(.writeFailed(error)))
+							}
+						}
+					}
+
+					// Skip duplicate frames.
+					guard result.actualTime != previousActualTime else {
+						self.progress.totalUnitCount -= 1
+						finalizeIfNeeded()
+						return
+					}
+
+					previousActualTime = result.actualTime
+
 					guard
 						let data = image.dataProvider?.data,
 						let buffer = CFDataGetBytePtr(data)
@@ -248,26 +271,21 @@ final class Gifski {
 
 					do {
 						try gifski.addFrameARGB(
-							frameNumber: UInt32(result.completedCount - 1),
+							frameNumber: UInt32(frameNumber),
 							width: UInt32(image.width),
 							bytesPerRow: UInt32(image.bytesPerRow),
 							height: UInt32(image.height),
 							pixels: buffer,
-							presentationTimestamp: result.actualTime.seconds
+							presentationTimestamp: result.requestedTime.seconds
 						)
+
+						frameNumber += 1
 					} catch {
 						completionHandlerOnce(.failure(.addFrameFailed(error)))
 						return
 					}
 
-					if result.isFinished {
-						do {
-							try gifski.finish()
-							completionHandlerOnce(.success(self.gifData as Data))
-						} catch {
-							completionHandlerOnce(.failure(.writeFailed(error)))
-						}
-					}
+					finalizeIfNeeded()
 				case .failure where result.isCancelled:
 					completionHandlerOnce(.failure(.cancelled))
 				case let .failure(error):

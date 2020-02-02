@@ -318,6 +318,11 @@ extension AVAssetImageGenerator {
 		let isFinished: Bool
 	}
 
+	/**
+	Generate a series of images for an asset at or near specified times.
+
+	- Note: Even if you specify `.requestedTimeToleranceAfter = .zero` and `.requestedTimeToleranceBefore = .zero`, it's not guaranteed that `result.requestedTime` and `result.actualTime` will be the same. If there are not enough frames in the source video, `generateCGImagesAsynchronously` might produce duplicate frames and `result.actualTime` will be the time of the previous frame, so not the same as `result.requestedTime`. If you're generating some kind of video/animation from the frames, use `result.requestedTime` and not `result.actualTime` for the time code. And you might also want to ignore the duplicate frames.
+	*/
 	func generateCGImagesAsynchronously(
 		forTimePoints timePoints: [CMTime],
 		completionHandler: @escaping (Swift.Result<CompletionHandlerResult, Error>) -> Void
