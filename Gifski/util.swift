@@ -321,19 +321,30 @@ extension AVAssetImageGenerator {
 	/**
 	Generate a series of images for an asset at or near specified times.
 
-	- Note: Even if you specify `.requestedTimeToleranceAfter = .zero` and `.requestedTimeToleranceBefore = .zero`, it's not guaranteed that `result.requestedTime` and `result.actualTime` will be the same. If there are not enough frames in the source video, `generateCGImagesAsynchronously` might produce duplicate frames and `result.actualTime` will be the time of the previous frame, so not the same as `result.requestedTime`. If you're generating some kind of video/animation from the frames, use `result.requestedTime` and not `result.actualTime` for the time code. And you might also want to ignore the duplicate frames.
+	- Parameter skipDuplicateFrames: When true, you need to ensure that if you have precalculated the total count and use it for progress info, you need to update it for each frame with the `result.totalCount`.
+
+	- Note: Even if you specify `.requestedTimeToleranceAfter = .zero` and `.requestedTimeToleranceBefore = .zero`, it's not guaranteed that the frame will be generated at the exact given times, or that `result.requestedTime` and `result.actualTime` will be the same. If there are not enough frames in the source video, `generateCGImagesAsynchronously` might produce duplicate frames and `result.actualTime` will be the time of the previous frame, hence not the same as `result.requestedTime`. If you're generating some kind of video/animation from the frames, use `result.requestedTime` and not `result.actualTime` for the presentation timestamp.
 	*/
 	func generateCGImagesAsynchronously(
 		forTimePoints timePoints: [CMTime],
+		skipDuplicateFrames: Bool = false,
 		completionHandler: @escaping (Swift.Result<CompletionHandlerResult, Error>) -> Void
 	) {
 		let times = timePoints.map { NSValue(time: $0) }
-		let totalCount = times.count
+		var totalCount = times.count
 		var completedCount = 0
+		var previousActualTime: CMTime?
 
 		generateCGImagesAsynchronously(forTimes: times) { requestedTime, image, actualTime, result, error in
 			switch result {
 			case .succeeded:
+				// Skip duplicate frames.
+				guard actualTime != previousActualTime else {
+					totalCount -= 1
+					return
+				}
+
+				previousActualTime = actualTime
 				completedCount += 1
 
 				completionHandler(
