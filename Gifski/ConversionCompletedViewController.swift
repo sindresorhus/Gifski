@@ -119,34 +119,36 @@ final class ConversionCompletedViewController: NSViewController {
 		}
 
 		saveAsButton.onAction = { [weak self] _ in
-			guard let self = self else {
+			self?.openSavePanel()
+		}
+	}
+
+	private func openSavePanel() {
+		let inputUrl = self.conversion.video
+
+		let panel = NSSavePanel()
+		panel.canCreateDirectories = true
+		panel.allowedFileTypes = [FileType.gif.identifier]
+		panel.directoryURL = inputUrl.directoryURL
+		panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
+		panel.message = "Choose where to save the GIF"
+
+		panel.beginSheetModal(for: self.view.window!) { [weak self] response in
+			guard
+				let self = self,
+				response == .OK,
+				let outputUrl = panel.url
+			else {
 				return
 			}
 
-			let inputUrl = self.conversion.video
-
-			let panel = NSSavePanel()
-			panel.canCreateDirectories = true
-			panel.allowedFileTypes = [FileType.gif.identifier]
-			panel.directoryURL = inputUrl.directoryURL
-			panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
-			panel.message = "Choose where to save the GIF"
-
-			panel.beginSheetModal(for: self.view.window!) { response in
-				guard
-					response == .OK,
-					let outputUrl = panel.url
-				else {
-					return
-				}
-
-				// Give the system time to close the sheet.
-				DispatchQueue.main.async {
-					do {
-						try FileManager.default.copyItem(at: url, to: outputUrl, overwrite: true)
-					} catch {
-						error.presentAsModalSheet(for: self.view.window)
-					}
+			// Give the system time to close the sheet.
+			DispatchQueue.main.async {
+				do {
+					try FileManager.default.copyItem(at: self.gifUrl, to: outputUrl, overwrite: true)
+				} catch {
+					error.presentAsModalSheet(for: self.view.window)
+					self.openSavePanel()
 				}
 			}
 		}
