@@ -253,7 +253,7 @@ final class Gifski {
 							bytesPerRow: UInt32(image.bytesPerRow),
 							height: UInt32(image.height),
 							pixels: buffer,
-							presentationTimestamp: result.actualTime.seconds
+							presentationTimestamp: max(0, result.actualTime.seconds - startTime)
 						)
 					} catch {
 						completionHandlerOnce(.failure(.addFrameFailed(error)))
