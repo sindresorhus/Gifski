@@ -96,30 +96,21 @@ struct VideoValidator {
 			return .failure
 		}
 
-		// If the video track duration is shorter than the total asset duration, we extract the video track into a new asset to prevent problems later on. If we don't do this, the video will show as black in the trim view at the duration where there's no video track, and it will confuse users. Also, if the user trims the video to just the black no video track part, the conversion would continue, but there's nothing to convert, so it would be stuck at 0%.
-		guard firstVideoTrack.isFullDuration else {
-			guard
-				let newAsset = firstVideoTrack.extractToNewAsset(),
-				let newVideoMetadata = newAsset.videoMetadata
-			else {
-				NSAlert.showModalAndReportToCrashlytics(
-					for: window,
-					message: "Cannot read the video.",
-					informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
-					debugInfo: asset.debugInfo
-				)
-
-				return .failure
-			}
-
-			Crashlytics.record(
-				key: "Extracted video to new asset",
-				value: true
+		// We extract the video track into a new asset to remove the audio and to prevent problems if the video track duration is shorter than the total asset duration. If we don't do this, the video will show as black in the trim view at the duration where there's no video track, and it will confuse users. Also, if the user trims the video to just the black no video track part, the conversion would continue, but there's nothing to convert, so it would be stuck at 0%.
+		guard
+			let newAsset = firstVideoTrack.extractToNewAsset(),
+			let newVideoMetadata = newAsset.videoMetadata
+		else {
+			NSAlert.showModalAndReportToCrashlytics(
+				for: window,
+				message: "Cannot read the video.",
+				informativeText: "This should not happen. Email sindresorhus@gmail.com and include this info:",
+				debugInfo: asset.debugInfo
 			)
 
-			return .success(newAsset, newVideoMetadata)
+			return .failure
 		}
 
-		return .success(asset, videoMetadata)
+		return .success(newAsset, newVideoMetadata)
 	}
 }
