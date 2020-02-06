@@ -2954,3 +2954,39 @@ extension Error {
 		NSApp.presentError(self)
 	}
 }
+
+
+extension AVPlayer {
+	func seekToStart() {
+		seek(to: .zero)
+	}
+}
+
+
+extension AVPlayer {
+	private struct AssociatedKeys {
+		static let observationToken = ObjectAssociation<NSObjectProtocol>()
+		static let originalActionAtItemEnd = ObjectAssociation<ActionAtItemEnd>()
+	}
+
+	/// Loop the playback.
+	var loopPlayback: Bool {
+		get {
+			AssociatedKeys.observationToken[self] != nil
+		}
+		set {
+			if newValue {
+				AssociatedKeys.originalActionAtItemEnd[self] = actionAtItemEnd
+				actionAtItemEnd = .none
+
+				// TODO: Use Combine publisher when targeting macOS 10.15.
+				AssociatedKeys.observationToken[self] = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: currentItem, queue: nil) { [weak self] _ in
+					self?.seekToStart()
+				}
+			} else {
+				actionAtItemEnd = AssociatedKeys.originalActionAtItemEnd[self] ?? actionAtItemEnd
+				AssociatedKeys.originalActionAtItemEnd[self] = nil
+			}
+		}
+	}
+}

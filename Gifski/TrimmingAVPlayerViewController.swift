@@ -1,4 +1,5 @@
 import AVKit
+import Defaults
 
 /// VC containing AVPlayerView and also extending possibilities for trimming (view) customization.
 final class TrimmingAVPlayerViewController: NSViewController {
@@ -33,10 +34,17 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	}
 
 	override func loadView() {
+		let player = AVPlayer(playerItem: playerItem)
+
+		Defaults.observe(.loopGif) {
+			player.loopPlayback = $0.newValue
+		}
+			.tieToLifetime(of: self)
+
 		let playerView = TrimmingAVPlayerView()
-		playerView.player = AVPlayer(playerItem: playerItem)
 		playerView.controlsStyle = controlsStyle
 		playerView.setupTrimmingObserver()
+		playerView.player = player
 
 		view = playerView
 	}
