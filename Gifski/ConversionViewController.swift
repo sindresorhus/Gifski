@@ -6,14 +6,15 @@ import Defaults
 final class ConversionViewController: NSViewController {
 	private lazy var circularProgress = with(CircularProgress(size: 160.0)) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
-		$0.color = .themeColor
+		$0.color = .progressCircleColor
+		$0.lineWidth = 3
 	}
 
 	private lazy var timeRemainingLabel = with(Label()) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.isHidden = true
 		$0.textColor = .secondaryLabelColor
-		$0.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+		$0.font = .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
 	}
 
 	private lazy var timeRemainingEstimator = TimeRemainingEstimator(label: timeRemainingLabel)
