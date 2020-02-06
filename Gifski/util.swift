@@ -155,6 +155,10 @@ extension NSView {
 
 
 extension NSWindow {
+	private struct AssociatedKeys {
+		static let observationToken = ObjectAssociation<NSKeyValueObservation>()
+	}
+
 	func makeVibrant() {
 		// So there seems to be a visual effect view already created by NSWindow.
 		// If we can attach ourselves to it and make it a vibrant one - awesome.
@@ -162,6 +166,11 @@ extension NSWindow {
 		if let visualEffectView = contentView?.superview?.subviews.compactMap({ $0 as? NSVisualEffectView }).first {
 			visualEffectView.blendingMode = .behindWindow
 			visualEffectView.material = .underWindowBackground
+
+			AssociatedKeys.observationToken[self] = visualEffectView.observe(\.effectiveAppearance) { _, _ in
+				visualEffectView.blendingMode = .behindWindow
+				visualEffectView.material = .underWindowBackground
+			}
 		} else {
 			contentView?.superview?.insertVibrancyView(material: .underWindowBackground)
 		}
@@ -1275,7 +1284,7 @@ final class UrlMenuItem: NSMenuItem {
 }
 
 
-final class AssociatedObject<T: Any> {
+final class ObjectAssociation<T: Any> {
 	subscript(index: Any) -> T? {
 		get {
 			objc_getAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque()) as! T?
@@ -1291,7 +1300,7 @@ extension NSMenuItem {
 	typealias ActionClosure = ((NSMenuItem) -> Void)
 
 	private struct AssociatedKeys {
-		static let onActionClosure = AssociatedObject<ActionClosure>()
+		static let onActionClosure = ObjectAssociation<ActionClosure>()
 	}
 
 	@objc
@@ -1325,7 +1334,7 @@ extension NSControl {
 	typealias ActionClosure = ((NSControl) -> Void)
 
 	private struct AssociatedKeys {
-		static let onActionClosure = AssociatedObject<ActionClosure>()
+		static let onActionClosure = ObjectAssociation<ActionClosure>()
 	}
 
 	@objc
