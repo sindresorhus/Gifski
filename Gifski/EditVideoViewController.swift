@@ -80,6 +80,7 @@ final class EditVideoViewController: NSViewController {
 	@IBAction private func cancel(_ sender: Any) {
 		let videoDropController = VideoDropViewController()
 		push(viewController: videoDropController)
+		AppDelegate.shared.previousEditViewController = nil
 	}
 
 	override func viewDidLoad() {

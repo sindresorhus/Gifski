@@ -66,8 +66,9 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		// Observing `.duration` seems buggy on macOS 10.14.
 		// Once we change minimum target to 10.15,
 		// observe `\.duration` instead of `\.forwardPlaybackEndTime`.
-		timeRangeObserver = player?.currentItem?.observe(\.forwardPlaybackEndTime, options: .new) { item, _ in
+		timeRangeObserver = player?.currentItem?.observe(\.forwardPlaybackEndTime, options: .new) { [weak self] item, _ in
 			guard
+				let self = self,
 				let fullRange = item.durationRange,
 				let playbackRange = item.playbackRange
 			else {
@@ -93,9 +94,13 @@ final class TrimmingAVPlayerView: AVPlayerView {
 
 	fileprivate func setupTrimmingObserver() {
 		trimmingObserver = observe(\.canBeginTrimming, options: .new) { [weak self] _, change in
+			guard let self = self else {
+				return
+			}
+
 			if let canBeginTrimming = change.newValue, canBeginTrimming {
-				self?.beginTrimming(completionHandler: nil)
-				self?.trimmingObserver?.invalidate()
+				self.beginTrimming(completionHandler: nil)
+				self.trimmingObserver?.invalidate()
 			}
 		}
 	}

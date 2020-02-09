@@ -46,7 +46,7 @@ struct VideoValidator {
 			return .failure
 		}
 
-		if asset.hasAudio && !asset.hasVideo {
+		if asset.hasAudio, !asset.hasVideo {
 			NSAlert.showModal(
 				for: window,
 				message: "Audio files are not supported.",

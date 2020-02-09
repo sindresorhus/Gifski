@@ -10,13 +10,21 @@ final class TimeRemainingEstimator {
 	/// Begin fade out when remaining time reaches this amount.
 	let fadeOutThreshold: TimeInterval = 1
 
-	var progress: Progress? {
+	weak var progress: Progress? {
 		didSet {
-			progressObserver = progress?.observe(\.fractionCompleted) { sender, _ in
+			progressObserver = progress?.observe(\.fractionCompleted) { [weak self] sender, _ in
+				guard let self = self else {
+					return
+				}
+
 				self.percentComplete = sender.fractionCompleted
 			}
 
-			cancelObserver = progress?.observe(\.isCancelled) { sender, _ in
+			cancelObserver = progress?.observe(\.isCancelled) { [weak self] sender, _ in
+				guard let self = self else {
+					return
+				}
+
 				if sender.isCancelled {
 					self.state = .done
 				}
