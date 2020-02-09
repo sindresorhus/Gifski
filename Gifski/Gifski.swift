@@ -16,9 +16,9 @@ final class Gifski {
 		var errorDescription: String? {
 			switch self {
 			case .invalidSettings:
-				return "Invalid settings"
+				return "Invalid settings."
 			case .unreadableFile:
-				return "The selected file is no longer readable"
+				return "The selected file is no longer readable."
 			case let .generateFrameFailed(error):
 				return "Failed to generate frame: \(error.localizedDescription)"
 			case let .addFrameFailed(error):
@@ -26,7 +26,7 @@ final class Gifski {
 			case let .writeFailed(error):
 				return "Failed to write, with underlying error: \(error.localizedDescription)"
 			case .cancelled:
-				return "The conversion was cancelled"
+				return "The conversion was cancelled."
 			}
 		}
 	}
@@ -241,7 +241,7 @@ final class Gifski {
 						let buffer = CFDataGetBytePtr(data)
 					else {
 						completionHandlerOnce(.failure(.generateFrameFailed(
-							NSError.appError(message: "Could not get byte pointer of image data provider")
+							NSError.appError("Could not get byte pointer of image data provider.")
 						)))
 						return
 					}

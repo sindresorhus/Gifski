@@ -2074,27 +2074,45 @@ extension NSError {
 		)
 	}
 
-	/**
-	- Parameter domainPostfix: String to append to the `domain`.
-	*/
-	static func appError(
-		message: String,
-		userInfo: [String: Any] = [:],
-		domainPostfix: String? = nil
-	) -> Self {
-		.init(
-			domain: domainPostfix != nil ? "\(App.id) - \(domainPostfix!)" : App.id,
-			code: 0,
-			userInfo: [NSLocalizedDescriptionKey: message]
-		)
-	}
-
 	/// Returns a new error with the user info appended.
 	func appending(userInfo newUserInfo: [String: Any]) -> Self {
 		.init(
 			domain: domain,
 			code: code,
 			userInfo: userInfo.appending(newUserInfo)
+		)
+	}
+}
+
+
+extension NSError {
+	/**
+	Use this for generic app errors.
+
+	- Note: Prefer using a specific enum-type error whenever possible.
+
+	- Parameter description: The description of the error. This is shown as the first line in error dialogs.
+	- Parameter recoverySuggestion: Explain how the user how they can recover from the error. For example, "Try choosing a different directory". This is usually shown as the second line in error dialogs.
+	- Parameter userInfo: Metadata to add to the error. Can be a custom key or any of the `NSLocalizedDescriptionKey` keys except `NSLocalizedDescriptionKey` and `NSLocalizedRecoverySuggestionErrorKey`.
+	- Parameter domainPostfix: String to append to the `domain` to make it easier to identify the error. The domain is the app's bundle identifier.
+	*/
+	static func appError(
+		_ description: String,
+		recoverySuggestion: String? = nil,
+		userInfo: [String: Any] = [:],
+		domainPostfix: String? = nil
+	) -> Self {
+		var userInfo = userInfo
+		userInfo[NSLocalizedDescriptionKey] = description
+
+		if let recoverySuggestion = recoverySuggestion {
+			userInfo[NSLocalizedRecoverySuggestionErrorKey] = recoverySuggestion
+		}
+
+		return .init(
+			domain: domainPostfix.map { "\(App.id) - \($0)" } ?? App.id,
+			code: 1, // This is what Swift errors end up as.
+			userInfo: userInfo
 		)
 	}
 }
