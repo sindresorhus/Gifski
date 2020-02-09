@@ -71,7 +71,7 @@ struct VideoValidator {
 			return .failure
 		}
 
-		guard let videoMetadata = asset.videoMetadata else {
+		guard asset.videoMetadata != nil else {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				message: "The video metadata is not readable.",
