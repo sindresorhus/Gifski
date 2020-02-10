@@ -8,6 +8,7 @@ final class Gifski {
 	enum Error: LocalizedError {
 		case invalidSettings
 		case unreadableFile
+		case notEnoughFrames(Int)
 		case generateFrameFailed(Swift.Error)
 		case addFrameFailed(Swift.Error)
 		case writeFailed(Swift.Error)
@@ -19,6 +20,8 @@ final class Gifski {
 				return "Invalid settings."
 			case .unreadableFile:
 				return "The selected file is no longer readable."
+			case let .notEnoughFrames(frameCount):
+				return "An animated GIF requires at least 2 frames. Your video only has \(frameCount) frame\(frameCount == 1 ? "" : "s")."
 			case let .generateFrameFailed(error):
 				return "Failed to generate frame: \(error.localizedDescription)"
 			case let .addFrameFailed(error):
@@ -192,8 +195,13 @@ final class Gifski {
 			let videoRange = conversion.timeRange?.clamped(to: videoTrackRange) ?? videoTrackRange
 			let startTime = videoRange.lowerBound
 			let duration = videoRange.length
-
 			let frameCount = Int(duration * fps)
+
+			guard frameCount >= 2 else {
+				completionHandlerOnce(.failure(.notEnoughFrames(frameCount)))
+				return
+			}
+
 			self.progress.totalUnitCount = Int64(frameCount)
 
 			var frameForTimes = [CMTime]()
