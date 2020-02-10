@@ -9,6 +9,7 @@ struct Constants {
 
 extension NSColor {
 	static let themeColor = NSColor.controlAccentColorPolyfill
+	static let progressCircleColor = NSColor(named: "ProgressCircleColor")!
 
 	enum Checkerboard {
 		static let first = NSColor(named: "CheckerboardFirstColor")!
