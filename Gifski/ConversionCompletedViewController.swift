@@ -106,15 +106,24 @@ final class ConversionCompletedViewController: NSViewController {
 		}
 
 		copyButton.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
 			let pasteboard = NSPasteboard.general
 			pasteboard.clearContents()
 			pasteboard.writeObjects([url as NSURL])
 
-			self?.copyButton.title = "Copied!"
-			self?.copyButton.isEnabled = false
-			delay(seconds: 1) {
-				self?.copyButton.title = "Copy"
-				self?.copyButton.isEnabled = true
+			self.copyButton.title = "Copied!"
+			self.copyButton.isEnabled = false
+
+			delay(seconds: 1) { [weak self] in
+				guard let self = self else {
+					return
+				}
+
+				self.copyButton.title = "Copy"
+				self.copyButton.isEnabled = true
 			}
 		}
 

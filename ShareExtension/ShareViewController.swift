@@ -33,7 +33,11 @@ final class ShareViewController: NSViewController {
 			return
 		}
 
-		item.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { url, error in
+		item.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { [weak self] url, error in
+			guard let self = self else {
+				return
+			}
+
 			guard let url = url else {
 				self.presentError(message: error?.localizedDescription ?? "Unknown error")
 				return

@@ -1277,8 +1277,15 @@ final class UrlMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
 
-		onAction = { _ in
-			NSWorkspace.shared.open(URL(string: self.url!)!)
+		onAction = { [weak self] _ in
+			guard
+				let self = self,
+				let url = self.url
+			else {
+				return
+			}
+
+			NSWorkspace.shared.open(URL(string: url)!)
 		}
 	}
 }

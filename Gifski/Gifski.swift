@@ -63,6 +63,7 @@ final class Gifski {
 		}
 	}
 
+	// TODO: `NSMutableData` is not thread-safe. We should use a lock when writing to it.
 	private var gifData = NSMutableData()
 	private var progress: Progress!
 
@@ -82,9 +83,12 @@ final class Gifski {
 
 		progress = Progress(parent: .current())
 
-		let completionHandlerOnce = Once().wrap { (_ result: Result<Data, Error>) -> Void in
+		let completionHandlerOnce = Once().wrap { [weak self] (_ result: Result<Data, Error>) -> Void in
 			DispatchQueue.main.async {
-				guard !self.progress.isCancelled else {
+				guard
+					let self = self,
+					!self.progress.isCancelled
+				else {
 					completionHandler?(.failure(.cancelled))
 					return
 				}

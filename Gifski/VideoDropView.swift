@@ -89,7 +89,7 @@ class DropView<CompletionType>: SSView {
 	}
 
 	override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-		if sender.draggingSourceOperationMask.contains(.copy) && onEntered(sender) {
+		if sender.draggingSourceOperationMask.contains(.copy), onEntered(sender) {
 			isDraggingHighlighted = true
 			return .copy
 		} else {
