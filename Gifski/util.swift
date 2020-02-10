@@ -2986,6 +2986,7 @@ extension AVPlayer {
 			} else {
 				actionAtItemEnd = AssociatedKeys.originalActionAtItemEnd[self] ?? actionAtItemEnd
 				AssociatedKeys.originalActionAtItemEnd[self] = nil
+				AssociatedKeys.observationToken[self] = nil
 			}
 		}
 	}
