@@ -1,5 +1,4 @@
 import AVKit
-import Defaults
 
 /// VC containing AVPlayerView and also extending possibilities for trimming (view) customization.
 final class TrimmingAVPlayerViewController: NSViewController {
