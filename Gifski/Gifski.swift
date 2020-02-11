@@ -21,7 +21,7 @@ final class Gifski {
 			case .unreadableFile:
 				return "The selected file is no longer readable."
 			case let .notEnoughFrames(frameCount):
-				return "An animated GIF requires at least 2 frames. Your video only has \(frameCount) frame\(frameCount == 1 ? "" : "s")."
+				return "An animated GIF requires a minimum of 2 frames. Your video contains \(frameCount) frame\(frameCount == 1 ? "" : "s")."
 			case let .generateFrameFailed(error):
 				return "Failed to generate frame: \(error.localizedDescription)"
 			case let .addFrameFailed(error):
