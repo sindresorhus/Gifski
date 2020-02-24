@@ -66,7 +66,7 @@ The GIF image format is very space inefficient. It works best with short video c
 
 ### Can I contribute localizations?
 
-No, we're not interested in localizing the app.
+We're not interested in localizing the app.
 
 ### Can you support macOS 10.13?
 
@@ -97,8 +97,7 @@ No, but there's a [cross-platform command-line tool](https://github.com/ImageOpt
 
 ## Related
 
-- [Plash](https://github.com/sindresorhus/Plash) - Make any website your desktop wallpaper
-- [More apps…](https://sindresorhus.com/apps)
+- [Sindre's apps](https://sindresorhus.com/apps)
 
 ## License
 

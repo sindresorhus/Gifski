@@ -13,10 +13,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	let notificationCenter = UNUserNotificationCenter.current()
 
 	func applicationWillFinishLaunching(_ notification: Notification) {
-		UserDefaults.standard.register(defaults: [
-			"NSApplicationCrashOnExceptions": true,
-			"NSFullScreenMenuItemEverywhere": false
-		])
+		UserDefaults.standard.register(
+			defaults: [
+				"NSApplicationCrashOnExceptions": true,
+				"NSFullScreenMenuItemEverywhere": false
+			]
+		)
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {

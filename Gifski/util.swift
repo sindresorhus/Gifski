@@ -109,11 +109,6 @@ extension NSWindow {
 		return window
 	}
 
-	@nonobjc
-	override convenience init() {
-		self.init(contentRect: NSWindow.defaultContentRect)
-	}
-
 	convenience init(contentRect: CGRect) {
 		self.init(contentRect: contentRect, styleMask: NSWindow.defaultStyleMask, backing: .buffered, defer: true)
 	}
@@ -2156,7 +2151,7 @@ extension Crashlytics {
 
 	static func recordNonFatalError(title: String? = nil, message: String) {
 		#if !DEBUG
-		sharedInstance().recordError(NSError.appError(message: message, domainPostfix: title))
+		sharedInstance().recordError(NSError.appError(message, domainPostfix: title))
 		#endif
 	}
 
@@ -2573,6 +2568,19 @@ extension NSViewController {
 
 		let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
 		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
+
+		guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+			window.makeFirstResponder(viewController)
+
+			DispatchQueue.main.async {
+				window.contentViewController = nil
+				window.setFrame(newWindowFrame, display: true)
+				window.contentViewController = viewController
+				completion?()
+			}
+
+			return
+		}
 
 		viewController.view.alphaValue = 0.0
 

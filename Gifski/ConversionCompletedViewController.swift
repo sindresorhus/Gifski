@@ -55,10 +55,13 @@ final class ConversionCompletedViewController: NSViewController {
 		view.window?.makeFirstResponder(self)
 
 		if wrapperView.isHidden {
-			draggableFile.layer?.animateScaleMove(
-				fromScale: 3,
-				fromY: Double(view.frame.height + draggableFile.frame.size.height)
-			)
+			if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+				draggableFile.layer?.animateScaleMove(
+					fromScale: 3,
+					fromY: Double(view.frame.height + draggableFile.frame.size.height)
+				)
+			}
+
 			wrapperView.fadeIn(duration: 0.5, delay: 0.15, completion: nil)
 		}
 

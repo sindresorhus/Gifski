@@ -15,7 +15,8 @@ final class Tooltip: NSPopover {
 		showOnlyOnce: Bool = false,
 		closeOnClick: Bool = true,
 		contentInsets: NSEdgeInsets = .init(all: 15),
-		maxWidth: Double? = nil
+		maxWidth: Double? = nil,
+		onClick: (() -> Void)? = nil
 	) {
 		self.identifier = identifier
 		self.showOnlyOnce = showOnlyOnce
@@ -25,7 +26,8 @@ final class Tooltip: NSPopover {
 			text: text,
 			closeOnClick: closeOnClick,
 			contentInsets: contentInsets,
-			maxWidth: maxWidth
+			maxWidth: maxWidth,
+			onClick: onClick
 		)
 	}
 
@@ -75,19 +77,32 @@ final class Tooltip: NSPopover {
 		text: String,
 		closeOnClick: Bool,
 		contentInsets: NSEdgeInsets,
-		maxWidth: Double?
+		maxWidth: Double?,
+		onClick: (() -> Void)? = nil
 	) {
-		contentViewController = ToolTipViewController(text: text, contentInsets: contentInsets, maxWidth: maxWidth) { [weak self] in
+		animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+		behavior = closeOnClick ? .semitransient : .applicationDefined
+
+		contentViewController = ToolTipViewController(
+			text: text,
+			contentInsets: contentInsets,
+			maxWidth: maxWidth
+		) { [weak self] in
 			if closeOnClick {
 				self?.close()
 			}
-		}
 
-		behavior = closeOnClick ? .semitransient : .applicationDefined
+			onClick?()
+		}
 	}
 }
 
 fileprivate final class ToolTipViewController: NSViewController {
+	private final class ContentView: NSView {
+		// This makes the tooltip dismissable by click even if the owner window is not key.
+		override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+	}
+
 	fileprivate let text: String
 	fileprivate let contentInsets: NSEdgeInsets
 	fileprivate var maxWidth: Double?
@@ -115,7 +130,7 @@ fileprivate final class ToolTipViewController: NSViewController {
 	}
 
 	override func loadView() {
-		let wrapperView = NSView()
+		let wrapperView = ContentView()
 		let textField = NSTextField(wrappingLabelWithString: text)
 		textField.isSelectable = false
 

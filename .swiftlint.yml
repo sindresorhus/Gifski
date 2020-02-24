@@ -86,6 +86,7 @@ whitelist_rules:
   - private_action
   - private_outlet
   - private_unit_test
+  - prohibited_nan_comparison
   - prohibited_super_call
   - protocol_property_accessors_order
   - reduce_boolean
@@ -99,6 +100,7 @@ whitelist_rules:
   - redundant_type_annotation
   - redundant_void_return
   - required_enum_case
+  - return_value_from_void_function
   - return_arrow_whitespace
   - shorthand_operator
   - sorted_first_last
@@ -115,6 +117,7 @@ whitelist_rules:
   - trailing_newline
   - trailing_semicolon
   - trailing_whitespace
+  - tuple_pattern
   - unavailable_function
   - unneeded_break_in_switch
   - unneeded_parentheses_in_closure_argument
@@ -140,6 +143,7 @@ analyzer_rules:
   - unused_declaration
   - unused_import
 force_cast: warning
+force_try: warning
 force_unwrapping: warning
 number_separator:
   minimum_length: 5
