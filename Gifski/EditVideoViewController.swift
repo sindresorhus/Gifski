@@ -302,6 +302,12 @@ final class EditVideoViewController: NSViewController {
 		playerViewController = TrimmingAVPlayerViewController(playerItem: AVPlayerItem(asset: asset)) { [weak self] _ in
 			self?.estimateFileSize()
 		}
+
+		Defaults.observe(.loopGif) { [weak self] in
+			self?.playerViewController.loopPlayback = $0.newValue
+		}
+			.tieToLifetime(of: self)
+
 		add(childController: playerViewController, to: playerViewWrapper)
 	}
 

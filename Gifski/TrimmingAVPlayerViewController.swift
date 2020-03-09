@@ -4,6 +4,7 @@ import AVKit
 final class TrimmingAVPlayerViewController: NSViewController {
 	private(set) var timeRange: ClosedRange<Double>?
 	private let playerItem: AVPlayerItem
+	private let player: AVPlayer
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
@@ -16,12 +17,22 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		}
 	}
 
+	var loopPlayback: Bool {
+		get {
+			player.loopPlayback
+		}
+		set {
+			player.loopPlayback = newValue
+		}
+	}
+
 	init(
 		playerItem: AVPlayerItem,
 		controlsStyle: AVPlayerViewControlsStyle = .inline,
 		timeRangeDidChange: ((ClosedRange<Double>) -> Void)? = nil
 	) {
 		self.playerItem = playerItem
+		self.player = AVPlayer(playerItem: playerItem)
 		self.controlsStyle = controlsStyle
 		self.timeRangeDidChange = timeRangeDidChange
 		super.init(nibName: nil, bundle: nil)
@@ -34,10 +45,9 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 	override func loadView() {
 		let playerView = TrimmingAVPlayerView()
-		playerView.player = AVPlayer(playerItem: playerItem)
 		playerView.controlsStyle = controlsStyle
 		playerView.setupTrimmingObserver()
-
+		playerView.player = player
 		view = playerView
 	}
 
