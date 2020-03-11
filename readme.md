@@ -60,19 +60,33 @@ xcode-select --install
 
 ## FAQ
 
-### The generated GIFs are huge!
+#### The generated GIFs are huge!
 
 The GIF image format is very space inefficient. It works best with short video clips. Try reducing the dimensions, FPS, or quality.
 
-### Can I contribute localizations?
+#### How can I convert a sequence of PNG images to a GIF?
+
+Install [FFmpeg](https://www.ffmpeg.org/) (with Homebrew: `brew install ffmpeg`) and then run this command:
+
+```
+TMPFILE="$(mktemp /tmp/XXXXXXXXXXX).mov"; \
+	ffmpeg -f image2 -framerate 30 -i image_%06d.png -c:v prores_ks -profile:v 5 "$TMPFILE" \
+	&& open -a Gifski "$TMPFILE"
+```
+
+Ensure the images are named in the format `image_000001.png` and adjust the `-framerate` accordingly.
+
+[*Command explanation.*](https://avpres.net/FFmpeg/sq_ProRes.html)
+
+#### Can I contribute localizations?
 
 We're not interested in localizing the app.
 
-### Can you support macOS 10.13?
+#### Can you support macOS 10.13?
 
 No, but you can get the last compatible version [here](https://github.com/sindresorhus/Gifski/files/3991913/Gifski.2.4.0.-.High.Sierra.zip).
 
-### Can you support Windows/Linux?
+#### Can you support Windows/Linux?
 
 No, but there's a [cross-platform command-line tool](https://github.com/ImageOptim/gifski) available.
 
