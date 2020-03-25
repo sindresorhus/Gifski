@@ -204,7 +204,7 @@ final class EditVideoViewController: NSViewController {
 		}
 
 		dimensionsTypeDropdown.removeAllItems()
-		dimensionsTypeDropdown.addItems(withTitles: DimensionsType.allCases.map { $0.rawValue })
+		dimensionsTypeDropdown.addItems(withTitles: DimensionsType.allCases.map(\.rawValue))
 
 		dimensionsTypeDropdown.onMenuDidClose = { [weak self] selectedIndex in
 			guard

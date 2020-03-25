@@ -145,7 +145,9 @@ final class TrimmingAVPlayerView: AVPlayerView {
 			.first { $0 != avTrimView }?
 			.subviews
 			.filter { ($0 as? NSButton)?.image == nil }
-			.forEach { $0.isHidden = true }
+			.forEach {
+				$0.isHidden = true
+			}
 	}
 
 	fileprivate func addCheckerboardView() {

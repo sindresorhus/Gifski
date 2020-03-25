@@ -158,7 +158,7 @@ extension NSWindow {
 		// So there seems to be a visual effect view already created by NSWindow.
 		// If we can attach ourselves to it and make it a vibrant one - awesome.
 		// If not, let's just add our view as a first one so it is vibrant anyways.
-		if let visualEffectView = contentView?.superview?.subviews.compactMap({ $0 as? NSVisualEffectView }).first {
+		if let visualEffectView = contentView?.superview?.subviews.lazy.compactMap({ $0 as? NSVisualEffectView }).first {
 			visualEffectView.blendingMode = .behindWindow
 			visualEffectView.material = .underWindowBackground
 
@@ -869,7 +869,7 @@ extension AVAsset {
 	/// - Note: If self is an `AVAsset` and not an `AVURLAsset`, the file size will just be an estimate.
 	var fileSize: Int {
 		guard let urlAsset = self as? AVURLAsset else {
-			return tracks.sum { $0.estimatedFileSize }
+			return tracks.sum(\.estimatedFileSize)
 		}
 
 		return urlAsset.url.fileSize
@@ -1287,7 +1287,7 @@ final class UrlMenuItem: NSMenuItem {
 
 
 final class ObjectAssociation<T: Any> {
-	subscript(index: Any) -> T? {
+	subscript(index: AnyObject) -> T? {
 		get {
 			objc_getAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque()) as! T?
 		} set {
@@ -1367,7 +1367,6 @@ extension NSControl {
 
 
 extension CAMediaTimingFunction {
-	// TODO: Use `Self` here when using Swift 5.2.
 	static let `default` = CAMediaTimingFunction(name: .default)
 	static let linear = CAMediaTimingFunction(name: .linear)
 	static let easeIn = CAMediaTimingFunction(name: .easeIn)

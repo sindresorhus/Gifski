@@ -34,36 +34,17 @@ final class Gifski {
 		}
 	}
 
+	/**
+	- Parameter frameRate: Clamped to `5...30`. Uses the frame rate of `input` if not specified.
+	- Parameter loopGif: Whether output should loop infinitely or not.
+	*/
 	struct Conversion {
 		let video: URL
-		let timeRange: ClosedRange<Double>?
-		let quality: Double
-		let dimensions: CGSize?
-		let frameRate: Int?
-		let loopGif: Bool
-
-		// TODO: With Swift 5.1 we can remove the manual `init` and have it synthesized.
-		/**
-		- Parameter frameRate: Clamped to `5...30`. Uses the frame rate of `input` if not specified.
-		*/
-		/**
-		- Parameter loopGif: Whether output should loop infinitely or not.
-		*/
-		init(
-			video: URL,
-			timeRange: ClosedRange<Double>? = nil,
-			quality: Double = 1,
-			dimensions: CGSize? = nil,
-			frameRate: Int? = nil,
-			loopGif: Bool = true
-		) {
-			self.video = video
-			self.timeRange = timeRange
-			self.quality = quality
-			self.dimensions = dimensions
-			self.frameRate = frameRate
-			self.loopGif = loopGif
-		}
+		var timeRange: ClosedRange<Double>?
+		var quality: Double = 1
+		var dimensions: CGSize?
+		var frameRate: Int?
+		var loopGif: Bool = true
 	}
 
 	// TODO: `NSMutableData` is not thread-safe. We should use a lock when writing to it.
@@ -231,7 +212,7 @@ final class Gifski {
 			)
 			Crashlytics.record(
 				key: "\(debugKey): frameForTimes",
-				value: frameForTimes.map { $0.seconds }
+				value: frameForTimes.map(\.seconds)
 			)
 
 			generator.generateCGImagesAsynchronously(forTimePoints: frameForTimes) { [weak self] result in
