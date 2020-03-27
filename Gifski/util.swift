@@ -27,25 +27,6 @@ func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
 }
 
 
-struct Meta {
-	static func openSubmitFeedbackPage() {
-		let metadata =
-			"""
-			\(App.name) \(App.versionWithBuild) - \(App.id)
-			macOS \(System.osVersion)
-			\(System.hardwareModel)
-			"""
-
-		let query: [String: String] = [
-			"product": App.name,
-			"metadata": metadata
-		]
-
-		URL(string: "https://sindresorhus.com/feedback/")!.addingDictionaryAsQuery(query).open()
-	}
-}
-
-
 extension NSView {
 	func shake(duration: TimeInterval = 0.3, direction: NSUserInterfaceLayoutOrientation) {
 		let translation = direction == .horizontal ? "x" : "y"
@@ -1259,7 +1240,7 @@ final class FeedbackMenuItem: NSMenuItem {
 		super.init(coder: decoder)
 
 		onAction = { _ in
-			Meta.openSubmitFeedbackPage()
+			App.openSendFeedbackPage()
 		}
 	}
 }
@@ -1477,13 +1458,6 @@ struct App {
 	static let isFirstLaunch: Bool = {
 		let key = "SS_hasLaunched"
 
-		// TODO: Remove this at some point.
-		// Prevents showing "first launch" stuff for existing users.
-		guard Defaults[.successfulConversionsCount] == 0 else {
-			UserDefaults.standard.set(true, forKey: key)
-			return false
-		}
-
 		if UserDefaults.standard.bool(forKey: key) {
 			return false
 		} else {
@@ -1491,6 +1465,22 @@ struct App {
 			return true
 		}
 	}()
+
+	static func openSendFeedbackPage() {
+		let metadata =
+			"""
+			\(App.name) \(App.versionWithBuild) - \(App.id)
+			macOS \(System.osVersion)
+			\(System.hardwareModel)
+			"""
+
+		let query: [String: String] = [
+			"product": App.name,
+			"metadata": metadata
+		]
+
+		URL(string: "https://sindresorhus.com/feedback/")!.addingDictionaryAsQuery(query).open()
+	}
 }
 
 

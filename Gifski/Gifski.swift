@@ -53,7 +53,7 @@ final class Gifski {
 
 	// TODO: Split this method up into smaller methods. It's too large.
 	/**
-	Converts a movie to GIF
+	Converts a movie to GIF.
 
 	- Parameter completionHandler: Guaranteed to be called on the main thread
 	*/
@@ -164,9 +164,9 @@ final class Gifski {
 			)
 
 			let generator = AVAssetImageGenerator(asset: asset)
-			generator.requestedTimeToleranceAfter = .zero
-			generator.requestedTimeToleranceBefore = .zero
 			generator.appliesPreferredTrackTransform = true
+			generator.requestedTimeToleranceBefore = .zero
+			generator.requestedTimeToleranceAfter = .zero
 
 			self.progress.cancellationHandler = {
 				generator.cancelAllCGImageGeneration()
