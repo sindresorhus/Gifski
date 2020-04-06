@@ -227,6 +227,7 @@ final class Gifski {
 
 				switch result {
 				case let .success(result):
+					self.progress.totalUnitCount = Int64(result.totalCount)
 					let image = result.image
 
 					guard
