@@ -2964,8 +2964,19 @@ extension Error {
 
 
 extension AVPlayer {
+	/**
+	Seek to the start of the playable range of the video.
+
+	The start might not be at `0` if, for example, the video has been trimmed in `AVPlayerView` trim mode.
+	*/
 	func seekToStart() {
-		seek(to: .zero)
+		let seconds = currentItem?.playbackRange?.lowerBound ?? 0
+
+		seek(
+			to: CMTime(seconds: seconds, preferredTimescale: .video),
+			toleranceBefore: .zero,
+			toleranceAfter: .zero
+		)
 	}
 }
 
