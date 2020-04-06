@@ -50,6 +50,7 @@ final class Gifski {
 	// TODO: `NSMutableData` is not thread-safe. We should use a lock when writing to it.
 	private var gifData = NSMutableData()
 	private var progress: Progress!
+	private let writeQueue = DispatchQueue(label: "com.sindresorhus.Gifski.writeQueue", qos: .utility)
 
 	// TODO: Split this method up into smaller methods. It's too large.
 	/**
@@ -100,16 +101,18 @@ final class Gifski {
 			return progress.isCancelled ? 0 : 1
 		}
 
-		gifski.setWriteCallback(context: &gifData) { bufferLength, bufferPointer, context in
-			guard
-				bufferLength > 0,
-				let bufferPointer = bufferPointer
-			else {
+		gifski.setWriteCallback { [weak self] bufferLength, bufferPointer in
+			guard let self = self else {
 				return 0
 			}
 
-			let data = context!.assumingMemoryBound(to: NSMutableData.self).pointee
-			data.append(bufferPointer, length: bufferLength)
+			self.writeQueue.async { [weak self] in
+				guard let self = self else {
+					return
+				}
+
+				self.gifData.append(bufferPointer, length: bufferLength)
+			}
 
 			return 0
 		}
