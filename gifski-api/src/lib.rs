@@ -98,6 +98,11 @@ trait Encoder {
     }
 }
 
+enum FrameMessage {
+    Write(Arc<GIFFrame>),
+    Skipped,
+}
+
 /// Start new encoding
 ///
 /// Encoding is multi-threaded, and the `Collector` and `Writer`
@@ -214,9 +219,11 @@ impl Writer {
         Ok((Img::new(pal_img, img.width(), img.height()), pal))
     }
 
-    fn write_frames(write_queue_iter: mpsc::Receiver<Arc<GIFFrame>>, enc: &mut dyn Encoder, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
+    fn write_frames(write_queue_iter: mpsc::Receiver<FrameMessage>, enc: &mut dyn Encoder, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         for f in write_queue_iter {
-            enc.write_frame(&f, settings)?;
+            if let FrameMessage::Write(f) = f {
+                enc.write_frame(&f, settings)?;
+            }
             if !reporter.increase() {
                 return Err(ErrorKind::Aborted.into());
             }
@@ -266,7 +273,7 @@ impl Writer {
         Ok(())
     }
 
-    fn make_frames(mut decode_iter: OrdQueueIter<DecodedImage>, write_queue: mpsc::SyncSender<Arc<GIFFrame>>, settings: &Settings) -> CatResult<()> {
+    fn make_frames(mut decode_iter: OrdQueueIter<DecodedImage>, write_queue: mpsc::SyncSender<FrameMessage>, settings: &Settings) -> CatResult<()> {
         let mut screen = None;
         let mut next_frame = decode_iter.next().transpose()?;
 
@@ -291,6 +298,7 @@ impl Writer {
                 if next_pts_in_delay_units > pts_in_delay_units {
                     (next_pts_in_delay_units - pts_in_delay_units).min(10000) as u16
                 } else {
+                    write_queue.send(FrameMessage::Skipped).map_err(|_| ErrorKind::ThreadSend)?;
                     continue; // skip frames with duplicate/invalid PTS
                 }
             } else {
@@ -365,7 +373,7 @@ impl Writer {
                 delay,
             });
 
-            write_queue.send(frame.clone()).map_err(|_| ErrorKind::ThreadSend)?;
+            write_queue.send(FrameMessage::Write(frame.clone())).map_err(|_| ErrorKind::ThreadSend)?;
             i += 1;
             screen.blit(Some(&frame.pal), dispose, 0, 0, frame.image.as_ref(), transparent_index)?;
         }
