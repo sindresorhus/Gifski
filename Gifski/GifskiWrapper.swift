@@ -78,8 +78,10 @@ final class GifskiWrapper {
 
 	typealias WriteCallback = (Int, UnsafePointer<UInt8>) -> Int
 
+	private var writeCallback: WriteCallback!
+
 	func setWriteCallback(_ callback: @escaping WriteCallback) {
-		var callback = callback
+		writeCallback = callback
 
 		gifski_set_write_callback(
 			pointer,
@@ -94,7 +96,7 @@ final class GifskiWrapper {
 				let callback = context!.assumingMemoryBound(to: WriteCallback.self).pointee
 				return Int32(callback(bufferLength, bufferPointer))
 			},
-			&callback
+			&writeCallback
 		)
 	}
 
