@@ -68,12 +68,21 @@ final class GifskiWrapper {
 		}
 	}
 
-	// TODO: Make this one like `setWriteCallback` too.
-	func setProgressCallback(
-		context: UnsafeMutableRawPointer,
-		callback: @escaping (@convention(c) (UnsafeMutableRawPointer?) -> Int32)
-	) {
-		gifski_set_progress_callback(pointer, callback, context)
+	typealias ProgressCallback = () -> Int
+
+	private var progressCallback: ProgressCallback!
+
+	func setProgressCallback(_ callback: @escaping ProgressCallback) {
+		progressCallback = callback
+
+		gifski_set_progress_callback(
+			pointer,
+			{ context in // swiftlint:disable:this opening_brace
+				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
+				return Int32(this.progressCallback())
+			},
+			Unmanaged.passRetained(self).toOpaque()
+		)
 	}
 
 	typealias WriteCallback = (Int, UnsafePointer<UInt8>) -> Int
@@ -93,10 +102,10 @@ final class GifskiWrapper {
 					return 0
 				}
 
-				let callback = context!.assumingMemoryBound(to: WriteCallback.self).pointee
-				return Int32(callback(bufferLength, bufferPointer))
+				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
+				return Int32(this.writeCallback(bufferLength, bufferPointer))
 			},
-			&writeCallback
+			Unmanaged.passRetained(self).toOpaque()
 		)
 	}
 
