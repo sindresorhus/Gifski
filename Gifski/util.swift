@@ -322,7 +322,7 @@ extension AVAssetImageGenerator {
 		let isFinished: Bool
 	}
 
-	/// - Note: If you use `result.completedCount`, don't forget to update its usage in each `completionHandler` call as it can change if frames are ignored.
+	/// - Note: If you use `result.completedCount`, don't forget to update its usage in each `completionHandler` call as it can change if frames are skipped, for example, blank frames.
 	func generateCGImagesAsynchronously(
 		forTimePoints timePoints: [CMTime],
 		completionHandler: @escaping (Swift.Result<CompletionHandlerResult, Error>) -> Void
@@ -349,8 +349,8 @@ extension AVAssetImageGenerator {
 					)
 				)
 			case .failed:
-				// TODO: Ideally, we should trim blank frames when initially reading the video in `VideoValidator.swift`, but I don't know a way to detect blank frames.
-				// TODO: Report this to Apple if it's still an issue in macOS 10.16.
+				// TODO: Ideally, we should trim blank frames when initially reading the video in `VideoValidator.swift`, but I don't know a way to detect blank frames. We should still keep this fix even if we find a way to trim as this handles blank frames in the middle of the video.
+				// TODO: Report the `xcrun` bug to Apple if it's still an issue in macOS 10.16.
 				// We ignore blank frames. A video can sometimes contain blank frames at the start when you record an iOS simulator using `xcrun simctl io booted recordVideo simulator.mp4`.
 				if
 					let error = error as? AVError,
