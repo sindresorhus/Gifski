@@ -5,6 +5,9 @@ import Crashlytics
 var conversionCount = 0
 
 final class Gifski {
+	deinit {
+		print("GIFSKI DEINIT")
+	}
 	enum Error: LocalizedError {
 		case invalidSettings
 		case unreadableFile
@@ -49,6 +52,7 @@ final class Gifski {
 
 	private var gifData = NSMutableData()
 	private var progress: Progress!
+	private var gifski: GifskiWrapper?
 
 	// TODO: Split this method up into smaller methods. It's too large.
 	/**
@@ -67,6 +71,8 @@ final class Gifski {
 		progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { [weak self] (_ result: Result<Data, Error>) -> Void in
+			self?.gifski?.release()
+
 			DispatchQueue.main.async {
 				guard
 					let self = self,
@@ -88,7 +94,9 @@ final class Gifski {
 			fast: false
 		)
 
-		guard let gifski = GifskiWrapper(settings: settings) else {
+		self.gifski = GifskiWrapper(settings: settings)
+
+		guard let gifski = gifski else {
 			completionHandlerOnce(.failure(.invalidSettings))
 			return
 		}

@@ -47,8 +47,10 @@ enum GifskiWrapperError: UInt32, LocalizedError {
 	}
 }
 
+/// - Important: Don't forget to call `.release()` when done, whether it succeeded or failed.
 final class GifskiWrapper {
 	private let pointer: OpaquePointer
+	private var unmanagedSelf: Unmanaged<GifskiWrapper>!
 
 	init?(settings: GifskiSettings) {
 		var settings = settings
@@ -58,6 +60,9 @@ final class GifskiWrapper {
 		}
 
 		self.pointer = pointer
+
+		// We need to keep a strong reference to self so we can ensure it's not deallocated before libgifski finishes writing.
+		self.unmanagedSelf = Unmanaged.passRetained(self)
 	}
 
 	private func wrap(_ fn: () -> GifskiError) throws {
@@ -81,7 +86,7 @@ final class GifskiWrapper {
 				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
 				return Int32(this.progressCallback())
 			},
-			Unmanaged.passRetained(self).toOpaque()
+			unmanagedSelf.toOpaque()
 		)
 	}
 
@@ -105,7 +110,7 @@ final class GifskiWrapper {
 				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
 				return Int32(this.writeCallback(bufferLength, bufferPointer))
 			},
-			Unmanaged.passRetained(self).toOpaque()
+			unmanagedSelf.toOpaque()
 		)
 	}
 
@@ -133,5 +138,13 @@ final class GifskiWrapper {
 
 	func finish() throws {
 		try wrap { gifski_finish(pointer) }
+	}
+
+	func release() {
+		unmanagedSelf.release()
+	}
+
+	deinit {
+		print("GIFSKIWRAPPER DEINIT")
 	}
 }
