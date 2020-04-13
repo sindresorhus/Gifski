@@ -154,9 +154,9 @@ final class GifskiWrapper {
 			return
 		}
 
-		try wrap { gifski_finish(pointer) }
-
 		hasFinished = true
+
+		try wrap { gifski_finish(pointer) }
 	}
 
 	func release() {
