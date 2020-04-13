@@ -51,6 +51,7 @@ enum GifskiWrapperError: UInt32, LocalizedError {
 final class GifskiWrapper {
 	private let pointer: OpaquePointer
 	private var unmanagedSelf: Unmanaged<GifskiWrapper>!
+	private var hasFinished = false
 
 	init?(settings: GifskiSettings) {
 		var settings = settings
@@ -78,6 +79,10 @@ final class GifskiWrapper {
 	private var progressCallback: ProgressCallback!
 
 	func setProgressCallback(_ callback: @escaping ProgressCallback) {
+		guard !hasFinished else {
+			return
+		}
+
 		progressCallback = callback
 
 		gifski_set_progress_callback(
@@ -95,6 +100,10 @@ final class GifskiWrapper {
 	private var writeCallback: WriteCallback!
 
 	func setWriteCallback(_ callback: @escaping WriteCallback) {
+		guard !hasFinished else {
+			return
+		}
+
 		writeCallback = callback
 
 		gifski_set_write_callback(
@@ -123,6 +132,10 @@ final class GifskiWrapper {
 		pixels: UnsafePointer<UInt8>,
 		presentationTimestamp: Double
 	) throws {
+		guard !hasFinished else {
+			return
+		}
+
 		try wrap {
 			gifski_add_frame_argb(
 				pointer,
@@ -137,7 +150,13 @@ final class GifskiWrapper {
 	}
 
 	func finish() throws {
+		guard !hasFinished else {
+			return
+		}
+
 		try wrap { gifski_finish(pointer) }
+
+		hasFinished = true
 	}
 
 	func release() {
