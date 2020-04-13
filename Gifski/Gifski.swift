@@ -71,6 +71,13 @@ final class Gifski {
 		progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { [weak self] (_ result: Result<Data, Error>) -> Void in
+			if
+				case .failure(let error) = result,
+				case .cancelled = error
+			{
+				try? self?.gifski?.finish()
+			}
+
 			self?.gifski?.release()
 
 			DispatchQueue.main.async {
