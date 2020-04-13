@@ -5,9 +5,6 @@ import Crashlytics
 var conversionCount = 0
 
 final class Gifski {
-	deinit {
-		print("GIFSKI DEINIT")
-	}
 	enum Error: LocalizedError {
 		case invalidSettings
 		case unreadableFile

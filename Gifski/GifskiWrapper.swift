@@ -162,8 +162,4 @@ final class GifskiWrapper {
 	func release() {
 		unmanagedSelf.release()
 	}
-
-	deinit {
-		print("GIFSKIWRAPPER DEINIT")
-	}
 }
