@@ -47,8 +47,11 @@ enum GifskiWrapperError: UInt32, LocalizedError {
 	}
 }
 
+/// - Important: Don't forget to call `.release()` when done, whether it succeeded or failed.
 final class GifskiWrapper {
 	private let pointer: OpaquePointer
+	private var unmanagedSelf: Unmanaged<GifskiWrapper>!
+	private var hasFinished = false
 
 	init?(settings: GifskiSettings) {
 		var settings = settings
@@ -58,6 +61,9 @@ final class GifskiWrapper {
 		}
 
 		self.pointer = pointer
+
+		// We need to keep a strong reference to self so we can ensure it's not deallocated before libgifski finishes writing.
+		self.unmanagedSelf = Unmanaged.passRetained(self)
 	}
 
 	private func wrap(_ fn: () -> GifskiError) throws {
@@ -68,18 +74,53 @@ final class GifskiWrapper {
 		}
 	}
 
-	func setProgressCallback(
-		context: UnsafeMutableRawPointer,
-		callback: @escaping (@convention(c) (UnsafeMutableRawPointer?) -> Int32)
-	) {
-		gifski_set_progress_callback(pointer, callback, context)
+	typealias ProgressCallback = () -> Int
+
+	private var progressCallback: ProgressCallback!
+
+	func setProgressCallback(_ callback: @escaping ProgressCallback) {
+		guard !hasFinished else {
+			return
+		}
+
+		progressCallback = callback
+
+		gifski_set_progress_callback(
+			pointer,
+			{ context in // swiftlint:disable:this opening_brace
+				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
+				return Int32(this.progressCallback())
+			},
+			unmanagedSelf.toOpaque()
+		)
 	}
 
-	func setWriteCallback(
-		context: UnsafeMutableRawPointer,
-		callback: (@convention(c) (Int, UnsafePointer<UInt8>?, UnsafeMutableRawPointer?) -> Int32)?
-	) {
-		gifski_set_write_callback(pointer, callback, context)
+	typealias WriteCallback = (Int, UnsafePointer<UInt8>) -> Int
+
+	private var writeCallback: WriteCallback!
+
+	func setWriteCallback(_ callback: @escaping WriteCallback) {
+		guard !hasFinished else {
+			return
+		}
+
+		writeCallback = callback
+
+		gifski_set_write_callback(
+			pointer,
+			{ bufferLength, bufferPointer, context in // swiftlint:disable:this opening_brace
+				guard
+					bufferLength > 0,
+					let bufferPointer = bufferPointer
+				else {
+					return 0
+				}
+
+				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
+				return Int32(this.writeCallback(bufferLength, bufferPointer))
+			},
+			unmanagedSelf.toOpaque()
+		)
 	}
 
 	// swiftlint:disable:next function_parameter_count
@@ -91,6 +132,10 @@ final class GifskiWrapper {
 		pixels: UnsafePointer<UInt8>,
 		presentationTimestamp: Double
 	) throws {
+		guard !hasFinished else {
+			return
+		}
+
 		try wrap {
 			gifski_add_frame_argb(
 				pointer,
@@ -105,6 +150,16 @@ final class GifskiWrapper {
 	}
 
 	func finish() throws {
+		guard !hasFinished else {
+			return
+		}
+
+		hasFinished = true
+
 		try wrap { gifski_finish(pointer) }
+	}
+
+	func release() {
+		unmanagedSelf.release()
 	}
 }
