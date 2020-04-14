@@ -14,6 +14,10 @@
 //!
 //! It's safe and efficient to call `gifski_add_frame_*` in a loop as fast as you can get frames,
 //! because it blocks and waits until previous frames are written.
+//!
+//!
+//! To cancel processing, make progress callback return 0 and call `gifski_finish()`. The write callback
+//! may still be called between the cancellation and `gifski_finish()` returning.
 
 use super::*;
 use std::ffi::CStr;
@@ -105,8 +109,10 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
 /// You can add frames in any order, and they will be sorted by their `frame_number`.
 ///
 /// Presentation timestamp (PTS) is time in seconds, since start of the file, when this frame is to be displayed.
-/// For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
+/// For a 20fps video it could be `frame_number/20.0`.
 /// Frames with duplicate or out-of-order PTS will be skipped.
+///
+/// The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
@@ -134,8 +140,10 @@ pub unsafe extern "C" fn gifski_add_frame_png_file(handle: *const GifskiHandle, 
 /// Pixels is an array width×height×4 bytes large. The array is copied, so you can free/reuse it immediately.
 ///
 /// Presentation timestamp (PTS) is time in seconds, since start of the file (at 0), when this frame is to be displayed.
-/// For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
+/// For a 20fps video it could be `frame_number/20.0`.
 /// Frames with duplicate or out-of-order PTS will be skipped.
+///
+/// The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
@@ -199,31 +207,19 @@ pub unsafe extern "C" fn gifski_add_frame_rgb(handle: *const GifskiHandle, frame
     add_frame_rgba(handle, frame_number, ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|&p| p.into())).collect(), width as usize, height as usize), presentation_timestamp)
 }
 
-/// Optional. Allows deprecated `gifski_write` to finish.
-#[no_mangle]
-pub unsafe extern "C" fn gifski_end_adding_frames(handle: *const GifskiHandle) -> GifskiError {
-    let g = match borrow(handle) {
-        Some(g) => g,
-        None => return GifskiError::NULL_ARG,
-    };
-    match g.collector.lock().unwrap().take() {
-        Some(_) => GifskiError::OK,
-        None => {
-            eprintln!("gifski_end_adding_frames has been called already");
-            GifskiError::INVALID_STATE
-        },
-    }
-}
-
 /// Get a callback for frame processed, and abort processing if desired.
 ///
-/// The callback is called once per frame.
+/// The callback is called once per input frame,
+/// even if the encoder decides to skip some frames.
+///
 /// It gets arbitrary pointer (`user_data`) as an argument. `user_data` can be `NULL`.
-/// The callback must be thread-safe (it will be called from another thread).
 ///
 /// The callback must return `1` to continue processing, or `0` to abort.
 ///
-/// Must be called before `gifski_set_file_output()` to take effect.
+/// The callback must be thread-safe (it will be called from another thread).
+/// It must remain valid at all times, until `gifski_finish` completes.
+///
+/// This function must be called before `gifski_set_file_output()` to take effect.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandle, cb: unsafe extern fn(*mut c_void) -> c_int, user_data: *mut c_void) {
     let g = match borrow(handle) {
@@ -231,27 +227,6 @@ pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandl
         None => return,
     };
     *g.progress.lock().unwrap() = Some(ProgressCallback::new(cb, user_data));
-}
-
-/// Deprecated. Do not use. Use `gifski_set_file_output` instead.
-///
-/// Blocks the current thread. Starts writing to the `destination` and keeps waiting
-/// for more frames being set by another thread, until `gifski_end_adding_frames()` is called.
-///
-/// This call will block until the entire file is written. You will need to add frames on another thread.
-///
-/// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
-#[no_mangle]
-pub unsafe extern "C" fn gifski_write(handle: *const GifskiHandle, destination: *const c_char) -> GifskiError {
-    let g = match borrow(handle) {
-        Some(g) => g,
-        None => return GifskiError::NULL_ARG,
-    };
-    let (file, path) = match prepare_for_file_writing(g, destination) {
-        Ok(res) => res,
-        Err(err) => return err,
-    };
-    gifski_write_sync_internal(g, file, Some(path))
 }
 
 /// Start writing to the `destination`. This has to be called before any frames are added.
@@ -337,7 +312,7 @@ impl io::Write for CallbackWriter {
 ///
 /// The callback should return 0 (`GIFSKI_OK`) on success, and non-zero on error.
 ///
-/// The callback function must be thread-safe.
+/// The callback function must be thread-safe. It must remain valid at all times, until `gifski_finish` completes.
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
@@ -411,6 +386,7 @@ unsafe fn retain(arc_ptr: *const GifskiHandle) -> Arc<GifskiHandleInternal> {
 ///
 /// Returns final status of write operations. Remember to check the return value!
 ///
+/// Must always be called, otherwise it will leak memory.
 /// After this call, the handle is freed and can't be used any more.
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
@@ -445,18 +421,27 @@ fn c_cb() {
         })
     };
     assert!(!g.is_null());
-    let mut called = false;
+    let mut write_called = false;
     unsafe extern "C" fn cb(_s: usize, _buf: *const u8, user_data: *mut c_void) -> c_int {
-        let called = user_data as *mut bool;
-        *called = true;
+        let write_called = user_data as *mut bool;
+        *write_called = true;
         0
     }
+    let mut progress_called = 0u32;
+    unsafe extern "C" fn pcb(user_data: *mut c_void) -> c_int {
+        let progress_called = user_data as *mut u32;
+        *progress_called += 1;
+        1
+    }
     unsafe {
-        assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), (&mut called) as *mut _ as _));
-        assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 5.0));
+        assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), (&mut write_called) as *mut _ as _));
+        gifski_set_progress_callback(g, pcb, (&mut progress_called) as *mut _ as _);
+        assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 3.));
+        assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 10.));
         assert_eq!(GifskiError::OK, gifski_finish(g));
     }
-    assert!(called);
+    assert!(write_called);
+    assert_eq!(2, progress_called);
 }
 
 #[test]
@@ -540,8 +525,6 @@ fn c_incomplete() {
         gifski_set_progress_callback(g, cb, ptr::null_mut());
         assert_eq!(GifskiError::OK, gifski_add_frame_rgba(g, 0, 1, 1, &RGBA::new(0, 0, 0, 0), 5.0));
         assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 1, 1, 3, 1, &RGB::new(0, 0, 0), 5.0));
-        assert_eq!(GifskiError::OK, gifski_end_adding_frames(g));
-        assert_eq!(GifskiError::INVALID_STATE, gifski_end_adding_frames(g));
         assert_eq!(GifskiError::OK, gifski_finish(g));
     }
 }

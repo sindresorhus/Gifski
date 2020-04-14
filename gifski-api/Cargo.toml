@@ -10,7 +10,7 @@ license = "AGPL-3.0+"
 name = "gifski"
 readme = "README.md"
 repository = "https://github.com/ImageOptim/gifski"
-version = "0.10.2"
+version = "1.0.0"
 autobins = false
 edition = "2018"
 
@@ -21,7 +21,6 @@ name = "gifski"
 [dependencies]
 gifsicle = { version = "1.92.0", optional = true }
 clap = "2.33.0"
-error-chain = "0.12.2"
 gif = "0.10.3"
 gif-dispose = "2.2.0"
 imagequant = "2.12.5"
@@ -32,6 +31,7 @@ resize = "0.4.0"
 rgb = "0.8.16"
 wild = "2.0.2"
 natord = "1.0.9"
+quick-error = "1.2.3"
 
 [dependencies.ffmpeg]
 rev = "61a668f5e105232df4af367d332bbd54de3d9f13"
@@ -50,9 +50,12 @@ malloc = []
 path = "src/lib.rs"
 crate-type = ["lib", "staticlib", "cdylib"]
 
-[profile.dev]
-opt-level = 1
+[profile.dev.package.imagequant]
+opt-level = 3
 
 [profile.release]
 panic = "abort"
 lto = true
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

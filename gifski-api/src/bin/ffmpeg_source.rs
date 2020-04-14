@@ -1,4 +1,4 @@
-use crate::error::*;
+use crate::BinResult;
 use gifski::Collector;
 use imgref::*;
 use rgb::*;
@@ -23,9 +23,9 @@ impl Source for FfmpegDecoder {
 
 impl FfmpegDecoder {
     pub fn new(path: &Path, fps: f32) -> BinResult<Self> {
-        ffmpeg::init().chain_err(|| "Unable to initialize ffmpeg")?;
+        ffmpeg::init().map_err(|e| format!("Unable to initialize ffmpeg: {}", e))?;
         let input_context = ffmpeg::format::input(&path)
-            .chain_err(|| format!("Unable to open video file {}", path.display()))?;
+            .map_err(|e| format!("Unable to open video file {}: {}", path.display(), e))?;
         // take fps override into account
         let frames = input_context.streams().best(ffmpeg::media::Type::Video).ok_or("The file has no video tracks")?.frames() as u64;
         Ok(Self {
@@ -40,7 +40,7 @@ impl FfmpegDecoder {
         let (stream_index, mut decoder, mut converter, time_base) = {
             let stream = self.input_context.streams().best(ffmpeg::media::Type::Video).ok_or("The file has no video tracks")?;
 
-            let decoder = stream.codec().decoder().video().chain_err(|| "Unable to decode the codec used in the video")?;
+            let decoder = stream.codec().decoder().video().map_err(|e| format!("Unable to decode the codec used in the video: {}", e))?;
 
             let converter = decoder.converter(ffmpeg::util::format::pixel::Pixel::RGBA)?;
             (stream.index(), decoder, converter, stream.time_base())

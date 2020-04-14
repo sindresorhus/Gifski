@@ -214,24 +214,12 @@ GifskiError gifski_set_write_callback(gifski *handle,
  *
  * Returns final status of write operations. Remember to check the return value!
  *
+ * Must always be called, otherwise it will leak memory.
  * After this call, the handle is freed and can't be used any more.
  *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
 GifskiError gifski_finish(gifski *g);
-
-// Previous, deprecated name
-#define gifski_drop(a) gifski_finish(a)
-
-/**
- * Deprecated. Do not use.
- */
-GifskiError gifski_write(gifski *, const char *);
-
-/**
- * Optional. Allows deprecated `gifski_write` to finish.
- */
-GifskiError gifski_end_adding_frames(gifski *handle);
 
 #ifdef __cplusplus
 }

@@ -5,9 +5,7 @@ use std::alloc::System;
 #[cfg_attr(feature = "malloc", global_allocator)]
 static A: System = System;
 
-use gifski;
 #[macro_use] extern crate clap;
-#[macro_use] extern crate error_chain;
 
 #[cfg(feature = "video")]
 extern crate ffmpeg;
@@ -23,9 +21,7 @@ use crate::source::*;
 
 use gifski::progress::{NoProgress, ProgressBar, ProgressReporter};
 
-mod error;
-use crate::error::ResultExt;
-use crate::error::*;
+pub type BinResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 use clap::{App, AppSettings, Arg};
 
@@ -40,7 +36,15 @@ const VIDEO_FRAMES_ARG_HELP: &'static str = "one MP4/WebM video, or multiple PNG
 #[cfg(not(feature = "video"))]
 const VIDEO_FRAMES_ARG_HELP: &'static str = "PNG animation frames";
 
-quick_main!(bin_main);
+fn main() {
+    if let Err(e) = bin_main() {
+        eprintln!("error: {}", e);
+        if let Some(e) = e.source() {
+            eprintln!("error: {}", e);
+        }
+        std::process::exit(1);
+    }
+}
 
 fn bin_main() -> BinResult<()> {
      let matches = App::new(crate_name!())
@@ -108,14 +112,14 @@ fn bin_main() -> BinResult<()> {
 
     let output_path = Path::new(matches.value_of_os("output").ok_or("Missing output")?);
     let settings = gifski::Settings {
-        width: parse_opt(matches.value_of("width")).chain_err(|| "Invalid width")?,
-        height: parse_opt(matches.value_of("height")).chain_err(|| "Invalid height")?,
-        quality: parse_opt(matches.value_of("quality")).chain_err(|| "Invalid quality")?.unwrap_or(100),
+        width: parse_opt(matches.value_of("width")).map_err(|_| "Invalid width")?,
+        height: parse_opt(matches.value_of("height")).map_err(|_| "Invalid height")?,
+        quality: parse_opt(matches.value_of("quality")).map_err(|_| "Invalid quality")?.unwrap_or(100),
         once: matches.is_present("once"),
         fast: matches.is_present("fast"),
     };
     let quiet = matches.is_present("quiet");
-    let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().chain_err(|| "FPS must be a number")?;
+    let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;
 
     if settings.quality < 20 {
         if settings.quality < 1 {
@@ -153,7 +157,7 @@ fn bin_main() -> BinResult<()> {
     });
 
     let file = File::create(output_path)
-        .chain_err(|| format!("Can't write to {}", output_path.display()))?;
+        .map_err(|e| format!("Can't write to {}: {}", output_path.display(), e))?;
     writer.write(file, &mut *progress)?;
     decode_thread.join().unwrap()?;
     progress.done(&format!("gifski created {}", output_path.display()));

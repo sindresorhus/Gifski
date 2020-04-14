@@ -26,7 +26,7 @@ pub fn new<T>(depth: usize) -> (OrdQueue<T>, OrdQueueIter<T>) {
 
 impl<T: Send + 'static> OrdQueue<T> {
     pub fn push(&mut self, index: usize, item: T) -> CatResult<()> {
-        self.sender.send(ReverseTuple(index, item)).map_err(|_| ErrorKind::ThreadSend)?;
+        self.sender.send(ReverseTuple(index, item)).map_err(|_| Error::ThreadSend)?;
         Ok(())
     }
 }

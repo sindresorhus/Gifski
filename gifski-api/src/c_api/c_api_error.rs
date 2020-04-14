@@ -70,10 +70,10 @@ impl From<c_int> for GifskiError {
 
 impl From<CatResult<()>> for GifskiError {
     fn from(res: CatResult<()>) -> Self {
-        use crate::error::ErrorKind::*;
+        use crate::error::Error::*;
         match res {
             Ok(_) => GifskiError::OK,
-            Err(err) => match *err.kind() {
+            Err(err) => match err {
                 Quant(_) => GifskiError::QUANT,
                 Pal(_) => GifskiError::GIF,
                 ThreadSend => GifskiError::THREAD_LOST,

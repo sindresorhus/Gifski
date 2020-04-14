@@ -1,4 +1,4 @@
-use crate::error::*;
+use crate::BinResult;
 use gifski::Collector;
 
 pub trait Source: Send {

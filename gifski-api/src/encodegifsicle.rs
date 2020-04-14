@@ -31,7 +31,7 @@ impl<'w> Gifsicle<'w> {
     fn flush_writer(&mut self) -> CatResult<()> {
         unsafe {
             if (*self.gif_writer).pos > 0 {
-                let buf_start = (*self.gif_writer).v.as_mut().ok_or(ErrorKind::Gifsicle)?;
+                let buf_start = (*self.gif_writer).v.as_mut().ok_or(Error::Gifsicle)?;
                 let buf = std::slice::from_raw_parts(buf_start, (*self.gif_writer).pos as usize);
                 self.out.write_all(buf)?;
                 (*self.gif_writer).pos = 0;
@@ -72,7 +72,7 @@ impl Encoder for Gifsicle<'_> {
         if self.gfs.is_null() {
             let gfs = unsafe {
                 self.gfs = gifsicle::Gif_NewStream();
-                self.gfs.as_mut().ok_or(ErrorKind::Gifsicle)?
+                self.gfs.as_mut().ok_or(Error::Gifsicle)?
             };
             gfs.screen_width = image.width() as _;
             gfs.screen_height = image.height() as _;
@@ -80,13 +80,13 @@ impl Encoder for Gifsicle<'_> {
             unsafe {
                 self.gif_writer = Gif_IncrementalWriteFileInit(gfs, &self.info, ptr::null_mut());
                 if self.gif_writer.is_null() {
-                    Err(ErrorKind::Gifsicle)?;
+                    Err(Error::Gifsicle)?;
                 }
             }
         }
 
         let g = unsafe {
-            Gif_NewImage().as_mut().ok_or(ErrorKind::Gifsicle)?
+            Gif_NewImage().as_mut().ok_or(Error::Gifsicle)?
         };
         g.delay = delay;
         g.width = image.width() as u16;
@@ -117,12 +117,12 @@ impl Encoder for Gifsicle<'_> {
         unsafe {
             if 0 == Gif_SetUncompressedImage(g, image.buf().as_ptr() as *mut u8, None, 0) {
                 Gif_DeleteImage(g);
-                Err(ErrorKind::Gifsicle)?;
+                Err(Error::Gifsicle)?;
             }
             let res = Gif_IncrementalWriteImage(self.gif_writer, self.gfs, g);
             Gif_DeleteImage(g);
             if 0 == res {
-                Err(ErrorKind::Gifsicle)?;
+                Err(Error::Gifsicle)?;
             }
             self.flush_writer()?;
         }

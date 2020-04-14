@@ -1,5 +1,5 @@
-use crate::error::*;
-use crate::source::*;
+use crate::source::Source;
+use crate::BinResult;
 use gifski::Collector;
 use std::path::PathBuf;
 
