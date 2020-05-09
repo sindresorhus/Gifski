@@ -360,7 +360,7 @@ extension CMTimeScale {
 	CMTime(seconds: (1 / fps), preferredTimescale: .video)
 	```
 	*/
-	static let video: CMTimeScale = 600
+	static let video: Self = 600
 }
 
 
@@ -2753,7 +2753,7 @@ extension ClosedRange {
 	//=> true
 	```
 	*/
-	func isSuperset(of other: ClosedRange<Bound>) -> Bool {
+	func isSuperset(of other: Self) -> Bool {
 		other.isEmpty ||
 			(
 				lowerBound <= other.lowerBound &&
@@ -2769,7 +2769,7 @@ extension ClosedRange {
 	//=> true
 	```
 	*/
-	func isSubset(of other: ClosedRange<Bound>) -> Bool {
+	func isSubset(of other: Self) -> Bool {
 		other.isSuperset(of: self)
 	}
 }
@@ -2903,6 +2903,7 @@ final class BackButton: NSButton {
 
 	private func commonInit() {
 		self.image = NSImage(named: NSImage.goBackTemplateName)
+		self.setAccessibilityLabel("Back")
 	}
 }
 

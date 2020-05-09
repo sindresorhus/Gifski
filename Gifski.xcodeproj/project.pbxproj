@@ -124,6 +124,7 @@
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CheckerboardView.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E3805F542466E68900489E6C /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		E3A6BD102245345C00F62256 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Constants.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3A9400D2182D7BC006981D5 /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Crashlytics.framework; path = Frameworks/Crashlytics.framework; sourceTree = "<group>"; };
 		E3A9400E2182D7BC006981D5 /* Fabric.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Fabric.framework; path = Frameworks/Fabric.framework; sourceTree = "<group>"; };
@@ -213,6 +214,7 @@
 		E3AE627A1E5CD2F300035A2F = {
 			isa = PBXGroup;
 			children = (
+				E3805F542466E68900489E6C /* Shared.xcconfig */,
 				E3AE62851E5CD2F300035A2F /* Gifski */,
 				0E79251C2329BDBE00058B94 /* ShareExtension */,
 				E3AE62841E5CD2F300035A2F /* Products */,
@@ -535,7 +537,6 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -545,7 +546,6 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MARKETING_VERSION = 2.7.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
@@ -566,7 +566,6 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -576,7 +575,6 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MARKETING_VERSION = 2.7.1;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -587,6 +585,7 @@
 		};
 		E3AE628E1E5CD2F300035A2F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E3805F542466E68900489E6C /* Shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -647,6 +646,7 @@
 		};
 		E3AE628F1E5CD2F300035A2F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E3805F542466E68900489E6C /* Shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -707,7 +707,6 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -725,7 +724,6 @@
 					"$(inherited)",
 					/usr/local/opt/gcc/lib/gcc/9,
 				);
-				MARKETING_VERSION = 2.7.1;
 				OTHER_LDFLAGS = (
 					"-weak_framework",
 					Combine,
@@ -753,7 +751,6 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -771,7 +768,6 @@
 					"$(inherited)",
 					/usr/local/opt/gcc/lib/gcc/9,
 				);
-				MARKETING_VERSION = 2.7.1;
 				OTHER_LDFLAGS = (
 					"-weak_framework",
 					Combine,
