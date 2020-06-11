@@ -1495,6 +1495,17 @@ struct App {
 	}
 }
 
+extension App {
+	static func runOnce(identifier: String, _ execute: () -> Void) {
+		let key = "SS_App_runOnce__\(identifier)"
+
+		if !UserDefaults.standard.bool(forKey: key) {
+			UserDefaults.standard.set(true, forKey: key)
+			execute()
+		}
+	}
+}
+
 
 /// Convenience for opening URLs.
 extension URL {
