@@ -1,5 +1,5 @@
-import Crashlytics
 import AVKit
+import Crashlytics
 
 struct VideoValidator {
 	enum Result {

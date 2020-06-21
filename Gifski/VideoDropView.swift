@@ -89,12 +89,15 @@ class DropView<CompletionType>: SSView {
 	}
 
 	override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-		if sender.draggingSourceOperationMask.contains(.copy), onEntered(sender) {
-			isDraggingHighlighted = true
-			return .copy
-		} else {
+		guard
+			sender.draggingSourceOperationMask.contains(.copy),
+			onEntered(sender)
+		else {
 			return []
 		}
+
+		isDraggingHighlighted = true
+		return .copy
 	}
 
 	override func draggingExited(_ sender: NSDraggingInfo?) {
@@ -125,11 +128,13 @@ final class VideoDropView: DropView<URL> {
 	}
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {
-		if let url = sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).first {
-			onComplete?(url)
-			return true
+		guard
+			let url = sender.draggingPasteboard.fileURLs(types: System.supportedVideoTypes).first
+		else {
+			return false
 		}
 
-		return false
+		onComplete?(url)
+		return true
 	}
 }

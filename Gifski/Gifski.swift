@@ -20,13 +20,13 @@ final class Gifski {
 				return "Invalid settings."
 			case .unreadableFile:
 				return "The selected file is no longer readable."
-			case let .notEnoughFrames(frameCount):
+			case .notEnoughFrames(let frameCount):
 				return "An animated GIF requires a minimum of 2 frames. Your video contains \(frameCount) frame\(frameCount == 1 ? "" : "s")."
-			case let .generateFrameFailed(error):
+			case .generateFrameFailed(let error):
 				return "Failed to generate frame: \(error.localizedDescription)"
-			case let .addFrameFailed(error):
+			case .addFrameFailed(let error):
 				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
-			case let .writeFailed(error):
+			case .writeFailed(let error):
 				return "Failed to write, with underlying error: \(error.localizedDescription)"
 			case .cancelled:
 				return "The conversion was cancelled."
@@ -232,7 +232,7 @@ final class Gifski {
 				}
 
 				switch result {
-				case let .success(result):
+				case .success(let result):
 					self.progress.totalUnitCount = Int64(result.totalCount)
 					let image = result.image
 
@@ -270,7 +270,7 @@ final class Gifski {
 					}
 				case .failure where result.isCancelled:
 					completionHandlerOnce(.failure(.cancelled))
-				case let .failure(error):
+				case .failure(let error):
 					completionHandlerOnce(.failure(.generateFrameFailed(error)))
 				}
 			}

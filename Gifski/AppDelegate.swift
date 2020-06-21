@@ -2,6 +2,7 @@ import Cocoa
 import UserNotifications
 import Fabric
 import Crashlytics
+import DockProgress
 
 @NSApplicationMain
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -19,11 +20,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 				"NSFullScreenMenuItemEverywhere": false
 			]
 		)
+
+		DockProgress.style = .circle(radius: 55)
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
 		#if !DEBUG
-			Fabric.with([Crashlytics.self])
+		Fabric.with([Crashlytics.self])
 		#endif
 
 		notificationCenter.requestAuthorization { _, _ in }

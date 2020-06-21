@@ -42,6 +42,10 @@ whitelist_rules:
   - first_where
   - flatmap_over_map_reduce
   - for_where
+  # Enable these once in a while
+  # - force_cast
+  # - force_try
+  # - force_unwrapping
   - generic_type_name
   - identical_operands
   - identifier_name
@@ -75,13 +79,11 @@ whitelist_rules:
   - notification_center_detachment
   - nsobject_prefer_isequal
   - number_separator
-  - object_literal
   - opening_brace
   - operator_usage_whitespace
   - operator_whitespace
   - orphaned_doc_comment
   - overridden_super_call
-  - pattern_matching_keywords
   - prefer_self_type_over_type_of_self
   - private_action
   - private_outlet
@@ -147,10 +149,6 @@ force_try: warning
 force_unwrapping: warning
 number_separator:
   minimum_length: 5
-object_literal:
-  image_literal: false
-discouraged_object_literal:
-  color_literal: false
 identifier_name:
   max_length:
     warning: 100

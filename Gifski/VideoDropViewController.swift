@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 @available(macOS 10.15, *)
@@ -48,7 +47,7 @@ final class VideoDropViewController: NSViewController {
 
 	func convert(_ inputUrl: URL) {
 		guard
-			case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: view.window)
+			case .success(let asset, let videoMetadata) = videoValidator.validate(inputUrl, in: view.window)
 		else {
 			return
 		}

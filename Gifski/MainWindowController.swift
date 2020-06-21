@@ -1,7 +1,4 @@
 import Cocoa
-import AVFoundation
-import Crashlytics
-import DockProgress
 
 final class MainWindowController: NSWindowController {
 	private let videoValidator = VideoValidator()
@@ -53,8 +50,6 @@ final class MainWindowController: NSWindowController {
 		NSApp.activate(ignoringOtherApps: false)
 		window.makeKeyAndOrderFront(nil)
 
-		DockProgress.style = .circle(radius: 55)
-
 		showWelcomeScreen()
 	}
 
@@ -65,13 +60,17 @@ final class MainWindowController: NSWindowController {
 		panel.allowedFileTypes = System.supportedVideoTypes
 
 		panel.beginSheetModal(for: window!) { [weak self] in
-			guard $0 == .OK else {
+			guard
+				let self = self,
+				$0 == .OK,
+				let url = panel.url
+			else {
 				return
 			}
 
 			// Give the system time to close the sheet.
 			DispatchQueue.main.async {
-				self?.convert(panel.url!)
+				self.convert(url)
 			}
 		}
 	}
@@ -84,7 +83,7 @@ final class MainWindowController: NSWindowController {
 	func convert(_ inputUrl: URL) {
 		guard
 			!isConverting,
-			case let .success(asset, videoMetadata) = videoValidator.validate(inputUrl, in: window)
+			case .success(let asset, let videoMetadata) = videoValidator.validate(inputUrl, in: window)
 		else {
 			return
 		}

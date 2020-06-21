@@ -561,11 +561,17 @@ extension AVAssetTrack {
 	/// `avc1` (video)
 	/// `aac` (audio)
 	var codecString: String? {
-		guard let rawDescription = formatDescriptions.first else {
+		guard
+			let rawDescription = formatDescriptions.first
+		else {
 			return nil
 		}
 
-		return CMFormatDescriptionGetMediaSubType(rawDescription as! CMFormatDescription).toString()
+		// This is the only way to do it. It's guaranteed to be this type.
+		// swiftlint:disable:next force_cast
+		let formatDescription = rawDescription as! CMFormatDescription
+
+		return CMFormatDescriptionGetMediaSubType(formatDescription).toString()
 	}
 
 	var codec: AVFormat? {
@@ -579,6 +585,8 @@ extension AVAssetTrack {
 	/// Returns a debug string with the media format.
 	/// Example: `vide/avc1`
 	var mediaFormat: String {
+		// This is the only way to do it. It's guaranteed to be this type.
+		// swiftlint:disable:next force_cast
 		let descriptions = formatDescriptions as! [CMFormatDescription]
 
 		var format = [String]()
@@ -617,7 +625,7 @@ extension AVAssetTrack {
 
 		guard
 			let track = composition.addMutableTrack(withMediaType: mediaType, preferredTrackID: kCMPersistentTrackID_Invalid),
-			((try? track.insertTimeRange(CMTimeRange(start: .zero, duration: timeRange.duration), of: self, at: .zero)) != nil)
+			(try? track.insertTimeRange(CMTimeRange(start: .zero, duration: timeRange.duration), of: self, at: .zero)) != nil
 		else {
 			return nil
 		}
@@ -641,10 +649,10 @@ extension FourCharCode {
 		let d_ = self
 
 		let bytes: [CChar] = [
-			CChar(a_ & 0xff),
-			CChar(b_ & 0xff),
-			CChar(c_ & 0xff),
-			CChar(d_ & 0xff),
+			CChar(a_ & 0xFF),
+			CChar(b_ & 0xFF),
+			CChar(c_ & 0xFF),
+			CChar(d_ & 0xFF),
 			0
 		]
 
@@ -944,6 +952,7 @@ extension AVAsset {
 		)
 	}
 }
+
 extension URL {
 	var videoMetadata: AVAsset.VideoMetadata? { AVURLAsset(url: self).videoMetadata }
 
@@ -1100,9 +1109,8 @@ extension DispatchQueue {
 
 
 extension NSFont {
-	var size: Double {
-		fontDescriptor.object(forKey: .size) as! Double
-	}
+	/// The point size of the font.
+	var size: Double { Double(pointSize) }
 
 	var traits: [NSFontDescriptor.TraitKey: AnyObject] {
 		fontDescriptor.object(forKey: .traits) as! [NSFontDescriptor.TraitKey: AnyObject]
@@ -1221,6 +1229,56 @@ func unimplemented(
 	line: UInt = #line
 ) -> Never {
 	fatalError("\(function) in \(file.nsString.lastPathComponent):\(line) has not been implemented")
+}
+
+
+extension NSPasteboard.PasteboardType {
+	/// The name of the URL if you put a URL on the pasteboard.
+	static let urlName = Self("public.url-name")
+}
+
+extension NSPasteboard.PasteboardType {
+	/**
+	Convention for getting the bundle identifier of the source app.
+
+	> This marker’s presence indicates that the source of the content is the application with the bundle identifier matching its UTF–8 string content. For example: `pasteboard.setString("com.sindresorhus.Foo" forType: "org.nspasteboard.source")`. This is useful when the source is not the foreground application. This is meant to be shown to the user by a supporting app for informational purposes only. Note that an empty string is a valid value as explained below.
+	> - http://nspasteboard.org
+	*/
+	static let sourceAppBundleIdentifier = Self("org.nspasteboard.source")
+}
+
+extension NSPasteboard {
+	/**
+	Add a marker to the pasteboard indicating which app put the current data on the pasteboard.
+
+	This helps clipboard managers identity the source app.
+
+	- Important: All pasteboard operation should call this, unless you use `NSPasteboard#with`.
+
+	Read more: http://nspasteboard.org
+	*/
+	func setSourceApp() {
+		setString(App.id, forType: .sourceAppBundleIdentifier)
+	}
+}
+
+extension NSPasteboard {
+	/**
+	Starts a new pasteboard writing session. Do all pasteboard write operations in the given closure.
+
+	It takes care of calling `NSPasteboard#clearContents()` for you and also adds a marker for the source app (`NSPasteboard#setSourceApp()`).
+
+	```
+	NSPasteboard.general.with {
+		$0.setString("Unicorn", forType: .string)
+	}
+	```
+	*/
+	func with(_ callback: (NSPasteboard) -> Void) {
+		clearContents()
+		callback(self)
+		setSourceApp()
+	}
 }
 
 
@@ -1491,7 +1549,7 @@ struct App {
 			"metadata": metadata
 		]
 
-		URL(string: "https://sindresorhus.com/feedback/")!.addingDictionaryAsQuery(query).open()
+		URL("https://sindresorhus.com/feedback/").settingQueryItems(from: query).open()
 	}
 }
 
@@ -1503,6 +1561,33 @@ extension App {
 			UserDefaults.standard.set(true, forKey: key)
 			execute()
 		}
+	}
+}
+
+
+extension URL: ExpressibleByStringLiteral {
+	/**
+	Example:
+
+	```
+	let url: URL = "https://sindresorhus.com"
+	```
+	*/
+	public init(stringLiteral value: StaticString) {
+		self.init(string: "\(value)")!
+	}
+}
+
+extension URL {
+	/**
+	Example:
+
+	```
+	URL("https://sindresorhus.com")
+	```
+	*/
+	init(_ staticString: StaticString) {
+		self.init(string: "\(staticString)")!
 	}
 }
 
@@ -1548,38 +1633,65 @@ struct System {
 }
 
 
-private func escapeQuery(_ query: String) -> String {
-	// From RFC 3986
-	let generalDelimiters = ":#[]@"
-	let subDelimiters = "!$&'()*+,;="
+typealias QueryDictionary = [String: String]
 
-	var allowedCharacters = CharacterSet.urlQueryAllowed
-	allowedCharacters.remove(charactersIn: generalDelimiters + subDelimiters)
-	return query.addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? query
+
+extension CharacterSet {
+	/// Characters allowed to be unescaped in an URL
+	/// https://tools.ietf.org/html/rfc3986#section-2.3
+	static let urlUnreservedRFC3986 = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
+}
+
+/// This should really not be necessary, but it's at least needed for my `formspree.io` form...
+/// Otherwise is results in "Internal Server Error" after submitting the form
+/// Relevant: https://www.djackson.org/why-we-do-not-use-urlcomponents/
+private func escapeQueryComponent(_ query: String) -> String {
+	query.addingPercentEncoding(withAllowedCharacters: .urlUnreservedRFC3986)!
 }
 
 
-extension Dictionary where Key: ExpressibleByStringLiteral, Value: ExpressibleByStringLiteral {
-	var asQueryItems: [URLQueryItem] {
+extension Dictionary where Key == String {
+	/// This correctly escapes items. See `escapeQueryComponent`.
+	var toQueryItems: [URLQueryItem] {
 		map {
 			URLQueryItem(
-				name: escapeQuery($0 as! String),
-				value: escapeQuery($1 as! String)
+				name: escapeQueryComponent($0),
+				value: escapeQueryComponent("\($1)")
 			)
 		}
 	}
 
-	var asQueryString: String {
+	var toQueryString: String {
 		var components = URLComponents()
-		components.queryItems = asQueryItems
+		components.queryItems = toQueryItems
 		return components.query!
 	}
 }
 
 
+extension Dictionary {
+	func compactValues<T>() -> [Key: T] where Value == T? {
+		compactMapValues { $0 }
+	}
+}
+
+
 extension URLComponents {
-	mutating func addDictionaryAsQuery(_ dict: [String: String]) {
-		percentEncodedQuery = dict.asQueryString
+	/// This correctly escapes items. See `escapeQueryComponent`.
+	init?(string: String, query: QueryDictionary) {
+		self.init(string: string)
+		self.queryDictionary = query
+	}
+
+	/// This correctly escapes items. See `escapeQueryComponent`.
+	var queryDictionary: QueryDictionary {
+		get {
+			queryItems?.toDictionary { ($0.name, $0.value) }.compactValues() ?? [:]
+		}
+		set {
+			/// Using `percentEncodedQueryItems` instead of `queryItems` since the query items are already custom-escaped. See `escapeQueryComponent`.
+			percentEncodedQueryItems = newValue.toQueryItems
+		}
 	}
 }
 
@@ -1621,9 +1733,18 @@ extension URL {
 		return url
 	}
 
-	func addingDictionaryAsQuery(_ dict: [String: String]) -> Self {
-		var components = URLComponents(url: self, resolvingAgainstBaseURL: false)!
-		components.addDictionaryAsQuery(dict)
+	/**
+	Returns `self` with the given query dictionary merged in.
+
+	The keys in the given dictionary overwrites any existing keys.
+	*/
+	func settingQueryItems(from queryDictionary: QueryDictionary) -> Self {
+		guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
+			return self
+		}
+
+		components.queryDictionary = components.queryDictionary.appending(queryDictionary)
+
 		return components.url ?? self
 	}
 
@@ -2298,6 +2419,59 @@ extension Sequence {
 }
 
 
+extension Sequence {
+	/**
+	Convert a sequence to a dictionary by mapping over the values and using the returned key as the key and the current sequence element as value.
+
+	```
+	[1, 2, 3].toDictionary { $0 }
+	//=> [1: 1, 2: 2, 3: 3]
+	```
+	*/
+	func toDictionary<Key: Hashable>(with pickKey: (Element) -> Key) -> [Key: Element] {
+		var dictionary = [Key: Element]()
+		for element in self {
+			dictionary[pickKey(element)] = element
+		}
+		return dictionary
+	}
+
+	/**
+	Convert a sequence to a dictionary by mapping over the elements and returning a key/value tuple representing the new dictionary element.
+
+	```
+	[(1, "a"), (2, "b")].toDictionary { ($1, $0) }
+	//=> ["a": 1, "b": 2]
+	```
+	*/
+	func toDictionary<Key: Hashable, Value>(with pickKeyValue: (Element) -> (Key, Value)) -> [Key: Value] {
+		var dictionary = [Key: Value]()
+		for element in self {
+			let newElement = pickKeyValue(element)
+			dictionary[newElement.0] = newElement.1
+		}
+		return dictionary
+	}
+
+	/**
+	Same as the above but supports returning optional values.
+
+	```
+	[(1, "a"), (nil, "b")].toDictionary { ($1, $0) }
+	//=> ["a": 1, "b": nil]
+	```
+	*/
+	func toDictionary<Key: Hashable, Value>(with pickKeyValue: (Element) -> (Key, Value?)) -> [Key: Value?] {
+		var dictionary = [Key: Value?]()
+		for element in self {
+			let newElement = pickKeyValue(element)
+			dictionary[newElement.0] = newElement.1
+		}
+		return dictionary
+	}
+}
+
+
 extension BinaryFloatingPoint {
 	func rounded(
 		toDecimalPlaces decimalPlaces: Int,
@@ -2420,14 +2594,14 @@ extension FloatingPoint {
 		// The simple computation below does not necessarily give sensible
 		// results if one of self or other is infinite; we need to rescale
 		// the computation in that case.
-		guard self.isFinite && other.isFinite else {
+		guard self.isFinite, other.isFinite else {
 			return rescaledAlmostEqual(to: other, tolerance: tolerance)
 		}
 		// This should eventually be rewritten to use a scaling facility to be
 		// defined on FloatingPoint suitable for hypot and scaled sums, but the
 		// following is good enough to be useful for now.
 		let scale = max(abs(self), abs(other), .leastNormalMagnitude)
-		return abs(self - other) < scale*tolerance
+		return abs(self - other) < scale * tolerance
 	}
 
 	/// Test if this value is nearly zero with a specified `absoluteTolerance`.
@@ -2464,7 +2638,7 @@ extension FloatingPoint {
 	@inlinable
 	public func isAlmostZero(
 		absoluteTolerance tolerance: Self = Self.ulpOfOne.squareRoot()
-		) -> Bool {
+	) -> Bool {
 		assert(tolerance > 0)
 		return abs(self) < tolerance
 	}
@@ -2482,12 +2656,16 @@ extension FloatingPoint {
 			// Self is infinite and other is finite. Replace self with the binade
 			// of the greatestFiniteMagnitude, and reduce the exponent of other by
 			// one to compensate.
-			let scaledSelf = Self(sign: self.sign,
-								  exponent: Self.greatestFiniteMagnitude.exponent,
-								  significand: 1)
-			let scaledOther = Self(sign: .plus,
-								   exponent: -1,
-								   significand: other)
+			let scaledSelf = Self(
+				sign: self.sign,
+				exponent: Self.greatestFiniteMagnitude.exponent,
+				significand: 1
+			)
+			let scaledOther = Self(
+				sign: .plus,
+				exponent: -1,
+				significand: other
+			)
 			// Now both values are finite, so re-run the naive comparison.
 			return scaledSelf.isAlmostEqual(to: scaledOther, tolerance: tolerance)
 		}
@@ -2496,6 +2674,7 @@ extension FloatingPoint {
 		return other.rescaledAlmostEqual(to: self, tolerance: tolerance)
 	}
 }
+
 // swiftlint:enable all
 
 
@@ -2554,14 +2733,6 @@ extension URL {
 	}
 }
 
-
-extension URLComponents {
-	var queryDictionary: [String: String] {
-		queryItems?.reduce(into: [String: String]()) { result, item in
-			result[item.name] = item.value
-		} ?? [:]
-	}
-}
 
 extension URL {
 	var components: URLComponents? {

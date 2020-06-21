@@ -97,7 +97,7 @@ final class Tooltip: NSPopover {
 	}
 }
 
-fileprivate final class ToolTipViewController: NSViewController {
+private final class ToolTipViewController: NSViewController {
 	private final class ContentView: NSView {
 		// This makes the tooltip dismissable by click even if the owner window is not key.
 		override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }

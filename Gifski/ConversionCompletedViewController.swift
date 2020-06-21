@@ -113,9 +113,10 @@ final class ConversionCompletedViewController: NSViewController {
 				return
 			}
 
-			let pasteboard = NSPasteboard.general
-			pasteboard.clearContents()
-			pasteboard.writeObjects([url as NSURL])
+			NSPasteboard.general.with {
+				$0.writeObjects([url as NSURL])
+				$0.setString(url.filenameWithoutExtension, forType: .urlName)
+			}
 
 			self.copyButton.title = "Copied!"
 			self.copyButton.isEnabled = false
@@ -151,7 +152,7 @@ final class ConversionCompletedViewController: NSViewController {
 	}
 
 	private func openSavePanel() {
-		let inputUrl = self.conversion.video
+		let inputUrl = conversion.video
 
 		let panel = NSSavePanel()
 		panel.canCreateDirectories = true
@@ -160,7 +161,7 @@ final class ConversionCompletedViewController: NSViewController {
 		panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
 		panel.message = "Choose where to save the GIF"
 
-		panel.beginSheetModal(for: self.view.window!) { [weak self] response in
+		panel.beginSheetModal(for: view.window!) { [weak self] response in
 			guard
 				let self = self,
 				response == .OK,

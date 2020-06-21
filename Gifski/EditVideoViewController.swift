@@ -10,7 +10,7 @@ final class EditVideoViewController: NSViewController {
 
 		var resizableDimensions: ResizableDimensions? {
 			switch self {
-			case let .dimensions(resizableDimensions):
+			case .dimensions(let resizableDimensions):
 				return resizableDimensions
 			default:
 				return nil
@@ -175,7 +175,7 @@ final class EditVideoViewController: NSViewController {
 				predefinedSizesDropdown.addItem(withTitle: "Custom")
 			case .spacer:
 				predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
-			case let .dimensions(dimensions):
+			case .dimensions(let dimensions):
 				predefinedSizesDropdown.addItem(withTitle: "\(dimensions)")
 			}
 		}

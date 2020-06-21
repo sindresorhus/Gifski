@@ -38,7 +38,7 @@
 		E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3AE628A1E5CD2F300035A2F /* MainMenu.xib */; };
 		E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = E3C3DB4E203F154300CB8BB9 /* Credits.rtf */; };
 		E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */; };
-		E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* util.swift */; };
+		E3D08F6E1E5D7BFD00F465DF /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */; };
 		E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */; };
 		E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */; };
 		E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FC365B2377FA0000CF7C59 /* Shared.swift */; };
@@ -136,7 +136,7 @@
 		E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Gifski.entitlements; sourceTree = "<group>"; };
 		E3C3DB4E203F154300CB8BB9 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
 		E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = VideoDropView.swift; sourceTree = "<group>"; usesTabs = 1; };
-		E3D08F6D1E5D7BFD00F465DF /* util.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = util.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Utilities.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = EditVideoViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = EditVideoViewController.xib; sourceTree = "<group>"; };
 		E3FC365B2377FA0000CF7C59 /* Shared.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; name = Shared.swift; path = Gifski/Shared.swift; sourceTree = SOURCE_ROOT; usesTabs = 1; };
@@ -259,7 +259,7 @@
 				85B9CF6322BD3FA00050A2E4 /* Tooltip.swift */,
 				858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */,
 				85A5C44722CA41B500CAA94D /* VideoValidator.swift */,
-				E3D08F6D1E5D7BFD00F465DF /* util.swift */,
+				E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */,
 				E3AE628A1E5CD2F300035A2F /* MainMenu.xib */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
 				E356A15D21028942000148AD /* Other */,
@@ -471,7 +471,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				85B9CF6422BD3FA00050A2E4 /* Tooltip.swift in Sources */,
-				E3D08F6E1E5D7BFD00F465DF /* util.swift in Sources */,
+				E3D08F6E1E5D7BFD00F465DF /* Utilities.swift in Sources */,
 				E339F011203820ED003B78FB /* Gifski.swift in Sources */,
 				E3A6BD112245345C00F62256 /* Constants.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
@@ -534,7 +534,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
@@ -550,6 +550,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -563,7 +564,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
@@ -578,6 +579,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -703,7 +705,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Gifski/Gifski.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
@@ -740,7 +742,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Gifski/Gifski.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = YG56YK5RN5;
@@ -807,7 +809,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 3.1.1;
+				minimumVersion = 4.0.0;
 			};
 		};
 		E3339E982395768F00303839 /* XCRemoteSwiftPackageReference "CircularProgress" */ = {
