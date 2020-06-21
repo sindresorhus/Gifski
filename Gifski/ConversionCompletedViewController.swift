@@ -120,6 +120,21 @@ final class ConversionCompletedViewController: NSViewController {
 			self.copyButton.title = "Copied!"
 			self.copyButton.isEnabled = false
 
+			App.runOnce(identifier: "copyWarning") {
+				NSAlert.showModal(
+					for: self.copyButton.window,
+					message: "The GIF was copied to the clipboard.",
+					informativeText: "However…",
+					buttonTitles: ["Continue"]
+				)
+
+				NSAlert.showModal(
+					for: self.copyButton.window,
+					message: "Please read!",
+					informativeText: "Many apps like Chrome and Slack do not properly handle copied animated GIFs and will paste them as non-animated PNG.\n\nInstead, drag and drop the GIF into such apps."
+				)
+			}
+
 			delay(seconds: 1) { [weak self] in
 				guard let self = self else {
 					return
