@@ -885,7 +885,7 @@ extension AVAsset {
 			Extension: \(describing: (self as? AVURLAsset)?.url.fileExtension)
 			Video codec: \(describing: videoCodec?.debugDescription)
 			Audio codec: \(describing: audioCodec)
-			Duration: \(describing: durationFormatter.string(from: duration.seconds))
+			Duration: \(describing: durationFormatter.stringSafe(from: duration.seconds))
 			Dimension: \(describing: dimensions?.formatted)
 			Frame rate: \(describing: frameRate?.rounded(toDecimalPlaces: 2).formatted)
 			File size: \(fileSizeFormatted)
@@ -903,7 +903,7 @@ extension AVAsset {
 				----
 				Type: \(track.mediaType.debugDescription)
 				Codec: \(describing: track.mediaType == .video ? track.codec?.debugDescription : track.codecString)
-				Duration: \(describing: durationFormatter.string(from: track.timeRange.duration.seconds))
+				Duration: \(describing: durationFormatter.stringSafe(from: track.timeRange.duration.seconds))
 				Dimensions: \(describing: track.dimensions?.formatted)
 				Natural size: \(describing: track.naturalSize)
 				Frame rate: \(describing: track.frameRate?.rounded(toDecimalPlaces: 2).formatted)
@@ -3021,5 +3021,22 @@ extension AVPlayer {
 				AssociatedKeys.observationToken[self] = nil
 			}
 		}
+	}
+}
+
+
+extension DateComponentsFormatter {
+	/// Like `string(from: TimeInterval)` but does not cause an `NSInternalInconsistencyException` exception for `NaN` and `Infinity`.
+	/// This is especially useful when formatting `CMTime#seconds` which can often be `NaN`.
+	func stringSafe(from timeInterval: TimeInterval) -> String? {
+		guard !timeInterval.isNaN else {
+			return "NaN"
+		}
+
+		guard timeInterval.isFinite else {
+			return "Infinity"
+		}
+
+		return string(from: timeInterval)
 	}
 }

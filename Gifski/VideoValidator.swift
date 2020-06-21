@@ -32,7 +32,12 @@ struct VideoValidator {
 			return .failure
 		}
 
-		let asset = AVURLAsset(url: inputUrl)
+		let asset = AVURLAsset(
+			url: inputUrl,
+			options: [
+				AVURLAssetPreferPreciseDurationAndTimingKey: true
+			]
+		)
 
 		Crashlytics.record(key: "AVAsset debug info", value: asset.debugInfo)
 
