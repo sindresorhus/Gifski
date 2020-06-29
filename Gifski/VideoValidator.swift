@@ -61,15 +61,34 @@ struct VideoValidator {
 			return .failure
 		}
 
+		guard let firstVideoTrack = asset.firstVideoTrack else {
+			NSAlert.showModal(
+				for: window,
+				message: "Could not read any video from the video file.",
+				informativeText: "Either the video format is unsupported by macOS or the file is corrupt."
+			)
+
+			return .failure
+		}
+
 		// We already specify the UTIs we support, so this can only happen on invalid video files or unsupported codecs.
-		guard
-			asset.isVideoDecodable,
-			let firstVideoTrack = asset.firstVideoTrack
-		else {
+		guard asset.isVideoDecodable else {
+			guard let codecTitle = firstVideoTrack.codecTitle else {
+				NSAlert.showModalAndReportToCrashlytics(
+					for: window,
+					message: "The video file is not supported.",
+					informativeText: "I'm trying to figure out why this happens. It would be amazing if you could email the below details to sindresorhus@gmail.com",
+					debugInfo: asset.debugInfo
+				)
+
+				return .failure
+			}
+
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
-				message: "The video file is not supported.",
-				informativeText: "I'm trying to figure out why this happens. It would be amazing if you could email the below details to sindresorhus@gmail.com",
+				message: "The video codec “\(codecTitle)” is not supported.",
+				informativeText: "Re-export or convert your video to a supported format. For the best possible quality, export to ProRes 4444 XQ (supports alpha). Alternatively, use the free HandBrake app to convert the video to H265 (MP4).",
+				showDebugInfo: false,
 				debugInfo: asset.debugInfo
 			)
 

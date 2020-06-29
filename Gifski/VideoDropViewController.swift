@@ -29,7 +29,11 @@ final class VideoDropViewController: NSViewController {
 
 		$0.onComplete = { [weak self] url in
 			NSApp.activate(ignoringOtherApps: true)
-			self?.convert(url)
+
+			// This is a workaround so the dropped thumbnail doesn't get visually stuck while a modal dialog is presented.
+			DispatchQueue.main.async {
+				self?.convert(url)
+			}
 		}
 	}
 

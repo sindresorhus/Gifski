@@ -110,7 +110,7 @@ extension NSWindowController {
 extension NSView {
 	@discardableResult
 	func insertVibrancyView(
-		material: NSVisualEffectView.Material = .appearanceBased,
+		material: NSVisualEffectView.Material,
 		blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
 		appearanceName: NSAppearance.Name? = nil
 	) -> NSVisualEffectView {
@@ -161,6 +161,7 @@ extension NSWindow {
 }
 
 
+// TODO: Remove these when targeting macOS 11.
 // swiftlint:disable:next identifier_name
 private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
 	// Adjust sheet position so it goes below the traffic lights.
@@ -170,7 +171,6 @@ private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: 
 
 	return rect
 }
-
 /// - Note: Ensure you set `window.delegate = self` in the NSWindowController subclass.
 extension NSWindowController: NSWindowDelegate {
 	public func window(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
@@ -560,7 +560,7 @@ extension AVAssetTrack {
 	/// Example:
 	/// `avc1` (video)
 	/// `aac` (audio)
-	var codecString: String? {
+	var codecIdentifier: String? {
 		guard
 			let rawDescription = formatDescriptions.first
 		else {
@@ -575,12 +575,15 @@ extension AVAssetTrack {
 	}
 
 	var codec: AVFormat? {
-		guard let codecString = codecString else {
+		guard let codecString = codecIdentifier else {
 			return nil
 		}
 
 		return AVFormat(fourCC: codecString)
 	}
+
+	/// Use this for presenting the codec to the user. This is either the codec name, if known, or the codec identifier. You can just default to `"Unknown"` if this is `nil`.
+	var codecTitle: String? { codec?.description ?? codecIdentifier }
 
 	/// Returns a debug string with the media format.
 	/// Example: `vide/avc1`
@@ -684,6 +687,15 @@ enum AVFormat: String {
 	case appleProRes422Proxy
 	case appleAnimation
 
+	// https://hap.video/using-hap.html
+	// https://github.com/Vidvox/hap/blob/master/documentation/HapVideoDRAFT.md#names-and-identifiers
+	case hap1
+	case hap5
+	case hapY
+	case hapM
+	case hapA
+	case hap7
+
 	init?(fourCC: String) {
 		switch fourCC.trimmingCharacters(in: .whitespaces) {
 		case "hvc1":
@@ -708,6 +720,18 @@ enum AVFormat: String {
 			self = .appleProRes422Proxy
 		case "rle":
 			self = .appleAnimation
+		case "Hap1":
+			self = .hap1
+		case "Hap5":
+			self = .hap5
+		case "HapY":
+			self = .hapY
+		case "HapM":
+			self = .hapM
+		case "HapA":
+			self = .hapA
+		case "Hap7":
+			self = .hap7
 		default:
 			return nil
 		}
@@ -741,6 +765,18 @@ enum AVFormat: String {
 			return "apco"
 		case .appleAnimation:
 			return "rle "
+		case .hap1:
+			return "Hap1"
+		case .hap5:
+			return "Hap5"
+		case .hapY:
+			return "HapY"
+		case .hapM:
+			return "HapM"
+		case .hapA:
+			return "HapA"
+		case .hap7:
+			return "Hap7"
 		}
 	}
 
@@ -783,6 +819,19 @@ extension AVFormat: CustomStringConvertible {
 			return "Apple ProRes 422 Proxy"
 		case .appleAnimation:
 			return "Apple Animation"
+		case .hap1:
+			return "Vidvox Hap"
+		case .hap5:
+			return "Vidvox Hap Alpha"
+		case .hapY:
+			return "Vidvox Hap Q"
+		case .hapM:
+			return "Vidvox Hap Q Alpha"
+		case .hapA:
+			return "Vidvox Hap Alpha-Only"
+		case .hap7:
+			// No official name for this.
+			return "Vidvox Hap"
 		}
 	}
 }
@@ -864,7 +913,7 @@ extension AVAsset {
 
 	/// Returns the audio codec of the first audio track if any.
 	/// Example: `aac`
-	var audioCodec: String? { firstAudioTrack?.codecString }
+	var audioCodec: String? { firstAudioTrack?.codecIdentifier }
 
 	/// The file size of the asset in bytes.
 	/// - Note: If self is an `AVAsset` and not an `AVURLAsset`, the file size will just be an estimate.
@@ -891,7 +940,7 @@ extension AVAsset {
 			"""
 			## AVAsset debug info ##
 			Extension: \(describing: (self as? AVURLAsset)?.url.fileExtension)
-			Video codec: \(describing: videoCodec?.debugDescription)
+			Video codec: \(videoCodec?.debugDescription ?? firstVideoTrack?.codecIdentifier ?? "nil")
 			Audio codec: \(describing: audioCodec)
 			Duration: \(describing: durationFormatter.stringSafe(from: duration.seconds))
 			Dimension: \(describing: dimensions?.formatted)
@@ -910,7 +959,7 @@ extension AVAsset {
 				Track #\(track.trackID)
 				----
 				Type: \(track.mediaType.debugDescription)
-				Codec: \(describing: track.mediaType == .video ? track.codec?.debugDescription : track.codecString)
+				Codec: \(describing: track.mediaType == .video ? track.codec?.debugDescription : track.codecIdentifier)
 				Duration: \(describing: durationFormatter.stringSafe(from: track.timeRange.duration.seconds))
 				Dimensions: \(describing: track.dimensions?.formatted)
 				Natural size: \(describing: track.naturalSize)
@@ -2304,6 +2353,7 @@ extension NSAlert {
 		message: String,
 		informativeText: String? = nil,
 		style: Style = .warning,
+		showDebugInfo: Bool = true,
 		debugInfo: String
 	) -> NSApplication.ModalResponse {
 		Crashlytics.recordNonFatalError(
@@ -2315,7 +2365,7 @@ extension NSAlert {
 			for: window,
 			message: message,
 			informativeText: informativeText,
-			detailText: debugInfo,
+			detailText: showDebugInfo ? debugInfo : nil,
 			style: style
 		)
 	}

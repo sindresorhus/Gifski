@@ -47,3 +47,8 @@ In the width/height input fields in the editor view, press the arrow up/down key
 ‣ The generated GIFs are huge!
 
 The GIF image format is very space inefficient. It works best with short video clips. Try reducing the dimensions, FPS, or quality.
+
+
+■ Support
+
+Click the “Send Feedback…” menu item in the “Help” menu in the app.
