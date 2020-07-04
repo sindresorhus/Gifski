@@ -25,6 +25,7 @@
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
 		D957BCDE234941C200A9A9F9 /* CheckerboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */; };
+		E31A4F3124AD36870097B1A5 /* InternetAccessPolicy.json in Resources */ = {isa = PBXBuildFile; fileRef = E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */; };
 		E3339E932395766800303839 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E922395766800303839 /* Defaults */; };
 		E3339E9A2395768F00303839 /* CircularProgress in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E992395768F00303839 /* CircularProgress */; };
 		E3339E9D2395789500303839 /* DockProgress in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E9C2395789500303839 /* DockProgress */; };
@@ -123,6 +124,7 @@
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CheckerboardView.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = InternetAccessPolicy.json; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3805F542466E68900489E6C /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		E3A6BD102245345C00F62256 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Constants.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -207,6 +209,7 @@
 				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
 				E3AE628D1E5CD2F300035A2F /* Info.plist */,
 				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
+				E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -410,6 +413,7 @@
 			files = (
 				E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */,
 				E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */,
+				E31A4F3124AD36870097B1A5 /* InternetAccessPolicy.json in Resources */,
 				E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */,
 				E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */,
 				E3FEF31922C52819003AEFED /* ConversionCompletedViewController.xib in Resources */,
@@ -642,7 +646,6 @@
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				VALID_ARCHS = x86_64;
 			};
 			name = Debug;
 		};
@@ -695,7 +698,6 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				VALID_ARCHS = x86_64;
 			};
 			name = Release;
 		};
@@ -723,7 +725,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/opt/gcc/lib/gcc/9,
+					/usr/local/opt/gcc/lib/gcc/10,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -760,7 +762,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/opt/gcc/lib/gcc/9,
+					/usr/local/opt/gcc/lib/gcc/10,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";

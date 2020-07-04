@@ -50,11 +50,11 @@ In the width/height input fields in the editor view, press the arrow up/down key
 
 ## Building from source
 
-To build the app in Xcode, you need to have [Rust](https://www.rust-lang.org) and GCC 8 installed first:
+To build the app in Xcode, you need to have [Rust](https://www.rust-lang.org) and GCC 10 installed first:
 
 ```sh
 curl https://sh.rustup.rs -sSf | sh
-brew install gcc@9 SwiftLint
+brew install gcc SwiftLint
 xcode-select --install
 ```
 

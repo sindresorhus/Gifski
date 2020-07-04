@@ -46,7 +46,7 @@ final class ShareViewController: NSViewController {
 			let shareUrl = url.lastPathComponent
 
 			guard
-				let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.videoShareGroupIdentifier)?.appendingPathComponent(shareUrl)
+				let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.videoShareGroupIdentifier)?.appendingPathComponent(shareUrl, isDirectory: false)
 			else {
 				self.presentError(message: "Could not share the video with the main app.")
 				return

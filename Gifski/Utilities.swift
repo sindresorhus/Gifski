@@ -164,6 +164,10 @@ extension NSWindow {
 // TODO: Remove these when targeting macOS 11.
 // swiftlint:disable:next identifier_name
 private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
+	if #available(macOS 11, *) {
+		return rect
+	}
+
 	// Adjust sheet position so it goes below the traffic lights.
 	if window.styleMask.contains(.fullSizeContentView) {
 		return rect.offsetBy(dx: 0, dy: CGFloat(-window.titlebarHeight))
@@ -677,6 +681,7 @@ extension FourCharCode {
 enum AVFormat: String {
 	case hevc
 	case h264
+	case av1
 	case appleProResRAWHQ
 	case appleProResRAW
 	case appleProRes4444XQ
@@ -696,12 +701,16 @@ enum AVFormat: String {
 	case hapA
 	case hap7
 
+	case cineFormHD
+
 	init?(fourCC: String) {
 		switch fourCC.trimmingCharacters(in: .whitespaces) {
 		case "hvc1":
 			self = .hevc
 		case "avc1":
 			self = .h264
+		case "av01":
+			self = .av1
 		case "aprh": // From https://avpres.net/Glossar/ProResRAW.html
 			self = .appleProResRAWHQ
 		case "aprn":
@@ -732,6 +741,8 @@ enum AVFormat: String {
 			self = .hapA
 		case "Hap7":
 			self = .hap7
+		case "CFHD":
+			self = .cineFormHD
 		default:
 			return nil
 		}
@@ -747,6 +758,8 @@ enum AVFormat: String {
 			return "hvc1"
 		case .h264:
 			return "avc1"
+		case .av1:
+			return "av01"
 		case .appleProResRAWHQ:
 			return "aprh"
 		case .appleProResRAW:
@@ -777,6 +790,8 @@ enum AVFormat: String {
 			return "HapA"
 		case .hap7:
 			return "Hap7"
+		case .cineFormHD:
+			return "CFHD"
 		}
 	}
 
@@ -792,6 +807,11 @@ enum AVFormat: String {
 			.appleProRes422Proxy
 		].contains(self)
 	}
+
+	/// - Important: This check only covers known (by us) compatible formats. It might be missing some. Don't use it for strict matching. Also keep in mind that even though a codec is supported, it might still not be decodable as the codec profile level might not be supported.
+	var isSupported: Bool {
+		self == .hevc || self == .h264 || isAppleProRes
+	}
 }
 
 extension AVFormat: CustomStringConvertible {
@@ -801,6 +821,8 @@ extension AVFormat: CustomStringConvertible {
 			return "HEVC"
 		case .h264:
 			return "H264"
+		case .av1:
+			return "AV1"
 		case .appleProResRAWHQ:
 			return "Apple ProRes RAW HQ"
 		case .appleProResRAW:
@@ -832,6 +854,8 @@ extension AVFormat: CustomStringConvertible {
 		case .hap7:
 			// No official name for this.
 			return "Vidvox Hap"
+		case .cineFormHD:
+			return "CineForm HD"
 		}
 	}
 }
@@ -1567,7 +1591,7 @@ extension String {
 }
 
 
-struct App {
+enum App {
 	static let id = Bundle.main.bundleIdentifier!
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
@@ -1589,8 +1613,8 @@ struct App {
 		let metadata =
 			"""
 			\(App.name) \(App.versionWithBuild) - \(App.id)
-			macOS \(System.osVersion)
-			\(System.hardwareModel)
+			macOS \(Device.osVersion)
+			\(Device.hardwareModel)
 			"""
 
 		let query: [String: String] = [
@@ -1660,7 +1684,7 @@ extension String {
 }
 
 
-struct System {
+enum Device {
 	static let osVersion: String = {
 		let os = ProcessInfo.processInfo.operatingSystemVersion
 		return "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
@@ -1834,7 +1858,7 @@ extension URL {
 	Check if the file conforms to the given type identifier.
 
 	```
-	URL(fileURLWithPath: "video.mp4").conformsTo(typeIdentifier: "public.movie")
+	URL(fileURLWithPath: "video.mp4", isDirectory: false).conformsTo(typeIdentifier: "public.movie")
 	//=> true
 	```
 	*/

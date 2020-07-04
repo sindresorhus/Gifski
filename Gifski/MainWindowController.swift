@@ -18,9 +18,22 @@ final class MainWindowController: NSWindowController {
 			informativeText:
 				"""
 				Keep in mind that the GIF image format is very space inefficient. Only convert short video clips unless you want huge files.
+				""",
+			buttonTitles: [
+				"Continue"
+			]
+		)
 
-				If you have any feedback, bug reports, or feature requests, kindly use the “Send Feedback” button in the “Help” menu. We respond to all submissions and reported issues will be dealt with swiftly. It's preferable that you report bugs this way rather than as an App Store review, since the App Store will not allow us to contact you for more information.
+		NSAlert.showModal(
+			for: window,
+			message: "Feedback Welcome 🙌🏻",
+			informativeText:
 				"""
+				If you have any feedback, bug reports, or feature requests, kindly use the “Send Feedback” button in the “Help” menu. We respond to all submissions. It's preferable that you report bugs this way rather than as an App Store review, since the App Store will not allow us to contact you for more information.
+				""",
+			buttonTitles: [
+				"Get Started"
+			]
 		)
 	}
 
@@ -57,7 +70,7 @@ final class MainWindowController: NSWindowController {
 		let panel = NSOpenPanel()
 		panel.canChooseDirectories = false
 		panel.canCreateDirectories = false
-		panel.allowedFileTypes = System.supportedVideoTypes
+		panel.allowedFileTypes = Device.supportedVideoTypes
 
 		panel.beginSheetModal(for: window!) { [weak self] in
 			guard
