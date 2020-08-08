@@ -63,7 +63,8 @@ final class EditVideoViewController: NSViewController {
 		AppDelegate.shared.previousEditViewController = self
 	}
 
-	@IBAction private func convert(_ sender: Any) {
+	@IBAction
+	private func convert(_ sender: Any) {
 		let conversion = Gifski.Conversion(
 			video: inputUrl,
 			timeRange: timeRange,
@@ -77,7 +78,8 @@ final class EditVideoViewController: NSViewController {
 		push(viewController: convert)
 	}
 
-	@IBAction private func cancel(_ sender: Any) {
+	@IBAction
+	private func cancel(_ sender: Any) {
 		let videoDropController = VideoDropViewController()
 		push(viewController: videoDropController)
 		AppDelegate.shared.previousEditViewController = nil
@@ -87,7 +89,7 @@ final class EditVideoViewController: NSViewController {
 		super.viewDidLoad()
 
 		formatter.zeroPadsFractionDigits = true
-		estimatedSizeLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 0, weight: .regular)
+		estimatedSizeLabel.font = .monospacedDigitSystemFont(ofSize: 0, weight: .regular)
 		setUpDimensions()
 		setUpDropdowns()
 		setUpSliders()

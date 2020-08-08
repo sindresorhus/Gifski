@@ -264,7 +264,7 @@ extension NSAlert {
 			let textView = scrollView.documentView as! NSTextView
 			textView.drawsBackground = false
 			textView.isEditable = false
-			textView.font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+			textView.font = .systemFont(ofSize: NSFont.systemFontSize(for: .small))
 			textView.textColor = .secondaryLabelColor
 			textView.string = detailText
 
@@ -1189,9 +1189,7 @@ extension NSFont {
 		fontDescriptor.object(forKey: .traits) as! [NSFontDescriptor.TraitKey: AnyObject]
 	}
 
-	var weight: NSFont.Weight {
-		NSFont.Weight(traits[.weight] as! CGFloat)
-	}
+	var weight: NSFont.Weight { .init(traits[.weight] as! CGFloat) }
 }
 
 
@@ -1252,7 +1250,7 @@ final class MonospacedLabel: Label {
 
 	private func setup() {
 		if let font = self.font {
-			self.font = NSFont.monospacedDigitSystemFont(ofSize: CGFloat(font.size), weight: font.weight)
+			self.font = .monospacedDigitSystemFont(ofSize: CGFloat(font.size), weight: font.weight)
 		}
 	}
 }

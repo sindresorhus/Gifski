@@ -18,7 +18,7 @@ class DropView<CompletionType>: SSView {
 
 	private let dropLabel = with(Label()) {
 		$0.textColor = .secondaryLabelColor
-		$0.font = NSFont.systemFont(ofSize: 14)
+		$0.font = .systemFont(ofSize: 14)
 	}
 
 	var highlightColor: NSColor { .controlAccentColorPolyfill }

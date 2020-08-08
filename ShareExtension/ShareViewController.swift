@@ -95,7 +95,8 @@ final class ShareViewController: NSViewController {
 
 	// MARK: - Actions
 
-	@IBAction private func errorButtonOkClicked(_ sender: Any) {
+	@IBAction
+	private func errorButtonOkClicked(_ sender: Any) {
 		extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
 	}
 }

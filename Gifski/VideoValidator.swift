@@ -87,6 +87,15 @@ struct VideoValidator {
 			return .failure
 		}
 
+		guard !asset.hasProtectedContent else {
+			NSAlert.showModal(
+				for: window,
+				message: "The video is DRM-protected and cannot be converted."
+			)
+
+			return .failure
+		}
+
 		// We already specify the UTIs we support, so this can only happen on invalid video files or unsupported codecs.
 		guard asset.isVideoDecodable else {
 			if
