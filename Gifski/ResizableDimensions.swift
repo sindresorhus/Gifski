@@ -163,7 +163,7 @@ extension ResizableDimensions: CustomStringConvertible {
 			return "\(currentDimensions) (\(pixelsDimensions == originalDimensions ? "Original" : "\(pixelsDimensions)"))"
 		case .pixels:
 			let percentDimensions = changed(dimensionsType: .percent).currentDimensions
-			return "\(currentDimensions) (\(currentDimensions == originalDimensions ? "Original" : "\(percentDimensions)"))"
+			return "\(currentDimensions) (\(currentDimensions == originalDimensions ? "Original" : "~\(percentDimensions)"))"
 		}
 	}
 }
