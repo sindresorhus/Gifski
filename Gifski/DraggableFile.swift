@@ -16,7 +16,7 @@ final class DraggableFile: NSImageView {
 	var fileUrl: URL? {
 		didSet {
 			guard
-				let fileUrl = self.fileUrl,
+				let fileUrl = fileUrl,
 				let image = NSImage(contentsOf: fileUrl)
 			else {
 				return
@@ -51,8 +51,8 @@ final class DraggableFile: NSImageView {
 
 	override func mouseDragged(with event: NSEvent) {
 		guard
-			let fileUrl = self.fileUrl,
-			let image = self.image
+			let fileUrl = fileUrl,
+			let image = image
 		else {
 			return
 		}

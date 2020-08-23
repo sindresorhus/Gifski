@@ -80,7 +80,7 @@ Ensure the images are named in the format `image_000001.png` and adjust the `-fr
 
 #### Can I contribute localizations?
 
-We're not interested in localizing the app.
+We don't have any immediate plans to localize the app.
 
 #### Can you support macOS 10.13?
 

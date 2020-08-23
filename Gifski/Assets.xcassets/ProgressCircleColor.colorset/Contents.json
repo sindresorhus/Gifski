@@ -1,18 +1,13 @@
 {
-  "info" : {
-    "version" : 1,
-    "author" : "xcode"
-  },
   "colors" : [
     {
-      "idiom" : "mac",
       "color" : {
         "platform" : "osx",
         "reference" : "controlAccentColor"
-      }
+      },
+      "idiom" : "universal"
     },
     {
-      "idiom" : "mac",
       "appearances" : [
         {
           "appearance" : "luminosity",
@@ -22,7 +17,12 @@
       "color" : {
         "platform" : "osx",
         "reference" : "labelColor"
-      }
+      },
+      "idiom" : "universal"
     }
-  ]
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
 }

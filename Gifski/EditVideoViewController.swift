@@ -342,11 +342,11 @@ final class EditVideoViewController: NSViewController {
 
 	private func estimateFileSize() {
 		let duration: Double = {
-			if let timeRange = self.timeRange {
-				return timeRange.upperBound - timeRange.lowerBound
-			} else {
+			guard let timeRange = timeRange else {
 				return videoMetadata.duration
 			}
+
+			return timeRange.upperBound - timeRange.lowerBound
 		}()
 
 		let frameCount = duration * frameRateSlider.doubleValue
@@ -376,8 +376,8 @@ final class EditVideoViewController: NSViewController {
 
 	private func updateSelectedItemAsCustomWithSize() {
 		let newType: DimensionsType = resizableDimensions.currentDimensions.type == .percent ? .pixels : .percent
-		let resizableDimensions = self.resizableDimensions.changed(dimensionsType: newType)
-		let selectedCustomTitle = "Custom - \(resizableDimensions.currentDimensions)"
+		let newResizableDimensions = resizableDimensions.changed(dimensionsType: newType)
+		let selectedCustomTitle = "Custom - \(newResizableDimensions.currentDimensions)"
 		predefinedSizesDropdown.item(at: 0)?.title = selectedCustomTitle
 		predefinedSizesDropdown.selectItem(at: 0)
 	}

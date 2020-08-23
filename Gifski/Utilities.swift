@@ -132,7 +132,7 @@ extension NSView {
 
 extension NSWindow {
 	private struct AssociatedKeys {
-		static let observationToken = ObjectAssociation<NSKeyValueObservation>()
+		static let observationToken = ObjectAssociation<NSKeyValueObservation?>()
 	}
 
 	func makeVibrant() {
@@ -703,6 +703,9 @@ enum AVFormat: String {
 
 	case cineFormHD
 
+	// https://en.wikipedia.org/wiki/QuickTime_Graphics
+	case quickTimeGraphics
+
 	init?(fourCC: String) {
 		switch fourCC.trimmingCharacters(in: .whitespaces) {
 		case "hvc1":
@@ -743,6 +746,8 @@ enum AVFormat: String {
 			self = .hap7
 		case "CFHD":
 			self = .cineFormHD
+		case "smc":
+			self = .quickTimeGraphics
 		default:
 			return nil
 		}
@@ -792,6 +797,8 @@ enum AVFormat: String {
 			return "Hap7"
 		case .cineFormHD:
 			return "CFHD"
+		case .quickTimeGraphics:
+			return "smc"
 		}
 	}
 
@@ -856,6 +863,8 @@ extension AVFormat: CustomStringConvertible {
 			return "Vidvox Hap"
 		case .cineFormHD:
 			return "CineForm HD"
+		case .quickTimeGraphics:
+			return "QuickTime Graphics"
 		}
 	}
 }
@@ -1249,7 +1258,7 @@ final class MonospacedLabel: Label {
 	}
 
 	private func setup() {
-		if let font = self.font {
+		if let font = font {
 			self.font = .monospacedDigitSystemFont(ofSize: CGFloat(font.size), weight: font.weight)
 		}
 	}
@@ -1296,8 +1305,8 @@ foo()
 // swiftlint:disable:next unavailable_function
 func unimplemented(
 	function: StaticString = #function,
-	file: String = #file,
-	line: UInt = #line
+	file: String = #fileID,
+	line: Int = #line
 ) -> Never {
 	fatalError("\(function) in \(file.nsString.lastPathComponent):\(line) has not been implemented")
 }
@@ -1408,13 +1417,51 @@ final class UrlMenuItem: NSMenuItem {
 }
 
 
-final class ObjectAssociation<T: Any> {
-	subscript(index: AnyObject) -> T? {
-		get {
-			objc_getAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque()) as! T?
-		} set {
-			objc_setAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque(), newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+enum AssociationPolicy {
+	case assign
+	case retainNonatomic
+	case copyNonatomic
+	case retain
+	case copy
+
+	var rawValue: objc_AssociationPolicy {
+		switch self {
+		case .assign:
+			return .OBJC_ASSOCIATION_ASSIGN
+		case .retainNonatomic:
+			return .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+		case .copyNonatomic:
+			return .OBJC_ASSOCIATION_COPY_NONATOMIC
+		case .retain:
+			return .OBJC_ASSOCIATION_RETAIN
+		case .copy:
+			return .OBJC_ASSOCIATION_COPY
 		}
+	}
+}
+
+final class ObjectAssociation<Value: Any> {
+	private let defaultValue: Value
+	private let policy: AssociationPolicy
+
+	init(defaultValue: Value, policy: AssociationPolicy = .retainNonatomic) {
+		self.defaultValue = defaultValue
+		self.policy = policy
+	}
+
+	subscript(index: AnyObject) -> Value {
+		get {
+			objc_getAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque()) as? Value ?? defaultValue
+		}
+		set {
+			objc_setAssociatedObject(index, Unmanaged.passUnretained(self).toOpaque(), newValue, policy.rawValue)
+		}
+	}
+}
+
+extension ObjectAssociation {
+	convenience init<T>(policy: AssociationPolicy = .retainNonatomic) where Value == T? {
+		self.init(defaultValue: nil, policy: policy)
 	}
 }
 
@@ -1424,7 +1471,7 @@ extension NSMenuItem {
 	typealias ActionClosure = ((NSMenuItem) -> Void)
 
 	private struct AssociatedKeys {
-		static let onActionClosure = ObjectAssociation<ActionClosure>()
+		static let onActionClosure = ObjectAssociation<ActionClosure?>()
 	}
 
 	@objc
@@ -1458,7 +1505,7 @@ extension NSControl {
 	typealias ActionClosure = ((NSControl) -> Void)
 
 	private struct AssociatedKeys {
-		static let onActionClosure = ObjectAssociation<ActionClosure>()
+		static let onActionClosure = ObjectAssociation<ActionClosure?>()
 	}
 
 	@objc
@@ -1553,8 +1600,8 @@ extension NSView {
 		NSView.animate(
 			duration: duration,
 			delay: delay,
-			animations: {
-				self.isHidden = false
+			animations: { [self] in
+				isHidden = false
 			},
 			completion: completion
 		)
@@ -1570,12 +1617,12 @@ extension NSView {
 		NSView.animate(
 			duration: duration,
 			delay: delay,
-			animations: {
-				self.alphaValue = 0
+			animations: { [self] in
+				alphaValue = 0
 			},
-			completion: {
-				self.isHidden = true
-				self.alphaValue = 1
+			completion: { [self] in
+				isHidden = true
+				alphaValue = 1
 				completion?()
 			}
 		)
@@ -2146,8 +2193,8 @@ final class Once {
 	// TODO: Support any number of arguments when Swift supports variadics.
 	/// Wraps a single-argument function.
 	func wrap<T, U>(_ function: @escaping ((T) -> U)) -> ((T) -> U) {
-		return { parameter in // swiftlint:disable:this implicit_return
-			self.run {
+		{ [self] parameter in
+			run {
 				function(parameter)
 			}
 		}
@@ -2159,8 +2206,8 @@ final class Once {
 			return nil
 		}
 
-		return { parameter in
-			self.run {
+		return { [self] parameter in
+			run {
 				function(parameter)
 			}
 		}
@@ -2168,8 +2215,8 @@ final class Once {
 
 	/// Wraps a single-argument throwing function.
 	func wrap<T, U>(_ function: @escaping ((T) throws -> U)) -> ((T) throws -> U) {
-		return { parameter in // swiftlint:disable:this implicit_return
-			try self.run {
+		{ [self] parameter in
+			try run {
 				try function(parameter)
 			}
 		}
@@ -2181,8 +2228,8 @@ final class Once {
 			return nil
 		}
 
-		return { parameter in
-			try self.run {
+		return { [self] parameter in
+			try run {
 				try function(parameter)
 			}
 		}
@@ -3156,8 +3203,8 @@ final class BackButton: NSButton {
 	}
 
 	private func commonInit() {
-		self.image = NSImage(named: NSImage.goBackTemplateName)
-		self.setAccessibilityLabel("Back")
+		image = NSImage(named: NSImage.goBackTemplateName)
+		setAccessibilityLabel("Back")
 	}
 }
 
@@ -3240,8 +3287,8 @@ extension AVPlayer {
 
 extension AVPlayer {
 	private struct AssociatedKeys {
-		static let observationToken = ObjectAssociation<NSObjectProtocol>()
-		static let originalActionAtItemEnd = ObjectAssociation<ActionAtItemEnd>()
+		static let observationToken = ObjectAssociation<NSObjectProtocol?>()
+		static let originalActionAtItemEnd = ObjectAssociation<ActionAtItemEnd?>()
 	}
 
 	/// Loop the playback.

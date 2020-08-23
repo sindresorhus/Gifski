@@ -7,7 +7,7 @@ final class MainWindowController: NSWindowController {
 		window?.contentViewController is ConversionViewController
 	}
 
-	private func showWelcomeScreen() {
+	private func showWelcomeScreenIfNeeded() {
 		guard App.isFirstLaunch else {
 			return
 		}
@@ -63,7 +63,7 @@ final class MainWindowController: NSWindowController {
 		NSApp.activate(ignoringOtherApps: false)
 		window.makeKeyAndOrderFront(nil)
 
-		showWelcomeScreen()
+		showWelcomeScreenIfNeeded()
 	}
 
 	func presentOpenPanel() {

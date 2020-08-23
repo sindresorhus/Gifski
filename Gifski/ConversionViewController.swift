@@ -76,11 +76,11 @@ final class ConversionViewController: NSViewController {
 		timeRemainingEstimator.start()
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) { [weak self] in
-			gifski.run(conversion) { result in
-				guard let self = self else {
-					return
-				}
+			guard let self = self else {
+				return
+			}
 
+			gifski.run(conversion) { result in
 				do {
 					let gifUrl = try self.generateTemporaryGifUrl(for: conversion.video)
 					try result.get().write(to: gifUrl, options: .atomic)

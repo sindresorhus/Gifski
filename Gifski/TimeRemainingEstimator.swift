@@ -114,24 +114,24 @@ final class TimeRemainingEstimator {
 	}
 
 	private func fadeInLabel() {
-		DispatchQueue.main.async {
-			if self.label.isHidden {
-				self.label.fadeIn()
+		DispatchQueue.main.async { [self] in
+			if label.isHidden {
+				label.fadeIn()
 			}
 		}
 	}
 
 	private func fadeOutLabel() {
-		DispatchQueue.main.async {
-			if !self.label.isHidden {
-				self.label.fadeOut()
+		DispatchQueue.main.async { [self] in
+			if !label.isHidden {
+				label.fadeOut()
 			}
 		}
 	}
 
 	private func updateLabel() {
-		DispatchQueue.main.async {
-			self.label.text = self.formattedTimeRemaining ?? ""
+		DispatchQueue.main.async { [self] in
+			label.text = formattedTimeRemaining ?? ""
 		}
 	}
 }
