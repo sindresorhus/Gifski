@@ -158,12 +158,12 @@ struct VideoValidator {
 
 		guard
 			let dimensions = asset.dimensions,
-			dimensions.width > 10,
-			dimensions.height > 10
+			dimensions.width >= 4,
+			dimensions.height >= 4
 		else {
 			NSAlert.showModal(
 				for: window,
-				message: "The video dimensions must be at least 10×10.",
+				message: "The video dimensions must be at least 4×4.",
 				informativeText: "The dimensions of the video are \(asset.dimensions?.formatted ?? "0×0")."
 			)
 
