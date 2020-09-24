@@ -26,12 +26,10 @@ struct VideoValidator {
 		)
 
 		guard inputUrl.fileSize > 0 else {
-			// TODO: Make this not report to Crashlytics at some point.
-			NSAlert.showModalAndReportToCrashlytics(
+			NSAlert.showModal(
 				for: window,
 				message: "The selected file is empty.",
-				informativeText: "Try selecting a different file.",
-				debugInfo: ""
+				informativeText: "Try selecting a different file."
 			)
 
 			return .failure

@@ -2,6 +2,7 @@ import Cocoa
 import AVFoundation
 import class Quartz.QLPreviewPanel
 import Defaults
+import StoreKit.SKStoreReviewController
 
 /**
 Convenience function for initializing an object and modifying its properties
@@ -335,7 +336,7 @@ extension AVAssetImageGenerator {
 				)
 			case .failed:
 				// TODO: Ideally, we should trim blank frames when initially reading the video in `VideoValidator.swift`, but I don't know a way to detect blank frames. We should still keep this fix even if we find a way to trim as this handles blank frames in the middle of the video.
-				// TODO: Report the `xcrun` bug to Apple if it's still an issue in macOS 10.16.
+				// TODO: Report the `xcrun` bug to Apple if it's still an issue in macOS 11.
 				// We ignore blank frames. A video can sometimes contain blank frames at the start when you record an iOS simulator using `xcrun simctl io booted recordVideo simulator.mp4`.
 				if
 					let error = error as? AVError,
@@ -465,7 +466,6 @@ extension String.StringInterpolation {
 }
 
 
-// TODO: Make this a `BinaryFloatingPoint` extension instead.
 extension Double {
 	/**
 	Converts the number to a string and strips fractional trailing zeros.
@@ -1338,7 +1338,7 @@ extension NSPasteboard {
 	Read more: http://nspasteboard.org
 	*/
 	func setSourceApp() {
-		setString(App.id, forType: .sourceAppBundleIdentifier)
+		setString(SSApp.id, forType: .sourceAppBundleIdentifier)
 	}
 }
 
@@ -1390,7 +1390,7 @@ final class FeedbackMenuItem: NSMenuItem {
 		super.init(coder: decoder)
 
 		onAction = { _ in
-			App.openSendFeedbackPage()
+			SSApp.openSendFeedbackPage()
 		}
 	}
 }
@@ -1636,7 +1636,7 @@ extension String {
 }
 
 
-enum App {
+enum SSApp {
 	static let id = Bundle.main.bundleIdentifier!
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
@@ -1657,13 +1657,13 @@ enum App {
 	static func openSendFeedbackPage() {
 		let metadata =
 			"""
-			\(App.name) \(App.versionWithBuild) - \(App.id)
+			\(SSApp.name) \(SSApp.versionWithBuild) - \(SSApp.id)
 			macOS \(Device.osVersion)
 			\(Device.hardwareModel)
 			"""
 
 		let query: [String: String] = [
-			"product": App.name,
+			"product": SSApp.name,
 			"metadata": metadata
 		]
 
@@ -1671,7 +1671,7 @@ enum App {
 	}
 }
 
-extension App {
+extension SSApp {
 	static func runOnce(identifier: String, _ execute: () -> Void) {
 		let key = "SS_App_runOnce__\(identifier)"
 
@@ -2321,7 +2321,7 @@ extension NSError {
 		let errorName = "\(error)".split(separator: "(").first ?? ""
 
 		return .init(
-			domain: "\(App.id) - \(nsError.domain)\(errorName.isEmpty ? "" : ".")\(errorName)",
+			domain: "\(SSApp.id) - \(nsError.domain)\(errorName.isEmpty ? "" : ".")\(errorName)",
 			code: nsError.code,
 			userInfo: userInfo
 		)
@@ -2363,7 +2363,7 @@ extension NSError {
 		}
 
 		return .init(
-			domain: domainPostfix.map { "\(App.id) - \($0)" } ?? App.id,
+			domain: domainPostfix.map { "\(SSApp.id) - \($0)" } ?? SSApp.id,
 			code: 1, // This is what Swift errors end up as.
 			userInfo: userInfo
 		)
@@ -3328,5 +3328,32 @@ extension DateComponentsFormatter {
 		}
 
 		return string(from: timeInterval)
+	}
+}
+
+
+extension Numeric {
+	mutating func increment(by value: Self = 1) -> Self {
+		self += value
+		return self
+	}
+
+	mutating func decrement(by value: Self = 1) -> Self {
+		self -= value
+		return self
+	}
+}
+
+
+extension SSApp {
+	private static let key = Defaults.Key("SSApp_requestReview", default: 0)
+
+	/// Requests a review only after this method has been called the given amount of times.
+	static func requestReviewAfterBeingCalledThisManyTimes(_ counts: [Int]) {
+		guard counts.contains(Defaults[key].increment()) else {
+			return
+		}
+
+		SKStoreReviewController.requestReview()
 	}
 }

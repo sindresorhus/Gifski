@@ -73,9 +73,7 @@ final class ConversionCompletedViewController: NSViewController {
 			self.tooltip.show(from: self.draggableFile, preferredEdge: .maxY)
 		}
 
-		if Defaults[.successfulConversionsCount] == 5 {
-			SKStoreReviewController.requestReview()
-		}
+		SSApp.requestReviewAfterBeingCalledThisManyTimes([5, 100, 1000])
 	}
 
 	private func setUpUI() {
@@ -121,7 +119,7 @@ final class ConversionCompletedViewController: NSViewController {
 			self.copyButton.title = "Copied!"
 			self.copyButton.isEnabled = false
 
-			App.runOnce(identifier: "copyWarning") {
+			SSApp.runOnce(identifier: "copyWarning") {
 				NSAlert.showModal(
 					for: self.copyButton.window,
 					message: "The GIF was copied to the clipboard.",

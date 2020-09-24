@@ -8,7 +8,7 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private func showWelcomeScreenIfNeeded() {
-		guard App.isFirstLaunch else {
+		guard SSApp.isFirstLaunch else {
 			return
 		}
 
