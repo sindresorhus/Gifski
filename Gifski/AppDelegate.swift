@@ -1,7 +1,6 @@
 import Cocoa
 import UserNotifications
-import Fabric
-import Crashlytics
+import FirebaseCrashlytics
 import DockProgress
 
 @NSApplicationMain
@@ -25,10 +24,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
-		#if !DEBUG
-		Fabric.with([Crashlytics.self])
-		#endif
-
 		notificationCenter.requestAuthorization { _, _ in }
 
 		mainWindowController.showWindow(self)

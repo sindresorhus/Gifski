@@ -32,12 +32,11 @@
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
 		E3807B6022BE315D00388F50 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E3807B5B22BE315A00388F50 /* libgifski.a */; };
 		E3A6BD112245345C00F62256 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A6BD102245345C00F62256 /* Constants.swift */; };
-		E3A9400F2182D7BC006981D5 /* Crashlytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E3A9400D2182D7BC006981D5 /* Crashlytics.framework */; };
-		E3A940102182D7BC006981D5 /* Fabric.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E3A9400E2182D7BC006981D5 /* Fabric.framework */; };
 		E3AE62871E5CD2F300035A2F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3AE62861E5CD2F300035A2F /* AppDelegate.swift */; };
 		E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E3AE62881E5CD2F300035A2F /* Assets.xcassets */; };
 		E3AE628C1E5CD2F300035A2F /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3AE628A1E5CD2F300035A2F /* MainMenu.xib */; };
 		E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = E3C3DB4E203F154300CB8BB9 /* Credits.rtf */; };
+		E3C874AA252CFE5B00AB1099 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = E3C874A9252CFE5B00AB1099 /* FirebaseCrashlytics */; };
 		E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */; };
 		E3D08F6E1E5D7BFD00F465DF /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */; };
 		E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */; };
@@ -90,16 +89,6 @@
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E34798D21F882FB3003F9142 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -128,8 +117,6 @@
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3805F542466E68900489E6C /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		E3A6BD102245345C00F62256 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Constants.swift; sourceTree = "<group>"; usesTabs = 1; };
-		E3A9400D2182D7BC006981D5 /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Crashlytics.framework; path = Frameworks/Crashlytics.framework; sourceTree = "<group>"; };
-		E3A9400E2182D7BC006981D5 /* Fabric.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Fabric.framework; path = Frameworks/Fabric.framework; sourceTree = "<group>"; };
 		E3AE62831E5CD2F300035A2F /* Gifski.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gifski.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3AE62861E5CD2F300035A2F /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = AppDelegate.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3AE62881E5CD2F300035A2F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -137,6 +124,7 @@
 		E3AE628D1E5CD2F300035A2F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Gifski.entitlements; sourceTree = "<group>"; };
 		E3C3DB4E203F154300CB8BB9 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
+		E3C874B2252CFFA200AB1099 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		E3CB1DD61F7E4CBC00D79BFC /* VideoDropView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = VideoDropView.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Utilities.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = EditVideoViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -162,9 +150,8 @@
 				E3339E9A2395768F00303839 /* CircularProgress in Frameworks */,
 				E3339E932395766800303839 /* Defaults in Frameworks */,
 				E3339E9D2395789500303839 /* DockProgress in Frameworks */,
+				E3C874AA252CFE5B00AB1099 /* FirebaseCrashlytics in Frameworks */,
 				E3807B6022BE315D00388F50 /* libgifski.a in Frameworks */,
-				E3A9400F2182D7BC006981D5 /* Crashlytics.framework in Frameworks */,
-				E3A940102182D7BC006981D5 /* Fabric.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -210,6 +197,7 @@
 				E3AE628D1E5CD2F300035A2F /* Info.plist */,
 				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
 				E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */,
+				E3C874B2252CFFA200AB1099 /* GoogleService-Info.plist */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -298,9 +286,7 @@
 				E3AE627F1E5CD2F300035A2F /* Sources */,
 				E3AE62801E5CD2F300035A2F /* Frameworks */,
 				E3AE62811E5CD2F300035A2F /* Resources */,
-				E34798D21F882FB3003F9142 /* Embed Frameworks */,
 				0E7925292329BDBE00058B94 /* Embed App Extensions */,
-				E3A9400C2182D718006981D5 /* Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -312,6 +298,7 @@
 				E3339E922395766800303839 /* Defaults */,
 				E3339E992395768F00303839 /* CircularProgress */,
 				E3339E9C2395789500303839 /* DockProgress */,
+				E3C874A9252CFE5B00AB1099 /* FirebaseCrashlytics */,
 			);
 			productName = "HEIC Converter";
 			productReference = E3AE62831E5CD2F300035A2F /* Gifski.app */;
@@ -357,6 +344,7 @@
 				E3339E912395766800303839 /* XCRemoteSwiftPackageReference "Defaults" */,
 				E3339E982395768F00303839 /* XCRemoteSwiftPackageReference "CircularProgress" */,
 				E3339E9B2395789500303839 /* XCRemoteSwiftPackageReference "DockProgress" */,
+				E3C874A8252CFE5B00AB1099 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = E3AE62841E5CD2F300035A2F /* Products */;
 			projectDirPath = "";
@@ -436,26 +424,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if which swiftlint >/dev/null; then\n    swiftlint\nelse\n    echo \"warning: SwiftLint not installed\"\nfi\n";
-			showEnvVarsInLog = 0;
-		};
-		E3A9400C2182D718006981D5 /* Crashlytics */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 8;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
-			);
-			name = Crashlytics;
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-			shellPath = /bin/sh;
-			shellScript = "\"${PROJECT_DIR}/Frameworks/Fabric.framework/run\" 82cbd166420c4577d13935b0fb0da5ea7adccee6 2d9650c15bf3dcae89ddd0601959bf286e0ce336254ed554d42533b37c6d1c76\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -832,6 +800,14 @@
 				minimumVersion = 3.0.0;
 			};
 		};
+		E3C874A8252CFE5B00AB1099 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				branch = "6.34-spm-beta";
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -849,6 +825,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E3339E9B2395789500303839 /* XCRemoteSwiftPackageReference "DockProgress" */;
 			productName = DockProgress;
+		};
+		E3C874A9252CFE5B00AB1099 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E3C874A8252CFE5B00AB1099 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

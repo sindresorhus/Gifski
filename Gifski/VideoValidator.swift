@@ -1,5 +1,5 @@
 import AVKit
-import Crashlytics
+import FirebaseCrashlytics
 
 struct VideoValidator {
 	enum Result {

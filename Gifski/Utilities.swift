@@ -2386,8 +2386,8 @@ extension Dictionary {
 }
 
 
-#if canImport(Crashlytics)
-import Crashlytics
+#if canImport(FirebaseCrashlytics)
+import FirebaseCrashlytics
 
 extension Crashlytics {
 	/// A better error recording method. Captures more debug info.
@@ -2396,20 +2396,20 @@ extension Crashlytics {
 		// This forces Crashlytics to actually provide some useful info for Swift errors.
 		let nsError = NSError.from(error: error, userInfo: userInfo)
 
-		sharedInstance().recordError(nsError)
+		crashlytics().record(error: nsError)
 		#endif
 	}
 
 	static func recordNonFatalError(title: String? = nil, message: String) {
 		#if !DEBUG
-		sharedInstance().recordError(NSError.appError(message, domainPostfix: title))
+		crashlytics().record(error: NSError.appError(message, domainPostfix: title))
 		#endif
 	}
 
 	/// Set a value for a for a key to be associated with your crash data which will be visible in Crashlytics.
 	static func record(key: String, value: Any?) {
 		#if !DEBUG
-		sharedInstance().setObjectValue(value, forKey: key)
+		crashlytics().setCustomValue(value as Any, forKey: key)
 		#endif
 	}
 }

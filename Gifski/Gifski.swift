@@ -1,6 +1,6 @@
 import Cocoa
 import AVFoundation
-import Crashlytics
+import FirebaseCrashlytics
 
 var conversionCount = 0
 

@@ -4,7 +4,7 @@
 	"Website": "https://sindresorhus.com/gifski",
 	"Connections" : [
 		{
-			"Host" : "*.crashlytics.com",
+			"Host" : "*.crashlytics.com,crashlyticsreports-pa.googleapis.com",
 			"NetworkProtocol" : "TCP",
 			"Port" : "443",
 			"Purpose" : "Gifski sends crash reports to this server.",
