@@ -316,8 +316,14 @@ extension AVAssetImageGenerator {
 		let times = timePoints.map { NSValue(time: $0) }
 		var totalCount = times.count
 		var completedCount = 0
+		var decodeFailureFrameCount = 0
 
 		generateCGImagesAsynchronously(forTimes: times) { requestedTime, image, actualTime, result, error in
+			if (Double(decodeFailureFrameCount) / Double(totalCount)) >= 0.2 {
+				completionHandler(.failure(NSError.appError("\(decodeFailureFrameCount) of \(totalCount) frames failed to decode. This is a bug in macOS. We are looking into workarounds.")))
+				return
+			}
+
 			switch result {
 			case .succeeded:
 				completedCount += 1
@@ -337,13 +343,20 @@ extension AVAssetImageGenerator {
 			case .failed:
 				// TODO: Ideally, we should trim blank frames when initially reading the video in `VideoValidator.swift`, but I don't know a way to detect blank frames. We should still keep this fix even if we find a way to trim as this handles blank frames in the middle of the video.
 				// TODO: Report the `xcrun` bug to Apple if it's still an issue in macOS 11.
-				// We ignore blank frames. A video can sometimes contain blank frames at the start when you record an iOS simulator using `xcrun simctl io booted recordVideo simulator.mp4`.
-				if
-					let error = error as? AVError,
-					error.code == .noImageAtTime
-				{
-					totalCount -= 1
-					break
+				if let error = error as? AVError {
+					// We ignore blank frames. A video can sometimes contain blank frames at the start when you record an iOS simulator using `xcrun simctl io booted recordVideo simulator.mp4`.
+					if error.code == .noImageAtTime {
+						totalCount -= 1
+						break
+					}
+
+					// macOS 11 started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these. We throw an error if more than 20% of the frames could not be decoded.
+					if error.code == .decodeFailed {
+						decodeFailureFrameCount += 1
+						totalCount -= 1
+						Crashlytics.recordNonFatalError(error: error, userInfo: ["requestedTime": requestedTime.seconds])
+						break
+					}
 				}
 
 				completionHandler(.failure(error!))
