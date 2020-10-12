@@ -350,7 +350,7 @@ extension AVAssetImageGenerator {
 						break
 					}
 
-					// macOS 11 started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these. We throw an error if more tha 20% of the frames could not be decoded.
+					// macOS 11 started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these. We throw an error if more than 20% of the frames could not be decoded.
 					if error.code == .decodeFailed {
 						decodeFailureFrameCount += 1
 						totalCount -= 1
