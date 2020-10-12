@@ -316,8 +316,14 @@ extension AVAssetImageGenerator {
 		let times = timePoints.map { NSValue(time: $0) }
 		var totalCount = times.count
 		var completedCount = 0
+		var decodeFailureFrameCount = 0
 
 		generateCGImagesAsynchronously(forTimes: times) { requestedTime, image, actualTime, result, error in
+			if (Double(decodeFailureFrameCount) / Double(totalCount)) >= 0.2 {
+				completionHandler(.failure(NSError.appError("\(decodeFailureFrameCount) of \(totalCount) frames failed to decode. This is a bug in macOS. We are looking into workarounds.")))
+				return
+			}
+
 			switch result {
 			case .succeeded:
 				completedCount += 1
@@ -344,8 +350,13 @@ extension AVAssetImageGenerator {
 						break
 					}
 
-					// macOS 11 started throwing decode failed error at the first 0 to 0.2-0.5 seconds of screen recordings. As a workaround, we ignore these. We use 1 second just to be sure.
-					if error.code == .decodeFailed && requestedTime.seconds <= 1 {
+					if error.code == .decodeFailed {
+						print("Decode failed", requestedTime.seconds)
+					}
+
+					// macOS 11 started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these. We throw an error if more tha 20% of the frames could not be decoded.
+					if error.code == .decodeFailed {
+						decodeFailureFrameCount += 1
 						totalCount -= 1
 						Crashlytics.recordNonFatalError(error: error, userInfo: ["requestedTime": requestedTime.seconds])
 						break

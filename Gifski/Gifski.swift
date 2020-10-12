@@ -199,7 +199,7 @@ final class Gifski {
 				frameForTimes.append(
 					CMTime(
 						seconds: presentationTimestamp,
-						preferredTimescale: .video
+						preferredTimescale: asset.duration.timescale
 					)
 				)
 			}
