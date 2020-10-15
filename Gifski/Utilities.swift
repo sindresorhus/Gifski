@@ -3370,3 +3370,154 @@ extension SSApp {
 		SKStoreReviewController.requestReview()
 	}
 }
+
+
+extension Array {
+	/**
+	Returns an array of elements split into groups of the given size.
+	If it can't be split evenly, the final chunk will be the remaining elements.
+
+	```
+	[1, 2, 3, 4].chunked(by: 2)
+	//=> [[1, 2], [3, 4]]
+	```
+	*/
+	func chunked(by chunkSize: Int) -> [[Element]] {
+		stride(from: 0, to: count, by: chunkSize).map {
+			Array(self[$0..<Swift.min($0 + chunkSize, count)])
+		}
+	}
+}
+
+
+extension Array {
+	func sample(withSize size: Int) -> [Element] {
+		precondition(size >= 0 && size <= count)
+		return (0..<size).map { self[($0 * count + count / 2) / size] }
+	}
+}
+
+
+final class AtomicDictionary<Key: Hashable, Value>: CustomDebugStringConvertible {
+	private var storage = [Key: Value]()
+
+	private let queue = DispatchQueue(
+		label: "com.sindresorhus.AtomicDictionary.\(UUID().uuidString)",
+		qos: .utility,
+		attributes: .concurrent,
+		autoreleaseFrequency: .inherit,
+		target: .global()
+	)
+
+	subscript(key: Key) -> Value? {
+		get {
+			queue.sync { storage[key] }
+		}
+		set {
+			queue.async(flags: .barrier) { [weak self] in
+				self?.storage[key] = newValue
+			}
+		}
+	}
+
+	var debugDescription: String { storage.debugDescription }
+}
+
+/**
+Debounce a function call.
+
+Thread-safe.
+
+```
+final class Foo {
+	private let debounce = Debouncer(delay: 0.2)
+
+	func reset() {
+		debounce(_reset)
+	}
+
+	private func _reset() {
+		// …
+	}
+}
+```
+
+or
+
+```
+final class Foo {
+	func reset() {
+		Debouncer.debounce(delay: 0.2, _reset)
+	}
+
+	private func _reset() {
+		// …
+	}
+}
+```
+*/
+final class Debouncer {
+	private let delay: TimeInterval
+	private var workItem: DispatchWorkItem?
+
+	init(delay: TimeInterval) {
+		self.delay = delay
+	}
+
+	func callAsFunction(_ action: @escaping () -> Void) {
+		workItem?.cancel()
+		let newWorkItem = DispatchWorkItem(block: action)
+		DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: newWorkItem)
+		workItem = newWorkItem
+	}
+}
+
+extension Debouncer {
+	private static var debouncers = AtomicDictionary<String, Debouncer>()
+
+	private static func debounce(
+		identifier: String,
+		delay: TimeInterval,
+		action: @escaping () -> Void
+	) {
+		let debouncer = { () -> Debouncer in
+			guard let debouncer = debouncers[identifier] else {
+				let debouncer = self.init(delay: delay)
+				debouncers[identifier] = debouncer
+				return debouncer
+			}
+
+			return debouncer
+		}()
+
+		debouncer {
+			debouncers[identifier] = nil
+			action()
+		}
+	}
+
+	/**
+	Debounce a function call.
+
+	This is less efficient than the instance method, but more convenient.
+
+	Thread-safe.
+	*/
+	static func debounce(
+		file: String = #fileID,
+		function: StaticString = #function,
+		line: Int = #line,
+		delay: TimeInterval,
+		action: @escaping () -> Void
+	) {
+		let identifier = "\(file)-\(function)-\(line)"
+		debounce(identifier: identifier, delay: delay, action: action)
+	}
+}
+
+
+extension Sequence where Element: Sequence {
+	func flatten() -> [Element.Element] {
+		flatMap { $0 }
+	}
+}

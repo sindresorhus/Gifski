@@ -80,7 +80,7 @@ final class ConversionViewController: NSViewController {
 				return
 			}
 
-			gifski.run(conversion) { result in
+			gifski.run(conversion, isEstimation: false) { result in
 				do {
 					let gifUrl = try self.generateTemporaryGifUrl(for: conversion.video)
 					try result.get().write(to: gifUrl, options: .atomic)
