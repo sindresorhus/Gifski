@@ -35,7 +35,13 @@ Gifski includes a share extension that lets you share videos to Gifski. Just sel
 
 Gifski includes a [system service](https://www.computerworld.com/article/2476298/os-x-a-quick-guide-to-services-on-your-mac.html) that lets you quickly convert a video to GIF from the **Services** menu in any app that provides a compatible video file.
 
-### Change GIF dimensions with the keyboard
+## Tips
+
+#### Quickly copy or save the GIF
+
+After converting, press <kbd>Command+C</kbd> to copy the GIF or <kbd>Command+S</kbd> to save it.
+
+#### Change GIF dimensions with the keyboard
 
 <img src="https://user-images.githubusercontent.com/170270/59964494-b8519f00-952b-11e9-8d16-47c8bc103a61.gif" width="226" height="80" align="right">
 

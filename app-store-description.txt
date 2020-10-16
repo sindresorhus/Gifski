@@ -37,6 +37,10 @@ Gifski includes a system service that lets you quickly convert a video to GIF fr
 
 ■ Tips
 
+‣ Quickly copy or save the GIF
+
+After converting, press Command+C to copy the GIF or Command+S to save it.
+
 ‣ Change GIF dimensions with the keyboard
 
 In the width/height input fields in the editor view, press the arrow up/down keys to change the value by 1. Hold the Option key meanwhile to change it by 10.
