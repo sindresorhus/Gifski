@@ -36,7 +36,7 @@ final class ConversionCompletedViewController: NSViewController {
 
 		setUpUI()
 		setUpDropView()
-		setUp(url: gifUrl)
+		setUp()
 
 		if !NSApp.isActive || view.window?.isVisible == false {
 			let notification = UNMutableNotificationContent()
@@ -92,64 +92,64 @@ final class ConversionCompletedViewController: NSViewController {
 		draggableFile.constrainEdgesToSuperview()
 	}
 
-	private func setUp(url: URL) {
-		draggableFile.fileUrl = url
-		fileNameLabel.text = url.filename
-		fileSizeLabel.text = url.fileSizeFormatted
+	private func setUp() {
+		draggableFile.fileUrl = gifUrl
+		fileNameLabel.text = gifUrl.filename
+		fileSizeLabel.text = gifUrl.fileSizeFormatted
+
+		copyButton.onAction = { [weak self] _ in
+			self?.copyGif()
+		}
 
 		shareButton.sendAction(on: .leftMouseDown)
 		shareButton.onAction = { [weak self] _ in
-			guard let self = self else {
-				return
-			}
-
-			NSSharingService.share(items: [url as NSURL], from: self.shareButton)
-		}
-
-		copyButton.onAction = { [weak self] _ in
-			guard let self = self else {
-				return
-			}
-
-			NSPasteboard.general.with {
-				$0.writeObjects([url as NSURL])
-				$0.setString(url.filenameWithoutExtension, forType: .urlName)
-			}
-
-			self.copyButton.title = "Copied!"
-			self.copyButton.isEnabled = false
-
-			SSApp.runOnce(identifier: "copyWarning") {
-				NSAlert.showModal(
-					for: self.copyButton.window,
-					message: "The GIF was copied to the clipboard.",
-					informativeText: "However…",
-					buttonTitles: ["Continue"]
-				)
-
-				NSAlert.showModal(
-					for: self.copyButton.window,
-					message: "Please read!",
-					informativeText: "Many apps like Chrome and Slack do not properly handle copied animated GIFs and will paste them as non-animated PNG.\n\nInstead, drag and drop the GIF into such apps."
-				)
-			}
-
-			delay(seconds: 1) { [weak self] in
-				guard let self = self else {
-					return
-				}
-
-				self.copyButton.title = "Copy"
-				self.copyButton.isEnabled = true
-			}
+			self?.shareGif()
 		}
 
 		saveAsButton.onAction = { [weak self] _ in
-			self?.openSavePanel()
+			self?.saveGif()
 		}
 	}
 
-	private func openSavePanel() {
+	private func copyGif() {
+		NSPasteboard.general.with {
+			$0.writeObjects([gifUrl as NSURL])
+			$0.setString(gifUrl.filenameWithoutExtension, forType: .urlName)
+		}
+
+		copyButton.title = "Copied!"
+		copyButton.isEnabled = false
+
+		SSApp.runOnce(identifier: "copyWarning") {
+			NSAlert.showModal(
+				for: copyButton.window,
+				message: "The GIF was copied to the clipboard.",
+				informativeText: "However…",
+				buttonTitles: ["Continue"]
+			)
+
+			NSAlert.showModal(
+				for: copyButton.window,
+				message: "Please read!",
+				informativeText: "Many apps like Chrome and Slack do not properly handle copied animated GIFs and will paste them as non-animated PNG.\n\nInstead, drag and drop the GIF into such apps."
+			)
+		}
+
+		delay(seconds: 1) { [weak self] in
+			guard let self = self else {
+				return
+			}
+
+			self.copyButton.title = "Copy"
+			self.copyButton.isEnabled = true
+		}
+	}
+
+	private func shareGif() {
+		NSSharingService.share(items: [gifUrl as NSURL], from: shareButton)
+	}
+
+	private func saveGif() {
 		let inputUrl = conversion.video
 
 		let panel = NSSavePanel()
@@ -174,7 +174,7 @@ final class ConversionCompletedViewController: NSViewController {
 					try FileManager.default.copyItem(at: self.gifUrl, to: outputUrl, overwrite: true)
 				} catch {
 					error.presentAsModalSheet(for: self.view.window)
-					self.openSavePanel()
+					self.saveGif()
 				}
 			}
 		}
@@ -189,6 +189,19 @@ final class ConversionCompletedViewController: NSViewController {
 	private func backButton(_ sender: NSButton) {
 		// It's safe to force-unwrap as there's no scenario where it will be nil.
 		push(viewController: AppDelegate.shared.previousEditViewController!)
+	}
+}
+
+// MARK: First responders
+extension ConversionCompletedViewController {
+	@objc
+	func copy(_ sender: Any) {
+		copyGif()
+	}
+
+	@objc
+	func saveDocumentAs(_ sender: Any) {
+		saveGif()
 	}
 }
 
@@ -239,13 +252,14 @@ extension ConversionCompletedViewController: QLPreviewPanelDelegate {
 	}
 }
 
+// TODO: This doesn't seem to be needed on macOS 10.15, so drop it when we target that.
 extension ConversionCompletedViewController: NSMenuItemValidation {
 	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
 		switch menuItem.action {
 		case #selector(quickLook(_:))?:
 			return true
 		default:
-			return false
+			return true
 		}
 	}
 }

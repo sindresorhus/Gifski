@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14490.70" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17156" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14490.70"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17156"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -67,16 +67,21 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="TB9-2E-bka"/>
+                            <menuItem title="Close" keyEquivalent="w" id="3u8-9s-Y0B">
+                                <connections>
+                                    <action selector="performClose:" target="-1" id="k0u-T6-LNm"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Save As…" keyEquivalent="s" id="XiK-JX-sg6">
+                                <connections>
+                                    <action selector="saveDocumentAs:" target="-1" id="ul6-aX-8nE"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="zHJ-Sl-xt7"/>
                             <menuItem title="Quick Look" keyEquivalent=" " id="Wfh-bM-KvX">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="quickLook:" target="-1" id="IQy-U1-llq"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>
-                            <menuItem title="Close" keyEquivalent="w" id="3u8-9s-Y0B">
-                                <connections>
-                                    <action selector="performClose:" target="-1" id="k0u-T6-LNm"/>
                                 </connections>
                             </menuItem>
                         </items>
