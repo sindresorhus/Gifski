@@ -255,12 +255,28 @@ final class EditVideoViewController: NSViewController {
 		// We round it so that `29.970` becomes `30` for practical reasons.
 		let frameRate = videoMetadata.frameRate.rounded()
 
+		if frameRate > 50 {
+			showFpsWarningIfNeeded()
+		}
+
 		frameRateSlider.maxValue = frameRate.clamped(to: Constants.allowedFrameRate)
 		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
 		frameRateSlider.triggerAction()
 
 		qualitySlider.doubleValue = Defaults[.outputQuality]
 		qualitySlider.triggerAction()
+	}
+
+	private func showFpsWarningIfNeeded() {
+		SSApp.runOnce(identifier: "fpsWarning") {
+			delay(seconds: 0.5) {
+				NSAlert.showModal(
+					for: self.view.window,
+					message: "Maximum GIF Frame Rate",
+					informativeText: "Exporting GIFs with a frame rate higher than 50 is not supported as browsers will throttle and play them at 10 FPS."
+				)
+			}
+		}
 	}
 
 	private func setUpWidthAndHeightTextFields() {

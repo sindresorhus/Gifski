@@ -4,7 +4,7 @@ import Defaults
 struct Constants {
 	static let defaultWindowSize = CGSize(width: 360, height: 240)
 	static let backgroundImage = NSImage(named: "BackgroundImage")!
-	static let allowedFrameRate = 5.0...60.0
+	static let allowedFrameRate = 5.0...50.0
 }
 
 extension NSColor {
