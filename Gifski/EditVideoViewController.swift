@@ -272,7 +272,7 @@ final class EditVideoViewController: NSViewController {
 			delay(seconds: 0.5) {
 				NSAlert.showModal(
 					for: self.view.window,
-					message: "Maximum GIF Frame Rate",
+					message: "Animated GIF Limitation",
 					informativeText: "Exporting GIFs with a frame rate higher than 50 is not supported as browsers will throttle and play them at 10 FPS."
 				)
 			}
