@@ -11,7 +11,7 @@ It converts videos to animated GIFs that use thousands of colors per frame. This
 - Share extension
 - System service
 - Optionally produce smaller lower quality GIFs
-- Generate up to 60 FPS GIFs (for showing off design work on Dribbble)
+- Generate up to 50 FPS GIFs (for showing off design work on Dribbble)
 
 
 ■ To convert, either:
@@ -51,6 +51,10 @@ In the width/height input fields in the editor view, press the arrow up/down key
 ‣ The generated GIFs are huge!
 
 The GIF image format is very space inefficient. It works best with short video clips. Try reducing the dimensions, FPS, or quality.
+
+‣ Why are 60 FPS and higher not supported?
+
+Browsers throttle frame rates above 50 FPS, playing them at 10 FPS.
 
 
 ■ Support
