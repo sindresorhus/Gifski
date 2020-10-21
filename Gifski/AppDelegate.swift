@@ -1,6 +1,6 @@
 import Cocoa
 import UserNotifications
-import FirebaseCrashlytics
+import Firebase
 import DockProgress
 
 @NSApplicationMain
@@ -24,6 +24,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
+		FirebaseApp.configure()
+
 		notificationCenter.requestAuthorization { _, _ in }
 
 		mainWindowController.showWindow(self)
