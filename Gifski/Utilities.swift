@@ -319,7 +319,7 @@ extension AVAssetImageGenerator {
 		var decodeFailureFrameCount = 0
 
 		generateCGImagesAsynchronously(forTimes: times) { requestedTime, image, actualTime, result, error in
-			if (Double(decodeFailureFrameCount) / Double(totalCount)) >= 0.2 {
+			if (Double(decodeFailureFrameCount) / Double(totalCount)) > 0.5 {
 				completionHandler(.failure(NSError.appError("\(decodeFailureFrameCount) of \(totalCount) frames failed to decode. This is a bug in macOS. We are looking into workarounds.")))
 				return
 			}
@@ -350,7 +350,7 @@ extension AVAssetImageGenerator {
 						break
 					}
 
-					// macOS 11 started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these. We throw an error if more than 20% of the frames could not be decoded.
+					// macOS 11 started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these. We throw an error if more than 50% of the frames could not be decoded.
 					if error.code == .decodeFailed {
 						decodeFailureFrameCount += 1
 						totalCount -= 1
