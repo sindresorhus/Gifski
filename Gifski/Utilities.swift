@@ -3372,10 +3372,13 @@ extension SSApp {
 }
 
 
-extension Array {
+extension Sequence {
 	/**
 	Returns an array of elements split into groups of the given size.
+
 	If it can't be split evenly, the final chunk will be the remaining elements.
+
+	If the requested chunk size is larger than the sequence, the chunk will be smaller than requested.
 
 	```
 	[1, 2, 3, 4].chunked(by: 2)
@@ -3383,17 +3386,27 @@ extension Array {
 	```
 	*/
 	func chunked(by chunkSize: Int) -> [[Element]] {
-		stride(from: 0, to: count, by: chunkSize).map {
-			Array(self[$0..<Swift.min($0 + chunkSize, count)])
+		reduce(into: []) { result, current in
+			if let last = result.last, last.count < chunkSize {
+				result.append(result.removeLast() + [current])
+			} else {
+				result.append([current])
+			}
 		}
 	}
 }
 
 
-extension Array {
-	func sample(withSize size: Int) -> [Element] {
-		precondition(size >= 0 && size <= count)
-		return (0..<size).map { self[($0 * count + count / 2) / size] }
+extension Collection where Index == Int {
+	/// Return a subset of the array of the given length by sampling "evenly distributed" elements.
+	func sample(length: Int) -> [Element] {
+		precondition(length >= 0, "The length cannot be negative.")
+
+		guard length < count else {
+			return Array(self)
+		}
+
+		return (0..<length).map { self[($0 * count + count / 2) / length] }
 	}
 }
 

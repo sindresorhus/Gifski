@@ -217,7 +217,7 @@ final class Gifski {
 				if originalCount > 25 {
 					frameForTimes = frameForTimes
 						.chunked(by: 5)
-						.sample(withSize: 5)
+						.sample(length: 5)
 						.flatten()
 				}
 
