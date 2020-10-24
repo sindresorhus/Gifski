@@ -211,6 +211,7 @@ final class Gifski {
 				)
 			}
 
+			// TODO: The whole estimation thing should be split out into a separate method and the things that are shared should also be split out.
 			if isEstimation {
 				let originalCount = frameForTimes.count
 
@@ -221,8 +222,6 @@ final class Gifski {
 						.flatten()
 				}
 
-				print("Estimate frames", frameForTimes.count, frameForTimes.map(\.seconds))
-				print("Original count", originalCount)
 				self.sizeMultiplierForEstimation = Double(originalCount) / Double(frameForTimes.count)
 			}
 

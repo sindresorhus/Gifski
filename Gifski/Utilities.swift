@@ -3543,7 +3543,7 @@ extension NSFont {
 		Self(descriptor: descriptor, size: 0) ?? self
 	}
 
-	// TODO: When Xcode 12 is out, use `[NSFont fontWithSize:]` when available.
+	// TODO: When Xcode 12.2 is out, use `[NSFont fontWithSize:]` when available.
 	/// Returns a font with the size replaced.
 	/// UIKit polyfill.
 	func withSize(_ size: CGFloat) -> NSFont {
