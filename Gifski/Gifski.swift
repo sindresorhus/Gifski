@@ -257,10 +257,7 @@ final class Gifski {
 					self.progress.totalUnitCount = Int64(result.totalCount)
 					let image = result.image
 
-					guard
-						let data = image.dataProvider?.data,
-						let buffer = CFDataGetBytePtr(data)
-					else {
+					guard let bytePointer = image.bytePointer else {
 						completionHandlerOnce(.failure(.generateFrameFailed(
 							NSError.appError("Could not get byte pointer of image data provider.")
 						)))
@@ -273,7 +270,7 @@ final class Gifski {
 							width: UInt32(image.width),
 							bytesPerRow: UInt32(image.bytesPerRow),
 							height: UInt32(image.height),
-							pixels: buffer,
+							pixels: bytePointer,
 							presentationTimestamp: max(0, result.actualTime.seconds - startTime)
 						)
 					} catch {

@@ -221,15 +221,35 @@ extension NSAlert {
 		informativeText: String? = nil,
 		detailText: String? = nil,
 		style: Style = .warning,
-		buttonTitles: [String] = []
+		buttonTitles: [String] = [],
+		defaultButtonIndex: Int? = nil
 	) -> NSApplication.ModalResponse {
 		NSAlert(
 			message: message,
 			informativeText: informativeText,
 			detailText: detailText,
 			style: style,
-			buttonTitles: buttonTitles
+			buttonTitles: buttonTitles,
+			defaultButtonIndex: defaultButtonIndex
 		).runModal(for: window)
+	}
+
+	/// The index in the `buttonTitles` array for the button to use as default.
+	/// Set `-1` to not have any default. Useful for really destructive actions.
+	var defaultButtonIndex: Int {
+		get {
+			buttons.firstIndex { $0.keyEquivalent == "\r" } ?? -1
+		}
+		set {
+			// Clear the default button indicator from other buttons.
+			for button in buttons where button.keyEquivalent == "\r" {
+				button.keyEquivalent = ""
+			}
+
+			if newValue != -1 {
+				buttons[newValue].keyEquivalent = "\r"
+			}
+		}
 	}
 
 	convenience init(
@@ -237,7 +257,8 @@ extension NSAlert {
 		informativeText: String? = nil,
 		detailText: String? = nil,
 		style: Style = .warning,
-		buttonTitles: [String] = []
+		buttonTitles: [String] = [],
+		defaultButtonIndex: Int? = nil
 	) {
 		self.init()
 		self.messageText = message
@@ -272,7 +293,11 @@ extension NSAlert {
 			self.accessoryView = scrollView
 		}
 
-		self.addButtons(withTitles: buttonTitles)
+		addButtons(withTitles: buttonTitles)
+
+		if let defaultButtonIndex = defaultButtonIndex {
+			self.defaultButtonIndex = defaultButtonIndex
+		}
 	}
 
 	/// Runs the alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
@@ -3618,5 +3643,40 @@ extension NSAttributedString {
 
 	func withFontSize(_ fontSize: Double) -> NSAttributedString {
 		addingAttributes([.font: font.withSize(CGFloat(fontSize))])
+	}
+}
+
+
+extension CGImage {
+	/// Returns a read-only pointer to the bytes of the image.
+	var bytePointer: UnsafePointer<UInt8>? {
+		guard let data = dataProvider?.data else {
+			return nil
+		}
+
+		return CFDataGetBytePtr(data)
+	}
+}
+
+
+extension String {
+	var trimmedTrailing: Self {
+		replacingOccurrences(of: #"\s+$"#, with: "", options: .regularExpression)
+	}
+
+	/**
+	```
+	"Unicorn".truncating(to: 4)
+	//=> "Uni…"
+	```
+	*/
+	func truncating(to number: Int, truncationIndicator: Self = "…") -> Self {
+		if number <= 0 {
+			return ""
+		} else if count > number {
+			return String(prefix(number - truncationIndicator.count)).trimmedTrailing + truncationIndicator
+		} else {
+			return self
+		}
 	}
 }

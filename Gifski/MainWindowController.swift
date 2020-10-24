@@ -33,7 +33,8 @@ final class MainWindowController: NSWindowController {
 				""",
 			buttonTitles: [
 				"Get Started"
-			]
+			],
+			defaultButtonIndex: -1
 		)
 	}
 

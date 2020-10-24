@@ -1,6 +1,7 @@
 import Cocoa
 import AVKit
 import Defaults
+import FirebaseCrashlytics
 
 final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {
@@ -405,8 +406,11 @@ final class EditVideoViewController: NSViewController {
 				switch error {
 				case .cancelled:
 					break
+				case .notEnoughFrames:
+					self.setEstimatedFileSize(self.getNaiveEstimate().attributedString)
 				default:
-					error.presentAsModalSheet(for: self.view.window)
+					Crashlytics.recordNonFatalError(error: error)
+					self.setEstimatedFileSize("Error: \(error.localizedDescription)".truncating(to: 86).attributedString.withColor(.secondaryLabelColor).withFontSize(NSFont.smallSystemFontSize.double))
 				}
 			}
 		}

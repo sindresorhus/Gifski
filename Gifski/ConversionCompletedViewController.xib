@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="15702" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17156" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="15702"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17156"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -53,8 +53,8 @@
                             <rect key="frame" x="30" y="22" width="300" height="30"/>
                             <subviews>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="e7w-oB-lHq">
-                                    <rect key="frame" x="0.0" y="7" width="93" height="23"/>
-                                    <buttonCell key="cell" type="roundTextured" title="Copy" bezelStyle="texturedRounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="wrr-rz-aBk">
+                                    <rect key="frame" x="-6" y="2" width="105" height="32"/>
+                                    <buttonCell key="cell" type="push" title="Copy" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="wrr-rz-aBk">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
                                         <string key="keyEquivalent">c</string>
@@ -62,15 +62,15 @@
                                     </buttonCell>
                                 </button>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="xNp-Z5-9zb">
-                                    <rect key="frame" x="103" y="7" width="94" height="23"/>
-                                    <buttonCell key="cell" type="roundTextured" title="Share" bezelStyle="texturedRounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5vU-7T-yAi">
+                                    <rect key="frame" x="97" y="2" width="106" height="32"/>
+                                    <buttonCell key="cell" type="push" title="Share" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5vU-7T-yAi">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>
                                 </button>
                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Olx-b9-5Qw">
-                                    <rect key="frame" x="207" y="7" width="93" height="23"/>
-                                    <buttonCell key="cell" type="roundTextured" title="Save As..." bezelStyle="texturedRounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Kiv-8z-1qn">
+                                    <rect key="frame" x="201" y="2" width="105" height="32"/>
+                                    <buttonCell key="cell" type="push" title="Save As..." bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Kiv-8z-1qn">
                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                         <font key="font" metaFont="system"/>
                                     </buttonCell>

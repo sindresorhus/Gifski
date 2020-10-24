@@ -1,6 +1,7 @@
 import Cocoa
 import UserNotifications
-import Firebase
+import FirebaseCore
+import FirebaseCrashlytics
 import DockProgress
 
 @NSApplicationMain
