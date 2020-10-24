@@ -51,6 +51,12 @@ final class Gifski {
 	private var progress: Progress!
 	private var gifski: GifskiWrapper?
 
+	var sizeMultiplierForEstimation = 1.0
+
+	deinit {
+		cancel()
+	}
+
 	// TODO: Split this method up into smaller methods. It's too large.
 	/**
 	Converts a movie to GIF.
@@ -59,6 +65,7 @@ final class Gifski {
 	*/
 	func run(
 		_ conversion: Conversion,
+		isEstimation: Bool,
 		completionHandler: ((Result<Data, Error>) -> Void)?
 	) {
 		// For debugging.
@@ -204,6 +211,20 @@ final class Gifski {
 				)
 			}
 
+			// TODO: The whole estimation thing should be split out into a separate method and the things that are shared should also be split out.
+			if isEstimation {
+				let originalCount = frameForTimes.count
+
+				if originalCount > 25 {
+					frameForTimes = frameForTimes
+						.chunked(by: 5)
+						.sample(length: 5)
+						.flatten()
+				}
+
+				self.sizeMultiplierForEstimation = Double(originalCount) / Double(frameForTimes.count)
+			}
+
 			Crashlytics.record(
 				key: "\(debugKey): fps",
 				value: fps
@@ -275,5 +296,9 @@ final class Gifski {
 				}
 			}
 		}
+	}
+
+	func cancel() {
+		progress?.cancel()
 	}
 }

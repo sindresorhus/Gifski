@@ -3370,3 +3370,253 @@ extension SSApp {
 		SKStoreReviewController.requestReview()
 	}
 }
+
+
+extension Sequence {
+	/**
+	Returns an array of elements split into groups of the given size.
+
+	If it can't be split evenly, the final chunk will be the remaining elements.
+
+	If the requested chunk size is larger than the sequence, the chunk will be smaller than requested.
+
+	```
+	[1, 2, 3, 4].chunked(by: 2)
+	//=> [[1, 2], [3, 4]]
+	```
+	*/
+	func chunked(by chunkSize: Int) -> [[Element]] {
+		reduce(into: []) { result, current in
+			if let last = result.last, last.count < chunkSize {
+				result.append(result.removeLast() + [current])
+			} else {
+				result.append([current])
+			}
+		}
+	}
+}
+
+
+extension Collection where Index == Int {
+	/// Return a subset of the array of the given length by sampling "evenly distributed" elements.
+	func sample(length: Int) -> [Element] {
+		precondition(length >= 0, "The length cannot be negative.")
+
+		guard length < count else {
+			return Array(self)
+		}
+
+		return (0..<length).map { self[($0 * count + count / 2) / length] }
+	}
+}
+
+
+final class AtomicDictionary<Key: Hashable, Value>: CustomDebugStringConvertible {
+	private var storage = [Key: Value]()
+
+	private let queue = DispatchQueue(
+		label: "com.sindresorhus.AtomicDictionary.\(UUID().uuidString)",
+		qos: .utility,
+		attributes: .concurrent,
+		autoreleaseFrequency: .inherit,
+		target: .global()
+	)
+
+	subscript(key: Key) -> Value? {
+		get {
+			queue.sync { storage[key] }
+		}
+		set {
+			queue.async(flags: .barrier) { [weak self] in
+				self?.storage[key] = newValue
+			}
+		}
+	}
+
+	var debugDescription: String { storage.debugDescription }
+}
+
+/**
+Debounce a function call.
+
+Thread-safe.
+
+```
+final class Foo {
+	private let debounce = Debouncer(delay: 0.2)
+
+	func reset() {
+		debounce(_reset)
+	}
+
+	private func _reset() {
+		// …
+	}
+}
+```
+
+or
+
+```
+final class Foo {
+	func reset() {
+		Debouncer.debounce(delay: 0.2, _reset)
+	}
+
+	private func _reset() {
+		// …
+	}
+}
+```
+*/
+final class Debouncer {
+	private let delay: TimeInterval
+	private var workItem: DispatchWorkItem?
+
+	init(delay: TimeInterval) {
+		self.delay = delay
+	}
+
+	func callAsFunction(_ action: @escaping () -> Void) {
+		workItem?.cancel()
+		let newWorkItem = DispatchWorkItem(block: action)
+		DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: newWorkItem)
+		workItem = newWorkItem
+	}
+}
+
+extension Debouncer {
+	private static var debouncers = AtomicDictionary<String, Debouncer>()
+
+	private static func debounce(
+		identifier: String,
+		delay: TimeInterval,
+		action: @escaping () -> Void
+	) {
+		let debouncer = { () -> Debouncer in
+			guard let debouncer = debouncers[identifier] else {
+				let debouncer = self.init(delay: delay)
+				debouncers[identifier] = debouncer
+				return debouncer
+			}
+
+			return debouncer
+		}()
+
+		debouncer {
+			debouncers[identifier] = nil
+			action()
+		}
+	}
+
+	/**
+	Debounce a function call.
+
+	This is less efficient than the instance method, but more convenient.
+
+	Thread-safe.
+	*/
+	static func debounce(
+		file: String = #fileID,
+		function: StaticString = #function,
+		line: Int = #line,
+		delay: TimeInterval,
+		action: @escaping () -> Void
+	) {
+		let identifier = "\(file)-\(function)-\(line)"
+		debounce(identifier: identifier, delay: delay, action: action)
+	}
+}
+
+
+extension Sequence where Element: Sequence {
+	func flatten() -> [Element.Element] {
+		flatMap { $0 }
+	}
+}
+
+
+extension NSFont {
+	/// Returns a new version of the font with the existing font descriptor replaced by the given font descriptor.
+	func withDescriptor(_ descriptor: NSFontDescriptor) -> NSFont {
+		// It's important that the size is `0` and not `pointSize` as otherwise the descriptor is not able to change the font size.
+		Self(descriptor: descriptor, size: 0) ?? self
+	}
+
+	// TODO: When Xcode 12.2 is out, use `[NSFont fontWithSize:]` when available.
+	/// Returns a font with the size replaced.
+	/// UIKit polyfill.
+	func withSize(_ size: CGFloat) -> NSFont {
+		withDescriptor(fontDescriptor.withSize(size))
+	}
+}
+
+
+extension String {
+	var attributedString: NSAttributedString { NSAttributedString(string: self) }
+}
+
+
+extension NSAttributedString {
+	static func + (lhs: NSAttributedString, rhs: NSAttributedString) -> NSAttributedString {
+		let string = NSMutableAttributedString(attributedString: lhs)
+		string.append(rhs)
+		return string
+	}
+
+	static func + (lhs: NSAttributedString, rhs: String) -> NSAttributedString {
+		lhs + NSAttributedString(string: rhs)
+	}
+
+	static func += (lhs: inout NSAttributedString, rhs: NSAttributedString) {
+		// swiftlint:disable:next shorthand_operator
+		lhs = lhs + rhs
+	}
+
+	static func += (lhs: inout NSAttributedString, rhs: String) {
+		lhs += NSAttributedString(string: rhs)
+	}
+
+	var nsRange: NSRange { NSRange(0..<length) }
+
+	var font: NSFont {
+		attributeForWholeString(.font) as? NSFont ?? .systemFont(ofSize: NSFont.systemFontSize)
+	}
+
+	/// Get an attribute if it applies to the whole string.
+	func attributeForWholeString(_ key: Key) -> Any? {
+		guard length > 0 else {
+			return nil
+		}
+
+		var foundRange = NSRange()
+		let result = attribute(key, at: 0, longestEffectiveRange: &foundRange, in: nsRange)
+
+		guard foundRange.length == length else {
+			return nil
+		}
+
+		return result
+	}
+
+	/// Returns a `NSMutableAttributedString` version.
+	func mutable() -> NSMutableAttributedString {
+		// Force-casting here is safe as it can only be nil if there's no `mutableCopy` implementation, but we know there is for `NSMutableAttributedString`.
+		// swiftlint:disable:next force_cast
+		mutableCopy() as! NSMutableAttributedString
+	}
+
+	func addingAttributes(_ attributes: [Key: Any]) -> NSAttributedString {
+		let new = mutable()
+		new.addAttributes(attributes, range: nsRange)
+		return new
+	}
+
+	func withColor(_ color: NSColor) -> NSAttributedString {
+		addingAttributes([.foregroundColor: color])
+	}
+
+	func withFontSize(_ fontSize: Double) -> NSAttributedString {
+		addingAttributes([.font: font.withSize(CGFloat(fontSize))])
+	}
+}
