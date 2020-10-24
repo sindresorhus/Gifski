@@ -342,17 +342,13 @@ final class EditVideoViewController: NSViewController {
 		selectPredefinedSizeBasedOnCurrentDimensions()
 	}
 
-	private func setEstimatedFileSize(_ string: String) {
-		estimatedSizeLabel.stringValue = "Estimated File Size: \(string)"
+	private func setEstimatedFileSize(_ string: NSAttributedString) {
+		estimatedSizeLabel.attributedStringValue = "Estimated File Size: ".attributedString + string
 	}
 
 	private var gifski: Gifski?
 
-	private func estimateFileSize() {
-		Debouncer.debounce(delay: 0.5, action: _estimateFileSize)
-	}
-
-	private func _estimateFileSize() {
+	private func getNaiveEstimate() -> String {
 		let duration: Double = {
 			guard let timeRange = timeRange else {
 				return videoMetadata.duration
@@ -365,17 +361,18 @@ final class EditVideoViewController: NSViewController {
 		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
 		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
-     // estimatedSizeLabel.stringValue = "Estimated File Size: " + formatter.string(fromByteCount: Int64(fileSize))
 
-		print("ESTIMATING")
+		return formatter.string(fromByteCount: Int64(fileSize))
+	}
 
+	private func _estimateFileSize() {
 		// TODO: Deinit doesn't seem to be called.
 		self.gifski?.cancel()
 
 		let gifski = Gifski()
 		self.gifski = gifski
 
-		setEstimatedFileSize("… (Naive: \(formatter.string(fromByteCount: Int64(fileSize))))")
+		setEstimatedFileSize(getNaiveEstimate().attributedString + "   Calculating Accurate Estimate…".attributedString.withColor(.secondaryLabelColor).withFontSize(NSFont.smallSystemFontSize.double))
 
 		gifski.run(conversionSettings, isEstimation: true) { [weak self] result in
 			guard let self = self else {
@@ -387,7 +384,7 @@ final class EditVideoViewController: NSViewController {
 				// We add 10% extra because it's better to estimate slightly too much than too little.
 				let fileSize = (Double(data.count) * gifski.sizeMultiplierForEstimation) * 1.1
 
-				self.setEstimatedFileSize(self.formatter.string(fromByteCount: Int64(fileSize)))
+				self.setEstimatedFileSize(self.formatter.string(fromByteCount: Int64(fileSize)).attributedString)
 			case .failure(let error):
 				switch error {
 				case .cancelled:
@@ -397,6 +394,10 @@ final class EditVideoViewController: NSViewController {
 				}
 			}
 		}
+	}
+
+	private func estimateFileSize() {
+		Debouncer.debounce(delay: 0.5, action: _estimateFileSize)
 	}
 
 	private func updateDimensionsDisplay() {

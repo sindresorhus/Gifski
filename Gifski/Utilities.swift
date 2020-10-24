@@ -3534,3 +3534,89 @@ extension Sequence where Element: Sequence {
 		flatMap { $0 }
 	}
 }
+
+
+extension NSFont {
+	/// Returns a new version of the font with the existing font descriptor replaced by the given font descriptor.
+	func withDescriptor(_ descriptor: NSFontDescriptor) -> NSFont {
+		// It's important that the size is `0` and not `pointSize` as otherwise the descriptor is not able to change the font size.
+		Self(descriptor: descriptor, size: 0) ?? self
+	}
+
+	// TODO: When Xcode 12 is out, use `[NSFont fontWithSize:]` when available.
+	/// Returns a font with the size replaced.
+	/// UIKit polyfill.
+	func withSize(_ size: CGFloat) -> NSFont {
+		withDescriptor(fontDescriptor.withSize(size))
+	}
+}
+
+
+extension String {
+	var attributedString: NSAttributedString { NSAttributedString(string: self) }
+}
+
+
+extension NSAttributedString {
+	static func + (lhs: NSAttributedString, rhs: NSAttributedString) -> NSAttributedString {
+		let string = NSMutableAttributedString(attributedString: lhs)
+		string.append(rhs)
+		return string
+	}
+
+	static func + (lhs: NSAttributedString, rhs: String) -> NSAttributedString {
+		lhs + NSAttributedString(string: rhs)
+	}
+
+	static func += (lhs: inout NSAttributedString, rhs: NSAttributedString) {
+		// swiftlint:disable:next shorthand_operator
+		lhs = lhs + rhs
+	}
+
+	static func += (lhs: inout NSAttributedString, rhs: String) {
+		lhs += NSAttributedString(string: rhs)
+	}
+
+	var nsRange: NSRange { NSRange(0..<length) }
+
+	var font: NSFont {
+		attributeForWholeString(.font) as? NSFont ?? .systemFont(ofSize: NSFont.systemFontSize)
+	}
+
+	/// Get an attribute if it applies to the whole string.
+	func attributeForWholeString(_ key: Key) -> Any? {
+		guard length > 0 else {
+			return nil
+		}
+
+		var foundRange = NSRange()
+		let result = attribute(key, at: 0, longestEffectiveRange: &foundRange, in: nsRange)
+
+		guard foundRange.length == length else {
+			return nil
+		}
+
+		return result
+	}
+
+	/// Returns a `NSMutableAttributedString` version.
+	func mutable() -> NSMutableAttributedString {
+		// Force-casting here is safe as it can only be nil if there's no `mutableCopy` implementation, but we know there is for `NSMutableAttributedString`.
+		// swiftlint:disable:next force_cast
+		mutableCopy() as! NSMutableAttributedString
+	}
+
+	func addingAttributes(_ attributes: [Key: Any]) -> NSAttributedString {
+		let new = mutable()
+		new.addAttributes(attributes, range: nsRange)
+		return new
+	}
+
+	func withColor(_ color: NSColor) -> NSAttributedString {
+		addingAttributes([.foregroundColor: color])
+	}
+
+	func withFontSize(_ fontSize: Double) -> NSAttributedString {
+		addingAttributes([.font: font.withSize(CGFloat(fontSize))])
+	}
+}
