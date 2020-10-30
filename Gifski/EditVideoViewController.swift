@@ -272,7 +272,7 @@ final class EditVideoViewController: NSViewController {
 
 	private func showFpsWarningIfNeeded() {
 		SSApp.runOnce(identifier: "fpsWarning") {
-			delay(seconds: 0.5) {
+			delay(seconds: 1) {
 				NSAlert.showModal(
 					for: self.view.window,
 					message: "Animated GIF Limitation",
