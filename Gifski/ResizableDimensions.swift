@@ -17,7 +17,7 @@ struct Dimensions: Equatable, CustomStringConvertible {
 	var description: String {
 		switch type {
 		case .pixels:
-			return String(format: "%.0f x %.0f", value.width, value.height)
+			return String(format: "%.0f × %.0f", value.width, value.height)
 		case .percent:
 			return String(format: "%.0f%%", value.width)
 		}
