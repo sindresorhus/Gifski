@@ -94,7 +94,7 @@ We don't have any immediate plans to localize the app.
 
 #### Can you support macOS 10.13?
 
-No, but you can get the last compatible version [here](https://github.com/sindresorhus/Gifski/files/3991913/Gifski.2.4.0.-.High.Sierra.zip).
+No, but you can get the last compatible version for High Sierra [(Gifski 2.4.0) here](https://github.com/sindresorhus/Gifski/files/3991913/Gifski.2.4.0.-.High.Sierra.zip).
 
 #### Can you support Windows/Linux?
 
