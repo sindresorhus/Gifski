@@ -1,1 +1,1 @@
-gif,video,movie,image,convert,converter,mp4,mov,photo,picture,photography,resize,design,60fps
+gif,video,movie,image,convert,converter,mp4,mov,photo,picture,photography,resize,design
