@@ -21,7 +21,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 			]
 		)
 
-		DockProgress.style = .circle(radius: 55)
+		// TODO: Enable this again when https://github.com/sindresorhus/DockProgress/issues/11 is fixed.
+		// DockProgress.style = .circle(radius: 55)
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
