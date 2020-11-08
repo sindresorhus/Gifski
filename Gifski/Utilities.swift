@@ -163,7 +163,6 @@ extension NSWindow {
 
 
 // TODO: Remove these when targeting macOS 11.
-// swiftlint:disable:next identifier_name
 private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
 	if #available(macOS 11, *) {
 		return rect
