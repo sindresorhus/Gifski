@@ -272,9 +272,9 @@ final class EditVideoViewController: NSViewController {
 
 	private func showFpsWarningIfNeeded() {
 		SSApp.runOnce(identifier: "fpsWarning") {
-			delay(seconds: 1) {
+			DispatchQueue.main.async { [self] in
 				NSAlert.showModal(
-					for: self.view.window,
+					for: view.window,
 					message: "Animated GIF Limitation",
 					informativeText: "Exporting GIFs with a frame rate higher than 50 is not supported as browsers will throttle and play them at 10 FPS."
 				)

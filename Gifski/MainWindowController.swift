@@ -71,6 +71,7 @@ final class MainWindowController: NSWindowController {
 		let panel = NSOpenPanel()
 		panel.canChooseDirectories = false
 		panel.canCreateDirectories = false
+		// TODO: Use `.allowedContentTypes` here when targeting macOS 11.
 		panel.allowedFileTypes = Device.supportedVideoTypes
 
 		panel.beginSheetModal(for: window!) { [weak self] in

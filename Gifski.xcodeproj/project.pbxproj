@@ -41,6 +41,7 @@
 		E3D08F6E1E5D7BFD00F465DF /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */; };
 		E3DF3E88203BD2B900055855 /* EditVideoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */; };
 		E3DF3E89203BD2B900055855 /* EditVideoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */; };
+		E3E9A7D6256EBE0800E2B9FD /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E9A7D5256EBE0800E2B9FD /* Utilities.swift */; };
 		E3E9BAE425406B84006AE1B7 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E3E9BAE325406B84006AE1B7 /* GoogleService-Info.plist */; };
 		E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FC365B2377FA0000CF7C59 /* Shared.swift */; };
 		E3FC365E2377FA9F00CF7C59 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FC365B2377FA0000CF7C59 /* Shared.swift */; };
@@ -129,6 +130,7 @@
 		E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Utilities.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = EditVideoViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = EditVideoViewController.xib; sourceTree = "<group>"; };
+		E3E9A7D5256EBE0800E2B9FD /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		E3E9BAE325406B84006AE1B7 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		E3FC365B2377FA0000CF7C59 /* Shared.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; name = Shared.swift; path = Gifski/Shared.swift; sourceTree = SOURCE_ROOT; usesTabs = 1; };
 		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; usesTabs = 1; };
@@ -164,6 +166,7 @@
 			children = (
 				0E79251F2329BDBE00058B94 /* ShareViewController.swift */,
 				0E7925212329BDBE00058B94 /* ShareViewController.xib */,
+				E3E9A7D5256EBE0800E2B9FD /* Utilities.swift */,
 				0E7925242329BDBE00058B94 /* Info.plist */,
 				0E7925252329BDBE00058B94 /* ShareExtension.entitlements */,
 			);
@@ -433,6 +436,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E3E9A7D6256EBE0800E2B9FD /* Utilities.swift in Sources */,
 				E3FC365E2377FA9F00CF7C59 /* Shared.swift in Sources */,
 				0E7925202329BDBE00058B94 /* ShareViewController.swift in Sources */,
 			);
@@ -806,7 +810,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
-				branch = "6.34-spm-beta";
+				branch = "7.0-spm-beta";
 				kind = branch;
 			};
 		};

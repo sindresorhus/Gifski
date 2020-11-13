@@ -15,12 +15,13 @@ final class ShareViewController: NSViewController {
 		errorButtonOk.isHidden = true
 
 		guard
-			let item = (extensionContext?.inputItems[0] as? NSExtensionItem)?.attachments?.first
+			let item = extensionContext?.attachments.first
 		else {
 			presentError(message: "The shared item does not contain an attachment.")
 			return
 		}
 
+		// TODO: Use `UTType` here when targeting macOS 11.
 		var typeIdentifier: String
 		if item.hasItemConformingToTypeIdentifier("public.mpeg-4") {
 			typeIdentifier = "public.mpeg-4"

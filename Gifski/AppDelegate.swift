@@ -4,7 +4,7 @@ import FirebaseCore
 import FirebaseCrashlytics
 import DockProgress
 
-@NSApplicationMain
+@main
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
 
