@@ -102,6 +102,11 @@ fn bin_main() -> BinResult<()> {
                             .empty_values(false)
                             .use_delimiter(false)
                             .required(true))
+                        .arg(Arg::with_name("times-shown")
+                            .long("times-shown")
+                            .help("Number of times the Animation is shown; 1 show once, 2 show twice.. etc..")
+                            .takes_value(true)
+                            .value_name("num"))
                         .get_matches_from(wild::args_os());
 
     let mut frames: Vec<_> = matches.values_of("FRAMES").ok_or("Missing files")?.collect();
@@ -111,12 +116,13 @@ fn bin_main() -> BinResult<()> {
     let frames: Vec<_> = frames.into_iter().map(|s| PathBuf::from(s)).collect();
 
     let output_path = Path::new(matches.value_of_os("output").ok_or("Missing output")?);
-    let settings = gifski::Settings {
+    let mut settings = gifski::Settings {
         width: parse_opt(matches.value_of("width")).map_err(|_| "Invalid width")?,
         height: parse_opt(matches.value_of("height")).map_err(|_| "Invalid height")?,
         quality: parse_opt(matches.value_of("quality")).map_err(|_| "Invalid quality")?.unwrap_or(100),
         once: matches.is_present("once"),
         fast: matches.is_present("fast"),
+        times_shown: parse_opt(matches.value_of("times-shown")).map_err(|_| "Invalid times-shown")?.unwrap_or(0),
     };
     let quiet = matches.is_present("quiet");
     let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;
@@ -130,7 +136,10 @@ fn bin_main() -> BinResult<()> {
     } else if settings.quality > 100 {
         Err("Quality 100 is maximum")?;
     }
-
+    if settings.times_shown > 0 {
+        settings.once = true;
+    }
+    
     check_if_path_exists(&frames[0])?;
 
     let mut decoder = if frames.len() == 1 {

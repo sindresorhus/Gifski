@@ -49,6 +49,8 @@ pub struct GifskiSettings {
     pub once: bool,
     /// Lower quality, but faster encode.
     pub fast: bool,
+    /// If once is true, times_shown is the number of times the animation is shown
+    pub times_shown: u16,
 }
 
 #[repr(C)]
@@ -89,6 +91,7 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
         quality: settings.quality,
         once: settings.once,
         fast: settings.fast,
+        times_shown: settings.times_shown,
     };
 
     if let Ok((collector, writer)) = new(s) {
@@ -418,6 +421,7 @@ fn c_cb() {
             quality: 100,
             once: true,
             fast: false,
+            loops: 1,
         })
     };
     assert!(!g.is_null());
@@ -451,6 +455,7 @@ fn cant_write_after_finish() {
         quality: 100,
         once: true,
         fast: false,
+        times_shown: 1,
     })};
     assert!(!g.is_null());
     let mut called = false;
@@ -472,6 +477,7 @@ fn c_write_failure_propagated() {
         quality: 100,
         once: true,
         fast: false,
+        times_shown: 1,
     })};
     assert!(!g.is_null());
     unsafe extern fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
@@ -491,6 +497,7 @@ fn cant_write_twice() {
         quality: 100,
         once: true,
         fast: false,
+        times_shown: 1,
     })};
     assert!(!g.is_null());
     unsafe extern "C" fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
@@ -509,6 +516,7 @@ fn c_incomplete() {
         quality: 100,
         once: false,
         fast: true,
+        times_shown: 0,
     })};
 
     let rgb: *const RGB8 = ptr::null();

@@ -29,7 +29,11 @@ impl<W: Write> Encoder for RustEncoder<W> {
             None => {
                 let w = writer.take().unwrap();
                 let mut enc = gif::Encoder::new(w, image.width() as _, image.height() as _, &[])?;
-                if !settings.once {
+                if settings.once {
+                    if settings.times_shown > 0 {
+                        enc.write_extension(gif::ExtensionData::Repetitions(gif::Repeat::Finite(settings.times_shown - 1)))?;
+                    }
+                } else {
                     enc.write_extension(gif::ExtensionData::Repetitions(gif::Repeat::Infinite))?;
                 }
                 self.gif_enc.get_or_insert(enc)

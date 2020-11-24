@@ -34,7 +34,7 @@ natord = "1.0.9"
 quick-error = "1.2.3"
 
 [dependencies.ffmpeg]
-rev = "61a668f5e105232df4af367d332bbd54de3d9f13"
+rev = "4da6d270cdaa868e5488144ed73bfaabe329cfcb"
 optional = true
 git = "https://github.com/kornelski/rust-ffmpeg.git"
 features = ["codec", "format", "filter", "software-resampling", "software-scaling", "resampling" ]
