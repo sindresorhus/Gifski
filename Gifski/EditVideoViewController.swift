@@ -99,7 +99,7 @@ final class EditVideoViewController: NSViewController {
 		setUpDropdowns()
 		setUpSliders()
 		setUpWidthAndHeightTextFields()
-		setUpTimesShownTextField()
+		setUpLoopCountControls()
 		setUpDropView()
 		setUpTrimmingView()
 	}
@@ -317,10 +317,14 @@ final class EditVideoViewController: NSViewController {
 		updateTextFieldsMinMax()
 	}
 
-	private func setUpTimesShownTextField() {
+	private func setUpLoopCountControls() {
 		loopCountTextField.onBlur = { [weak self] loopCount in
+			guard let self = self else {
+				return
+			}
+			self.loopCountTextField.stringValue = "\(loopCount)"
 			if loopCount > 0 {
-				self?.loopCheckbox.state = .off
+				self.loopCheckbox.state = .off
 			}
 		}
 
@@ -328,10 +332,21 @@ final class EditVideoViewController: NSViewController {
 			guard let self = self else {
 				return
 			}
-
+			self.loopCountTextField.stringValue = "\(loopCount)"
 			if loopCount > 0 {
 				self.loopCheckbox.state = .off
 			}
+		}
+
+		loopCheckbox.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
+			if self.loopCheckbox.state == .on {
+				self.loopCountTextField.stringValue = "0"
+			}
+			self.loopCountTextField.isEnabled = (self.loopCheckbox.state == .off)
 		}
 	}
 
