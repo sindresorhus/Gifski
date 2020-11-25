@@ -17,11 +17,13 @@ Gifski supports all the video formats that macOS supports (`.mp4` or `.mov` with
 
 **[Blog post](https://blog.sindresorhus.com/gifski-972692460aa5)** &nbsp;&nbsp; **[Product Hunt](https://www.producthunt.com/posts/gifski-2)**
 
-Requires macOS 10.14 or later.
-
 ## Download
 
 [![](https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/macappstore-lrg.svg)](https://apps.apple.com/us/app/gifski/id1351639930?mt=12)
+
+Requires macOS 10.14 or later.
+
+*You can get the last macOS 10.13 compatible version [here](https://github.com/sindresorhus/Gifski/files/3991913/Gifski.2.4.0.-.High.Sierra.zip) (Gifski 2.4.0).*
 
 ## Features
 
@@ -91,10 +93,6 @@ Ensure the images are named in the format `image_000001.png` and adjust the `-fr
 #### Can I contribute localizations?
 
 We don't have any immediate plans to localize the app.
-
-#### Can you support macOS 10.13?
-
-No, but you can get the last compatible version [here](https://github.com/sindresorhus/Gifski/files/3991913/Gifski.2.4.0.-.High.Sierra.zip).
 
 #### Can you support Windows/Linux?
 
