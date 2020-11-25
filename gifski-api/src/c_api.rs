@@ -421,7 +421,7 @@ fn c_cb() {
             quality: 100,
             once: true,
             fast: false,
-            loops: 1,
+            loop_count: 1,
         })
     };
     assert!(!g.is_null());
