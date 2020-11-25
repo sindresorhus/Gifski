@@ -322,10 +322,11 @@ final class EditVideoViewController: NSViewController {
 
 	private func setUpTimesShownTextField() {
 		timesShownTextField.onBlur = { [weak self] timesShown in
-			self?.loopCheckbox.isEnabled = (timesShown == 0)
+			self?.loopCheckbox.isEnabled = timesShown == 0
 			self?.timesShown = timesShown == 0 ? 1 : Int(self?.timesShownTextField.intValue ?? 1) + 1
+
 			if timesShown > 0 {
-				self?.loopCheckbox.state = NSControl.StateValue.off
+				self?.loopCheckbox.state = .off
 			}
 		}
 
@@ -334,10 +335,11 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			self.loopCheckbox.isEnabled = (timesShown == 0)
+			self.loopCheckbox.isEnabled = timesShown == 0
 			self.timesShown = timesShown == 0 ? 1 : Int(self.timesShownTextField.intValue) + 1
+
 			if timesShown > 0 {
-				self.loopCheckbox.state = NSControl.StateValue.off
+				self.loopCheckbox.state = .off
 			}
 		}
 	}
