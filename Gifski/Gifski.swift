@@ -45,6 +45,7 @@ final class Gifski {
 		var dimensions: CGSize?
 		var frameRate: Int?
 		var loopGif: Bool = true
+		var timesShown: Int = 9999
 	}
 
 	private var gifData = NSMutableData()
@@ -97,7 +98,8 @@ final class Gifski {
 			height: UInt32(conversion.dimensions?.height ?? 0),
 			quality: UInt8(conversion.quality * 100),
 			once: !conversion.loopGif,
-			fast: false
+			fast: false,
+			times_shown: UInt16(conversion.timesShown)
 		)
 
 		self.gifski = GifskiWrapper(settings: settings)

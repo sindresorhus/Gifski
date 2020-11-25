@@ -31,6 +31,7 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
 	@IBOutlet private var cancelButton: NSButton!
 	@IBOutlet private var playerViewWrapper: NSView!
+	@IBOutlet private var timesShownTextField: IntTextField!
 
 	var inputUrl: URL!
 	var asset: AVAsset!
@@ -40,6 +41,9 @@ final class EditVideoViewController: NSViewController {
 	private var predefinedSizes: [PredefinedSizeItem]!
 	private let formatter = ByteCountFormatter()
 	private var playerViewController: TrimmingAVPlayerViewController!
+
+	// a loop of 1 is times shown of 2..  a loop of 2 is timesShown of 3
+	private var timesShown: Int = 1
 
 	private var timeRange: ClosedRange<Double>? { playerViewController?.timeRange }
 
@@ -57,7 +61,8 @@ final class EditVideoViewController: NSViewController {
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue,
-			loopGif: Defaults[.loopGif]
+			loopGif: Defaults[.loopGif],
+			timesShown: timesShown
 		)
 	}
 
@@ -97,6 +102,7 @@ final class EditVideoViewController: NSViewController {
 		setUpDropdowns()
 		setUpSliders()
 		setUpWidthAndHeightTextFields()
+		setUpTimesShownTextField()
 		setUpDropView()
 		setUpTrimmingView()
 	}
@@ -314,6 +320,28 @@ final class EditVideoViewController: NSViewController {
 		updateTextFieldsMinMax()
 	}
 
+	private func setUpTimesShownTextField() {
+		timesShownTextField.onBlur = { [weak self] timesShown in
+			self?.loopCheckbox.isEnabled = (timesShown == 0)
+			self?.timesShown = timesShown == 0 ? 1 : Int(self?.timesShownTextField.intValue ?? 1) + 1
+			if timesShown > 0 {
+				self?.loopCheckbox.state = NSControl.StateValue.off
+			}
+		}
+
+		timesShownTextField.onValueChange = { [weak self] timesShown in
+			guard let self = self else {
+				return
+			}
+
+			self.loopCheckbox.isEnabled = (timesShown == 0)
+			self.timesShown = timesShown == 0 ? 1 : Int(self.timesShownTextField.intValue) + 1
+			if timesShown > 0 {
+				self.loopCheckbox.state = NSControl.StateValue.off
+			}
+		}
+	}
+
 	private func setUpDropView() {
 		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
 		add(childController: videoDropController)
@@ -342,7 +370,8 @@ final class EditVideoViewController: NSViewController {
 		heightTextField.nextKeyView = dimensionsTypeDropdown
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		frameRateSlider.nextKeyView = qualitySlider
-		qualitySlider.nextKeyView = loopCheckbox
+		qualitySlider.nextKeyView = timesShownTextField
+		timesShownTextField.nextKeyView = loopCheckbox
 		loopCheckbox.nextKeyView = cancelButton
 	}
 
@@ -351,6 +380,7 @@ final class EditVideoViewController: NSViewController {
 		let heightMinMax = resizableDimensions.heightMinMax
 		widthTextField.minMax = Int(widthMinMax.lowerBound)...Int(widthMinMax.upperBound)
 		heightTextField.minMax = Int(heightMinMax.lowerBound)...Int(heightMinMax.upperBound)
+		timesShownTextField.minMax = 0...9999
 	}
 
 	private func dimensionsUpdated() {
