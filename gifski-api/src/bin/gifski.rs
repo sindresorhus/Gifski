@@ -102,9 +102,9 @@ fn bin_main() -> BinResult<()> {
                             .empty_values(false)
                             .use_delimiter(false)
                             .required(true))
-                        .arg(Arg::with_name("times-shown")
-                            .long("times-shown")
-                            .help("Number of times the Animation is shown; 1 show once, 2 show twice.. etc..")
+                        .arg(Arg::with_name("loop-count")
+                            .long("loop-count")
+                            .help("Number of loops the Animation is shown")
                             .takes_value(true)
                             .value_name("num"))
                         .get_matches_from(wild::args_os());
@@ -122,7 +122,7 @@ fn bin_main() -> BinResult<()> {
         quality: parse_opt(matches.value_of("quality")).map_err(|_| "Invalid quality")?.unwrap_or(100),
         once: matches.is_present("once"),
         fast: matches.is_present("fast"),
-        times_shown: parse_opt(matches.value_of("times-shown")).map_err(|_| "Invalid times-shown")?.unwrap_or(0),
+        loop_count: parse_opt(matches.value_of("loop-count")).map_err(|_| "Invalid loop-count")?.unwrap_or(0),
     };
     let quiet = matches.is_present("quiet");
     let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;
@@ -136,7 +136,7 @@ fn bin_main() -> BinResult<()> {
     } else if settings.quality > 100 {
         Err("Quality 100 is maximum")?;
     }
-    if settings.times_shown > 0 {
+    if settings.loop_count > 0 {
         settings.once = true;
     }
     

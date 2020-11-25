@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17506" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17506"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -15,10 +14,10 @@
                 <outlet property="frameRateSlider" destination="Rej-Dl-z8Y" id="cIA-dv-KJw"/>
                 <outlet property="heightTextField" destination="bzf-LM-SxO" id="67N-9X-vzq"/>
                 <outlet property="loopCheckbox" destination="Mk2-3o-6CT" id="jrz-yA-sLw"/>
+                <outlet property="loopCountTextField" destination="taC-H3-jcv" id="Rdc-pf-FRN"/>
                 <outlet property="playerViewWrapper" destination="64m-0V-WWu" id="6cd-p2-aMe"/>
                 <outlet property="predefinedSizesDropdown" destination="BWw-q9-45K" id="mLx-BM-G3f"/>
                 <outlet property="qualitySlider" destination="wmm-UU-g6g" id="RlB-Ty-dIN"/>
-                <outlet property="timesShownTextField" destination="taC-H3-jcv" id="Rdc-pf-FRN"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
                 <outlet property="widthTextField" destination="Jqk-p7-DIM" id="uiL-Sw-PE5"/>
             </connections>

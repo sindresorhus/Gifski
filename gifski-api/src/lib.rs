@@ -55,8 +55,8 @@ pub struct Settings {
     pub once: bool,
     /// Lower quality, but faster encode
     pub fast: bool,
-    /// If once is true, times_shown is the number of times the animation is shown
-    pub times_shown: u16,
+    /// If once is true, loop_count is the number of loops the animation is shown
+    pub loop_count: u16,
 }
 
 impl Settings {
