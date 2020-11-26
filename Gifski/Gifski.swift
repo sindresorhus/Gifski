@@ -97,7 +97,7 @@ final class Gifski {
 			width: UInt32(conversion.dimensions?.width ?? 0),
 			height: UInt32(conversion.dimensions?.height ?? 0),
 			quality: UInt8(conversion.quality * 100),
-			once: !conversion.loopGif,
+			once: !conversion.loopGif && (conversion.loopCount ?? 0) == 0,
 			fast: false,
 			loop_count: UInt16(conversion.loopCount ?? 0)
 		)
