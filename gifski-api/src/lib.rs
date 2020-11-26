@@ -45,17 +45,17 @@ type DecodedImage = CatResult<(ImgVec<RGBA8>, f64)>;
 
 #[derive(Copy, Clone, Default)]
 pub struct Settings {
-    /// Resize to max this width if set
+    /// Resize to max this width if set.
     pub width: Option<u32>,
     /// Resize to max this height if width is set. Note that aspect ratio is not preserved.
     pub height: Option<u32>,
     /// 1-100
     pub quality: u8,
-    /// If true, looping is disabled
+    /// If true, looping is disabled.
     pub once: bool,
-    /// Lower quality, but faster encode
+    /// Lower quality, but faster encode.
     pub fast: bool,
-    /// If once is true, loop_count is the number of loops the animation is shown
+    /// The loop count if once is false. 0 is forever.
     pub loop_count: u16,
 }
 

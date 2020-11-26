@@ -49,7 +49,7 @@ pub struct GifskiSettings {
     pub once: bool,
     /// Lower quality, but faster encode.
     pub fast: bool,
-    /// If once is true, times_shown is the number of times the animation is shown
+    /// the loop count if once is false. 0 is forever.
     pub loop_count: u16,
 }
 

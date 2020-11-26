@@ -54,7 +54,7 @@ typedef struct GifskiSettings {
    */
   bool fast;
   /**
-   * 0+, but useful range is 1-10. Recommended to set to 5. If loop_count is > 0 once should be set to true
+   * 0+, but useful range is 0-10. 0 is loop forever. Recommended to set to 0.
    */
   uint16_t loop_count;
 } GifskiSettings;

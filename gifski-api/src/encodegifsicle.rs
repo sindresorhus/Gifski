@@ -76,12 +76,8 @@ impl Encoder for Gifsicle<'_> {
             };
             gfs.screen_width = image.width() as _;
             gfs.screen_height = image.height() as _;
-            if settings.once {
-                // -1 is no looping, 0 is loop forever, else loop X number of times
-                gfs.loopcount = if settings.loop_count == 0 { -1 } else { settings.loop_count.into() };
-            } else {
-                gfs.loopcount = 0; // forever
-            }
+            // -1 is no looping, 0 is loop forever, else loop X number of times
+            gfs.loopcount = if settings.once { -1 } else { settings.loop_count.into() };
             unsafe {
                 self.gif_writer = Gif_IncrementalWriteFileInit(gfs, &self.info, ptr::null_mut());
                 if self.gif_writer.is_null() {
