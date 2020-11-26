@@ -230,13 +230,9 @@
                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="x03-mN-zhh">
-                                        <rect key="frame" x="151" y="14" width="19" height="27"/>
-                                        <stepperCell key="cell" continuous="YES" alignment="left" maxValue="9999" id="d96-4O-hec"/>
-                                    </stepper>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Mk2-3o-6CT">
-                                        <rect key="frame" x="255" y="19" width="68" height="18"/>
-                                        <buttonCell key="cell" type="check" title="Forever" bezelStyle="regularSquare" imagePosition="left" inset="2" id="c3l-oV-Y0b">
+                                        <rect key="frame" x="198" y="19" width="102" height="18"/>
+                                        <buttonCell key="cell" type="check" title="Loop Forever" bezelStyle="regularSquare" imagePosition="left" inset="2" id="c3l-oV-Y0b">
                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -249,6 +245,13 @@
                                             </binding>
                                         </connections>
                                     </button>
+                                    <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="x03-mN-zhh">
+                                        <rect key="frame" x="159" y="14" width="19" height="27"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="13" id="hkR-an-gRW"/>
+                                        </constraints>
+                                        <stepperCell key="cell" continuous="YES" alignment="left" maxValue="100" id="d96-4O-hec"/>
+                                    </stepper>
                                 </subviews>
                                 <constraints>
                                     <constraint firstAttribute="trailing" secondItem="5Ke-gz-J2u" secondAttribute="trailing" constant="20" symbolic="YES" id="2kR-fz-ftG"/>
@@ -266,7 +269,7 @@
                                     <constraint firstItem="VFJ-xS-F2B" firstAttribute="firstBaseline" secondItem="Mk2-3o-6CT" secondAttribute="baseline" id="S08-Db-IIm"/>
                                     <constraint firstItem="5Ke-gz-J2u" firstAttribute="firstBaseline" secondItem="Fxs-GY-NUz" secondAttribute="firstBaseline" id="YcA-vG-aBS"/>
                                     <constraint firstItem="VFJ-xS-F2B" firstAttribute="baseline" secondItem="taC-H3-jcv" secondAttribute="firstBaseline" id="cF9-z1-Ege"/>
-                                    <constraint firstItem="x03-mN-zhh" firstAttribute="leading" secondItem="taC-H3-jcv" secondAttribute="trailing" id="crK-jR-hpb"/>
+                                    <constraint firstItem="x03-mN-zhh" firstAttribute="leading" secondItem="taC-H3-jcv" secondAttribute="trailing" constant="8" id="crK-jR-hpb"/>
                                     <constraint firstItem="VFJ-xS-F2B" firstAttribute="leading" secondItem="iFf-bP-MLi" secondAttribute="leading" id="eAS-rc-ZTd"/>
                                     <constraint firstItem="VFJ-xS-F2B" firstAttribute="baseline" secondItem="taC-H3-jcv" secondAttribute="baseline" id="eXM-GQ-78a"/>
                                     <constraint firstItem="5Ke-gz-J2u" firstAttribute="leading" secondItem="Rej-Dl-z8Y" secondAttribute="trailing" constant="8" symbolic="YES" id="eXk-Bv-HWg"/>
@@ -274,7 +277,7 @@
                                     <constraint firstItem="Fxs-GY-NUz" firstAttribute="top" secondItem="d7l-jL-VWi" secondAttribute="top" constant="18" id="ivK-Jk-HzZ"/>
                                     <constraint firstItem="taC-H3-jcv" firstAttribute="leading" secondItem="VFJ-xS-F2B" secondAttribute="trailing" constant="8" symbolic="YES" id="kfm-tz-40e"/>
                                     <constraint firstItem="x03-mN-zhh" firstAttribute="centerY" secondItem="taC-H3-jcv" secondAttribute="centerY" id="qQQ-L0-l5o"/>
-                                    <constraint firstItem="Mk2-3o-6CT" firstAttribute="leading" secondItem="wmm-UU-g6g" secondAttribute="leading" constant="173" id="qeA-E1-JIA"/>
+                                    <constraint firstItem="Mk2-3o-6CT" firstAttribute="leading" secondItem="wmm-UU-g6g" secondAttribute="leading" constant="116" id="qeA-E1-JIA"/>
                                     <constraint firstItem="Fxs-GY-NUz" firstAttribute="firstBaseline" secondItem="Rej-Dl-z8Y" secondAttribute="firstBaseline" id="tLB-lC-RNe"/>
                                 </constraints>
                             </view>
