@@ -323,8 +323,10 @@ final class EditVideoViewController: NSViewController {
 			guard let self = self else {
 				return
 			}
+
 			self.loopCountTextField.stringValue = "\(loopCount)"
 			self.loopCountStepper.intValue = Int32(loopCount)
+
 			if loopCount > 0 {
 				self.loopCheckbox.state = .off
 			}
@@ -334,9 +336,11 @@ final class EditVideoViewController: NSViewController {
 			guard let self = self else {
 				return
 			}
+
 			let validLoopCount = loopCount.clamped(to: 0...100)
 			self.loopCountTextField.stringValue = "\(validLoopCount)"
 			self.loopCountStepper.intValue = Int32(validLoopCount)
+
 			if validLoopCount > 0 {
 				self.loopCheckbox.state = .off
 			}
@@ -351,8 +355,9 @@ final class EditVideoViewController: NSViewController {
 				self.loopCountTextField.stringValue = "0"
 				self.loopCountStepper.intValue = 0
 			}
-			self.loopCountTextField.isEnabled = (self.loopCheckbox.state == .off)
-			self.loopCountStepper.isEnabled = (self.loopCheckbox.state == .off)
+
+			self.loopCountTextField.isEnabled = self.loopCheckbox.state == .off
+			self.loopCountStepper.isEnabled = self.loopCheckbox.state == .off
 		}
 
 		loopCountStepper.onAction = { [weak self] _ in
