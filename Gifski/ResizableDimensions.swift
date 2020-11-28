@@ -110,16 +110,6 @@ final class ResizableDimensions: Copyable {
 		return scalesEqual(validated(scale: scale), scale)
 	}
 
-	func validate(newWidth width: CGFloat) -> Bool {
-		let scale = calculateScale(usingWidth: width)
-		return scalesEqual(validated(scale: scale), scale)
-	}
-
-	func validate(newHeight height: CGFloat) -> Bool {
-		let scale = calculateScale(usingHeight: height)
-		return scalesEqual(validated(scale: scale), scale)
-	}
-
 	private func scalesEqual(_ scale1: CGFloat, _ scale2: CGFloat) -> Bool {
 		scale1.isAlmostEqual(to: scale2, tolerance: 0.001)
 	}

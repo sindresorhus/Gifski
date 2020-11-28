@@ -30,11 +30,6 @@ class DropView<CompletionType>: SSView {
 		}
 	}
 
-	func fadeInVideoDropLabel() {
-		dropLabel.fadeIn()
-		dropView?.fadeIn()
-	}
-
 	var acceptedTypes: [NSPasteboard.PasteboardType] {
 		unimplemented()
 	}

@@ -158,6 +158,7 @@ final class ConversionCompletedViewController: NSViewController {
 
 		let panel = NSSavePanel()
 		panel.canCreateDirectories = true
+		// TODO: Use `.allowedContentTypes` here when targeting macOS 11.
 		panel.allowedFileTypes = [FileType.gif.identifier]
 		panel.directoryURL = inputUrl.directoryURL
 		panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
