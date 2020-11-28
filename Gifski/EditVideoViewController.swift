@@ -336,7 +336,7 @@ final class EditVideoViewController: NSViewController {
 			guard let self = self else {
 				return
 			}
-			let validLoopCount = loopCount.clamped(to: Constants.repeatCountRange)
+			let validLoopCount = loopCount.clamped(to: Constants.loopCountRange)
 			self.loopCountTextField.stringValue = "\(validLoopCount)"
 			self.loopCountStepper.intValue = Int32(validLoopCount)
 
@@ -406,7 +406,7 @@ final class EditVideoViewController: NSViewController {
 		let heightMinMax = resizableDimensions.heightMinMax
 		widthTextField.minMax = Int(widthMinMax.lowerBound)...Int(widthMinMax.upperBound)
 		heightTextField.minMax = Int(heightMinMax.lowerBound)...Int(heightMinMax.upperBound)
-		loopCountTextField.minMax = Constants.repeatCountRange
+		loopCountTextField.minMax = Constants.loopCountRange
 	}
 
 	private func dimensionsUpdated() {

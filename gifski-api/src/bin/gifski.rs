@@ -116,7 +116,7 @@ fn bin_main() -> BinResult<()> {
     let frames: Vec<_> = frames.into_iter().map(|s| PathBuf::from(s)).collect();
 
     let output_path = Path::new(matches.value_of_os("output").ok_or("Missing output")?);
-    let mut settings = gifski::Settings {
+    let settings = gifski::Settings {
         width: parse_opt(matches.value_of("width")).map_err(|_| "Invalid width")?,
         height: parse_opt(matches.value_of("height")).map_err(|_| "Invalid height")?,
         quality: parse_opt(matches.value_of("quality")).map_err(|_| "Invalid quality")?.unwrap_or(100),

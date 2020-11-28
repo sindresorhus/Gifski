@@ -5,7 +5,7 @@ struct Constants {
 	static let defaultWindowSize = CGSize(width: 360, height: 240)
 	static let backgroundImage = NSImage(named: "BackgroundImage")!
 	static let allowedFrameRate = 5.0...50.0
-	static let repeatCountRange = 0...100
+	static let loopCountRange = 0...100
 }
 
 extension NSColor {

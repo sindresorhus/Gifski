@@ -230,13 +230,6 @@
                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="x03-mN-zhh">
-                                        <rect key="frame" x="159" y="13" width="19" height="28"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="13" id="hkR-an-gRW"/>
-                                        </constraints>
-                                        <stepperCell key="cell" continuous="YES" alignment="left" maxValue="100" id="d96-4O-hec"/>
-                                    </stepper>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Mk2-3o-6CT">
                                         <rect key="frame" x="197" y="20" width="102" height="18"/>
                                         <buttonCell key="cell" type="check" title="Loop Forever" bezelStyle="regularSquare" imagePosition="left" inset="2" id="c3l-oV-Y0b">
@@ -252,6 +245,13 @@
                                             </binding>
                                         </connections>
                                     </button>
+                                    <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="x03-mN-zhh">
+                                        <rect key="frame" x="159" y="14" width="19" height="28"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="13" id="hkR-an-gRW"/>
+                                        </constraints>
+                                        <stepperCell key="cell" continuous="YES" alignment="left" maxValue="100" id="d96-4O-hec"/>
+                                    </stepper>
                                 </subviews>
                                 <constraints>
                                     <constraint firstAttribute="trailing" secondItem="5Ke-gz-J2u" secondAttribute="trailing" constant="20" symbolic="YES" id="2kR-fz-ftG"/>
@@ -259,7 +259,7 @@
                                     <constraint firstItem="Fxs-GY-NUz" firstAttribute="leading" secondItem="iFf-bP-MLi" secondAttribute="leading" id="AOu-eR-uC7"/>
                                     <constraint firstItem="iFf-bP-MLi" firstAttribute="top" secondItem="Fxs-GY-NUz" secondAttribute="bottom" constant="18" id="BdX-Ip-Sfw"/>
                                     <constraint firstItem="VFJ-xS-F2B" firstAttribute="centerY" secondItem="taC-H3-jcv" secondAttribute="centerY" id="Ce4-nQ-SIA"/>
-                                    <constraint firstItem="x03-mN-zhh" firstAttribute="top" secondItem="wmm-UU-g6g" secondAttribute="bottom" constant="16" id="Cf3-5u-qEI"/>
+                                    <constraint firstItem="x03-mN-zhh" firstAttribute="top" secondItem="wmm-UU-g6g" secondAttribute="bottom" constant="15" id="Cf3-5u-qEI"/>
                                     <constraint firstItem="Fxs-GY-NUz" firstAttribute="trailing" secondItem="iFf-bP-MLi" secondAttribute="trailing" id="HTv-ji-VLV"/>
                                     <constraint firstItem="iFf-bP-MLi" firstAttribute="baseline" secondItem="wmm-UU-g6g" secondAttribute="baseline" id="JaM-6Y-r2w"/>
                                     <constraint firstItem="Fxs-GY-NUz" firstAttribute="leading" secondItem="d7l-jL-VWi" secondAttribute="leading" constant="20" symbolic="YES" id="LrM-Ia-FKl"/>
