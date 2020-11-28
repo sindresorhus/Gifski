@@ -132,7 +132,7 @@ extension NSView {
 
 
 extension NSWindow {
-	private struct AssociatedKeys {
+	private enum AssociatedKeys {
 		static let observationToken = ObjectAssociation<NSKeyValueObservation?>()
 	}
 
@@ -1141,7 +1141,7 @@ extension NSView {
 	Used to map logical edges to its representing `NSView` layout anchors.
 	This type can be used for all auto-layout functions.
 	*/
-	struct ConstraintEdge {
+	enum ConstraintEdge {
 		enum Vertical {
 			case top
 			case bottom
@@ -1298,31 +1298,6 @@ final class MonospacedLabel: Label {
 		if let font = font {
 			self.font = .monospacedDigitSystemFont(ofSize: CGFloat(font.size), weight: font.weight)
 		}
-	}
-}
-
-
-extension NSView {
-	/// UIKit polyfill.
-	var center: CGPoint {
-		get { frame.center }
-		set {
-			frame.center = newValue
-		}
-	}
-
-	func centerInRect(_ rect: CGRect) {
-		center = CGPoint(x: rect.midX, y: rect.midY)
-	}
-
-	/// Passing in a window can be useful when the view is not yet added to a window.
-	/// If you don't pass in a window, it will use the window the view is in.
-	func centerInWindow(_ window: NSWindow? = nil) {
-		guard let view = (window ?? self.window)?.contentView else {
-			return
-		}
-
-		centerInRect(view.bounds)
 	}
 }
 
@@ -1507,7 +1482,7 @@ extension ObjectAssociation {
 extension NSMenuItem {
 	typealias ActionClosure = ((NSMenuItem) -> Void)
 
-	private struct AssociatedKeys {
+	private enum AssociatedKeys {
 		static let onActionClosure = ObjectAssociation<ActionClosure?>()
 	}
 
@@ -1541,7 +1516,7 @@ extension NSMenuItem {
 extension NSControl {
 	typealias ActionClosure = ((NSControl) -> Void)
 
-	private struct AssociatedKeys {
+	private enum AssociatedKeys {
 		static let onActionClosure = ObjectAssociation<ActionClosure?>()
 	}
 
@@ -1582,34 +1557,6 @@ extension CAMediaTimingFunction {
 
 
 extension NSView {
-	/**
-	```
-	let label = NSTextField(labelWithString: "Unicorn")
-	view.addSubviewByFadingIn(label)
-	```
-	*/
-	func addSubviewByFadingIn(
-		_ view: NSView,
-		duration: TimeInterval = 1,
-		completion: (() -> Void)? = nil
-	) {
-		NSAnimationContext.runAnimationGroup({ context in
-			context.duration = duration
-			animator().addSubview(view)
-		}, completionHandler: completion)
-	}
-
-	func removeSubviewByFadingOut(
-		_ view: NSView,
-		duration: TimeInterval = 1,
-		completion: (() -> Void)? = nil
-	) {
-		NSAnimationContext.runAnimationGroup({ context in
-			context.duration = duration
-			view.animator().removeFromSuperview()
-		}, completionHandler: completion)
-	}
-
 	static func animate(
 		duration: TimeInterval = 1,
 		delay: TimeInterval = 0,
@@ -1935,6 +1882,7 @@ extension URL {
 }
 
 
+// TODO: Use UTType when targeting macOS 11.
 extension URL {
 	/**
 	Check if the file conforms to the given type identifier.
@@ -1951,9 +1899,6 @@ extension URL {
 
 		return UTTypeConformsTo(typeIdentifier as CFString, parentTypeIdentifier as CFString)
 	}
-
-	/// - Important: This doesn't guarantee it's a video. A video container could contain only an audio track. Use the `AVAsset` properties to ensure it's something you can use.
-	var isVideo: Bool { conformsTo(typeIdentifier: kUTTypeMovie as String) }
 }
 
 
@@ -3323,7 +3268,7 @@ extension AVPlayer {
 
 
 extension AVPlayer {
-	private struct AssociatedKeys {
+	private enum AssociatedKeys {
 		static let observationToken = ObjectAssociation<NSObjectProtocol?>()
 		static let originalActionAtItemEnd = ObjectAssociation<ActionAtItemEnd?>()
 	}
@@ -3677,5 +3622,14 @@ extension String {
 		} else {
 			return self
 		}
+	}
+}
+
+
+extension NSExtensionContext {
+	var inputItemsTyped: [NSExtensionItem] { inputItems as! [NSExtensionItem] }
+
+	var attachments: [NSItemProvider] {
+		inputItemsTyped.compactMap(\.attachments).flatten()
 	}
 }
