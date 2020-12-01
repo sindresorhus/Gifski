@@ -20,9 +20,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 				"NSFullScreenMenuItemEverywhere": false
 			]
 		)
-
-		// TODO: Enable this again when https://github.com/sindresorhus/DockProgress/issues/11 is fixed.
-		// DockProgress.style = .circle(radius: 55)
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {

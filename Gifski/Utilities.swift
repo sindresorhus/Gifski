@@ -1620,6 +1620,11 @@ extension String {
 }
 
 
+extension NSAppearance {
+	var isDarkMode: Bool { bestMatch(from: [.darkAqua, .aqua]) == .darkAqua }
+}
+
+
 enum SSApp {
 	static let id = Bundle.main.bundleIdentifier!
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
@@ -1637,6 +1642,8 @@ enum SSApp {
 			return true
 		}
 	}()
+
+	static var isDarkMode: Bool { NSApp.effectiveAppearance.isDarkMode }
 
 	static func openSendFeedbackPage() {
 		let metadata =
