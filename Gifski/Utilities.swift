@@ -41,7 +41,7 @@ extension NSView {
 
 
 /// This is useful as `awakeFromNib` is not called for programatically created views.
-class SSView: NSView {
+class SSView: NSView { // swiftlint:disable:this final_class
 	var didAppearWasCalled = false
 
 	/// Meant to be overridden in subclasses
@@ -1244,7 +1244,7 @@ extension NSFont {
 let foo = Label(text: "Foo")
 ```
 */
-class Label: NSTextField {
+class Label: NSTextField { // swiftlint:disable:this final_class
 	var text: String {
 		get { stringValue }
 		set {
@@ -1314,7 +1314,6 @@ foo()
 //=> "foo() in main.swift:1 has not been implemented"
 ```
 */
-// swiftlint:disable:next unavailable_function
 func unimplemented(
 	function: StaticString = #function,
 	file: String = #fileID,

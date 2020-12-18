@@ -1,5 +1,6 @@
 import Cocoa
 
+// swiftlint:disable:next final_class
 class DropView<CompletionType>: SSView {
 	var onComplete: ((CompletionType) -> Void)?
 
