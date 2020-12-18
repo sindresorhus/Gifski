@@ -51,27 +51,30 @@ final class EditVideoViewController: NSViewController {
 		showOnlyOnce: true,
 		maxWidth: 300
 	)
+	
+	private var loopCount: Int {
+		/*
+		Looping values are:
+		 -1 | No loops
+		  0 | Loop forever
+		>=1 | Loop n times
+		*/
+		guard Defaults[.loopGif] else {
+			return Int(loopCountTextField.intValue) == 0 ? -1 : Int(loopCountTextField.intValue)
+		}
 
-	var conversionSettings: Gifski.Conversion {
+		return 0
+	}
+
+	private var conversionSettings: Gifski.Conversion {
 		.init(
 			video: inputUrl,
 			timeRange: timeRange,
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue,
-			loopCount: setLoopCountValue()
+			loopCount: loopCount
 		)
-	}
-
-	fileprivate func setLoopCountValue() -> Int {
-		// looping values are:
-		// -1 = no loops
-		// 0 = loop forever
-		// 1+ = loop x times
-		if Defaults[.loopGif] == true {
-			return 0
-		}
-		return  Int(loopCountTextField.intValue) == 0 ? -1 :  Int(loopCountTextField.intValue)
 	}
 
 	convenience init(
