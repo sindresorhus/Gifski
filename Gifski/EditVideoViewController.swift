@@ -349,6 +349,7 @@ final class EditVideoViewController: NSViewController {
 			guard let self = self else {
 				return
 			}
+
 			let validLoopCount = loopCount.clamped(to: Constants.loopCountRange)
 			self.loopCountTextField.stringValue = "\(validLoopCount)"
 			self.loopCountStepper.intValue = Int32(validLoopCount)
