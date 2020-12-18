@@ -368,10 +368,14 @@ final class EditVideoViewController: NSViewController {
 				self.loopCountTextField.stringValue = "0"
 				self.loopCountStepper.intValue = 0
 			}
-
-			self.loopCountTextField.isEnabled = self.loopCheckbox.state == .off
-			self.loopCountStepper.isEnabled = self.loopCheckbox.state == .off
 		}
+		
+		Defaults.observe(.loopGif) { [weak self] in
+			self?.loopCountTextField.isEnabled = $0.newValue == false
+			self?.loopCountStepper.isEnabled = $0.newValue == false
+		}
+		.tieToLifetime(of: self)
+
 
 		loopCountStepper.onAction = { [weak self] _ in
 			guard let self = self else {
