@@ -44,7 +44,6 @@ final class Gifski {
 		var quality: Double = 1
 		var dimensions: CGSize?
 		var frameRate: Int?
-		var loopGif: Bool = true
 		var loopCount: Int?
 	}
 
@@ -97,9 +96,8 @@ final class Gifski {
 			width: UInt32(conversion.dimensions?.width ?? 0),
 			height: UInt32(conversion.dimensions?.height ?? 0),
 			quality: UInt8(conversion.quality * 100),
-			once: !conversion.loopGif && (conversion.loopCount ?? 0) == 0,
 			fast: false,
-			loop_count: UInt16(conversion.loopCount ?? 0)
+			loop_count: Int16(conversion.loopCount ?? 0)
 		)
 
 		self.gifski = GifskiWrapper(settings: settings)
