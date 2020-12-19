@@ -447,7 +447,6 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
-		let defaultFrameRate = frameRate >= 24 ? frameRate / 2 : frameRate
-		return defaultFrameRate.clamped(to: Constants.allowedFrameRate)
+		frameRate.clamped(to: Constants.allowedFrameRate.lowerBound...20)
 	}
 }
