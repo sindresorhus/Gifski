@@ -51,7 +51,7 @@ final class EditVideoViewController: NSViewController {
 		showOnlyOnce: true,
 		maxWidth: 300
 	)
-	
+
 	private var loopCount: Int {
 		/*
 		Looping values are:
@@ -299,6 +299,19 @@ final class EditVideoViewController: NSViewController {
 		}
 	}
 
+	private func showConversionCompletedAnimationWarningIfNeeded() {
+		// TODO: This function can be removed once NSImageView respects the looping counter in the GIF header.
+		SSApp.runOnce(identifier: "convCompleteWarning") {
+			DispatchQueue.main.async { [self] in
+				NSAlert.showModal(
+					for: view.window,
+					message: "Animated GIF Preview Limitation",
+					informativeText: "The Conversion Completed Preview after processing will not reflect the image repetitions selected. However, the exported file will refelct the options selected and repeat correctly."
+				)
+			}
+		}
+	}
+
 	private func setUpWidthAndHeightTextFields() {
 		widthTextField.onBlur = { [weak self] width in
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
@@ -367,9 +380,11 @@ final class EditVideoViewController: NSViewController {
 			if self.loopCheckbox.state == .on {
 				self.loopCountTextField.stringValue = "0"
 				self.loopCountStepper.intValue = 0
+			} else {
+				self.showConversionCompletedAnimationWarningIfNeeded()
 			}
 		}
-		
+
 		Defaults.observe(.loopGif) { [weak self] in
 			self?.loopCountTextField.isEnabled = $0.newValue == false
 			self?.loopCountStepper.isEnabled = $0.newValue == false
