@@ -293,7 +293,8 @@ final class EditVideoViewController: NSViewController {
 				NSAlert.showModal(
 					for: view.window,
 					message: "Animated GIF Limitation",
-					informativeText: "Exporting GIFs with a frame rate higher than 50 is not supported as browsers will throttle and play them at 10 FPS."
+					informativeText: "Exporting GIFs with a frame rate higher than 50 is not supported as browsers will throttle and play them at 10 FPS.",
+					defaultButtonIndex: -1
 				)
 			}
 		}
@@ -309,7 +310,8 @@ final class EditVideoViewController: NSViewController {
 				NSAlert.showModal(
 					for: view.window,
 					message: "Animated GIF Preview Limitation",
-					informativeText: "Due to a bug in the macOS GIF animation handling, the after-conversion preview and Quick Look may not loop as expected. The GIF will work properly in web browsers and other image viewing apps."
+					informativeText: "Due to a bug in the macOS GIF handling, the after-conversion preview and Quick Look may not loop as expected. The GIF will loop correctly in web browsers and other image viewing apps.",
+					defaultButtonIndex: -1
 				)
 			}
 		}
@@ -481,7 +483,7 @@ final class EditVideoViewController: NSViewController {
 		let gifski = Gifski()
 		self.gifski = gifski
 
-		setEstimatedFileSize(getNaiveEstimate().attributedString + "   Calculating Accurate Estimate…".attributedString.withColor(.secondaryLabelColor).withFontSize(NSFont.smallSystemFontSize.double))
+		setEstimatedFileSize(getNaiveEstimate().attributedString + "   Calculating Estimate…".attributedString.withColor(.secondaryLabelColor).withFontSize(NSFont.smallSystemFontSize.double))
 
 		gifski.run(conversionSettings, isEstimation: true) { [weak self] result in
 			guard let self = self else {

@@ -32,7 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = true
 		NSApp.servicesProvider = self
 
-		// Set launch completions option if the notification center could not be set up already
+		// Set launch completions option if the notification center could not be set up already.
 		LaunchCompletions.applicationDidLaunch()
 	}
 

@@ -719,6 +719,7 @@ enum AVFormat: String {
 	case hevc
 	case h264
 	case av1
+	case vp9
 	case appleProResRAWHQ
 	case appleProResRAW
 	case appleProRes4444XQ
@@ -751,6 +752,8 @@ enum AVFormat: String {
 			self = .h264
 		case "av01":
 			self = .av1
+		case "vp09":
+			self = .vp9
 		case "aprh": // From https://avpres.net/Glossar/ProResRAW.html
 			self = .appleProResRAWHQ
 		case "aprn":
@@ -802,6 +805,8 @@ enum AVFormat: String {
 			return "avc1"
 		case .av1:
 			return "av01"
+		case .vp9:
+			return "vp09"
 		case .appleProResRAWHQ:
 			return "aprh"
 		case .appleProResRAW:
@@ -867,6 +872,8 @@ extension AVFormat: CustomStringConvertible {
 			return "H264"
 		case .av1:
 			return "AV1"
+		case .vp9:
+			return "VP9"
 		case .appleProResRAWHQ:
 			return "Apple ProRes RAW HQ"
 		case .appleProResRAW:
@@ -3518,7 +3525,7 @@ extension NSFont {
 		Self(descriptor: descriptor, size: 0) ?? self
 	}
 
-	// TODO: When Xcode 12.2 is out, use `[NSFont fontWithSize:]` when available.
+	// TODO: Remove this when targeting macOS 10.15 as it's then built-in.
 	/// Returns a font with the size replaced.
 	/// UIKit polyfill.
 	func withSize(_ size: CGFloat) -> NSFont {

@@ -29,7 +29,7 @@ final class MainWindowController: NSWindowController {
 			message: "Feedback Welcome 🙌🏻",
 			informativeText:
 				"""
-				If you have any feedback, bug reports, or feature requests, kindly use the “Send Feedback” button in the “Help” menu. We respond to all submissions. It's preferable that you report bugs this way rather than as an App Store review, since the App Store will not allow us to contact you for more information.
+				If you have any feedback, bug report, or feature request, there's a feedback button in the “Help” menu. We respond to all submissions.
 				""",
 			buttonTitles: [
 				"Get Started"
