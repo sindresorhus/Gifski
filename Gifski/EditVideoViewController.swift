@@ -301,12 +301,13 @@ final class EditVideoViewController: NSViewController {
 
 	private func showConversionCompletedAnimationWarningIfNeeded() {
 		// TODO: This function can be removed once NSImageView respects the looping counter in the GIF header.
+		// https://github.com/feedback-assistant/reports/issues/187
 		SSApp.runOnce(identifier: "gifLoopCountWarning") {
 			DispatchQueue.main.async { [self] in
 				NSAlert.showModal(
 					for: view.window,
 					message: "Animated GIF Preview Limitation",
-					informativeText: "The Conversion Completed Preview after processing will not reflect the image repetitions selected. However, the exported file will refelct the options selected and repeat correctly."
+					informativeText: "The after conversion preview and Quick Look will not reflect the image looping options selected. However, the exported file will work as expected in a web browser."
 				)
 			}
 		}
