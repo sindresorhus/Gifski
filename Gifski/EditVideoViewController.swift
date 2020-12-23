@@ -301,7 +301,7 @@ final class EditVideoViewController: NSViewController {
 
 	private func showConversionCompletedAnimationWarningIfNeeded() {
 		// TODO: This function can be removed once NSImageView respects the looping counter in the GIF header.
-		SSApp.runOnce(identifier: "convCompleteWarning") {
+		SSApp.runOnce(identifier: "gifLoopCountWarning") {
 			DispatchQueue.main.async { [self] in
 				NSAlert.showModal(
 					for: view.window,
