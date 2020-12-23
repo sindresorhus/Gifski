@@ -307,7 +307,7 @@ final class EditVideoViewController: NSViewController {
 				NSAlert.showModal(
 					for: view.window,
 					message: "Animated GIF Preview Limitation",
-					informativeText: "The after conversion preview and Quick Look will not reflect the image looping options selected. However, the exported file will work as expected in a web browser."
+					informativeText: "The after conversion preview and Quick Look will may not loop as expect, but the exorted file is valid."
 				)
 			}
 		}
