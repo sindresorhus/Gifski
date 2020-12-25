@@ -300,14 +300,17 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func showConversionCompletedAnimationWarningIfNeeded() {
-		// TODO: This function can be removed once NSImageView respects the looping counter in the GIF header.
+		// TODO: This function eventually will become an os version >= x check when Apple fixes their gif animation implementation.
+		// So far NSImageView and Quick Look are affected and may be fixed in later OS versions. Depending on how Apple fixes the issue,
+		// the message may need future modifications.
+		// Safari works as expected, so it's not all of Apple's software.
 		// https://github.com/feedback-assistant/reports/issues/187
 		SSApp.runOnce(identifier: "gifLoopCountWarning") {
 			DispatchQueue.main.async { [self] in
 				NSAlert.showModal(
 					for: view.window,
 					message: "Animated GIF Preview Limitation",
-					informativeText: "The after conversion preview and Quick Look will may not loop as expect, but the exorted file is valid."
+					informativeText: "Due to a bug in Apple’s gif animation handling, the after-conversion preview and Quick Look may not loop as expected. The exported file will work properly in web browsers and other image viewing applications."
 				)
 			}
 		}
