@@ -39,16 +39,16 @@ use self::c_api_error::*;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct GifskiSettings {
-    /// Resize to max this width if non-0
+    /// Resize to max this width if non-0.
     pub width: u32,
     /// Resize to max this height if width is non-0. Note that aspect ratio is not preserved.
     pub height: u32,
     /// 1-100, but useful range is 50-100. Recommended to set to 100.
     pub quality: u8,
-    /// If true, looping is disabled. Recommended false (looping on).
-    pub once: bool,
     /// Lower quality, but faster encode.
     pub fast: bool,
+    /// If negative, looping is disabled. The number of times the sequence is repeated. 0 to loop forever.
+    pub repeat: i16,
 }
 
 #[repr(C)]
@@ -87,8 +87,8 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
         width: if settings.width > 0 { Some(settings.width) } else { None },
         height: if settings.height > 0 { Some(settings.height) } else { None },
         quality: settings.quality,
-        once: settings.once,
         fast: settings.fast,
+        repeat: if settings.repeat == -1 { Repeat::Finite(0) } else if settings.repeat == 0 { Repeat::Infinite } else { Repeat::Finite(settings.repeat as u16) },
     };
 
     if let Ok((collector, writer)) = new(s) {
@@ -416,8 +416,8 @@ fn c_cb() {
             width: 1,
             height: 1,
             quality: 100,
-            once: true,
             fast: false,
+            repeat: -1,
         })
     };
     assert!(!g.is_null());
@@ -449,8 +449,8 @@ fn cant_write_after_finish() {
     let g = unsafe { gifski_new(&GifskiSettings {
         width: 1, height: 1,
         quality: 100,
-        once: true,
         fast: false,
+        repeat: -1,
     })};
     assert!(!g.is_null());
     let mut called = false;
@@ -470,8 +470,8 @@ fn c_write_failure_propagated() {
     let g = unsafe { gifski_new(&GifskiSettings {
         width: 1, height: 1,
         quality: 100,
-        once: true,
         fast: false,
+        repeat: -1,
     })};
     assert!(!g.is_null());
     unsafe extern fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
@@ -489,8 +489,8 @@ fn cant_write_twice() {
     let g = unsafe { gifski_new(&GifskiSettings {
         width: 1, height: 1,
         quality: 100,
-        once: true,
         fast: false,
+        repeat: -1,
     })};
     assert!(!g.is_null());
     unsafe extern "C" fn cb(_s: usize, _buf: *const u8, _user: *mut c_void) -> c_int {
@@ -507,8 +507,8 @@ fn c_incomplete() {
     let g = unsafe { gifski_new(&GifskiSettings {
         width: 0, height: 0,
         quality: 100,
-        once: false,
         fast: true,
+        repeat: 0,
     })};
 
     let rgb: *const RGB8 = ptr::null();

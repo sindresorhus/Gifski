@@ -53,6 +53,7 @@ fn bin_main() -> BinResult<()> {
                         .setting(AppSettings::UnifiedHelpMessage)
                         .setting(AppSettings::DeriveDisplayOrder)
                         .setting(AppSettings::ArgRequiredElseHelp)
+                        .setting(AppSettings::AllowNegativeNumbers)
                         .arg(Arg::with_name("output")
                             .long("output")
                             .short("o")
@@ -87,9 +88,6 @@ fn bin_main() -> BinResult<()> {
                             .takes_value(true)
                             .value_name("px")
                             .help("Maximum height (if width is also set)"))
-                        .arg(Arg::with_name("once")
-                            .long("once")
-                            .help("Do not loop the GIF"))
                         .arg(Arg::with_name("nosort")
                             .long("nosort")
                             .help("Use files exactly in the order given, rather than sorted"))
@@ -102,6 +100,11 @@ fn bin_main() -> BinResult<()> {
                             .empty_values(false)
                             .use_delimiter(false)
                             .required(true))
+                        .arg(Arg::with_name("repeat")
+                            .long("repeat")
+                            .help("Number of times the animation is repeated (-1 none, 0 forever or <value> repetitions")
+                            .takes_value(true)
+                            .value_name("num"))
                         .get_matches_from(wild::args_os());
 
     let mut frames: Vec<_> = matches.values_of("FRAMES").ok_or("Missing files")?.collect();
@@ -111,12 +114,22 @@ fn bin_main() -> BinResult<()> {
     let frames: Vec<_> = frames.into_iter().map(|s| PathBuf::from(s)).collect();
 
     let output_path = Path::new(matches.value_of_os("output").ok_or("Missing output")?);
+    let width = parse_opt(matches.value_of("width")).map_err(|_| "Invalid width")?;
+    let height = parse_opt(matches.value_of("height")).map_err(|_| "Invalid height")?;
+    let repeat_int = parse_opt(matches.value_of("repeat")).map_err(|_| "Invalid repeat count")?.unwrap_or(0) as i16;
+    let repeat;
+    match repeat_int {
+        -1 => repeat = gifski::Repeat::Finite(0),
+        0 => repeat = gifski::Repeat::Infinite,
+        _ => repeat = gifski::Repeat::Finite(repeat_int as u16),
+    }
+
     let settings = gifski::Settings {
-        width: parse_opt(matches.value_of("width")).map_err(|_| "Invalid width")?,
-        height: parse_opt(matches.value_of("height")).map_err(|_| "Invalid height")?,
+        width,
+        height,
         quality: parse_opt(matches.value_of("quality")).map_err(|_| "Invalid quality")?.unwrap_or(100),
-        once: matches.is_present("once"),
         fast: matches.is_present("fast"),
+        repeat,
     };
     let quiet = matches.is_present("quiet");
     let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;

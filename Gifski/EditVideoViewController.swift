@@ -31,6 +31,8 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var dimensionsTypeDropdown: MenuPopUpButton!
 	@IBOutlet private var cancelButton: NSButton!
 	@IBOutlet private var playerViewWrapper: NSView!
+	@IBOutlet private var loopCountTextField: IntTextField!
+	@IBOutlet private var loopCountStepper: NSStepper!
 
 	var inputUrl: URL!
 	var asset: AVAsset!
@@ -50,6 +52,20 @@ final class EditVideoViewController: NSViewController {
 		maxWidth: 300
 	)
 
+	private var loopCount: Int {
+		/*
+		Looping values are:
+		 -1 | No loops
+		  0 | Loop forever
+		>=1 | Loop n times
+		*/
+		guard Defaults[.loopGif] else {
+			return Int(loopCountTextField.intValue) == 0 ? -1 : Int(loopCountTextField.intValue)
+		}
+
+		return 0
+	}
+
 	private var conversionSettings: Gifski.Conversion {
 		.init(
 			video: inputUrl,
@@ -57,7 +73,7 @@ final class EditVideoViewController: NSViewController {
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue,
-			loopGif: Defaults[.loopGif]
+			loopCount: loopCount
 		)
 	}
 
@@ -97,6 +113,7 @@ final class EditVideoViewController: NSViewController {
 		setUpDropdowns()
 		setUpSliders()
 		setUpWidthAndHeightTextFields()
+		setUpLoopCountControls()
 		setUpDropView()
 		setUpTrimmingView()
 	}
@@ -282,6 +299,22 @@ final class EditVideoViewController: NSViewController {
 		}
 	}
 
+	private func showConversionCompletedAnimationWarningIfNeeded() {
+		// TODO: This function eventually will become an OS version check when Apple fixes their GIF animation implementation.
+		// So far `NSImageView` and Quick Look are affected and may be fixed in later OS versions. Depending on how Apple fixes the issue,
+		// the message may need future modifications. Safari works as expected, so it's not all of Apple's software.
+		// https://github.com/feedback-assistant/reports/issues/187
+		SSApp.runOnce(identifier: "gifLoopCountWarning") {
+			DispatchQueue.main.async { [self] in
+				NSAlert.showModal(
+					for: view.window,
+					message: "Animated GIF Preview Limitation",
+					informativeText: "Due to a bug in the macOS GIF animation handling, the after-conversion preview and Quick Look may not loop as expected. The GIF will work properly in web browsers and other image viewing apps."
+				)
+			}
+		}
+	}
+
 	private func setUpWidthAndHeightTextFields() {
 		widthTextField.onBlur = { [weak self] width in
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
@@ -314,6 +347,63 @@ final class EditVideoViewController: NSViewController {
 		updateTextFieldsMinMax()
 	}
 
+	private func setUpLoopCountControls() {
+		loopCountTextField.onBlur = { [weak self] loopCount in
+			guard let self = self else {
+				return
+			}
+
+			self.loopCountTextField.stringValue = "\(loopCount)"
+			self.loopCountStepper.intValue = Int32(loopCount)
+
+			if loopCount > 0 {
+				self.loopCheckbox.state = .off
+			}
+		}
+
+		loopCountTextField.onValueChange = { [weak self] loopCount in
+			guard let self = self else {
+				return
+			}
+
+			let validLoopCount = loopCount.clamped(to: Constants.loopCountRange)
+			self.loopCountTextField.stringValue = "\(validLoopCount)"
+			self.loopCountStepper.intValue = Int32(validLoopCount)
+
+			if validLoopCount > 0 {
+				self.loopCheckbox.state = .off
+			}
+		}
+
+		loopCheckbox.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
+			if self.loopCheckbox.state == .on {
+				self.loopCountTextField.stringValue = "0"
+				self.loopCountStepper.intValue = 0
+			} else {
+				self.showConversionCompletedAnimationWarningIfNeeded()
+			}
+		}
+
+		Defaults.observe(.loopGif) { [weak self] in
+			self?.loopCountTextField.isEnabled = $0.newValue == false
+			self?.loopCountStepper.isEnabled = $0.newValue == false
+		}
+		.tieToLifetime(of: self)
+
+
+		loopCountStepper.onAction = { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
+			self.loopCountTextField.stringValue = "\(self.loopCountStepper.intValue)"
+		}
+	}
+
 	private func setUpDropView() {
 		let videoDropController = VideoDropViewController(dropLabelIsHidden: true)
 		add(childController: videoDropController)
@@ -342,7 +432,8 @@ final class EditVideoViewController: NSViewController {
 		heightTextField.nextKeyView = dimensionsTypeDropdown
 		dimensionsTypeDropdown.nextKeyView = frameRateSlider
 		frameRateSlider.nextKeyView = qualitySlider
-		qualitySlider.nextKeyView = loopCheckbox
+		qualitySlider.nextKeyView = loopCountTextField
+		loopCountTextField.nextKeyView = loopCheckbox
 		loopCheckbox.nextKeyView = cancelButton
 	}
 
@@ -351,6 +442,7 @@ final class EditVideoViewController: NSViewController {
 		let heightMinMax = resizableDimensions.heightMinMax
 		widthTextField.minMax = Int(widthMinMax.lowerBound)...Int(widthMinMax.upperBound)
 		heightTextField.minMax = Int(heightMinMax.lowerBound)...Int(heightMinMax.upperBound)
+		loopCountTextField.minMax = Constants.loopCountRange
 	}
 
 	private func dimensionsUpdated() {
