@@ -1889,6 +1889,14 @@ extension URL {
 		ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
 	}
 
+	// TODO: Use the below instead when targeting macOS 10.15. Also in `AVAsset#fileSize`.
+	/// File size in bytes.
+//	var fileSize: Measurement<UnitInformationStorage> { Measurement<UnitInformationStorage>(value: resourceValue(forKey: .fileSizeKey) ?? 0, unit: .bytes) }
+//
+//	var fileSizeFormatted: String {
+//		ByteCountFormatter.string(from: fileSize, countStyle: .file)
+//	}
+
 	var exists: Bool { FileManager.default.fileExists(atPath: path) }
 
 	var isReadable: Bool { boolResourceValue(forKey: .isReadableKey) }
