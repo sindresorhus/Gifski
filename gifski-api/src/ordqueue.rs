@@ -1,20 +1,21 @@
 use crate::error::*;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
-use std::sync::mpsc;
+use std::iter::FusedIterator;
+use crossbeam_channel::{Sender, Receiver};
 
 pub struct OrdQueue<T> {
-    sender: mpsc::SyncSender<ReverseTuple<T>>,
+    sender: Sender<ReverseTuple<T>>,
 }
 
 pub struct OrdQueueIter<T> {
-    receiver: mpsc::Receiver<ReverseTuple<T>>,
+    receiver: Receiver<ReverseTuple<T>>,
     next_index: usize,
     receive_buffer: BinaryHeap<ReverseTuple<T>>,
 }
 
 pub fn new<T>(depth: usize) -> (OrdQueue<T>, OrdQueueIter<T>) {
-    let (sender, receiver) = mpsc::sync_channel(depth);
+    let (sender, receiver) = crossbeam_channel::bounded(depth);
     (OrdQueue {
         sender,
     }, OrdQueueIter {
@@ -26,10 +27,12 @@ pub fn new<T>(depth: usize) -> (OrdQueue<T>, OrdQueueIter<T>) {
 
 impl<T: Send + 'static> OrdQueue<T> {
     pub fn push(&mut self, index: usize, item: T) -> CatResult<()> {
-        self.sender.send(ReverseTuple(index, item)).map_err(|_| Error::ThreadSend)?;
+        self.sender.send(ReverseTuple(index, item))?;
         Ok(())
     }
 }
+
+impl<T> FusedIterator for OrdQueueIter<T> {}
 
 impl<T> Iterator for OrdQueueIter<T> {
     type Item = T;

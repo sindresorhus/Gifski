@@ -12,13 +12,15 @@ It's a CLI tool, but it can also be compiled [as a C library](https://docs.rs/gi
 
 See [releases](https://github.com/ImageOptim/gifski/releases) page for executables.
 
-If you have [Rust](https://www.rust-lang.org/install.html) 1.42+, you can also get it with [`cargo install gifski`](https://crates.rs/crates/gifski). Run `cargo build --release --features=openmp` to build from source.
+If you have [Rust](https://www.rust-lang.org/install.html) 1.49+, you can also get it with [`cargo install gifski`](https://crates.rs/crates/gifski). Run `cargo build --release --features=openmp` or `cargo build --release --features=video,openmp` to build from source.
 
 If you have [Homebrew](https://brew.sh/), you can also get it with `brew install gifski`.
 
 ## Usage
 
-You can use `ffmpeg` command to convert any video to PNG frames:
+gifski is a command-line tool. There is no GUI for Windows or Linux (there is one for [macOS](https://sindresorhus.com/gifski)).
+
+The recommended way is to first export video as PNG frames. If you have `ffmpeg` installed, you can run in terminal:
 
 ```sh
 ffmpeg -i video.webm frame%04d.png
@@ -58,11 +60,11 @@ AGPL 3 or later. Let [me](https://kornel.ski/contact) know if you'd like to use 
 
 ## With built-in video support
 
-The tool optionally supports decoding video directly, but unfortunately it relies on ffmpeg 3.x, which may be *very hard* to get working, so it's not enabled by default.
+The tool optionally supports decoding video directly, but unfortunately it relies on ffmpeg 4.x, which may be *very hard* to get working, so it's not enabled by default.
 
 You must have `ffmpeg` and `libclang` installed, both with their C headers intalled in default system include paths. Details depend on the platform and version, but you usually need to install packages such as `libavformat-dev`, `libavfilter-dev`, `libavdevice-dev`, `libclang-dev`, `clang`. Please note that installation of these dependencies may be quite difficult. Especially on macOS and Windows it takes *expert knowledge* to just get them installed without wasting several hours on endless stupid installation and compilation errors, which I can't help with.
 
-Once you have dependencies installed, compile with `cargo build --release --features=video,openmp`.
+Once you have dependencies installed, compile with `cargo build --release --features=video,openmp` or `cargo build --release --features=video-static`.
 
 When compiled with video support [ffmpeg licenses](https://www.ffmpeg.org/legal.html) apply. You may need to have a patent license to use H.264/H.265 video (I recommend using VP9/WebM instead).
 
@@ -86,7 +88,7 @@ cargo build --lib --release --target=aarch64-apple-ios
 
 The build will print "dropping unsupported crate type `cdylib`". This is normal and expected.
 
-This will create a static library in `./target/aarch64-apple-ios/release/libgifski.a`. You can add this library to your Xcode project.
+This will create a static library in `./target/aarch64-apple-ios/release/libgifski.a`. You can add this library to your Xcode project. See [gifski.app](https://github.com/sindresorhus/Gifski) for an example how to use libgifski from Swift.
 
 You can also [use `cargo lipo` command](https://lib.rs/crates/cargo-lipo) to integrate with Xcode project to have it built automatically.
 

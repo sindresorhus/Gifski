@@ -1,4 +1,5 @@
 use crate::source::Source;
+use crate::source::Fps;
 use crate::BinResult;
 use gifski::Collector;
 use std::path::PathBuf;
@@ -9,8 +10,8 @@ pub struct Lodecoder {
 }
 
 impl Lodecoder {
-    pub fn new(frames: Vec<PathBuf>, fps: f32) -> Self {
-        Self { frames, fps }
+    pub fn new(frames: Vec<PathBuf>, params: &Fps) -> Self {
+        Self { frames, fps: params.fps }
     }
 }
 

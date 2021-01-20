@@ -37,8 +37,7 @@ mod encodegifsicle;
 
 use std::io::prelude::*;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::mpsc;
+use crossbeam_channel::{Sender, Receiver};
 use std::thread;
 
 type DecodedImage = CatResult<(ImgVec<RGBA8>, f64)>;
@@ -53,9 +52,9 @@ pub enum Repeat {
 /// Encoding settings for the `new()` function
 #[derive(Copy, Clone)]
 pub struct Settings {
-    /// Resize to max this width if set.
+    /// Resize to max this width if non-0.
     pub width: Option<u32>,
-    /// Resize to max this height if width is set. Note that aspect ratio is not preserved.
+    /// Resize to max this height if width is non-0. Note that aspect ratio is not preserved.
     pub height: Option<u32>,
     /// 1-100, but useful range is 50-100. Recommended to set to 100.
     pub quality: u8,
@@ -75,6 +74,11 @@ impl Settings {
     pub(crate) fn color_quality(&self) -> u8 {
         (self.quality * 2).min(100)
     }
+
+    /// add_frame is going to resize the images to this size.
+    pub fn dimensions_for_image(&self, width: usize, height: usize) -> (usize, usize) {
+        dimensions_for_image((width, height), (self.width, self.height))
+    }
 }
 
 /// Collect frames that will be encoded
@@ -89,33 +93,55 @@ pub struct Collector {
 
 /// Perform GIF writing
 pub struct Writer {
+    /// Input frame decoder results
     queue_iter: Option<OrdQueueIter<DecodedImage>>,
     settings: Settings,
 }
 
 struct GIFFrame {
+    left: u16,
+    top: u16,
+    screen_width: u16,
+    screen_height: u16,
     image: ImgVec<u8>,
     pal: Vec<RGBA8>,
-    delay: u16,
     dispose: gif::DisposalMethod,
 }
 
 trait Encoder {
-    fn write_frame(&mut self, frame: &GIFFrame, settings: &Settings) -> CatResult<()>;
+    fn write_frame(&mut self, frame: GIFFrame, delay: u16, settings: &Settings) -> CatResult<()>;
     fn finish(&mut self) -> CatResult<()> {
         Ok(())
     }
 }
 
-enum FrameMessage {
-    Write(Arc<GIFFrame>),
-    Skipped,
+/// Frame before quantization
+struct DiffMessage {
+    /// 1..
+    ordinal_frame_number: usize,
+    image: ImgVec<RGBA8>,
+    importance_map: Vec<u8>,
+    dispose: gif::DisposalMethod,
+    /// presentation timestamp of the next frame (i.e. when this frame finishes being displayed)
+    end_pts: f64,
 }
+
+/// Frame post quantization
+struct FrameMessage {
+    /// 1..
+    ordinal_frame_number: usize,
+    frame: GIFFrame,
+    end_pts: f64,
+}
+
 
 /// Start new encoding
 ///
 /// Encoding is multi-threaded, and the `Collector` and `Writer`
 /// can be used on sepate threads.
+///
+/// You feed input frames to the `Collector`, and ask the `Writer` to
+/// start writing the GIF.
 pub fn new(settings: Settings) -> CatResult<(Collector, Writer)> {
     let (queue, queue_iter) = ordqueue::new(4);
 
@@ -161,19 +187,16 @@ impl Collector {
     }
 
     fn resized_binary_alpha(mut image: ImgVec<RGBA8>, width: Option<u32>, height: Option<u32>) -> ImgVec<RGBA8> {
-        if let Some(width) = width {
-            if image.width() != image.stride() {
-                let mut contig = Vec::with_capacity(image.width() * image.height());
-                contig.extend(image.rows().flat_map(|r| r.iter().cloned()));
-                image = ImgVec::new(contig, image.width(), image.height());
-            }
-            let dst_width = (width as usize).min(image.width());
-            let dst_height = height.map(|h| (h as usize).min(image.height())).unwrap_or(image.height() * dst_width / image.width());
-            let mut r = resize::new(image.width(), image.height(), dst_width, dst_height, resize::Pixel::RGBA, resize::Type::Lanczos3);
-            let mut dst = vec![RGBA::new(0, 0, 0, 0); dst_width * dst_height];
-            assert_eq!(image.buf().len(), image.width() * image.height());
-            r.resize(image.buf().as_bytes(), dst.as_bytes_mut());
-            image = ImgVec::new(dst, dst_width, dst_height)
+        let (width, height) = dimensions_for_image((image.width(), image.height()), (width, height));
+
+        if width != image.width() || height != image.height() {
+            let (buf, img_width, img_height) = image.into_contiguous_buf();
+            assert_eq!(buf.len(), img_width * img_height);
+
+            let mut r = resize::new(img_width, img_height, width, height, resize::Pixel::RGBA, resize::Type::Lanczos3);
+            let mut dst = vec![RGBA::new(0, 0, 0, 0); width * height];
+            r.resize(buf.as_bytes(), dst.as_bytes_mut());
+            image = ImgVec::new(dst, width, height)
         }
 
         const DITHER: [u8; 64] = [
@@ -195,6 +218,32 @@ impl Collector {
             }
         }
         image
+    }
+}
+
+/// add_frame is going to resize the image to this size.
+/// The `Option` args are user-specified max width and max height
+fn dimensions_for_image((img_w, img_h): (usize, usize), resize_to: (Option<u32>, Option<u32>)) -> (usize, usize) {
+    match resize_to {
+        (None, None) => {
+            let factor = (img_w * img_h + 800*600) / (800*600);
+            if factor > 1 {
+                (img_w / factor, img_h / factor)
+            } else {
+                (img_w, img_h)
+            }
+        },
+        (Some(w), Some(h)) => {
+            ((w as usize).min(img_w), (h as usize).min(img_h))
+        },
+        (Some(w), None) => {
+            let w = (w as usize).min(img_w);
+            (w, img_h * w / img_w)
+        }
+        (None, Some(h)) => {
+            let h = (h as usize).min(img_h);
+            (img_w * h / img_h, h)
+        },
     }
 }
 
@@ -232,13 +281,27 @@ impl Writer {
         Ok((Img::new(pal_img, img.width(), img.height()), pal))
     }
 
-    fn write_frames(write_queue_iter: mpsc::Receiver<FrameMessage>, enc: &mut dyn Encoder, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
-        for f in write_queue_iter {
-            if let FrameMessage::Write(f) = f {
-                enc.write_frame(&f, settings)?;
+    fn write_frames(write_queue: Receiver<FrameMessage>, enc: &mut dyn Encoder, settings: &Settings, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
+        let mut pts_in_delay_units = 0_u64;
+
+        let mut n_done = 0;
+        for FrameMessage {frame, ordinal_frame_number, end_pts, ..} in write_queue {
+            let delay = ((end_pts * 100.0).round() as u64)
+                .saturating_sub(pts_in_delay_units)
+                .min(10000) as u16;
+            pts_in_delay_units += u64::from(delay);
+
+            // skip frames with bad pts
+            if delay != 0 {
+                enc.write_frame(frame, delay, settings)?;
             }
-            if !reporter.increase() {
-                return Err(Error::Aborted.into());
+
+            // loop to report skipped frames too
+            while n_done < ordinal_frame_number {
+                n_done += 1;
+                if !reporter.increase() {
+                    return Err(Error::Aborted.into());
+                }
             }
         }
         enc.finish()?;
@@ -275,79 +338,53 @@ impl Writer {
     }
 
     fn write_with_encoder(mut self, encoder: &mut dyn Encoder, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
-        let (write_queue, write_queue_iter) = mpsc::sync_channel(4);
-        let queue_iter = self.queue_iter.take().unwrap();
+        let decode_queue_recv = self.queue_iter.take().expect("queue");
+        let (quant_queue, quant_queue_recv) = crossbeam_channel::bounded(4);
         let settings = self.settings;
-        let make_thread = thread::spawn(move || {
-            Self::make_frames(queue_iter, write_queue, &settings)
+        let diff_thread = thread::spawn(move || {
+            Self::make_diffs(decode_queue_recv, quant_queue, &settings)
         });
-        Self::write_frames(write_queue_iter, encoder, &self.settings, reporter)?;
-        make_thread.join().unwrap()?;
+        let (write_queue, write_queue_recv) = crossbeam_channel::bounded(4);
+        let quant_thread = thread::spawn(move || {
+            Self::quantize_frames(quant_queue_recv, write_queue, &settings)
+        });
+        Self::write_frames(write_queue_recv, encoder, &self.settings, reporter)?;
+        diff_thread.join().map_err(|_| Error::ThreadSend)??;
+        quant_thread.join().map_err(|_| Error::ThreadSend)??;
         Ok(())
     }
 
-    fn make_frames(mut decode_iter: OrdQueueIter<DecodedImage>, write_queue: mpsc::SyncSender<FrameMessage>, settings: &Settings) -> CatResult<()> {
-        let mut screen = None;
-        let mut next_frame = decode_iter.next().transpose()?;
+    fn make_diffs(mut inputs: OrdQueueIter<DecodedImage>, quant_queue: Sender<DiffMessage>, _settings: &Settings) -> CatResult<()> {
+        let mut next_frame = inputs.next().transpose()?;
 
-        let mut last_frame_delay_s = None;
-        let mut pts_in_delay_units = 0_u64;
-        let mut importance_map = match &next_frame {
-            Some((next_frame, pts)) => {
-                // If the first frame doesn't start at 0 (or actually with 1/100th because that's min delay)
-                // interpret it as the delay between (looped) the last and the first frame.
-                if *pts >= 1./100. {
-                    last_frame_delay_s = Some(*pts);
-                    // Shift all frames by this pts so that frame 0 always starts at 0
-                    pts_in_delay_units = (100.0*(*pts)).floor() as _;
-                }
-                vec![255_u8; next_frame.buf().len()]
-            },
-            None => {
-                return Err(Error::NoFrames)
-            },
-        };
+        let first_frame_pts = next_frame.as_ref().map(|&(_, pts)| pts).unwrap_or_default();
+        let mut prev_frame_pts = 0.0;
 
-        let mut previous_frame_dispose = gif::DisposalMethod::Background;
-        let mut previous_frame_delay = 3;
-        let mut i = 0;
-        while let Some((image, _)) = {
-            // that's not the while loop, that block gets the next element
+        let mut ordinal_frame_number = 0;
+        while let Some((image, mut pts)) = {
+            // this is not while loop's body, but a block that gets the next element
             let curr_frame = next_frame.take();
-            next_frame = decode_iter.next().transpose()?;
+            next_frame = inputs.next().transpose()?;
             curr_frame
         } {
-            // To convert PTS to delay it's necessary to know when the next frame is to be displayed
-            let delay = if let Some(next_pts) = next_frame.as_ref().map(|(_, pts)| *pts).or_else(|| {
-                    last_frame_delay_s.map(|s| pts_in_delay_units as f64 / 100.0 + s)
-                }) {
-                let next_pts_in_delay_units = (next_pts * 100.0).round() as u64;
-                if next_pts_in_delay_units > pts_in_delay_units {
-                    (next_pts_in_delay_units - pts_in_delay_units).min(10000) as u16
-                } else {
-                    // skip frames with duplicate/invalid PTS
-                    if next_frame.is_some() {
-                        write_queue.send(FrameMessage::Skipped).map_err(|_| Error::ThreadSend)?;
-                    }
-                    continue;
-                }
-            } else {
-                // for the last frame just assume constant framerate
-                previous_frame_delay
-            };
-            pts_in_delay_units += u64::from(delay);
-            previous_frame_delay = delay;
+            pts -= first_frame_pts;
+            ordinal_frame_number += 1;
 
             let mut dispose = gif::DisposalMethod::Keep;
-            if let Some((ref next, _)) = next_frame {
+            let importance_map = if let Some((next, _)) = &next_frame {
                 if next.width() != image.width() || next.height() != image.height() {
-                    return Err(Error::WrongSize(format!("Frame {} has wrong size ({}×{}, expected {}×{})", i+1,
+                    return Err(Error::WrongSize(format!("Frame {} has wrong size ({}×{}, expected {}×{})", ordinal_frame_number,
                         next.width(), next.height(), image.width(), image.height())));
                 }
 
-                debug_assert_eq!(next.width(), image.width());
-                importance_map.clear();
-                importance_map.extend(next.rows().zip(image.rows()).flat_map(|(n, curr)| n.iter().cloned().zip(curr.iter().cloned())).map(|(n, curr)| {
+                // Skip identical frames
+                if next.as_ref() == image.as_ref() {
+                    prev_frame_pts = pts;
+                    continue;
+                }
+
+                let mut importance_map = Vec::with_capacity(image.width() * image.height());
+                importance_map.extend(next.rows().zip(image.rows()).flat_map(|(n, curr)| n.iter().copied().zip(curr.iter().copied())).map(|(n, curr)| {
                     if n.a < curr.a {
                         dispose = gif::DisposalMethod::Background;
                     }
@@ -355,62 +392,164 @@ impl Writer {
                     // but pixels that will stay unchanged should have higher quality
                     255 - (colordiff(n, curr) / (255 * 255 * 6 / 170)) as u8
                 }));
+                importance_map
             } else {
                 // Last frame should reset to background to avoid breaking transparent looped anims
                 dispose = gif::DisposalMethod::Background;
+                vec![255; image.width() * image.height()]
             };
 
+            // conversion from pts to delay
+            let end_pts = if let Some((_, next_pts)) = next_frame {
+                next_pts - first_frame_pts
+            } else if first_frame_pts > 1./100. {
+                // this is gifski's weird rule that non-zero first-frame pts
+                // shifts the whole anim and is the delay of the last frame
+                pts + first_frame_pts
+            } else {
+                // otherwise assume steady framerate
+                pts + (pts - prev_frame_pts)
+            };
+            prev_frame_pts = pts;
+
+            quant_queue.send(DiffMessage {
+                dispose,
+                importance_map,
+                ordinal_frame_number,
+                image,
+                end_pts,
+            })?;
+        }
+
+        Ok(())
+    }
+
+    fn quantize_frames(inputs: Receiver<DiffMessage>, write_queue: Sender<FrameMessage>, settings: &Settings) -> CatResult<()> {
+        let mut screen = None;
+        let next_frame = inputs.recv().map_err(|_| Error::NoFrames)?;
+
+        let mut next_frame = Some(next_frame);
+
+        let mut previous_frame_dispose = gif::DisposalMethod::Background;
+        let mut frames_written = 0;
+        while let Some(DiffMessage {image, end_pts, dispose, ordinal_frame_number, mut importance_map}) = {
+            // that's not the while loop, that block gets the next element
+            let curr_frame = next_frame.take();
+            next_frame = inputs.recv().ok();
+            curr_frame
+        } {
             let screen = screen.get_or_insert_with(|| gif_dispose::Screen::new(image.width(), image.height(), RGBA8::new(0, 0, 0, 0), None));
 
-            let has_prev_frame = i > 0 && previous_frame_dispose == gif::DisposalMethod::Keep;
+            let has_prev_frame = frames_written > 0 && previous_frame_dispose == gif::DisposalMethod::Keep;
             if has_prev_frame {
                 let q = 100 - u32::from(settings.color_quality());
                 let min_diff = 80 + q * q;
                 debug_assert_eq!(image.width(), screen.pixels.width());
                 importance_map
-                    .chunks_mut(image.width())
+                    .chunks_exact_mut(image.width())
                     .zip(screen.pixels.rows().zip(image.rows()))
-                    .flat_map(|(px, (a, b))| {
-                        px.iter_mut().zip(a.iter().cloned().zip(b.iter().cloned()))
+                    .flat_map(|(imp, (bg, px))| {
+                        imp.iter_mut().zip(bg.iter().copied().zip(px.iter().copied()))
                     })
-                    .for_each(|(px, (a, b))| {
+                    .for_each(|(imp, (bg, px))| {
                         // TODO: try comparing with max-quality dithered non-transparent frame, but at half res to avoid dithering confusing the results
                         // and pick pixels/areas that are better left transparent?
 
-                        let diff = colordiff(a, b);
+                        let diff = colordiff(bg, px);
                         // if pixels are close or identical, no weight on them
-                        *px = if diff < min_diff {
+                        *imp = if diff < min_diff {
                             0
                         } else {
                             // clip max value, since if something's different it doesn't matter how much, it has to be displayed anyway
                             // but multiply by previous map last, since it already decided non-max value
                             let t = diff / 32;
-                            ((t * t).min(256) as u16 * u16::from(*px) / 256) as u8
+                            ((t * t).min(256) as u16 * u16::from(*imp) / 256) as u8
                         }
                     });
             }
-            previous_frame_dispose = dispose;
+
+            let screen_width = screen.pixels.width() as u16;
+            let screen_height = screen.pixels.height() as u16;
+            let mut screen_after_dispose = screen.dispose();
 
             let (image8, image8_pal) = {
-                let bg = if has_prev_frame { Some(screen.pixels.as_ref()) } else { None };
+                let bg = if has_prev_frame { Some(screen_after_dispose.pixels()) } else { None };
                 Self::quantize(image.as_ref(), &importance_map, bg, settings)?
             };
 
+            drop(image);
+
             let transparent_index = image8_pal.iter().position(|p| p.a == 0).map(|i| i as u8);
-            let frame = Arc::new(GIFFrame {
+
+            let (left, top, image8) = match trim_image(image8, &image8_pal, transparent_index, screen_after_dispose.pixels()) {
+                Some(trimmed) => trimmed,
+                None => continue, // no pixels left
+            };
+
+            previous_frame_dispose = dispose;
+
+            let frame = GIFFrame {
+                left,
+                top,
+                screen_width,
+                screen_height,
                 image: image8,
                 pal: image8_pal,
                 dispose,
-                delay,
-            });
+            };
 
-            write_queue.send(FrameMessage::Write(frame.clone())).map_err(|_| Error::ThreadSend)?;
-            i += 1;
-            screen.blit(Some(&frame.pal), dispose, 0, 0, frame.image.as_ref(), transparent_index)?;
+            screen_after_dispose.then_blit(Some(&frame.pal), dispose, left, top as _, frame.image.as_ref(), transparent_index)?;
+
+            write_queue.send(FrameMessage {
+                ordinal_frame_number,
+                end_pts,
+                frame,
+            })?;
+            frames_written += 1;
         }
 
         Ok(())
     }
+}
+
+fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: Option<u8>, screen: ImgRef<RGBA8>) -> Option<(u16, u16, ImgVec<u8>)> {
+    let mut image_trimmed = image8.as_ref();
+
+    let bottom = image_trimmed.rows().zip(screen.rows()).rev()
+        .take_while(|(img_row, screen_row)| {
+            img_row.iter().copied().zip(screen_row.iter().copied())
+                .all(|(px, bg)| {
+                    Some(px) == transparent_index || image8_pal.get(px as usize) == Some(&bg)
+                })
+        })
+        .count();
+
+    if bottom > 0 {
+        if bottom == image_trimmed.height() {
+            return None;
+        }
+        image_trimmed = image_trimmed.sub_image(0, 0, image_trimmed.width(), image_trimmed.height() - bottom);
+    }
+
+    let top = image_trimmed.rows().zip(screen.rows())
+        .take_while(|(img_row, screen_row)| {
+            img_row.iter().copied().zip(screen_row.iter().copied())
+                .all(|(px, bg)| {
+                    Some(px) == transparent_index || image8_pal.get(px as usize) == Some(&bg)
+                })
+        })
+        .count();
+
+    if top > 0 {
+        image_trimmed = image_trimmed.sub_image(0, top, image_trimmed.width(), image_trimmed.height() - top);
+    }
+
+    if image_trimmed.height() != image8.height() {
+        let (buf, width, height) = image_trimmed.to_contiguous_buf();
+        image8 = Img::new(buf.into_owned(), width, height);
+    }
+
+    Some((0, top as _, image8))
 }
 
 #[inline]

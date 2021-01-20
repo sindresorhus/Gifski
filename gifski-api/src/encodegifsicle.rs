@@ -66,21 +66,22 @@ impl Encoder for Gifsicle<'_> {
         }
         Ok(())
     }
-    fn write_frame(&mut self, frame: &GIFFrame, settings: &Settings) -> CatResult<()> {
-        let GIFFrame {ref pal, ref image, delay, dispose} = *frame;
+    fn write_frame(&mut self, frame: GIFFrame, delay: u16, settings: &Settings) -> CatResult<()> {
+        let GIFFrame {left, top, pal, screen_width, screen_height, image, dispose} = frame;
 
         if self.gfs.is_null() {
             let gfs = unsafe {
                 self.gfs = gifsicle::Gif_NewStream();
                 self.gfs.as_mut().ok_or(Error::Gifsicle)?
             };
-            gfs.screen_width = image.width() as _;
-            gfs.screen_height = image.height() as _;
+            gfs.screen_width = screen_width;
+            gfs.screen_height = screen_height;
             // -1 is no looping, 0 is loop forever, else loop X number of times
+            // not sure the else will work.. I need to get gif::Repeat copy-able first to test.
             match settings.repeat {
                 Repeat::Finite(0) => gfs.loopcount = -1,
                 Repeat::Infinite => gfs.loopcount = 0,
-                Repeat::Finite(x) => gfs.loopcount = x as i64,
+                Repeat::Finite(x) => gfs.loopcount = x as _,
             }
             unsafe {
                 self.gif_writer = Gif_IncrementalWriteFileInit(gfs, &self.info, ptr::null_mut());
@@ -93,6 +94,8 @@ impl Encoder for Gifsicle<'_> {
         let g = unsafe {
             Gif_NewImage().as_mut().ok_or(Error::Gifsicle)?
         };
+        g.top = top;
+        g.left = left;
         g.delay = delay;
         g.width = image.width() as u16;
         g.height = image.height() as u16;

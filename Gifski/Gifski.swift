@@ -96,8 +96,9 @@ final class Gifski {
 			width: UInt32(conversion.dimensions?.width ?? 0),
 			height: UInt32(conversion.dimensions?.height ?? 0),
 			quality: UInt8(conversion.quality * 100),
+			once: false,
 			fast: false,
-			loop_count: Int16(conversion.loopCount ?? 0)
+			loop_count: UInt16(conversion.loopCount ?? 0)
 		)
 
 		self.gifski = GifskiWrapper(settings: settings)

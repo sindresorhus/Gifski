@@ -46,13 +46,17 @@ typedef struct GifskiSettings {
    */
   uint8_t quality;
   /**
+   * If true, looping is disabled. Recommended false (looping on).
+   */
+  bool once;
+  /**
    * Lower quality, but faster encode.
    */
   bool fast;
   /**
-   * -1+, but useful range is -1, 0-10. -1 is no looping, 0 is loop forever. Recommended to set to 0.
+   * 0+, but useful range is 0-10. 0 is loop forever. Recommended to set to 0.
    */
-  int16_t loop_count;
+  uint16_t loop_count;
 } GifskiSettings;
 
 enum GifskiError {
