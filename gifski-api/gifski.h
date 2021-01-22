@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -34,7 +35,7 @@ because it blocks and waits until previous frames are written.
  */
 typedef struct GifskiSettings {
   /**
-   * Resize to max this width if non-0
+   * Resize to max this width if non-0.
    */
   uint32_t width;
   /**
@@ -42,21 +43,17 @@ typedef struct GifskiSettings {
    */
   uint32_t height;
   /**
-   * 1-100, but useful range is 50-100. Recommended to set to 100.
+   * 1-100, but useful range is 50-100. Recommended to set to 90.
    */
   uint8_t quality;
-  /**
-   * If true, looping is disabled. Recommended false (looping on).
-   */
-  bool once;
   /**
    * Lower quality, but faster encode.
    */
   bool fast;
   /**
-   * 0+, but useful range is 0-10. 0 is loop forever. Recommended to set to 0.
+   * If negative, looping is disabled. The number of times the sequence is repeated. 0 to loop forever.
    */
-  uint16_t loop_count;
+  int16_t repeat;
 } GifskiSettings;
 
 enum GifskiError {
@@ -113,8 +110,10 @@ gifski *gifski_new(const GifskiSettings *settings);
  * You can add frames in any order, and they will be sorted by their `frame_number`.
  *
  * Presentation timestamp (PTS) is time in seconds, since start of the file, when this frame is to be displayed.
- * For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
+ * For a 20fps video it could be `frame_number/20.0`.
  * Frames with duplicate or out-of-order PTS will be skipped.
+ *
+ * The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
  *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
@@ -173,13 +172,18 @@ GifskiError gifski_add_frame_rgb(gifski *handle,
 
 /**
  * Get a callback for frame processed, and abort processing if desired.
- * The callback is called once per frame.
+ *
+ * The callback is called once per input frame,
+ * even if the encoder decides to skip some frames.
  *
  * It gets arbitrary pointer (`user_data`) as an argument. `user_data` can be `NULL`.
- * The callback must be thread-safe (it will be called from another thread).
+ *
  * The callback must return `1` to continue processing, or `0` to abort.
  *
- * Must be called before `gifski_set_file_output()` to take effect.
+ * The callback must be thread-safe (it will be called from another thread).
+ * It must remain valid at all times, until `gifski_finish` completes.
+ *
+ * This function must be called before `gifski_set_file_output()` to take effect.
  */
 void gifski_set_progress_callback(gifski *handle, int (*progress_callback)(void *user_data), void *user_data);
 
@@ -199,11 +203,13 @@ GifskiError gifski_set_file_output(gifski *handle, const char *destination_path)
  * This call will not block.
  *
  * The callback function receives 3 arguments:
- * - size of the buffer to write, in bytes. IT MAY BE ZERO (when it's zero, either do nothing, or flush internal buffers if necessary).
- * - pointer to the buffer.
- * - context pointer to arbitary user data, same as passed in to this function.
+ *  - size of the buffer to write, in bytes. IT MAY BE ZERO (when it's zero, either do nothing, or flush internal buffers if necessary).
+ *  - pointer to the buffer.
+ *  - context pointer to arbitary user data, same as passed in to this function.
+ *
  * The callback should return 0 (`GIFSKI_OK`) on success, and non-zero on error.
- * The callback function must be thread-safe.
+ *
+ * The callback function must be thread-safe. It must remain valid at all times, until `gifski_finish` completes.
  *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
