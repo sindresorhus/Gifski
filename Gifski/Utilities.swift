@@ -342,8 +342,12 @@ extension AVAssetImageGenerator {
 		var completedCount = 0
 		var decodeFailureFrameCount = 0
 
-		generateCGImagesAsynchronously(forTimes: times) { requestedTime, image, actualTime, result, error in
-			if (Double(decodeFailureFrameCount) / Double(totalCount)) > 0.5 {
+		generateCGImagesAsynchronously(forTimes: times) { [weak self] requestedTime, image, actualTime, result, error in
+			guard let self = self else {
+				return
+			}
+
+			if (Double(decodeFailureFrameCount) / Double(totalCount)) > 0.8 {
 				completionHandler(.failure(NSError.appError("\(decodeFailureFrameCount) of \(totalCount) frames failed to decode. This is a bug in macOS. We are looking into workarounds.")))
 				return
 			}
@@ -374,11 +378,30 @@ extension AVAssetImageGenerator {
 						break
 					}
 
-					// macOS 11 started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these. We throw an error if more than 50% of the frames could not be decoded.
+					// macOS 11 (still an issue in macOS 11.1) started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these. We throw an error if more than 50% of the frames could not be decoded.
 					if error.code == .decodeFailed {
-						decodeFailureFrameCount += 1
-						totalCount -= 1
-						Crashlytics.recordNonFatalError(error: error, userInfo: ["requestedTime": requestedTime.seconds])
+						var newActualTime = CMTime.zero
+						if let image = try? self.copyCGImage(at: requestedTime, actualTime: &newActualTime) {
+							completedCount += 1
+
+							completionHandler(
+								.success(
+									CompletionHandlerResult(
+										image: image,
+										requestedTime: requestedTime,
+										actualTime: newActualTime,
+										completedCount: completedCount,
+										totalCount: totalCount,
+										isFinished: completedCount == totalCount
+									)
+								)
+							)
+						} else {
+							decodeFailureFrameCount += 1
+							totalCount -= 1
+							Crashlytics.recordNonFatalError(error: error, userInfo: ["requestedTime": requestedTime.seconds])
+						}
+
 						break
 					}
 				}
@@ -1937,6 +1960,8 @@ extension CGSize {
 	}
 
 	var cgRect: CGRect { .init(origin: .zero, size: self) }
+
+	var longestSide: CGFloat { max(width, height) }
 
 	func aspectFit(to boundingSize: CGSize) -> Self {
 		let ratio = min(boundingSize.width / width, boundingSize.height / height)
