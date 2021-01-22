@@ -43,7 +43,7 @@ pub struct GifskiSettings {
     pub width: u32,
     /// Resize to max this height if width is non-0. Note that aspect ratio is not preserved.
     pub height: u32,
-    /// 1-100, but useful range is 50-100. Recommended to set to 100.
+    /// 1-100, but useful range is 50-100. Recommended to set to 90.
     pub quality: u8,
     /// Lower quality, but faster encode.
     pub fast: bool,
@@ -78,6 +78,8 @@ pub struct GifskiHandleInternal {
 /// Call to start the process
 ///
 /// See `gifski_add_frame_png_file` and `gifski_end_adding_frames`
+///
+/// Returns a handle for the other functions, or `NULL` on error (if the settings are invalid).
 #[no_mangle]
 pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const GifskiHandle {
     let settings = if let Some(s) = settings.as_ref() {s} else {
@@ -103,7 +105,9 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
     }
 }
 
-/// File path must be valid UTF-8. This function is asynchronous.
+/// Adds a frame to the animation. This function is asynchronous.
+///
+/// File path must be valid UTF-8.
 ///
 /// `frame_number` orders frames (consecutive numbers starting from 0).
 /// You can add frames in any order, and they will be sorted by their `frame_number`.

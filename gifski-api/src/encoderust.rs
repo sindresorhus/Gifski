@@ -3,7 +3,6 @@ use crate::{Encoder, Repeat};
 use crate::GIFFrame;
 use crate::Settings;
 use rgb::*;
-use std::borrow::Cow;
 use std::io::Write;
 
 pub(crate) struct RustEncoder<W: Write> {
@@ -21,8 +20,8 @@ impl<W: Write> RustEncoder<W> {
 }
 
 impl<W: Write> Encoder for RustEncoder<W> {
-    fn write_frame(&mut self, f: &GIFFrame, settings: &Settings) -> CatResult<()> {
-        let GIFFrame {ref pal, ref image, delay, dispose} = *f;
+    fn write_frame(&mut self, f: GIFFrame, delay: u16, settings: &Settings) -> CatResult<()> {
+        let GIFFrame {left, top, pal, image, screen_width, screen_height, dispose} = f;
 
         let writer = &mut self.writer;
 
@@ -34,19 +33,26 @@ impl<W: Write> Encoder for RustEncoder<W> {
 
         let enc = match self.gif_enc {
             None => {
-                let w = writer.take().unwrap();
-                let mut enc = gif::Encoder::new(w, image.width() as _, image.height() as _, &[])?;
+                let w = writer.take().expect("writer");
+                let mut enc = gif::Encoder::new(w, screen_width, screen_height, &[])?;
                 enc.write_extension(gif::ExtensionData::Repetitions(repeat))?;
                 self.gif_enc.get_or_insert(enc)
             },
             Some(ref mut enc) => enc,
         };
 
+        let (mut buffer, width, height) = image.into_contiguous_buf();
+
         let mut transparent_index = None;
         let mut pal_rgb = Vec::with_capacity(3 * pal.len());
         for (i, p) in pal.iter().enumerate() {
             if p.a == 0 {
-                transparent_index = Some(i as u8);
+                let new_index = i as u8;
+                if let Some(old_index) = transparent_index {
+                    buffer.iter_mut().filter(|px| **px == new_index).for_each(|px| *px = old_index);
+                } else {
+                    transparent_index = Some(new_index);
+                }
             }
             pal_rgb.extend_from_slice([p.rgb()].as_bytes());
         }
@@ -56,13 +62,13 @@ impl<W: Write> Encoder for RustEncoder<W> {
             dispose,
             transparent: transparent_index,
             needs_user_input: false,
-            top: 0,
-            left: 0,
-            width: image.width() as u16,
-            height: image.height() as u16,
+            top,
+            left,
+            width: width as u16,
+            height: height as u16,
             interlaced: false,
             palette: Some(pal_rgb),
-            buffer: Cow::Borrowed(image.buf()),
+            buffer: buffer.into(),
         })?;
         Ok(())
     }

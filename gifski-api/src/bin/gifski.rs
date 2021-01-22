@@ -1,15 +1,6 @@
-#[cfg(feature = "malloc")]
-use std::alloc::System;
-
-#[cfg(feature = "malloc")]
-#[cfg_attr(feature = "malloc", global_allocator)]
-static A: System = System;
-
 #[macro_use] extern crate clap;
 
-#[cfg(feature = "video")]
-extern crate ffmpeg;
-
+use gifski::{Settings, Repeat};
 use natord;
 use wild;
 
@@ -32,9 +23,9 @@ use std::thread;
 use std::time::Duration;
 
 #[cfg(feature = "video")]
-const VIDEO_FRAMES_ARG_HELP: &'static str = "one MP4/WebM video, or multiple PNG animation frames";
+const VIDEO_FRAMES_ARG_HELP: &'static str = "one video file supported by FFmpeg, or multiple PNG image files";
 #[cfg(not(feature = "video"))]
-const VIDEO_FRAMES_ARG_HELP: &'static str = "PNG animation frames";
+const VIDEO_FRAMES_ARG_HELP: &'static str = "PNG image files";
 
 fn main() {
     if let Err(e) = bin_main() {
@@ -64,15 +55,27 @@ fn bin_main() -> BinResult<()> {
                             .required(true))
                         .arg(Arg::with_name("fps")
                             .long("fps")
-                            .help("Animation frames per second (for PNG frames only)")
+                            .short("r")
+                            .help("Frame rate of animation. If using PNG files as \n\
+                                   input, this means the speed, as all frames are \n\
+                                   kept. If video is used, it will be resampled to \n\
+                                   this constant rate by dropping and/or duplicating \n\
+                                   frames")
                             .empty_values(false)
                             .value_name("num")
                             .default_value("20"))
+                        .arg(Arg::with_name("fast-forward")
+                            .long("fast-forward")
+                            .help("Multiply speed of video by a factor\n(no effect when using PNG files as input)")
+                            .empty_values(false)
+                            .value_name("num")
+                            .default_value("1"))
                         .arg(Arg::with_name("fast")
                             .long("fast")
-                            .help("3 times faster encoding, but 10% lower quality and bigger file"))
+                            .help("3 times faster encoding, but 10% lower quality and \nlarger file size"))
                         .arg(Arg::with_name("quality")
                             .long("quality")
+                            .short("Q")
                             .value_name("1-100")
                             .takes_value(true)
                             .help("Lower quality may give smaller file"))
@@ -81,20 +84,21 @@ fn bin_main() -> BinResult<()> {
                             .short("W")
                             .takes_value(true)
                             .value_name("px")
-                            .help("Maximum width"))
+                            .help("Maximum width.\nBy default anims are limited to about 800x600"))
                         .arg(Arg::with_name("height")
                             .long("height")
                             .short("H")
                             .takes_value(true)
                             .value_name("px")
-                            .help("Maximum height (if width is also set)"))
+                            .help("Maximum height (stretches if the width is also set)"))
                         .arg(Arg::with_name("nosort")
                             .long("nosort")
-                            .help("Use files exactly in the order given, rather than sorted"))
+                            .help("Use files exactly in the order given, rather than \nsorted"))
                         .arg(Arg::with_name("quiet")
                             .long("quiet")
-                            .help("Do not show a progress bar"))
-                        .arg(Arg::with_name("FRAMES")
+                            .short("q")
+                            .help("Do not display anything on standard output/console"))
+                        .arg(Arg::with_name("FILE")
                             .help(VIDEO_FRAMES_ARG_HELP)
                             .min_values(1)
                             .empty_values(false)
@@ -107,7 +111,7 @@ fn bin_main() -> BinResult<()> {
                             .value_name("num"))
                         .get_matches_from(wild::args_os());
 
-    let mut frames: Vec<_> = matches.values_of("FRAMES").ok_or("Missing files")?.collect();
+    let mut frames: Vec<_> = matches.values_of("FILE").ok_or("Missing files")?.collect();
     if !matches.is_present("nosort") {
         frames.sort_by(|a, b| natord::compare(a, b));
     }
@@ -119,12 +123,12 @@ fn bin_main() -> BinResult<()> {
     let repeat_int = parse_opt(matches.value_of("repeat")).map_err(|_| "Invalid repeat count")?.unwrap_or(0) as i16;
     let repeat;
     match repeat_int {
-        -1 => repeat = gifski::Repeat::Finite(0),
-        0 => repeat = gifski::Repeat::Infinite,
-        _ => repeat = gifski::Repeat::Finite(repeat_int as u16),
+        -1 => repeat = Repeat::Finite(0),
+        0 => repeat = Repeat::Infinite,
+        _ => repeat = Repeat::Finite(repeat_int as u16),
     }
 
-    let settings = gifski::Settings {
+    let settings = Settings {
         width,
         height,
         quality: parse_opt(matches.value_of("quality")).map_err(|_| "Invalid quality")?.unwrap_or(100),
@@ -133,23 +137,39 @@ fn bin_main() -> BinResult<()> {
     };
     let quiet = matches.is_present("quiet");
     let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;
+    let speed: f32 = matches.value_of("fast-forward").ok_or("Missing speed")?.parse().map_err(|_| "Speed must be a number")?;
+
+    let rate = source::Fps {
+        speed,
+        fps,
+    };
 
     if settings.quality < 20 {
         if settings.quality < 1 {
             Err("Quality too low")?;
-        } else {
+        } else if !quiet {
             eprintln!("warning: quality {} will give really bad results", settings.quality);
         }
     } else if settings.quality > 100 {
         Err("Quality 100 is maximum")?;
     }
 
-    check_if_path_exists(&frames[0])?;
+    if fps > 100.0 {
+        Err("100 fps is maximum")?;
+    }
+    else if !quiet && fps > 50.0 {
+        eprintln!("warning: web browsers support max 50 fps");
+    }
+
+    check_if_paths_exist(&frames)?;
 
     let mut decoder = if frames.len() == 1 {
-        get_video_decoder(&frames[0], fps)?
+        get_video_decoder(&frames[0], rate, settings)?
     } else {
-        Box::new(png::Lodecoder::new(frames, fps))
+        if speed != 1.0 {
+            Err("Speed doesn't apply to PNG files as input, use fps only")?;
+        }
+        Box::new(png::Lodecoder::new(frames, &rate))
     };
 
     let mut progress: Box<dyn ProgressReporter> = if quiet {
@@ -169,27 +189,31 @@ fn bin_main() -> BinResult<()> {
         decoder.collect(collector)
     });
 
+    let abs_path = dunce::canonicalize(&output_path);
+    let abs_path = abs_path.as_ref().map(|p| p.as_path()).unwrap_or(output_path);
+
     let file = File::create(output_path)
-        .map_err(|e| format!("Can't write to {}: {}", output_path.display(), e))?;
+        .map_err(|e| format!("Can't write to {}: {}", abs_path.display(), e))?;
     writer.write(file, &mut *progress)?;
-    decode_thread.join().unwrap()?;
-    progress.done(&format!("gifski created {}", output_path.display()));
+    decode_thread.join().map_err(|_| "thread died?")??;
+    progress.done(&format!("gifski created {}", abs_path.display()));
 
     Ok(())
 }
 
-fn check_if_path_exists(path: &Path) -> BinResult<()> {
-    if path.exists() {
-        Ok(())
-    } else {
-        let mut msg = format!("Unable to find the input file: \"{}\"", path.display());
-        if path.to_str().map_or(false, |p| p.contains('*')) {
-            msg += "\nThe path contains a literal \"*\" character. If you want to select multiple files, don't put the special wildcard characters in quotes.";
-        } else if path.is_relative() {
-            msg += &format!(" (searched in \"{}\")", env::current_dir()?.display());
+fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
+    for path in paths {
+        if !path.exists() {
+            let mut msg = format!("Unable to find the input file: \"{}\"", path.display());
+            if path.to_str().map_or(false, |p| p.contains('*')) {
+                msg += "\nThe path contains a literal \"*\" character. If you want to select multiple files, don't put the special wildcard characters in quotes.";
+            } else if path.is_relative() {
+                msg += &format!(" (searched in \"{}\")", env::current_dir()?.display());
+            }
+            Err(msg)?
         }
-        Err(msg)?
     }
+    Ok(())
 }
 
 fn parse_opt<T: ::std::str::FromStr<Err = ::std::num::ParseIntError>>(s: Option<&str>) -> BinResult<Option<T>> {
@@ -200,16 +224,18 @@ fn parse_opt<T: ::std::str::FromStr<Err = ::std::num::ParseIntError>>(s: Option<
 }
 
 #[cfg(feature = "video")]
-fn get_video_decoder(path: &Path, fps: f32) -> BinResult<Box<dyn Source + Send>> {
-    Ok(Box::new(ffmpeg_source::FfmpegDecoder::new(path, fps)?))
+fn get_video_decoder(path: &Path, fps: source::Fps, settings: Settings) -> BinResult<Box<dyn Source + Send>> {
+    Ok(Box::new(ffmpeg_source::FfmpegDecoder::new(path, fps, settings)?))
 }
 
 #[cfg(not(feature = "video"))]
-fn get_video_decoder(_: &Path, _fps: f32) -> BinResult<Box<dyn Source + Send>> {
+fn get_video_decoder(_: &Path, _: source::Fps, _: Settings) -> BinResult<Box<dyn Source + Send>> {
     Err(r"Video support is permanently disabled in this executable.
 
 To enable video decoding you need to recompile gifski from source with:
 cargo build --release --features=video
+or
+cargo install gifski --features=video
 
 Alternatively, use ffmpeg command to export PNG frames, and then specify
 the PNG files as input for this executable.
