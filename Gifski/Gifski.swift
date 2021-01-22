@@ -178,14 +178,30 @@ final class Gifski {
 
 			let generator = AVAssetImageGenerator(asset: asset)
 			generator.appliesPreferredTrackTransform = true
-			generator.requestedTimeToleranceBefore = .zero
-			generator.requestedTimeToleranceAfter = .zero
+
+			// This improves the performance a little bit.
+			if let dimensions = conversion.dimensions {
+				generator.maximumSize = CGSize(widthHeight: dimensions.longestSide)
+			}
 
 			self.progress.cancellationHandler = {
 				generator.cancelAllCGImageGeneration()
 			}
 
-			let fps = (conversion.frameRate.map { Double($0) } ?? assetFrameRate).clamped(to: Constants.allowedFrameRate)
+			// Even though we enforce a minimum of 5 FPS in the GUI, a source video could have lower FPS, and we should allow that.
+			var fps = (conversion.frameRate.map { Double($0) } ?? assetFrameRate).clamped(to: 0.1...Constants.allowedFrameRate.upperBound)
+			fps = min(fps, assetFrameRate)
+
+			// `.zero` tolerance is much slower and fails a lot on macOS 11. (macOS 11.1)
+			if #available(macOS 11, *) {
+				let tolerance = CMTime(seconds: 0.5 / fps, preferredTimescale: .video)
+				generator.requestedTimeToleranceBefore = tolerance
+				generator.requestedTimeToleranceAfter = tolerance
+			} else {
+				generator.requestedTimeToleranceBefore = .zero
+				generator.requestedTimeToleranceAfter = .zero
+			}
+
 			let videoRange = conversion.timeRange?.clamped(to: videoTrackRange) ?? videoTrackRange
 			let startTime = videoRange.lowerBound
 			let duration = videoRange.length
