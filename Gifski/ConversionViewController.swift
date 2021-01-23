@@ -118,7 +118,10 @@ final class ConversionViewController: NSViewController {
 
 		stopConversion { [weak self] in
 			// It's safe to force-unwrap as there's no scenario where it will be nil.
-			self?.push(viewController: AppDelegate.shared.previousEditViewController!)
+			let viewController = AppDelegate.shared.previousEditViewController!
+			viewController.isConverting = false
+
+			self?.push(viewController: viewController)
 		}
 	}
 

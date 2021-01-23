@@ -91,8 +91,14 @@ final class EditVideoViewController: NSViewController {
 		AppDelegate.shared.previousEditViewController = self
 	}
 
+	var isConverting = false
+
 	@IBAction
 	private func convert(_ sender: Any) {
+		isConverting = true
+
+		cancelFileSizeEstimation()
+
 		let convert = ConversionViewController(conversion: conversionSettings)
 		push(viewController: convert)
 	}
@@ -476,9 +482,25 @@ final class EditVideoViewController: NSViewController {
 		return formatter.string(fromByteCount: Int64(fileSize))
 	}
 
-	private func _estimateFileSize() {
+	private func cancelFileSizeEstimation() {
 		// TODO: Deinit doesn't seem to be called.
 		self.gifski?.cancel()
+		self.gifski = nil
+
+		if estimatedSizeLabel.stringValue.contains("Calculating") {
+			setEstimatedFileSize(getNaiveEstimate().attributedString)
+		}
+	}
+
+	private func _estimateFileSize() {
+		self.gifski?.cancel()
+		self.gifski = nil
+
+		setEstimatedFileSize(getNaiveEstimate().attributedString)
+
+		guard !isConverting else {
+			return
+		}
 
 		let gifski = Gifski()
 		self.gifski = gifski
