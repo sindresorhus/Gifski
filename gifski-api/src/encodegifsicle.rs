@@ -67,7 +67,7 @@ impl Encoder for Gifsicle<'_> {
         Ok(())
     }
     fn write_frame(&mut self, frame: GIFFrame, delay: u16, settings: &Settings) -> CatResult<()> {
-        let GIFFrame {left, top, pal, screen_width, screen_height, image, dispose} = frame;
+        let GIFFrame {left, top, pal, screen_width, screen_height, image, dispose, transparent_index} = frame;
 
         if self.gfs.is_null() {
             let gfs = unsafe {
@@ -105,12 +105,10 @@ impl Encoder for Gifsicle<'_> {
             gif::DisposalMethod::Background => Disposal::Background,
             gif::DisposalMethod::Previous => Disposal::Previous,
         } as _;
+        g.transparent = transparent_index.map(|i| i as _).unwrap_or(-1);
 
         g.local = unsafe { Gif_NewFullColormap(0, pal.len() as _) }; // it's owned by the image
-        for (i, c) in pal.iter().enumerate() {
-            if c.a == 0 {
-                g.transparent = i as _;
-            }
+        for c in pal.iter() {
             unsafe {
                 Gif_AddColor((*g).local, &mut Gif_Color {
                     gfc_red: c.r,
