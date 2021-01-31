@@ -193,7 +193,9 @@ final class ConversionCompletedViewController: NSViewController {
 	@IBAction
 	private func backButton(_ sender: NSButton) {
 		// It's safe to force-unwrap as there's no scenario where it will be nil.
-		push(viewController: AppDelegate.shared.previousEditViewController!)
+		let viewController = AppDelegate.shared.previousEditViewController!
+		viewController.isConverting = false
+		push(viewController: viewController)
 	}
 }
 
