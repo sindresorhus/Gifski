@@ -21,7 +21,7 @@ impl<W: Write> RustEncoder<W> {
 
 impl<W: Write> Encoder for RustEncoder<W> {
     fn write_frame(&mut self, f: GIFFrame, delay: u16, settings: &Settings) -> CatResult<()> {
-        let GIFFrame {left, top, pal, image, screen_width, screen_height, dispose} = f;
+        let GIFFrame {left, top, pal, image, screen_width, screen_height, dispose, transparent_index} = f;
 
         let writer = &mut self.writer;
 
@@ -41,19 +41,10 @@ impl<W: Write> Encoder for RustEncoder<W> {
             Some(ref mut enc) => enc,
         };
 
-        let (mut buffer, width, height) = image.into_contiguous_buf();
+        let (buffer, width, height) = image.into_contiguous_buf();
 
-        let mut transparent_index = None;
         let mut pal_rgb = Vec::with_capacity(3 * pal.len());
-        for (i, p) in pal.iter().enumerate() {
-            if p.a == 0 {
-                let new_index = i as u8;
-                if let Some(old_index) = transparent_index {
-                    buffer.iter_mut().filter(|px| **px == new_index).for_each(|px| *px = old_index);
-                } else {
-                    transparent_index = Some(new_index);
-                }
-            }
+        for p in pal.iter() {
             pal_rgb.extend_from_slice([p.rgb()].as_bytes());
         }
 

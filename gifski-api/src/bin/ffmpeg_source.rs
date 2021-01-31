@@ -17,7 +17,7 @@ impl Source for FfmpegDecoder {
     fn total_frames(&self) -> u64 {
         self.frames
     }
-    fn collect(&mut self, dest: Collector) -> BinResult<()> {
+    fn collect(&mut self, dest: &mut Collector) -> BinResult<()> {
         self.collect_frames(dest)
     }
 }
@@ -40,7 +40,7 @@ impl FfmpegDecoder {
         })
     }
 
-    pub fn collect_frames(&mut self, mut dest: Collector) -> BinResult<()> {
+    pub fn collect_frames(&mut self, dest: &mut Collector) -> BinResult<()> {
         let (stream_index, mut decoder, mut filter) = {
             let filter_fps = self.rate.fps / self.rate.speed;
             let stream = self.input_context.streams().best(ffmpeg::media::Type::Video).ok_or("The file has no video tracks")?;

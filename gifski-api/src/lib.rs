@@ -106,6 +106,7 @@ struct GIFFrame {
     image: ImgVec<u8>,
     pal: Vec<RGBA8>,
     dispose: gif::DisposalMethod,
+    transparent_index: Option<u8>,
 }
 
 trait Encoder {
@@ -119,19 +120,30 @@ trait Encoder {
 struct DiffMessage {
     /// 1..
     ordinal_frame_number: usize,
-    image: ImgVec<RGBA8>,
-    importance_map: Vec<u8>,
-    dispose: gif::DisposalMethod,
     /// presentation timestamp of the next frame (i.e. when this frame finishes being displayed)
     end_pts: f64,
+    dispose: gif::DisposalMethod,
+    image: ImgVec<RGBA8>,
+    importance_map: Vec<u8>,
 }
 
-/// Frame post quantization
+/// Frame post quantization, before remap
+struct RemapMessage {
+    /// 1..
+    ordinal_frame_number: usize,
+    end_pts: f64,
+    dispose: gif::DisposalMethod,
+    liq: Attributes,
+    remap: QuantizationResult,
+    liq_image: Image<'static>,
+}
+
+/// Frame post quantization and remap
 struct FrameMessage {
     /// 1..
     ordinal_frame_number: usize,
-    frame: GIFFrame,
     end_pts: f64,
+    frame: GIFFrame,
 }
 
 
@@ -194,7 +206,7 @@ impl Collector {
             assert_eq!(buf.len(), img_width * img_height);
 
             let mut r = resize::new(img_width, img_height, width, height, resize::Pixel::RGBA, resize::Type::Lanczos3);
-            let mut dst = vec![RGBA::new(0, 0, 0, 0); width * height];
+            let mut dst = vec![RGBA8::new(0, 0, 0, 0); width * height];
             r.resize(buf.as_bytes(), dst.as_bytes_mut());
             image = ImgVec::new(dst, width, height)
         }
@@ -254,26 +266,32 @@ impl Writer {
     /// Avoids wasting palette on pixels identical to the background.
     ///
     /// `background` is the previous frame.
-    fn quantize(image: ImgRef<'_, RGBA8>, importance_map: &[u8], background: Option<ImgRef<'_, RGBA8>>, settings: &Settings) -> CatResult<(ImgVec<u8>, Vec<RGBA8>)> {
+    fn quantize(image: ImgRef<'_, RGBA8>, importance_map: &[u8], has_prev_frame: bool, settings: &Settings) -> CatResult<(Attributes, QuantizationResult, Image<'static>)> {
         let mut liq = Attributes::new();
         if settings.fast {
             liq.set_speed(10);
         }
-        let quality = if background.is_some() { // not first frame
+        let quality = if has_prev_frame {
             settings.color_quality().into()
         } else {
             100 // the first frame is too important to ruin it
         };
         liq.set_quality(0, quality);
-        let mut img = liq.new_image_stride(image.buf(), image.width(), image.height(), image.stride(), 0.)?;
-        img.set_importance_map(importance_map)?;
-        if let Some(bg) = background {
-            assert_eq!(bg.width(), bg.stride());
-            img.set_background(liq.new_image(bg.buf(), bg.width(), bg.height(), 0.)?)?;
+        let mut img = liq.new_image_stride_copy(image.buf(), image.width(), image.height(), image.stride(), 0.).expect("stridecopy");
+        img.set_importance_map(importance_map).expect("immap");
+        if has_prev_frame {
+            img.add_fixed_color(RGBA8::new(0, 0, 0, 0));
         }
-        img.add_fixed_color(RGBA8::new(0, 0, 0, 0));
-        let mut res = liq.quantize(&img)?;
-        res.set_dithering_level(0.5);
+        let res = liq.quantize(&img).expect("quantize");
+        Ok((liq, res, img))
+    }
+
+    fn remap(liq: Attributes, mut res: QuantizationResult, mut img: Image<'static>, background: Option<ImgRef<'_, RGBA8>>, settings: &Settings) -> CatResult<(ImgVec<u8>, Vec<RGBA8>)> {
+        if let Some(bg) = background {
+            img.set_background(liq.new_image_stride(bg.buf(), bg.width(), bg.height(), bg.stride(), 0.)?)?;
+        }
+
+        res.set_dithering_level(settings.quality as f32 / 150.0);
 
         let (pal, pal_img) = res.remapped(&mut img)?;
         debug_assert_eq!(img.width() * img.height(), pal_img.len());
@@ -288,7 +306,7 @@ impl Writer {
         for FrameMessage {frame, ordinal_frame_number, end_pts, ..} in write_queue {
             let delay = ((end_pts * 100.0).round() as u64)
                 .saturating_sub(pts_in_delay_units)
-                .min(10000) as u16;
+                .min(30000) as u16;
             pts_in_delay_units += u64::from(delay);
 
             // skip frames with bad pts
@@ -318,39 +336,35 @@ impl Writer {
 
         #[cfg(feature = "gifsicle")]
         {
-            let encoder: &mut dyn Encoder;
-            let mut gifsicle;
-            let mut rustgif;
             if self.settings.quality < 100 {
                 let loss = (100 - self.settings.quality as u32) * 6;
-                gifsicle = encodegifsicle::Gifsicle::new(loss, &mut writer);
-                encoder = &mut gifsicle;
-            } else {
-                rustgif = encoderust::RustEncoder::new(writer);
-                encoder = &mut rustgif;
+                let mut gifsicle = encodegifsicle::Gifsicle::new(loss, &mut writer);
+                return self.write_with_encoder(&mut gifsicle, reporter);
             }
-            self.write_with_encoder(encoder, reporter)
         }
-        #[cfg(not(feature = "gifsicle"))]
-        {
-            self.write_with_encoder(&mut encoderust::RustEncoder::new(writer), reporter)
-        }
+        self.write_with_encoder(&mut encoderust::RustEncoder::new(writer), reporter)
     }
 
     fn write_with_encoder(mut self, encoder: &mut dyn Encoder, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
-        let decode_queue_recv = self.queue_iter.take().expect("queue");
-        let (quant_queue, quant_queue_recv) = crossbeam_channel::bounded(4);
+        let decode_queue_recv = self.queue_iter.take().ok_or(Error::Aborted)?;
+
         let settings = self.settings;
-        let diff_thread = thread::spawn(move || {
+        let (quant_queue, quant_queue_recv) = crossbeam_channel::bounded(4);
+        let diff_thread = thread::Builder::new().name("diff".into()).spawn(move || {
             Self::make_diffs(decode_queue_recv, quant_queue, &settings)
-        });
-        let (write_queue, write_queue_recv) = crossbeam_channel::bounded(4);
-        let quant_thread = thread::spawn(move || {
-            Self::quantize_frames(quant_queue_recv, write_queue, &settings)
-        });
+        })?;
+        let (remap_queue, remap_queue_recv) = crossbeam_channel::bounded(8);
+        let quant_thread = thread::Builder::new().name("quant".into()).spawn(move || {
+            Self::quantize_frames(quant_queue_recv, remap_queue, &settings)
+        })?;
+        let (write_queue, write_queue_recv) = crossbeam_channel::bounded(6);
+        let remap_thread = thread::Builder::new().name("remap".into()).spawn(move || {
+            Self::remap_frames(remap_queue_recv, write_queue, &settings)
+        })?;
         Self::write_frames(write_queue_recv, encoder, &self.settings, reporter)?;
         diff_thread.join().map_err(|_| Error::ThreadSend)??;
         quant_thread.join().map_err(|_| Error::ThreadSend)??;
+        remap_thread.join().map_err(|_| Error::ThreadSend)??;
         Ok(())
     }
 
@@ -424,30 +438,24 @@ impl Writer {
         Ok(())
     }
 
-    fn quantize_frames(inputs: Receiver<DiffMessage>, write_queue: Sender<FrameMessage>, settings: &Settings) -> CatResult<()> {
-        let mut screen = None;
+    fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: Sender<RemapMessage>, settings: &Settings) -> CatResult<()> {
         let next_frame = inputs.recv().map_err(|_| Error::NoFrames)?;
 
         let mut next_frame = Some(next_frame);
+        let mut prev_frame: Option<ImgVec<_>> = None;
 
-        let mut previous_frame_dispose = gif::DisposalMethod::Background;
-        let mut frames_written = 0;
         while let Some(DiffMessage {image, end_pts, dispose, ordinal_frame_number, mut importance_map}) = {
             // that's not the while loop, that block gets the next element
             let curr_frame = next_frame.take();
             next_frame = inputs.recv().ok();
             curr_frame
         } {
-            let screen = screen.get_or_insert_with(|| gif_dispose::Screen::new(image.width(), image.height(), RGBA8::new(0, 0, 0, 0), None));
-
-            let has_prev_frame = frames_written > 0 && previous_frame_dispose == gif::DisposalMethod::Keep;
-            if has_prev_frame {
+            if let Some(prev_frame) = &prev_frame {
                 let q = 100 - u32::from(settings.color_quality());
                 let min_diff = 80 + q * q;
-                debug_assert_eq!(image.width(), screen.pixels.width());
                 importance_map
                     .chunks_exact_mut(image.width())
-                    .zip(screen.pixels.rows().zip(image.rows()))
+                    .zip(prev_frame.rows().zip(image.rows()))
                     .flat_map(|(imp, (bg, px))| {
                         imp.iter_mut().zip(bg.iter().copied().zip(px.iter().copied()))
                     })
@@ -467,26 +475,64 @@ impl Writer {
                         }
                     });
             }
+            let (liq, remap, liq_image) = Self::quantize(image.as_ref(), &importance_map, ordinal_frame_number > 1, settings)?;
+            remap_queue.send(RemapMessage {
+                ordinal_frame_number,
+                end_pts,
+                dispose,
+                liq, remap,
+                liq_image,
+            })?;
+            prev_frame = if dispose == gif::DisposalMethod::Keep { Some(image) } else { None };
+        }
+        Ok(())
+    }
 
+    fn remap_frames(inputs: Receiver<RemapMessage>, write_queue: Sender<FrameMessage>, settings: &Settings) -> CatResult<()> {
+        let next_frame = inputs.recv().map_err(|_| Error::NoFrames)?;
+        let mut screen = gif_dispose::Screen::new(next_frame.liq_image.width(), next_frame.liq_image.height(), RGBA8::new(0, 0, 0, 0), None);
+
+        let mut next_frame = Some(next_frame);
+
+        let mut first_frame = true;
+        while let Some(RemapMessage {ordinal_frame_number, end_pts, dispose, liq, remap, liq_image}) = {
+            // that's not the while loop, that block gets the next element
+            let curr_frame = next_frame.take();
+            next_frame = inputs.recv().ok();
+            curr_frame
+        } {
             let screen_width = screen.pixels.width() as u16;
             let screen_height = screen.pixels.height() as u16;
             let mut screen_after_dispose = screen.dispose();
 
-            let (image8, image8_pal) = {
-                let bg = if has_prev_frame { Some(screen_after_dispose.pixels()) } else { None };
-                Self::quantize(image.as_ref(), &importance_map, bg, settings)?
+            let (mut image8, mut image8_pal) = {
+                let bg = if !first_frame { Some(screen_after_dispose.pixels()) } else { None };
+                Self::remap(liq, remap, liq_image, bg, settings)?
             };
 
-            drop(image);
+            // Palette may have multiple transparent indices :(
+            let mut transparent_index = None;
+            for (i, p) in image8_pal.iter_mut().enumerate() {
+                if p.a <= 128 {
+                    p.a = 0;
+                    let new_index = i as u8;
+                    if let Some(old_index) = transparent_index {
+                        image8.pixels_mut().filter(|px| **px == new_index).for_each(|px| *px = old_index);
+                    } else {
+                        transparent_index = Some(new_index);
+                    }
+                }
+            }
 
-            let transparent_index = image8_pal.iter().position(|p| p.a == 0).map(|i| i as u8);
-
-            let (left, top, image8) = match trim_image(image8, &image8_pal, transparent_index, screen_after_dispose.pixels()) {
-                Some(trimmed) => trimmed,
-                None => continue, // no pixels left
+            let (left, top, image8) = if !first_frame && next_frame.is_some() {
+                match trim_image(image8, &image8_pal, transparent_index, screen_after_dispose.pixels()) {
+                    Some(trimmed) => trimmed,
+                    None => continue, // no pixels left
+                }
+            } else {
+                // must keep first and last frame
+                (0, 0, image8)
             };
-
-            previous_frame_dispose = dispose;
 
             let frame = GIFFrame {
                 left,
@@ -495,6 +541,7 @@ impl Writer {
                 screen_height,
                 image: image8,
                 pal: image8_pal,
+                transparent_index,
                 dispose,
             };
 
@@ -505,9 +552,9 @@ impl Writer {
                 end_pts,
                 frame,
             })?;
-            frames_written += 1;
-        }
 
+            first_frame = false;
+        }
         Ok(())
     }
 }

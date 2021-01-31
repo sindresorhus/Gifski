@@ -225,12 +225,18 @@ pub unsafe extern "C" fn gifski_add_frame_rgb(handle: *const GifskiHandle, frame
 ///
 /// This function must be called before `gifski_set_file_output()` to take effect.
 #[no_mangle]
-pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandle, cb: unsafe extern fn(*mut c_void) -> c_int, user_data: *mut c_void) {
+pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandle, cb: unsafe extern fn(*mut c_void) -> c_int, user_data: *mut c_void) -> GifskiError {
     let g = match borrow(handle) {
         Some(g) => g,
-        None => return,
+        None => return GifskiError::NULL_ARG,
     };
+    let t = g.write_thread.lock().unwrap();
+    if t.0 {
+        eprintln!("tried to set progress callback after writing has already started");
+        return GifskiError::INVALID_STATE;
+    }
     *g.progress.lock().unwrap() = Some(ProgressCallback::new(cb, user_data));
+    GifskiError::OK
 }
 
 /// Start writing to the `destination`. This has to be called before any frames are added.
@@ -240,26 +246,15 @@ pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandl
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_set_file_output(handle: *const GifskiHandle, destination: *const c_char) -> GifskiError {
-    if handle.is_null() {
-        return GifskiError::NULL_ARG;
-    }
-    let g = retain(handle);
-    let (file, path) = match prepare_for_file_writing(&g, destination) {
+    let g = match borrow(handle) {
+        Some(g) => g,
+        None => return GifskiError::NULL_ARG,
+    };
+    let (file, path) = match prepare_for_file_writing(g, destination) {
         Ok(res) => res,
         Err(err) => return err,
     };
-    let mut t = g.write_thread.lock().unwrap();
-    if t.0 {
-        eprintln!("gifski_set_file_output/gifski_set_write_callback has been called already");
-        return GifskiError::INVALID_STATE;
-    }
-    *t = (true, Some(thread::spawn({
-        let g = Arc::clone(&g);
-        move || {
-            gifski_write_sync_internal(&g, file, Some(path))
-        }
-    })));
-    GifskiError::OK
+    gifski_write_thread_start(g, file, Some(path))
 }
 
 
@@ -321,67 +316,59 @@ impl io::Write for CallbackWriter {
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_set_write_callback(handle: *const GifskiHandle, cb: Option<unsafe extern fn(usize, *const u8, *mut c_void) -> c_int>, user_data: *mut c_void) -> GifskiError {
-    if handle.is_null() {
-        return GifskiError::NULL_ARG;
-    }
+    let g = match borrow(handle) {
+        Some(g) => g,
+        None => return GifskiError::NULL_ARG,
+    };
     let cb = match cb {
         Some(cb) => cb,
         None => return GifskiError::NULL_ARG,
     };
-    let g = retain(handle);
     let writer = CallbackWriter { cb, user_data };
+    gifski_write_thread_start(g, writer, None)
+}
+
+fn gifski_write_thread_start<W: 'static +  Write + Send>(g: &GifskiHandleInternal, file: W, path: Option<PathBuf>) -> GifskiError {
     let mut t = g.write_thread.lock().unwrap();
     if t.0 {
         eprintln!("gifski_set_file_output/gifski_set_write_callback has been called already");
         return GifskiError::INVALID_STATE;
     }
-    *t = (
-        true,
-        Some(thread::spawn({
-            let g = Arc::clone(&g);
-            move || gifski_write_sync_internal(&g, writer, None)
-        })),
-    );
-    GifskiError::OK
-}
-
-
-fn gifski_write_sync_internal<W: Write + Send>(g: &GifskiHandleInternal, file: W, path: Option<PathBuf>) -> GifskiError {
-    if let Some(writer) = g.writer.lock().unwrap().take() {
-        let mut tmp;
-        let mut progress: &mut dyn ProgressReporter = &mut NoProgress {};
-        if let Some(cb) = g.progress.lock().unwrap().take() {
-            tmp = cb;
-            progress = &mut tmp;
+    let writer = g.writer.lock().unwrap().take();
+    let mut user_progress = g.progress.lock().unwrap().take();
+    let handle = thread::Builder::new().name("c-write".into()).spawn(move || {
+        if let Some(writer) = writer {
+            let mut progress: &mut dyn ProgressReporter = &mut NoProgress {};
+            if let Some(cb) = &mut user_progress {
+                progress = &mut *cb;
+            }
+            match writer.write(file, progress).into() {
+                res @ GifskiError::OK |
+                res @ GifskiError::ALREADY_EXISTS => res,
+                err => {
+                    if let Some(path) = path {
+                        let _ = fs::remove_file(path); // clean up unfinished file
+                    }
+                    err
+                },
+            }
+        } else {
+            eprintln!("gifski_set_file_output or gifski_write_* has been called once already");
+            GifskiError::INVALID_STATE
         }
-        match writer.write(file, progress).into() {
-            res @ GifskiError::OK |
-            res @ GifskiError::ALREADY_EXISTS => res,
-            err => {
-                if let Some(path) = path {
-                    let _ = fs::remove_file(path); // clean up unfinished file
-                }
-                err
-            },
-        }
-    } else {
-        eprintln!("gifski_set_file_output or gifski_write_* has been called once already");
-        GifskiError::INVALID_STATE
+    });
+    match handle {
+        Ok(handle) => {
+            *t = (true, Some(handle));
+            GifskiError::OK
+        },
+        Err(_) => GifskiError::THREAD_LOST,
     }
 }
 
 unsafe fn borrow<'a>(handle: *const GifskiHandle) -> Option<&'a GifskiHandleInternal> {
     let g = handle as *const GifskiHandleInternal;
     g.as_ref()
-}
-
-/// get refcount++ without dropping the handle
-unsafe fn retain(arc_ptr: *const GifskiHandle) -> Arc<GifskiHandleInternal> {
-    let arc_ptr = arc_ptr as *const GifskiHandleInternal;
-    let tmp = Arc::from_raw(arc_ptr);
-    let g = Arc::clone(&tmp);
-    let _ = Arc::into_raw(tmp);
-    g
 }
 
 /// The last step:
@@ -438,8 +425,9 @@ fn c_cb() {
         1
     }
     unsafe {
+        assert_eq!(GifskiError::OK, gifski_set_progress_callback(g, pcb, (&mut progress_called) as *mut _ as _));
         assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), (&mut write_called) as *mut _ as _));
-        gifski_set_progress_callback(g, pcb, (&mut progress_called) as *mut _ as _);
+        assert_eq!(GifskiError::INVALID_STATE, gifski_set_progress_callback(g, pcb, (&mut progress_called) as *mut _ as _));
         assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 3.));
         assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 10.));
         assert_eq!(GifskiError::OK, gifski_finish(g));
@@ -457,14 +445,11 @@ fn cant_write_after_finish() {
         repeat: -1,
     })};
     assert!(!g.is_null());
-    let mut called = false;
-    unsafe extern "C" fn cb(_s: usize, _buf: *const u8, user_data: *mut c_void) -> c_int {
-        let called = user_data as *mut bool;
-        *called = true;
+    unsafe extern "C" fn cb(_s: usize, _buf: *const u8, _: *mut c_void) -> c_int {
         0
     }
     unsafe {
-        assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), (&mut called) as *mut _ as _));
+        assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), 0 as _));
         assert_eq!(GifskiError::OTHER, gifski_finish(g));
     }
 }
@@ -527,7 +512,7 @@ fn c_incomplete() {
     }
     unsafe {
         gifski_set_progress_callback(g, cb, ptr::null_mut());
-        assert_eq!(GifskiError::OK, gifski_add_frame_rgba(g, 0, 1, 1, &RGBA::new(0, 0, 0, 0), 5.0));
+        assert_eq!(GifskiError::OK, gifski_add_frame_rgba(g, 0, 1, 1, &RGBA8::new(0, 0, 0, 0), 5.0));
         assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 1, 1, 3, 1, &RGB::new(0, 0, 0), 5.0));
         assert_eq!(GifskiError::OK, gifski_finish(g));
     }
