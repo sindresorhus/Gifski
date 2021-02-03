@@ -34,6 +34,8 @@ gifski -o anim.gif frame*.png
 
 You can also resize frames (with `-W <width in pixels>` option). If the input was ever encoded using a lossy video codec it's recommended to at least halve size of the frames to hide compression artefacts and counter chroma subsampling that was done by the video codec.
 
+Adding `--quality=90` may reduce file sizes a bit, but expect to lose a lot of quality for little gain. GIF just isn't that good at compressing, no matter how much you compromise.
+
 See `gifski -h` for more options.
 
 ## Building

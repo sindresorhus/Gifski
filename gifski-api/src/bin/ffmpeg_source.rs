@@ -1,9 +1,9 @@
+use crate::source::*;
 use crate::BinResult;
 use gifski::Collector;
 use gifski::Settings;
 use imgref::*;
 use rgb::*;
-use crate::source::*;
 use std::path::Path;
 
 pub struct FfmpegDecoder {

@@ -1,7 +1,7 @@
 use crate::error::CatResult;
-use crate::{Encoder, Repeat};
 use crate::GIFFrame;
 use crate::Settings;
+use crate::{Encoder, Repeat};
 use rgb::*;
 use std::io::Write;
 

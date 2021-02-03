@@ -26,6 +26,7 @@ pub enum GifskiError {
 }
 
 impl Into<io::Error> for GifskiError {
+    #[cold]
     fn into(self) -> io::Error {
         use std::io::ErrorKind as EK;
         use GifskiError::*;
@@ -45,6 +46,7 @@ impl Into<io::Error> for GifskiError {
 }
 
 impl From<c_int> for GifskiError {
+    #[cold]
     fn from(res: c_int) -> Self {
         use GifskiError::*;
         match res {
@@ -69,6 +71,7 @@ impl From<c_int> for GifskiError {
 }
 
 impl From<CatResult<()>> for GifskiError {
+    #[cold]
     fn from(res: CatResult<()>) -> Self {
         use crate::error::Error::*;
         match res {
@@ -85,6 +88,7 @@ impl From<CatResult<()>> for GifskiError {
 }
 
 impl From<io::ErrorKind> for GifskiError {
+    #[cold]
     fn from(res: io::ErrorKind) -> Self {
         use std::io::ErrorKind as EK;
         match res {

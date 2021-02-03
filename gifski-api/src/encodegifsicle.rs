@@ -1,7 +1,7 @@
 use crate::error::*;
-use crate::{Encoder, Repeat};
 use crate::GIFFrame;
 use crate::Settings;
+use crate::{Encoder, Repeat};
 use gifsicle::*;
 use std::io::Write;
 use std::ptr;
@@ -86,7 +86,7 @@ impl Encoder for Gifsicle<'_> {
             unsafe {
                 self.gif_writer = Gif_IncrementalWriteFileInit(gfs, &self.info, ptr::null_mut());
                 if self.gif_writer.is_null() {
-                    Err(Error::Gifsicle)?;
+                    return Err(Error::Gifsicle);
                 }
             }
         }
@@ -123,12 +123,12 @@ impl Encoder for Gifsicle<'_> {
         unsafe {
             if 0 == Gif_SetUncompressedImage(g, image.buf().as_ptr() as *mut u8, None, 0) {
                 Gif_DeleteImage(g);
-                Err(Error::Gifsicle)?;
+                return Err(Error::Gifsicle);
             }
             let res = Gif_IncrementalWriteImage(self.gif_writer, self.gfs, g);
             Gif_DeleteImage(g);
             if 0 == res {
-                Err(Error::Gifsicle)?;
+                return Err(Error::Gifsicle);
             }
             self.flush_writer()?;
         }

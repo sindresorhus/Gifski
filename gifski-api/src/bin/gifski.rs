@@ -2,8 +2,6 @@
 
 use std::ffi::OsStr;
 use gifski::{Settings, Repeat};
-use natord;
-use wild;
 
 #[cfg(feature = "video")]
 mod ffmpeg_source;
@@ -19,16 +17,16 @@ use clap::{App, AppSettings, Arg};
 
 use std::env;
 use std::fmt;
-use std::io;
 use std::fs::File;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
 #[cfg(feature = "video")]
-const VIDEO_FRAMES_ARG_HELP: &'static str = "one video file supported by FFmpeg, or multiple PNG image files";
+const VIDEO_FRAMES_ARG_HELP: &str = "one video file supported by FFmpeg, or multiple PNG image files";
 #[cfg(not(feature = "video"))]
-const VIDEO_FRAMES_ARG_HELP: &'static str = "PNG image files";
+const VIDEO_FRAMES_ARG_HELP: &str = "PNG image files";
 
 fn main() {
     if let Err(e) = bin_main() {
@@ -40,8 +38,9 @@ fn main() {
     }
 }
 
+#[allow(clippy::float_cmp)]
 fn bin_main() -> BinResult<()> {
-     let matches = App::new(crate_name!())
+    let matches = App::new(crate_name!())
                         .version(crate_version!())
                         .about("https://gif.ski by Kornel Lesiński")
                         .setting(AppSettings::UnifiedHelpMessage)
@@ -71,7 +70,7 @@ fn bin_main() -> BinResult<()> {
                             .long("fast-forward")
                             .help("Multiply speed of video by a factor\n(no effect when using PNG files as input)")
                             .empty_values(false)
-                            .value_name("num")
+                            .value_name("x")
                             .default_value("1"))
                         .arg(Arg::with_name("fast")
                             .long("fast")
@@ -118,7 +117,7 @@ fn bin_main() -> BinResult<()> {
     if !matches.is_present("nosort") {
         frames.sort_by(|a, b| natord::compare(a, b));
     }
-    let frames: Vec<_> = frames.into_iter().map(|s| PathBuf::from(s)).collect();
+    let frames: Vec<_> = frames.into_iter().map(PathBuf::from).collect();
 
     let output_path = DestPath::new(matches.value_of_os("output").ok_or("Missing output")?);
     let width = parse_opt(matches.value_of("width")).map_err(|_| "Invalid width")?;
@@ -142,10 +141,7 @@ fn bin_main() -> BinResult<()> {
     let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;
     let speed: f32 = matches.value_of("fast-forward").ok_or("Missing speed")?.parse().map_err(|_| "Speed must be a number")?;
 
-    let rate = source::Fps {
-        speed,
-        fps,
-    };
+    let rate = source::Fps { speed, fps };
 
     if settings.quality < 20 {
         if settings.quality < 1 {
@@ -265,6 +261,7 @@ fn get_video_decoder(path: &Path, fps: source::Fps, settings: Settings) -> BinRe
 }
 
 #[cfg(not(feature = "video"))]
+#[cold]
 fn get_video_decoder(_: &Path, _: source::Fps, _: Settings) -> BinResult<Box<dyn Source + Send>> {
     Err(r"Video support is permanently disabled in this executable.
 
