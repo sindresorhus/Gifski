@@ -89,12 +89,12 @@ impl FfmpegDecoder {
         let mut filt_frame = ffmpeg::util::frame::Video::empty();
         let mut i = 0;
         let mut pts_last_packet = 0;
-        let mut delayed_frames = 0;
         let pts_frame_step = 1.0 / self.rate.fps as f64;
 
         loop {
-            let (packet, packet_is_empty) = if let Some((s, packet)) = packets.next() {
+            let (packet, no_more_packets) = if let Some((s, packet)) = packets.next() {
                 if s.index() != stream_index {
+                    // ignore irrelevant streams
                     continue;
                 }
                 pts_last_packet = packet.pts().ok_or("ffmpeg format error")? + packet.duration();
@@ -102,30 +102,24 @@ impl FfmpegDecoder {
             } else {
                 (ffmpeg::Packet::empty(), true)
             };
-            let decoded = decoder.decode(&packet, &mut vid_frame)?;
-            if !decoded || 0 == vid_frame.width() {
-                if packet_is_empty {
-                    if delayed_frames == 0 {
-                        break;
-                    }
-                } else {
-                    delayed_frames += 1;
-                }
-                continue;
-            }
-            if packet_is_empty {
-                delayed_frames -= 1;
-            }
 
-            filter.get("in").ok_or("ffmpeg format error")?.source().add(&vid_frame)?;
-            let mut out = filter.get("out").ok_or("ffmpeg format error")?;
-            let mut out = out.sink();
-            while let Ok(..) = out.frame(&mut filt_frame) {
-                add_frame(&filt_frame, pts_frame_step * i as f64, i)?;
-                i += 1;
+            let decoded = decoder.decode(&packet, &mut vid_frame)?;
+            if decoded {
+                filter.get("in").ok_or("ffmpeg format error")?.source().add(&vid_frame)?;
+                let mut out = filter.get("out").ok_or("ffmpeg format error")?;
+                let mut out = out.sink();
+                while let Ok(..) = out.frame(&mut filt_frame) {
+                    add_frame(&filt_frame, pts_frame_step * i as f64, i)?;
+                    i += 1;
+                }
+            }
+            // loop to flush decoder's buffer
+            if no_more_packets && !decoded {
+                break;
             }
         }
 
+        // now flush filter's buffer
         filter.get("in").ok_or("ffmpeg format error")?.source().close(pts_last_packet)?;
         let mut out = filter.get("out").ok_or("ffmpeg format error")?;
         let mut out = out.sink();
