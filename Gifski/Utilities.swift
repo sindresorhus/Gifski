@@ -613,7 +613,7 @@ extension AVAssetTrack {
 		// swiftlint:disable:next force_cast
 		let formatDescription = rawDescription as! CMFormatDescription
 
-		return CMFormatDescriptionGetMediaSubType(formatDescription).toString()
+		return CMFormatDescriptionGetMediaSubType(formatDescription).fourCharCodeToString()
 	}
 
 	var codec: AVFormat? {
@@ -637,10 +637,10 @@ extension AVAssetTrack {
 		var format = [String]()
 		for description in descriptions {
 			// Get string representation of media type (vide, soun, sbtl, etc.)
-			let type = CMFormatDescriptionGetMediaType(description).toString()
+			let type = CMFormatDescriptionGetMediaType(description).fourCharCodeToString()
 
 			// Get string representation media subtype (avc1, aac, tx3g, etc.)
-			let subType = CMFormatDescriptionGetMediaSubType(description).toString()
+			let subType = CMFormatDescriptionGetMediaSubType(description).fourCharCodeToString()
 
 			format.append("\(type)/\(subType)")
 		}
@@ -687,7 +687,7 @@ extension AVAssetTrack {
 */
 extension FourCharCode {
 	/// Create a String representation of a FourCC.
-	func toString() -> String {
+	func fourCharCodeToString() -> String {
 		let a_ = self >> 24
 		let b_ = self >> 16
 		let c_ = self >> 8
@@ -795,7 +795,7 @@ enum AVFormat: String {
 	}
 
 	init?(fourCC: FourCharCode) {
-		self.init(fourCC: fourCC.toString())
+		self.init(fourCC: fourCC.fourCharCodeToString())
 	}
 
 	var fourCC: String {

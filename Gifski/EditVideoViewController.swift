@@ -484,8 +484,8 @@ final class EditVideoViewController: NSViewController {
 
 	private func cancelFileSizeEstimation() {
 		// TODO: Deinit doesn't seem to be called.
-		self.gifski?.cancel()
-		self.gifski = nil
+		gifski?.cancel()
+		gifski = nil
 
 		if estimatedSizeLabel.stringValue.contains("Calculating") {
 			setEstimatedFileSize(getNaiveEstimate().attributedString)
