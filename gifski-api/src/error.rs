@@ -1,5 +1,3 @@
-use gif_dispose;
-use imagequant;
 use std::io;
 
 quick_error! {
@@ -29,6 +27,7 @@ quick_error! {
         }
         WrongSize(msg: String) {
             display("{}", msg)
+            from(e: resize::Error) -> (e.to_string())
         }
         Quant(liq: imagequant::liq_error) {
             from()
@@ -44,6 +43,7 @@ quick_error! {
 pub type CatResult<T, E = Error> = Result<T, E>;
 
 impl From<gif::EncodingError> for Error {
+    #[cold]
     fn from(err: gif::EncodingError) -> Self {
         match err {
             gif::EncodingError::Io(err) => err.into(),
@@ -53,12 +53,14 @@ impl From<gif::EncodingError> for Error {
 }
 
 impl<T> From<crossbeam_channel::SendError<T>> for Error {
+    #[cold]
     fn from(_: crossbeam_channel::SendError<T>) -> Self {
         Self::ThreadSend
     }
 }
 
 impl From<crossbeam_channel::RecvError> for Error {
+    #[cold]
     fn from(_: crossbeam_channel::RecvError) -> Self {
         Self::Aborted
     }

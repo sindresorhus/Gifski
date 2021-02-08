@@ -17,7 +17,8 @@
 */
 #![doc(html_logo_url = "https://gif.ski/icon.png")]
 
-#[macro_use] extern crate quick_error;
+#[macro_use]
+extern crate quick_error;
 
 use imagequant::*;
 use imgref::*;
@@ -35,9 +36,9 @@ mod encoderust;
 #[cfg(feature = "gifsicle")]
 mod encodegifsicle;
 
+use crossbeam_channel::{Receiver, Sender};
 use std::io::prelude::*;
 use std::path::PathBuf;
-use crossbeam_channel::{Sender, Receiver};
 use std::thread;
 
 type DecodedImage = CatResult<(ImgVec<RGBA8>, f64)>;
@@ -65,19 +66,19 @@ pub struct Settings {
 }
 
 impl Settings {
-    #[cfg(not(feature = "gifsicle"))]
+    /// quality is used in other places, like gifsicle or frame differences,
+    /// and it's better to lower quality there before ruining quantization
     pub(crate) fn color_quality(&self) -> u8 {
-        self.quality
-    }
-
-    #[cfg(feature = "gifsicle")]
-    pub(crate) fn color_quality(&self) -> u8 {
-        (self.quality * 2).min(100)
+        (self.quality as u16 * 4 / 3).min(100) as u8
     }
 
     /// add_frame is going to resize the images to this size.
     pub fn dimensions_for_image(&self, width: usize, height: usize) -> (usize, usize) {
         dimensions_for_image((width, height), (self.width, self.height))
+    }
+
+    pub(crate) fn gifsicle_loss(&self) -> u32 {
+        (100./6. - self.quality as f32 / 6.).powf(1.75).ceil() as u32
     }
 }
 
@@ -146,7 +147,6 @@ struct FrameMessage {
     frame: GIFFrame,
 }
 
-
 /// Start new encoding
 ///
 /// Encoding is multi-threaded, and the `Collector` and `Writer`
@@ -179,7 +179,7 @@ impl Collector {
     ///
     /// If the first frame doesn't start at pts=0, the delay will be used for the last frame.
     pub fn add_frame_rgba(&mut self, frame_index: usize, image: ImgVec<RGBA8>, presentation_timestamp: f64) -> CatResult<()> {
-        self.queue.push(frame_index, Ok((Self::resized_binary_alpha(image, self.width, self.height), presentation_timestamp)))
+        self.queue.push(frame_index, Ok((Self::resized_binary_alpha(image, self.width, self.height)?, presentation_timestamp)))
     }
 
     /// Read and decode a PNG file from disk.
@@ -195,19 +195,21 @@ impl Collector {
         let image = lodepng::decode32_file(&path)
             .map_err(|err| Error::PNG(format!("Can't load {}: {}", path.display(), err)))?;
 
-        self.queue.push(frame_index, Ok((Self::resized_binary_alpha(ImgVec::new(image.buffer, image.width, image.height), width, height), presentation_timestamp)))
+        self.queue.push(frame_index, Ok((Self::resized_binary_alpha(ImgVec::new(image.buffer, image.width, image.height), width, height)?, presentation_timestamp)))
     }
 
-    fn resized_binary_alpha(mut image: ImgVec<RGBA8>, width: Option<u32>, height: Option<u32>) -> ImgVec<RGBA8> {
+    #[allow(clippy::identity_op)]
+    #[allow(clippy::erasing_op)]
+    fn resized_binary_alpha(mut image: ImgVec<RGBA8>, width: Option<u32>, height: Option<u32>) -> CatResult<ImgVec<RGBA8>> {
         let (width, height) = dimensions_for_image((image.width(), image.height()), (width, height));
 
         if width != image.width() || height != image.height() {
             let (buf, img_width, img_height) = image.into_contiguous_buf();
             assert_eq!(buf.len(), img_width * img_height);
 
-            let mut r = resize::new(img_width, img_height, width, height, resize::Pixel::RGBA, resize::Type::Lanczos3);
+            let mut r = resize::new(img_width, img_height, width, height, resize::Pixel::RGBA, resize::Type::Lanczos3)?;
             let mut dst = vec![RGBA8::new(0, 0, 0, 0); width * height];
-            r.resize(buf.as_bytes(), dst.as_bytes_mut());
+            r.resize(buf.as_bytes(), dst.as_bytes_mut())?;
             image = ImgVec::new(dst, width, height)
         }
 
@@ -229,7 +231,7 @@ impl Collector {
                 }
             }
         }
-        image
+        Ok(image)
     }
 }
 
@@ -238,7 +240,7 @@ impl Collector {
 fn dimensions_for_image((img_w, img_h): (usize, usize), resize_to: (Option<u32>, Option<u32>)) -> (usize, usize) {
     match resize_to {
         (None, None) => {
-            let factor = (img_w * img_h + 800*600) / (800*600);
+            let factor = (img_w * img_h + 800 * 600) / (800 * 600);
             if factor > 1 {
                 (img_w / factor, img_h / factor)
             } else {
@@ -277,12 +279,12 @@ impl Writer {
             100 // the first frame is too important to ruin it
         };
         liq.set_quality(0, quality);
-        let mut img = liq.new_image_stride_copy(image.buf(), image.width(), image.height(), image.stride(), 0.).expect("stridecopy");
-        img.set_importance_map(importance_map).expect("immap");
+        let mut img = liq.new_image_stride_copy(image.buf(), image.width(), image.height(), image.stride(), 0.)?;
+        img.set_importance_map(importance_map)?;
         if has_prev_frame {
             img.add_fixed_color(RGBA8::new(0, 0, 0, 0));
         }
-        let res = liq.quantize(&img).expect("quantize");
+        let res = liq.quantize(&img)?;
         Ok((liq, res, img))
     }
 
@@ -318,7 +320,7 @@ impl Writer {
             while n_done < ordinal_frame_number {
                 n_done += 1;
                 if !reporter.increase() {
-                    return Err(Error::Aborted.into());
+                    return Err(Error::Aborted);
                 }
             }
         }
@@ -337,8 +339,7 @@ impl Writer {
         #[cfg(feature = "gifsicle")]
         {
             if self.settings.quality < 100 {
-                let loss = (100 - self.settings.quality as u32) * 6;
-                let mut gifsicle = encodegifsicle::Gifsicle::new(loss, &mut writer);
+                let mut gifsicle = encodegifsicle::Gifsicle::new(self.settings.gifsicle_loss(), &mut writer);
                 return self.write_with_encoder(&mut gifsicle, reporter);
             }
         }
@@ -369,11 +370,12 @@ impl Writer {
     }
 
     fn make_diffs(mut inputs: OrdQueueIter<DecodedImage>, quant_queue: Sender<DiffMessage>, _settings: &Settings) -> CatResult<()> {
-        let mut next_frame = inputs.next().transpose()?;
-
-        let first_frame_pts = next_frame.as_ref().map(|&(_, pts)| pts).unwrap_or_default();
+        let (first_frame, first_frame_pts) = inputs.next().transpose()?.ok_or(Error::NoFrames)?;
         let mut prev_frame_pts = 0.0;
 
+        let first_frame_has_transparency = first_frame.pixels().any(|px| px.a < 128);
+
+        let mut next_frame = Some((first_frame, first_frame_pts));
         let mut ordinal_frame_number = 0;
         while let Some((image, mut pts)) = {
             // this is not while loop's body, but a block that gets the next element
@@ -409,7 +411,12 @@ impl Writer {
                 importance_map
             } else {
                 // Last frame should reset to background to avoid breaking transparent looped anims
-                dispose = gif::DisposalMethod::Background;
+                if first_frame_has_transparency {
+                    dispose = gif::DisposalMethod::Background;
+                } else {
+                    // Workaround for Preview.app in macOS Big Oof
+                    dispose = gif::DisposalMethod::Keep;
+                }
                 vec![255; image.width() * image.height()]
             };
 
@@ -523,6 +530,12 @@ impl Writer {
                     }
                 }
             }
+
+            // Check that palette is fine and has no duplicate transparent indices
+            debug_assert!(matches!(image8_pal.len(), 1..=256));
+            debug_assert!(image8_pal.iter().enumerate().all(|(idx, color)| {
+                Some(idx as u8) == transparent_index || color.a > 128 || !image8.pixels().any(|px| px == idx as u8)
+            }));
 
             let (left, top, image8) = if !first_frame && next_frame.is_some() {
                 match trim_image(image8, &image8_pal, transparent_index, screen_after_dispose.pixels()) {

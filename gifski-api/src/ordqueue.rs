@@ -1,8 +1,8 @@
 use crate::error::*;
+use crossbeam_channel::{Receiver, Sender};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::iter::FusedIterator;
-use crossbeam_channel::{Sender, Receiver};
 
 pub struct OrdQueue<T> {
     sender: Sender<ReverseTuple<T>>,

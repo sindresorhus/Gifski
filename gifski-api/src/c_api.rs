@@ -1,3 +1,4 @@
+#![allow(clippy::missing_safety_doc)]
 //! How to use from C
 //!
 //! ```c
