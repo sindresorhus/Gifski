@@ -330,6 +330,7 @@ extension AVAssetImageGenerator {
 		let completedCount: Int
 		let totalCount: Int
 		let isFinished: Bool
+		let isFinishedIgnoreImage: Bool
 	}
 
 	/// - Note: If you use `result.completedCount`, don't forget to update its usage in each `completionHandler` call as it can change if frames are skipped, for example, blank frames.
@@ -343,12 +344,6 @@ extension AVAssetImageGenerator {
 		var decodeFailureFrameCount = 0
 
 		generateCGImagesAsynchronously(forTimes: times) { requestedTime, image, actualTime, result, error in
-			let successFrameCount = totalCount - decodeFailureFrameCount
-			if successFrameCount <= 2 {
-				completionHandler(.failure(NSError.appError("\(decodeFailureFrameCount) of \(totalCount) frames failed to decode. This is a bug in macOS. We are looking into workarounds.")))
-				return
-			}
-
 			switch result {
 			case .succeeded:
 				completedCount += 1
@@ -361,7 +356,8 @@ extension AVAssetImageGenerator {
 							actualTime: actualTime,
 							completedCount: completedCount,
 							totalCount: totalCount,
-							isFinished: completedCount == totalCount
+							isFinished: completedCount == totalCount,
+							isFinishedIgnoreImage: false
 						)
 					)
 				)
@@ -369,17 +365,42 @@ extension AVAssetImageGenerator {
 				// TODO: Ideally, we should trim blank frames when initially reading the video in `VideoValidator.swift`, but I don't know a way to detect blank frames. We should still keep this fix even if we find a way to trim as this handles blank frames in the middle of the video.
 				// TODO: Report the `xcrun` bug to Apple if it's still an issue in macOS 11.
 				if let error = error as? AVError {
+					// Ugly workaround for when the last frame is a failure.
+					func finishWithoutImageIfNeeded() {
+						guard completedCount == totalCount else {
+							return
+						}
+
+						completionHandler(
+							.success(
+								CompletionHandlerResult(
+									image: .empty,
+									requestedTime: requestedTime,
+									actualTime: actualTime,
+									completedCount: completedCount,
+									totalCount: totalCount,
+									isFinished: true,
+									isFinishedIgnoreImage: true
+								)
+							)
+						)
+					}
+
 					// We ignore blank frames. A video can sometimes contain blank frames at the start when you record an iOS simulator using `xcrun simctl io booted recordVideo simulator.mp4`.
 					if error.code == .noImageAtTime {
 						totalCount -= 1
+						print("No image at time. Completed: \(completedCount) Total: \(totalCount)")
+						finishWithoutImageIfNeeded()
 						break
 					}
 
-					// macOS 11 (still an issue in macOS 11.2) started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these.
+					// macOS 11 (still an issue in macOS 11.2) started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these as the GIF seems fine still.
 					if error.code == .decodeFailed {
 						decodeFailureFrameCount += 1
 						totalCount -= 1
+						print("Decode failure. Completed: \(completedCount) Total: \(totalCount)")
 						Crashlytics.recordNonFatalError(error: error, userInfo: ["requestedTime": requestedTime.seconds])
+						finishWithoutImageIfNeeded()
 						break
 					}
 				}
@@ -3656,4 +3677,10 @@ extension NSExtensionContext {
 	var attachments: [NSItemProvider] {
 		inputItemsTyped.compactMap(\.attachments).flatten()
 	}
+}
+
+
+extension CGImage {
+	static let empty = NSImage(size: CGSize(widthHeight: 1), flipped: false) { _ in true }
+		.cgImage(forProposedRect: nil, context: nil, hints: nil)!
 }

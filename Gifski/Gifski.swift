@@ -192,6 +192,8 @@ final class Gifski {
 			var fps = (conversion.frameRate.map { Double($0) } ?? assetFrameRate).clamped(to: 0.1...Constants.allowedFrameRate.upperBound)
 			fps = min(fps, assetFrameRate)
 
+			print("FPS:", fps)
+
 			// `.zero` tolerance is much slower and fails a lot on macOS 11. (macOS 11.1)
 			if #available(macOS 11, *) {
 				let tolerance = CMTime(seconds: 0.5 / fps, preferredTimescale: .video)
@@ -211,6 +213,8 @@ final class Gifski {
 				completionHandlerOnce(.failure(.notEnoughFrames(frameCount)))
 				return
 			}
+
+			print("Frame count:", frameCount)
 
 			self.progress.totalUnitCount = Int64(frameCount)
 
@@ -263,6 +267,15 @@ final class Gifski {
 					return
 				}
 
+				func finish() {
+					do {
+						try gifski.finish()
+						completionHandlerOnce(.success(self.gifData as Data))
+					} catch {
+						completionHandlerOnce(.failure(.writeFailed(error)))
+					}
+				}
+
 				guard !self.progress.isCancelled else {
 					completionHandlerOnce(.failure(.cancelled))
 					return
@@ -271,6 +284,13 @@ final class Gifski {
 				switch result {
 				case .success(let result):
 					self.progress.totalUnitCount = Int64(result.totalCount)
+
+					// This happens if the last frame in the video failed to be generated.
+					if result.isFinishedIgnoreImage {
+						finish()
+						return
+					}
+
 					let image = result.image
 
 					guard let bytePointer = image.bytePointer else {
@@ -295,12 +315,7 @@ final class Gifski {
 					}
 
 					if result.isFinished {
-						do {
-							try gifski.finish()
-							completionHandlerOnce(.success(self.gifData as Data))
-						} catch {
-							completionHandlerOnce(.failure(.writeFailed(error)))
-						}
+						finish()
 					}
 				case .failure where result.isCancelled:
 					completionHandlerOnce(.failure(.cancelled))
