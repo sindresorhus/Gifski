@@ -28,8 +28,8 @@ struct VideoValidator {
 		guard inputUrl.fileSize > 0 else {
 			NSAlert.showModal(
 				for: window,
-				message: "The selected file is empty.",
-				informativeText: "Try selecting a different file."
+				title: "The selected file is empty.",
+				message: "Try selecting a different file."
 			)
 
 			return .failure
@@ -40,8 +40,8 @@ struct VideoValidator {
 		guard inputUrl.conformsTo(typeIdentifier: kUTTypeMovie as String) else {
 			NSAlert.showModal(
 				for: window,
-				message: "The selected file could not be converted because it's not a video.",
-				informativeText: "Try again with a video file, usually with the file extension “mp4” or “mov”."
+				title: "The selected file could not be converted because it's not a video.",
+				message: "Try again with a video file, usually with the file extension “mp4” or “mov”."
 			)
 
 			return .failure
@@ -59,8 +59,8 @@ struct VideoValidator {
 		guard asset.videoCodec != .appleAnimation else {
 			NSAlert.showModal(
 				for: window,
-				message: "The QuickTime Animation format is not supported.",
-				informativeText: "Re-export or convert the video to ProRes 4444 XQ instead. It's more efficient, more widely supported, and like QuickTime Animation, it also supports alpha channel. To convert an existing video, open it in QuickTime Player, which will automatically convert it, and then save it."
+				title: "The QuickTime Animation format is not supported.",
+				message: "Re-export or convert the video to ProRes 4444 XQ instead. It's more efficient, more widely supported, and like QuickTime Animation, it also supports alpha channel. To convert an existing video, open it in QuickTime Player, which will automatically convert it, and then save it."
 			)
 
 			return .failure
@@ -69,8 +69,8 @@ struct VideoValidator {
 		if asset.hasAudio, !asset.hasVideo {
 			NSAlert.showModal(
 				for: window,
-				message: "Audio files are not supported.",
-				informativeText: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video."
+				title: "Audio files are not supported.",
+				message: "Gifski converts video files but the provided file is audio-only. Please provide a file that contains video."
 			)
 
 			return .failure
@@ -79,8 +79,8 @@ struct VideoValidator {
 		guard let firstVideoTrack = asset.firstVideoTrack else {
 			NSAlert.showModal(
 				for: window,
-				message: "Could not read any video from the video file.",
-				informativeText: "Either the video format is unsupported by macOS or the file is corrupt."
+				title: "Could not read any video from the video file.",
+				message: "Either the video format is unsupported by macOS or the file is corrupt."
 			)
 
 			return .failure
@@ -89,7 +89,7 @@ struct VideoValidator {
 		guard !asset.hasProtectedContent else {
 			NSAlert.showModal(
 				for: window,
-				message: "The video is DRM-protected and cannot be converted."
+				title: "The video is DRM-protected and cannot be converted."
 			)
 
 			return .failure
@@ -103,8 +103,8 @@ struct VideoValidator {
 			{
 				NSAlert.showModalAndReportToCrashlytics(
 					for: window,
-					message: "The video could not be decoded even though its codec “\(codec)” is supported.",
-					informativeText: "This could happen if the video is corrupt or the codec profile level is not supported. macOS unfortunately doesn't provide Gifski a reason for why the video could not be decoded. Try re-exporting using a different configuration or try converting the video to HEVC (MP4) with the free HandBrake app.",
+					title: "The video could not be decoded even though its codec “\(codec)” is supported.",
+					message: "This could happen if the video is corrupt or the codec profile level is not supported. macOS unfortunately doesn't provide Gifski a reason for why the video could not be decoded. Try re-exporting using a different configuration or try converting the video to HEVC (MP4) with the free HandBrake app.",
 					showDebugInfo: false,
 					debugInfo: asset.debugInfo
 				)
@@ -115,8 +115,8 @@ struct VideoValidator {
 			guard let codecTitle = firstVideoTrack.codecTitle else {
 				NSAlert.showModalAndReportToCrashlytics(
 					for: window,
-					message: "The video file is not supported.",
-					informativeText: "I'm trying to figure out why this happens. It would be amazing if you could email the below details to sindresorhus@gmail.com",
+					title: "The video file is not supported.",
+					message: "I'm trying to figure out why this happens. It would be amazing if you could email the below details to sindresorhus@gmail.com",
 					debugInfo: asset.debugInfo
 				)
 
@@ -126,8 +126,8 @@ struct VideoValidator {
 			guard codecTitle != "hev1" else {
 				NSAlert.showModal(
 					for: window,
-					message: "This variant of the HEVC video codec is not supported by macOS.",
-					informativeText: "The video uses the “hev1” variant of HEVC while macOS only supports “hvc1”. Try re-exporting the video using a different configuration or use the free HandBrake app to convert the video to the supported HEVC variant."
+					title: "This variant of the HEVC video codec is not supported by macOS.",
+					message: "The video uses the “hev1” variant of HEVC while macOS only supports “hvc1”. Try re-exporting the video using a different configuration or use the free HandBrake app to convert the video to the supported HEVC variant."
 				)
 
 				return .failure
@@ -135,8 +135,8 @@ struct VideoValidator {
 
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
-				message: "The video codec “\(codecTitle)” is not supported.",
-				informativeText: "Re-export or convert the video to a supported format. For the best possible quality, export to ProRes 4444 XQ (supports alpha). Alternatively, use the free HandBrake app to convert the video to HEVC (MP4).",
+				title: "The video codec “\(codecTitle)” is not supported.",
+				message: "Re-export or convert the video to a supported format. For the best possible quality, export to ProRes 4444 XQ (supports alpha). Alternatively, use the free HandBrake app to convert the video to HEVC (MP4).",
 				showDebugInfo: false,
 				debugInfo: asset.debugInfo
 			)
@@ -147,8 +147,8 @@ struct VideoValidator {
 		guard asset.videoMetadata != nil else {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
-				message: "The video metadata is not readable.",
-				informativeText: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
+				title: "The video metadata is not readable.",
+				message: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:",
 				debugInfo: asset.debugInfo
 			)
 
@@ -162,8 +162,8 @@ struct VideoValidator {
 		else {
 			NSAlert.showModal(
 				for: window,
-				message: "The video dimensions must be at least 4×4.",
-				informativeText: "The dimensions of the video are \(asset.dimensions?.formatted ?? "0×0")."
+				title: "The video dimensions must be at least 4×4.",
+				message: "The dimensions of the video are \(asset.dimensions?.formatted ?? "0×0")."
 			)
 
 			return .failure
@@ -176,8 +176,8 @@ struct VideoValidator {
 		else {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
-				message: "Could not read the video.",
-				informativeText: "This should not happen. Email sindresorhus@gmail.com and include this info:",
+				title: "Could not read the video.",
+				message: "This should not happen. Email sindresorhus@gmail.com and include this info:",
 				debugInfo: asset.debugInfo
 			)
 

@@ -123,8 +123,8 @@ final class ConversionCompletedViewController: NSViewController {
 		SSApp.runOnce(identifier: "copyWarning") {
 			NSAlert.showModal(
 				for: copyButton.window,
-				message: "The GIF was copied to the clipboard.",
-				informativeText: "However…",
+				title: "The GIF was copied to the clipboard.",
+				message: "However…",
 				buttonTitles: [
 					"Continue"
 				],
@@ -133,8 +133,8 @@ final class ConversionCompletedViewController: NSViewController {
 
 			NSAlert.showModal(
 				for: copyButton.window,
-				message: "Please read!",
-				informativeText: "Many apps like Chrome and Slack do not properly handle copied animated GIFs and will paste them as non-animated PNG.\n\nInstead, drag and drop the GIF into such apps.",
+				title: "Please read!",
+				message: "Many apps like Chrome and Slack do not properly handle copied animated GIFs and will paste them as non-animated PNG.\n\nInstead, drag and drop the GIF into such apps.",
 				defaultButtonIndex: -1
 			)
 		}

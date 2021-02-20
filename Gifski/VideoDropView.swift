@@ -24,7 +24,7 @@ class DropView<CompletionType>: SSView {
 
 	var highlightColor: NSColor { .controlAccentColorPolyfill }
 
-	var isDropLabelHidden: Bool = false {
+	var isDropLabelHidden = false {
 		didSet {
 			dropLabel.isHidden = isDropLabelHidden
 			dropView?.isHidden = isDropLabelHidden
@@ -35,7 +35,7 @@ class DropView<CompletionType>: SSView {
 		unimplemented()
 	}
 
-	private var isDraggingHighlighted: Bool = false {
+	private var isDraggingHighlighted = false {
 		didSet {
 			needsDisplay = true
 		}

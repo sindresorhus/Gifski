@@ -14,8 +14,8 @@ final class MainWindowController: NSWindowController {
 
 		NSAlert.showModal(
 			for: window,
-			message: "Welcome to Gifski!",
-			informativeText:
+			title: "Welcome to Gifski!",
+			message:
 				"""
 				Keep in mind that the GIF image format is very space inefficient. Only convert short video clips unless you want huge files.
 				""",
@@ -26,8 +26,8 @@ final class MainWindowController: NSWindowController {
 
 		NSAlert.showModal(
 			for: window,
-			message: "Feedback Welcome 🙌🏻",
-			informativeText:
+			title: "Feedback Welcome 🙌🏻",
+			message:
 				"""
 				If you have any feedback, bug reports, or feature requests, there's a feedback button in the “Help” menu. We respond to all submissions.
 				""",

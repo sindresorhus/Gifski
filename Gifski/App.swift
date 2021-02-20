@@ -48,7 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		else {
 			NSAlert.showModal(
 				for: mainWindowController.window,
-				message: "Could not retrieve the shared video."
+				title: "Could not retrieve the shared video."
 			)
 			return nil
 		}
@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		else {
 			NSAlert.showModal(
 				for: mainWindowController.window,
-				message: "Gifski can only convert a single file at the time."
+				title: "Gifski can only convert a single file at the time."
 			)
 			return
 		}
@@ -84,8 +84,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		if mainWindowController.isConverting {
 			let response = NSAlert.showModal(
 				for: mainWindowController.window,
-				message: "Do you want to continue converting?",
-				informativeText: "Gifski is currently converting a video. If you quit, the conversion will be cancelled.",
+				title: "Do you want to continue converting?",
+				message: "Gifski is currently converting a video. If you quit, the conversion will be cancelled.",
 				buttonTitles: [
 					"Continue",
 					"Quit"

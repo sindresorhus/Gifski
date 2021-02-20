@@ -216,16 +216,16 @@ extension NSAlert {
 	@discardableResult
 	static func showModal(
 		for window: NSWindow? = nil,
-		message: String,
-		informativeText: String? = nil,
+		title: String,
+		message: String? = nil,
 		detailText: String? = nil,
 		style: Style = .warning,
 		buttonTitles: [String] = [],
 		defaultButtonIndex: Int? = nil
 	) -> NSApplication.ModalResponse {
 		NSAlert(
+			title: title,
 			message: message,
-			informativeText: informativeText,
 			detailText: detailText,
 			style: style,
 			buttonTitles: buttonTitles,
@@ -252,19 +252,19 @@ extension NSAlert {
 	}
 
 	convenience init(
-		message: String,
-		informativeText: String? = nil,
+		title: String,
+		message: String? = nil,
 		detailText: String? = nil,
 		style: Style = .warning,
 		buttonTitles: [String] = [],
 		defaultButtonIndex: Int? = nil
 	) {
 		self.init()
-		self.messageText = message
+		self.messageText = title
 		self.alertStyle = style
 
-		if let informativeText = informativeText {
-			self.informativeText = informativeText
+		if let message = message {
+			self.informativeText = message
 		}
 
 		if let detailText = detailText {
@@ -2446,21 +2446,21 @@ extension NSAlert {
 	@discardableResult
 	static func showModalAndReportToCrashlytics(
 		for window: NSWindow? = nil,
-		message: String,
-		informativeText: String? = nil,
+		title: String,
+		message: String? = nil,
 		style: Style = .warning,
 		showDebugInfo: Bool = true,
 		debugInfo: String
 	) -> NSApplication.ModalResponse {
 		Crashlytics.recordNonFatalError(
-			title: message,
+			title: title,
 			message: debugInfo
 		)
 
 		return Self.showModal(
 			for: window,
+			title: title,
 			message: message,
-			informativeText: informativeText,
 			detailText: showDebugInfo ? debugInfo : nil,
 			style: style
 		)

@@ -298,8 +298,8 @@ final class EditVideoViewController: NSViewController {
 			DispatchQueue.main.async { [self] in
 				NSAlert.showModal(
 					for: view.window,
-					message: "Animated GIF Limitation",
-					informativeText: "Exporting GIFs with a frame rate higher than 50 is not supported as browsers will throttle and play them at 10 FPS.",
+					title: "Animated GIF Limitation",
+					message: "Exporting GIFs with a frame rate higher than 50 is not supported as browsers will throttle and play them at 10 FPS.",
 					defaultButtonIndex: -1
 				)
 			}
@@ -315,8 +315,8 @@ final class EditVideoViewController: NSViewController {
 			DispatchQueue.main.async { [self] in
 				NSAlert.showModal(
 					for: view.window,
-					message: "Animated GIF Preview Limitation",
-					informativeText: "Due to a bug in the macOS GIF handling, the after-conversion preview and Quick Look may not loop as expected. The GIF will loop correctly in web browsers and other image viewing apps.",
+					title: "Animated GIF Preview Limitation",
+					message: "Due to a bug in the macOS GIF handling, the after-conversion preview and Quick Look may not loop as expected. The GIF will loop correctly in web browsers and other image viewing apps.",
 					defaultButtonIndex: -1
 				)
 			}
