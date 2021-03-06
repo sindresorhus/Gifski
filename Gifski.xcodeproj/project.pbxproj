@@ -25,12 +25,12 @@
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		C2AFA91D204FFEFD00FC5A7F /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */; };
 		D957BCDE234941C200A9A9F9 /* CheckerboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */; };
+		E304EB5F25F39EDF003BCE1F /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E304EB5E25F39ED5003BCE1F /* libgifski.a */; };
 		E31A4F3124AD36870097B1A5 /* InternetAccessPolicy.json in Resources */ = {isa = PBXBuildFile; fileRef = E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */; };
 		E3339E932395766800303839 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E922395766800303839 /* Defaults */; };
 		E3339E9A2395768F00303839 /* CircularProgress in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E992395768F00303839 /* CircularProgress */; };
 		E3339E9D2395789500303839 /* DockProgress in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E9C2395789500303839 /* DockProgress */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
-		E3807B6022BE315D00388F50 /* libgifski.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E3807B5B22BE315A00388F50 /* libgifski.a */; };
 		E3A6BD112245345C00F62256 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A6BD102245345C00F62256 /* Constants.swift */; };
 		E3AE62871E5CD2F300035A2F /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3AE62861E5CD2F300035A2F /* App.swift */; };
 		E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E3AE62881E5CD2F300035A2F /* Assets.xcassets */; };
@@ -56,27 +56,6 @@
 			remoteGlobalIDString = 0E79251A2329BDBE00058B94;
 			remoteInfo = ShareExtension;
 		};
-		E3807B5A22BE315A00388F50 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CA60E15ACA76538A1122A904;
-			remoteInfo = gifski;
-		};
-		E3807B5C22BE315A00388F50 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CA60F2BAC541F7CC3EDC5919;
-			remoteInfo = libgifski;
-		};
-		E3807B5E22BE315A00388F50 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CA608A209BAEAE13C0448516;
-			remoteInfo = gifski;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -99,7 +78,6 @@
 		0E7925222329BDBE00058B94 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ShareViewController.xib; sourceTree = "<group>"; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0E7925252329BDBE00058B94 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
-		5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = "<group>"; };
 		6D86841121FD283B0044F6FE /* ConversionCompletedViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ConversionCompletedViewController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		6D86841621FD283B0044F6FE /* DraggableFile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = DraggableFile.swift; sourceTree = "<group>"; usesTabs = 1; };
 		8548806422B78E8300E97401 /* IntTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = IntTextField.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -115,6 +93,8 @@
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = MainWindowController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CheckerboardView.swift; sourceTree = "<group>"; usesTabs = 1; };
+		E304EB5E25F39ED5003BCE1F /* libgifski.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgifski.a; path = "gifski-api/target/release-universal/libgifski.a"; sourceTree = "<group>"; };
+		E304EB8725F3A4D2003BCE1F /* gifski.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = SOURCE_ROOT; };
 		E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = InternetAccessPolicy.json; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3805F542466E68900489E6C /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
@@ -134,7 +114,6 @@
 		E3E9BAE325406B84006AE1B7 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		E3FC365B2377FA0000CF7C59 /* Shared.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; name = Shared.swift; path = Gifski/Shared.swift; sourceTree = SOURCE_ROOT; usesTabs = 1; };
 		E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = "Gifski-Bridging-Header.h"; sourceTree = "<group>"; usesTabs = 1; };
-		E3FD61A4201BD2DA0087160A /* gifski.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = "<group>"; };
 		E3FEF31422C52819003AEFED /* ConversionCompletedViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConversionCompletedViewController.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -153,8 +132,8 @@
 				E3339E9A2395768F00303839 /* CircularProgress in Frameworks */,
 				E3339E932395766800303839 /* Defaults in Frameworks */,
 				E3339E9D2395789500303839 /* DockProgress in Frameworks */,
+				E304EB5F25F39EDF003BCE1F /* libgifski.a in Frameworks */,
 				E3C874AA252CFE5B00AB1099 /* FirebaseCrashlytics in Frameworks */,
-				E3807B6022BE315D00388F50 /* libgifski.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -173,20 +152,10 @@
 			path = ShareExtension;
 			sourceTree = "<group>";
 		};
-		5A7524AE20D085FB00F12C99 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				E3807B5B22BE315A00388F50 /* libgifski.a */,
-				E3807B5D22BE315A00388F50 /* libgifski.dylib */,
-				E3807B5F22BE315A00388F50 /* gifski */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		E317EE121F88305800359C57 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				E3FD61A4201BD2DA0087160A /* gifski.h */,
+				E304EB5E25F39ED5003BCE1F /* libgifski.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -195,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				E3FD6190201BCBC30087160A /* Gifski-Bridging-Header.h */,
+				E304EB8725F3A4D2003BCE1F /* gifski.h */,
 				E3C3DB4E203F154300CB8BB9 /* Credits.rtf */,
 				E3AE628D1E5CD2F300035A2F /* Info.plist */,
 				E3BF14CC1E5CD5A30049FD4B /* Gifski.entitlements */,
@@ -212,7 +182,6 @@
 				0E79251C2329BDBE00058B94 /* ShareExtension */,
 				E3AE62841E5CD2F300035A2F /* Products */,
 				E317EE121F88305800359C57 /* Frameworks */,
-				5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */,
 			);
 			sourceTree = "<group>";
 			usesTabs = 1;
@@ -350,12 +319,6 @@
 			);
 			productRefGroup = E3AE62841E5CD2F300035A2F /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 5A7524AE20D085FB00F12C99 /* Products */;
-					ProjectRef = 5A7524AD20D085FB00F12C99 /* gifski.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				E3AE62821E5CD2F300035A2F /* Gifski */,
@@ -363,30 +326,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		E3807B5B22BE315A00388F50 /* libgifski.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libgifski.a;
-			remoteRef = E3807B5A22BE315A00388F50 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		E3807B5D22BE315A00388F50 /* libgifski.dylib */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.dylib";
-			path = libgifski.dylib;
-			remoteRef = E3807B5C22BE315A00388F50 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		E3807B5F22BE315A00388F50 /* gifski */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.executable";
-			path = gifski;
-			remoteRef = E3807B5E22BE315A00388F50 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		0E7925192329BDBE00058B94 /* Resources */ = {
@@ -597,7 +536,6 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				EXCLUDED_ARCHS = arm64;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -659,7 +597,6 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				EXCLUDED_ARCHS = arm64;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -702,6 +639,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/opt/gcc/lib/gcc/10,
+					"$(PROJECT_DIR)/gifski-api/target/release-universal",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -739,6 +677,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/opt/gcc/lib/gcc/10,
+					"$(PROJECT_DIR)/gifski-api/target/release-universal",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -787,7 +726,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 4.0.0;
+				minimumVersion = 4.2.1;
 			};
 		};
 		E3339E982395768F00303839 /* XCRemoteSwiftPackageReference "CircularProgress" */ = {
