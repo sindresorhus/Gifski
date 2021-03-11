@@ -291,23 +291,35 @@ final class Gifski {
 						return
 					}
 
-					guard
-						let image = result.image.converting(to: .argb),
-						let bytePointer = image.bytePointer
-					else {
-						completionHandlerOnce(.failure(.generateFrameFailed(
-							NSError.appError("Could not get the pixels of the image.")
-						)))
+					if !isEstimation, result.completedCount == 1 {
+						Crashlytics.record(
+							key: "\(debugKey): CGImage",
+							value: result.image.debugInfo
+						)
+
+						// TODO: Remove
+						print(result.image.debugInfo)
+						DispatchQueue.main.async {
+							NSAlert.showModal(title: "Debug info:", message: result.image.debugInfo)
+						}
+					}
+
+					let pixels: CGImage.Pixels
+					do {
+						pixels = try result.image.pixels(as: .argb, premultiplyAlpha: false)
+					} catch {
+						completionHandlerOnce(.failure(.generateFrameFailed(error)))
 						return
 					}
 
 					do {
-						try gifski.addFrameARGB(
-							frameNumber: UInt32(result.completedCount - 1),
-							width: UInt32(image.width),
-							bytesPerRow: UInt32(image.bytesPerRow),
-							height: UInt32(image.height),
-							pixels: bytePointer,
+						try gifski.addFrame(
+							pixelFormat: .argb,
+							frameNumber: result.completedCount - 1,
+							width: pixels.width,
+							height: pixels.height,
+							bytesPerRow: pixels.bytesPerRow,
+							pixels: pixels.bytes,
 							presentationTimestamp: max(0, result.actualTime.seconds - startTime)
 						)
 					} catch {

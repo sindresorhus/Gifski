@@ -8,6 +8,25 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private func showWelcomeScreenIfNeeded() {
+		if Device.isRunningNativelyOnMacWithAppleSilicon {
+			// TODO: Enable this
+			//SSApp.runOnce(identifier: "appleSiliconWelcomeMessage") {
+				NSAlert.showModal(
+					for: window,
+					title: "Gifski on Apple Silicon",
+					message:
+						"""
+						Gifski now runs natively on Apple silicon.
+
+						If you encounter any problems, use the feedback button in the “Help” menu to report it.
+
+						You can temporarily work around the issue by switching back to Rosetta mode: Right-click the app in Finder, select “Get Info”, and then enable “Open using Rosetta”.
+						""",
+					defaultButtonIndex: -1
+				)
+			//}
+		}
+
 		guard SSApp.isFirstLaunch else {
 			return
 		}

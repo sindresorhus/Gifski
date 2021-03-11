@@ -1,8 +1,10 @@
 import Cocoa
 import AVFoundation
 import class Quartz.QLPreviewPanel
-import Defaults
 import StoreKit.SKStoreReviewController
+import Accelerate.vImage
+import Defaults
+
 
 /**
 Convenience function for initializing an object and modifying its properties
@@ -1679,6 +1681,7 @@ enum SSApp {
 			\(SSApp.name) \(SSApp.versionWithBuild) - \(SSApp.id)
 			macOS \(Device.osVersion)
 			\(Device.hardwareModel)
+			\(Device.architecture)
 			"""
 
 		let query: [String: String] = [
@@ -1760,6 +1763,39 @@ enum Device {
 		var model = [CChar](repeating: 0, count: size)
 		sysctlbyname("hw.model", &model, &size, nil, 0)
 		return String(cString: model)
+	}()
+
+	/**
+	The CPU architecture.
+
+	```
+	Device.architecture
+	//=> "arm64"
+	```
+	*/
+	static let architecture: String = {
+		var sysinfo = utsname()
+		let result = uname(&sysinfo)
+
+		guard result == EXIT_SUCCESS else {
+			return "unknown"
+		}
+
+		let data = Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN))
+
+		guard let identifier = String(bytes: data, encoding: .ascii) else {
+			return "unknown"
+		}
+
+		return identifier.trimmingCharacters(in: .controlCharacters)
+	}()
+
+	static let isRunningNativelyOnMacWithAppleSilicon: Bool = {
+		#if os(macOS) && arch(arm64)
+		return true
+		#else
+		return false
+		#endif
 	}()
 
 	static let supportedVideoTypes = [
@@ -3668,6 +3704,33 @@ extension NSExtensionContext {
 }
 
 
+extension UnsafeMutableRawPointer {
+	/**
+	Convert an unsafe mutable raw pointer to an array.
+
+	```
+	let bytes = sourceBuffer.data?.toArray(to: UInt8.self, capacity: Int(sourceBuffer.height) * sourceBuffer.rowBytes)
+	```
+	*/
+	func toArray<T>(to type: T.Type, capacity count: Int) -> [T] {
+		let pointer = bindMemory(to: type, capacity: count)
+		return Array(UnsafeBufferPointer(start: pointer, count: count))
+	}
+}
+
+
+extension Data {
+	/// The bytes of the data.
+	var bytes: [UInt8] { [UInt8](self) }
+}
+
+
+extension Array where Element == UInt8 {
+	/// Convert the array to data.
+	var data: Data { Data(self) }
+}
+
+
 extension CGImage {
 	static let empty = NSImage(size: CGSize(widthHeight: 1), flipped: false) { _ in true }
 		.cgImage(forProposedRect: nil, context: nil, hints: nil)!
@@ -3690,7 +3753,7 @@ extension CGImage {
 
 extension CGImage {
 	/**
-	Returns a read-only pointer to the bytes of the image.
+	A read-only pointer to the bytes of the image.
 
 	- Important: Don't assume the format of the underlaying storage. It could be `ARGB`, but it could also be `RGBA`. Draw the image into a `CGContext` first to be safe. See `CGImage#converting`.
 	*/
@@ -3701,56 +3764,159 @@ extension CGImage {
 
 		return CFDataGetBytePtr(data)
 	}
+
+	// TODO: Investigate which of these are more efficient.
+//	var bytes: [UInt8]? { // wiftlint:disable:this discouraged_optional_collection
+//		guard let data = dataProvider?.data else {
+//			return nil
+//		}
+//
+//		let length = CFDataGetLength(data)
+//		var bytes = [UInt8](repeating: 0, count: length)
+//		CFDataGetBytes(data, CFRange(location: 0, length: length), &bytes)
+//		return bytes
+//	}
+
+	/**
+	The bytes of the image.
+
+	- Important: Don't assume the format of the underlaying storage. It could be `ARGB`, but it could also be `RGBA`. Draw the image into a `CGContext` first to be safe. See `CGImage#converting`.
+	*/
+	var bytes: [UInt8]? { // swiftlint:disable:this discouraged_optional_collection
+		guard let data = dataProvider?.data else {
+			return nil
+		}
+
+		return (data as Data).bytes
+	}
 }
 
 
 extension CGContext {
-	/// Create an `ARGB` bitmap context.
-	static func argbBitmapContext(width: Int, height: Int, withAlpha: Bool) -> CGContext? {
-		let alphaInfo = withAlpha ? CGImageAlphaInfo.premultipliedFirst : .noneSkipFirst
+	/**
+	Create a premultiplied RGB bitmap context.
 
-		let cgContext = CGContext(
+	- Note: `CGContext` does not support non-premultiplied RGB.
+	*/
+	static func rgbBitmapContext(
+		pixelFormat: CGImage.PixelFormat,
+		width: Int,
+		height: Int,
+		withAlpha: Bool
+	) -> CGContext? {
+		let byteOrder: CGBitmapInfo
+		let alphaInfo: CGImageAlphaInfo
+		switch pixelFormat {
+		case .argb:
+			byteOrder = .byteOrder32Big
+			alphaInfo = withAlpha ? .premultipliedFirst : .noneSkipFirst
+		case .rgba:
+			byteOrder = .byteOrder32Big
+			alphaInfo = withAlpha ? .premultipliedLast : .noneSkipLast
+		case .abgr:
+			byteOrder = .byteOrder32Little
+			alphaInfo = withAlpha ? .premultipliedFirst : .noneSkipFirst
+		case .bgra:
+			byteOrder = .byteOrder32Little
+			alphaInfo = withAlpha ? .premultipliedLast : .noneSkipLast
+		}
+
+		return CGContext(
 			data: nil,
 			width: width,
 			height: height,
 			bitsPerComponent: 8,
 			bytesPerRow: width * 4,
 			space: CGColorSpaceCreateDeviceRGB(),
-			bitmapInfo: alphaInfo.rawValue
+			bitmapInfo: byteOrder.rawValue | alphaInfo.rawValue
 		)
-
-		return cgContext
 	}
+}
 
-	/// Create a `RGBA` bitmap context.
-	static func rgbaBitmapContext(width: Int, height: Int, withAlpha: Bool) -> CGContext? {
-		let alphaInfo = withAlpha ? CGImageAlphaInfo.premultipliedLast : .noneSkipLast
 
-		let cgContext = CGContext(
-			data: nil,
-			width: width,
-			height: height,
-			bitsPerComponent: 8,
-			bytesPerRow: width * 4,
-			space: CGColorSpaceCreateDeviceRGB(),
-			bitmapInfo: alphaInfo.rawValue
-		)
-
-		return cgContext
+extension vImage_Buffer {
+	/// The bytes of the image.
+	var bytes: [UInt8] {
+		data?.toArray(to: UInt8.self, capacity: rowBytes * Int(height)) ?? []
 	}
 }
 
 
 extension CGImage {
-	enum ComponentOrder {
-		case argb
-		case rgba
-	}
-
 	/**
-	Convert the image to use the given underlying storage format.
+	Convert an image to a `vImage` buffer of the given pixel format.
 
-	This can be useful if you need to read the pixels of an image as `CGImage` can use multiple different underlying storage formats.
+	- Parameter premultiplyAlpha: Whether the alpha channel should be premultiplied.
+	*/
+	@available(macOS 11, *)
+	func toVImageBuffer(
+		pixelFormat: PixelFormat,
+		premultiplyAlpha: Bool
+	) throws -> vImage_Buffer {
+		guard let sourceFormat = vImage_CGImageFormat(cgImage: self) else {
+			throw NSError.appError("Could not initialize vImage_CGImageFormat")
+		}
+
+		let alphaFirst = premultiplyAlpha ? CGImageAlphaInfo.premultipliedFirst : .first
+		let alphaLast = premultiplyAlpha ? CGImageAlphaInfo.premultipliedLast : .last
+
+		let byteOrder: CGBitmapInfo
+		let alphaInfo: CGImageAlphaInfo
+		switch pixelFormat {
+		case .argb:
+			byteOrder = .byteOrder32Big
+			alphaInfo = alphaFirst
+		case .rgba:
+			byteOrder = .byteOrder32Big
+			alphaInfo = alphaLast
+		case .abgr:
+			byteOrder = .byteOrder32Little
+			alphaInfo = alphaFirst
+		case .bgra:
+			byteOrder = .byteOrder32Little
+			alphaInfo = alphaLast
+		}
+
+		guard
+			let destinationFormat = vImage_CGImageFormat(
+				bitsPerComponent: 8,
+				bitsPerPixel: 8 * 4,
+				colorSpace: CGColorSpaceCreateDeviceRGB(),
+				bitmapInfo: CGBitmapInfo(rawValue: byteOrder.rawValue | alphaInfo.rawValue),
+				renderingIntent: .defaultIntent
+			)
+		else {
+			// TODO: Use a proper error.
+			throw NSError.appError("Could not initialize vImage_CGImageFormat")
+		}
+
+		let converter = try vImageConverter.make(
+			sourceFormat: sourceFormat,
+			destinationFormat: destinationFormat
+		)
+
+		let sourceBuffer = try vImage_Buffer(cgImage: self, format: sourceFormat)
+
+		defer {
+			sourceBuffer.free()
+		}
+
+		var destinationBuffer = try vImage_Buffer(size: sourceBuffer.size, bitsPerPixel: destinationFormat.bitsPerPixel)
+
+		try converter.convert(source: sourceBuffer, destination: &destinationBuffer)
+
+		return destinationBuffer
+	}
+}
+
+
+extension CGImage {
+	/**
+	Convert the image to use the given underlying pixel format.
+
+	Prefer `CGImage#pixels(…)` if you need to read the pixels of an image. It's faster and also suppot non-premultiplied alpha.
+
+	- Note: The byte pointer uses premultiplied alpha.
 
 	```
 	let image = result.image.converting(to: .argb)
@@ -3758,11 +3924,14 @@ extension CGImage {
 	let bytesPerRow = image.bytesPerRow
 	```
 	*/
-	func converting(to componentOrder: ComponentOrder) -> CGImage? {
-		let createContext = componentOrder == .argb ? CGContext.argbBitmapContext : CGContext.rgbaBitmapContext
-
+	func converting(to pixelFormat: PixelFormat) -> CGImage? {
 		guard
-			let context = createContext(width, height, hasAlphaChannel)
+			let context = CGContext.rgbBitmapContext(
+				pixelFormat: pixelFormat,
+				width: width,
+				height: height,
+				withAlpha: hasAlphaChannel
+			)
 		else {
 			return nil
 		}
@@ -3770,5 +3939,166 @@ extension CGImage {
 		context.draw(self, in: CGRect(origin: .zero, size: size))
 
 		return context.makeImage()
+	}
+}
+
+
+extension CGImage {
+	enum PixelFormat {
+		/// Big-endian, alpha first.
+		case argb
+
+		/// Big-endian, alpha last.
+		case rgba
+
+		/// Little-endian, alpha first.
+		case abgr
+
+		/// Little-endian, alpha last.
+		case bgra
+
+		var title: String {
+			switch self {
+			case .argb:
+				return "ARGB"
+			case .rgba:
+				return "RGBA"
+			case .abgr:
+				return "ABGR"
+			case .bgra:
+				return "BGRA"
+			}
+		}
+	}
+}
+
+extension CGImage.PixelFormat: CustomDebugStringConvertible {
+	var debugDescription: String { "CGImage.PixelFormat(\(title)" }
+}
+
+
+extension CGImage {
+	struct Pixels {
+		let bytes: [UInt8]
+		let width: Int
+		let height: Int
+		let bytesPerRow: Int
+	}
+
+	/**
+	Get the pixels of an image.
+
+	- Parameter premultiplyAlpha: Whether the alpha channel should be premultiplied.
+
+	If you pass the pixels to a C API or external library, you most likely want `premultiplied: false`.
+	*/
+	func pixels(
+		as pixelFormat: PixelFormat,
+		premultiplyAlpha: Bool
+	) throws -> Pixels {
+		// For macOS 10.15 and older, we don't handle the `premultiplied` option as it never correctly worked before and I'm too lazy to fix it there.
+		guard #available(macOS 11, *) else {
+			guard
+				let image = converting(to: pixelFormat),
+				let bytes = image.bytes
+			else {
+				throw NSError.appError("Could not get the pixels of the image.")
+			}
+
+			return Pixels(
+				bytes: bytes,
+				width: image.width,
+				height: image.height,
+				bytesPerRow: image.bytesPerRow
+			)
+		}
+
+		let buffer = try toVImageBuffer(pixelFormat: pixelFormat, premultiplyAlpha: premultiplyAlpha)
+
+		defer {
+			buffer.free()
+		}
+
+		return Pixels(
+			bytes: buffer.bytes,
+			width: width,
+			height: height,
+			bytesPerRow: bytesPerRow
+		)
+	}
+}
+
+
+extension CGBitmapInfo {
+	/// The alpha info of the current `CGBitmapInfo`.
+	var alphaInfo: CGImageAlphaInfo {
+		get {
+			CGImageAlphaInfo(rawValue: rawValue & Self.alphaInfoMask.rawValue) ?? .none
+		}
+		set {
+			remove(.alphaInfoMask)
+			insert(.init(rawValue: newValue.rawValue))
+		}
+	}
+
+	/// The pixel format of the image.
+	/// Returns `nil` if the pixel format is not supported, for example, non-alpha.
+	var pixelFormat: CGImage.PixelFormat? {
+		// While the host byte order is little endian, default bytes are stored in big endian format.
+
+		let alphaInfo = self.alphaInfo
+		let isLittleEndian = contains(.byteOrder32Little)
+
+		guard alphaInfo != .none else {
+			// TODO: Support non-alpha formats.
+			// return isLittleEndian ? .bgr : .rgb
+			return nil
+		}
+
+		let isAlphaFirst = alphaInfo == .premultipliedFirst || alphaInfo == .first || alphaInfo == .noneSkipFirst
+
+		if isLittleEndian {
+			return isAlphaFirst ? .bgra : .abgr
+		} else {
+			return isAlphaFirst ? .argb : .rgba
+		}
+	}
+
+	/// Whether the alpha channel is premultipled.
+	var isPremultipliedAlpha: Bool {
+		let alphaInfo = self.alphaInfo
+		return alphaInfo == .premultipliedFirst || alphaInfo == .premultipliedLast
+	}
+}
+
+
+extension CGColorSpace {
+	/// Presentable title of the color space.
+	var title: String {
+		guard let name = name else {
+			return "Unknown"
+		}
+
+		return (name as String).replacingOccurrences(of: #"^kCGColorSpace"#, with: "", options: .regularExpression, range: nil)
+	}
+}
+
+
+extension CGImage {
+	/**
+	Debug info for the image.
+
+	```
+	print(image.debugInfo)
+	```
+	*/
+	var debugInfo: String {
+		"""
+		## CGImage debug info ##
+		Dimension: \(size.formatted)
+		Pixel format: \(bitmapInfo.pixelFormat?.title, default: "Unknown")
+		Premultiplied alpha: \(bitmapInfo.isPremultipliedAlpha)
+		Color space: \(colorSpace?.title, default: "nil")
+		"""
 	}
 }
