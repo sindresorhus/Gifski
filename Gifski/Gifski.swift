@@ -291,11 +291,12 @@ final class Gifski {
 						return
 					}
 
-					let image = result.image
-
-					guard let bytePointer = image.bytePointer else {
+					guard
+						let image = result.image.converting(to: .argb),
+						let bytePointer = image.bytePointer
+					else {
 						completionHandlerOnce(.failure(.generateFrameFailed(
-							NSError.appError("Could not get byte pointer of image data provider.")
+							NSError.appError("Could not get the pixels of the image.")
 						)))
 						return
 					}

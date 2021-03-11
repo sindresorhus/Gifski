@@ -3636,18 +3636,6 @@ extension NSAttributedString {
 }
 
 
-extension CGImage {
-	/// Returns a read-only pointer to the bytes of the image.
-	var bytePointer: UnsafePointer<UInt8>? {
-		guard let data = dataProvider?.data else {
-			return nil
-		}
-
-		return CFDataGetBytePtr(data)
-	}
-}
-
-
 extension String {
 	var trimmedTrailing: Self {
 		replacingOccurrences(of: #"\s+$"#, with: "", options: .regularExpression)
@@ -3683,4 +3671,104 @@ extension NSExtensionContext {
 extension CGImage {
 	static let empty = NSImage(size: CGSize(widthHeight: 1), flipped: false) { _ in true }
 		.cgImage(forProposedRect: nil, context: nil, hints: nil)!
+}
+
+
+extension CGImage {
+	var size: CGSize { CGSize(width: width, height: height) }
+
+	var hasAlphaChannel: Bool {
+		switch alphaInfo {
+		case .first, .last, .premultipliedFirst, .premultipliedLast:
+			return true
+		default:
+			return false
+		}
+	}
+}
+
+
+extension CGImage {
+	/**
+	Returns a read-only pointer to the bytes of the image.
+
+	- Important: Don't assume the format of the underlaying storage. It could be `ARGB`, but it could also be `RGBA`. Draw the image into a `CGContext` first to be safe. See `CGImage#converting`.
+	*/
+	var bytePointer: UnsafePointer<UInt8>? {
+		guard let data = dataProvider?.data else {
+			return nil
+		}
+
+		return CFDataGetBytePtr(data)
+	}
+}
+
+
+extension CGContext {
+	/// Create an `ARGB` bitmap context.
+	static func argbBitmapContext(width: Int, height: Int, withAlpha: Bool) -> CGContext? {
+		let alphaInfo = withAlpha ? CGImageAlphaInfo.premultipliedFirst : .noneSkipFirst
+
+		let cgContext = CGContext(
+			data: nil,
+			width: width,
+			height: height,
+			bitsPerComponent: 8,
+			bytesPerRow: width * 4,
+			space: CGColorSpaceCreateDeviceRGB(),
+			bitmapInfo: alphaInfo.rawValue
+		)
+
+		return cgContext
+	}
+
+	/// Create a `RGBA` bitmap context.
+	static func rgbaBitmapContext(width: Int, height: Int, withAlpha: Bool) -> CGContext? {
+		let alphaInfo = withAlpha ? CGImageAlphaInfo.premultipliedLast : .noneSkipLast
+
+		let cgContext = CGContext(
+			data: nil,
+			width: width,
+			height: height,
+			bitsPerComponent: 8,
+			bytesPerRow: width * 4,
+			space: CGColorSpaceCreateDeviceRGB(),
+			bitmapInfo: alphaInfo.rawValue
+		)
+
+		return cgContext
+	}
+}
+
+
+extension CGImage {
+	enum ComponentOrder {
+		case argb
+		case rgba
+	}
+
+	/**
+	Convert the image to use the given underlying storage format.
+
+	This can be useful if you need to read the pixels of an image as `CGImage` can use multiple different underlying storage formats.
+
+	```
+	let image = result.image.converting(to: .argb)
+	let bytePointer = image.bytePointer
+	let bytesPerRow = image.bytesPerRow
+	```
+	*/
+	func converting(to componentOrder: ComponentOrder) -> CGImage? {
+		let createContext = componentOrder == .argb ? CGContext.argbBitmapContext : CGContext.rgbaBitmapContext
+
+		guard
+			let context = createContext(width, height, hasAlphaChannel)
+		else {
+			return nil
+		}
+
+		context.draw(self, in: CGRect(origin: .zero, size: size))
+
+		return context.makeImage()
+	}
 }
