@@ -296,12 +296,6 @@ final class Gifski {
 							key: "\(debugKey): CGImage",
 							value: result.image.debugInfo
 						)
-
-						// TODO: Remove
-						print(result.image.debugInfo)
-						DispatchQueue.main.async {
-							NSAlert.showModal(title: "Debug info:", message: result.image.debugInfo)
-						}
 					}
 
 					let pixels: CGImage.Pixels

@@ -9,8 +9,7 @@ final class MainWindowController: NSWindowController {
 
 	private func showWelcomeScreenIfNeeded() {
 		if Device.isRunningNativelyOnMacWithAppleSilicon {
-			// TODO: Enable this
-			//SSApp.runOnce(identifier: "appleSiliconWelcomeMessage") {
+			SSApp.runOnce(identifier: "appleSiliconWelcomeMessage") {
 				NSAlert.showModal(
 					for: window,
 					title: "Gifski on Apple Silicon",
@@ -24,7 +23,7 @@ final class MainWindowController: NSWindowController {
 						""",
 					defaultButtonIndex: -1
 				)
-			//}
+			}
 		}
 
 		guard SSApp.isFirstLaunch else {
