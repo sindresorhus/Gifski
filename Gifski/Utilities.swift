@@ -3990,7 +3990,7 @@ extension CGImage {
 
 	- Parameter premultiplyAlpha: Whether the alpha channel should be premultiplied.
 
-	If you pass the pixels to a C API or external library, you most likely want `premultiplied: false`.
+	If you pass the pixels to a C API or external library, you most likely want `premultiplyAlpha: false`.
 	*/
 	func pixels(
 		as pixelFormat: PixelFormat,
@@ -4021,9 +4021,9 @@ extension CGImage {
 
 		return Pixels(
 			bytes: buffer.bytes,
-			width: width,
-			height: height,
-			bytesPerRow: bytesPerRow
+			width: Int(buffer.width),
+			height: Int(buffer.height),
+			bytesPerRow: buffer.rowBytes
 		)
 	}
 }
