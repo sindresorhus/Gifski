@@ -291,22 +291,29 @@ final class Gifski {
 						return
 					}
 
-					let image = result.image
+					if !isEstimation, result.completedCount == 1 {
+						Crashlytics.record(
+							key: "\(debugKey): CGImage",
+							value: result.image.debugInfo
+						)
+					}
 
-					guard let bytePointer = image.bytePointer else {
-						completionHandlerOnce(.failure(.generateFrameFailed(
-							NSError.appError("Could not get byte pointer of image data provider.")
-						)))
+					let pixels: CGImage.Pixels
+					do {
+						pixels = try result.image.pixels(as: .argb, premultiplyAlpha: false)
+					} catch {
+						completionHandlerOnce(.failure(.generateFrameFailed(error)))
 						return
 					}
 
 					do {
-						try gifski.addFrameARGB(
-							frameNumber: UInt32(result.completedCount - 1),
-							width: UInt32(image.width),
-							bytesPerRow: UInt32(image.bytesPerRow),
-							height: UInt32(image.height),
-							pixels: bytePointer,
+						try gifski.addFrame(
+							pixelFormat: .argb,
+							frameNumber: result.completedCount - 1,
+							width: pixels.width,
+							height: pixels.height,
+							bytesPerRow: pixels.bytesPerRow,
+							pixels: pixels.bytes,
 							presentationTimestamp: max(0, result.actualTime.seconds - startTime)
 						)
 					} catch {

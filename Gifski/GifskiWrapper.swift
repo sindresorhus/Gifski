@@ -49,6 +49,12 @@ enum GifskiWrapperError: UInt32, LocalizedError {
 
 /// - Important: Don't forget to call `.release()` when done, whether it succeeded or failed.
 final class GifskiWrapper {
+	enum PixelFormat {
+		case rgba
+		case argb
+		case rgb
+	}
+
 	private let pointer: OpaquePointer
 	private var unmanagedSelf: Unmanaged<GifskiWrapper>!
 	private var hasFinished = false
@@ -124,12 +130,13 @@ final class GifskiWrapper {
 	}
 
 	// swiftlint:disable:next function_parameter_count
-	func addFrameARGB(
-		frameNumber: UInt32,
-		width: UInt32,
-		bytesPerRow: UInt32,
-		height: UInt32,
-		pixels: UnsafePointer<UInt8>,
+	func addFrame(
+		pixelFormat: PixelFormat,
+		frameNumber: Int,
+		width: Int,
+		height: Int,
+		bytesPerRow: Int,
+		pixels: [UInt8],
 		presentationTimestamp: Double
 	) throws {
 		guard !hasFinished else {
@@ -137,15 +144,39 @@ final class GifskiWrapper {
 		}
 
 		try wrap {
-			gifski_add_frame_argb(
-				pointer,
-				frameNumber,
-				width,
-				bytesPerRow,
-				height,
-				pixels,
-				presentationTimestamp
-			)
+			var pixels = pixels
+
+			switch pixelFormat {
+			case .rgba:
+				return gifski_add_frame_rgba(
+					pointer,
+					UInt32(frameNumber),
+					UInt32(width),
+					UInt32(height),
+					&pixels,
+					presentationTimestamp
+				)
+			case .argb:
+				return gifski_add_frame_argb(
+					pointer,
+					UInt32(frameNumber),
+					UInt32(width),
+					UInt32(bytesPerRow),
+					UInt32(height),
+					&pixels,
+					presentationTimestamp
+				)
+			case .rgb:
+				return gifski_add_frame_rgb(
+					pointer,
+					UInt32(frameNumber),
+					UInt32(width),
+					UInt32(bytesPerRow),
+					UInt32(height),
+					&pixels,
+					presentationTimestamp
+				)
+			}
 		}
 	}
 
