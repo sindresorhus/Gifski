@@ -3996,7 +3996,7 @@ extension CGImage {
 		as pixelFormat: PixelFormat,
 		premultiplyAlpha: Bool
 	) throws -> Pixels {
-		// For macOS 10.15 and older, we don't handle the `premultiplied` option as it never correctly worked before and I'm too lazy to fix it there.
+		// For macOS 10.15 and older, we don't handle the `premultiplyAlpha` option as it never correctly worked before and I'm too lazy to fix it there.
 		guard #available(macOS 11, *) else {
 			guard
 				let image = converting(to: pixelFormat),
@@ -4044,7 +4044,7 @@ extension CGBitmapInfo {
 	/// The pixel format of the image.
 	/// Returns `nil` if the pixel format is not supported, for example, non-alpha.
 	var pixelFormat: CGImage.PixelFormat? {
-		// While the host byte order is little endian, default bytes are stored in big endian format.
+		// While the host byte order is little-endian, by default, `CGImage` is stored in big-endian format on Intel Macs and little-endian on Apple silicon Macs.
 
 		let alphaInfo = self.alphaInfo
 		let isLittleEndian = contains(.byteOrder32Little)
