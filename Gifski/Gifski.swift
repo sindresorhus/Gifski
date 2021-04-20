@@ -37,6 +37,7 @@ final class Gifski {
 	/**
 	- Parameter frameRate: Clamped to `5...30`. Uses the frame rate of `input` if not specified.
 	- Parameter loopGif: Whether output should loop infinitely or not.
+	- Parameter bounce: Whether output should bounce or not.
 	*/
 	struct Conversion {
 		let video: URL
@@ -45,6 +46,7 @@ final class Gifski {
 		var dimensions: CGSize?
 		var frameRate: Int?
 		var loopCount: Int?
+		var bounce: Bool
 	}
 
 	private var gifData = Data()
@@ -150,11 +152,13 @@ final class Gifski {
 	) {
 		let generator: AVAssetImageGenerator
 		var times: [CMTime]
+		let fps: Int
 
 		switch imageGenerator(for: conversion, jobKey: jobKey) {
 		case .success(let result):
 			generator = result.generator
 			times = result.times
+			fps = result.fps
 
 		case .failure(let error):
 			completionHandler(.failure(error))
@@ -176,7 +180,7 @@ final class Gifski {
 		}
 
 		progress.cancellationHandler = generator.cancelAllCGImageGeneration
-		progress.totalUnitCount = Int64(times.count)
+		progress.totalUnitCount = Int64(totalFrameCount(for: conversion, sourceFrameCount: times.count))
 
 		let startTime = times.first?.seconds ?? 0
 
@@ -189,6 +193,8 @@ final class Gifski {
 			let frameResult = self.processFrame(
 				for: imageResult,
 				at: startTime,
+				frameRate: fps,
+				conversion: conversion,
 				isEstimation: isEstimation,
 				jobKey: jobKey
 			)
@@ -219,7 +225,7 @@ final class Gifski {
 	private func imageGenerator(
 		for conversion: Conversion,
 		jobKey: String
-	) -> Result<(generator: AVAssetImageGenerator, times: [CMTime]), Error> {
+	) -> Result<(generator: AVAssetImageGenerator, times: [CMTime], fps: Int), Error> {
 		let asset = AVURLAsset(
 			url: conversion.video,
 			options: [
@@ -339,25 +345,30 @@ final class Gifski {
 			value: frameForTimes.map(\.seconds)
 		)
 
-		return .success((generator, frameForTimes))
+		return .success((generator, frameForTimes, Int(fps)))
 	}
 
 	/// Generates image data from an image frame and sends that data to the Gifski image API for processing.
 	/// - Parameters:
 	///   - result: The image size
 	///   - startTime: The start time of all the frames being processed. (not the time of the current frame).
+	///   - frameRate: The frames per second of the job.
+	///   - conversion: The source information of the conversion.
 	///   - isEstimation: Whether the frame is part of a size estimation job.
 	///   - jobKey: The string used to identify the current conversion job.
 	/// - Returns: A result containing if an error occurred or if the frame is the last frame in the conversion.
 	private func processFrame(
 		for result: Result<AVAssetImageGenerator.CompletionHandlerResult, Swift.Error>,
 		at startTime: TimeInterval,
+		frameRate: Int,
+		conversion: Conversion,
 		isEstimation: Bool,
 		jobKey: String
 	) -> Result<Bool, Error> {
 		switch result {
 		case .success(let result):
-			progress.totalUnitCount = Int64(result.totalCount)
+			let totalFrameCount = self.totalFrameCount(for: conversion, sourceFrameCount: result.totalCount)
+			progress.totalUnitCount = Int64(totalFrameCount)
 
 			// This happens if the last frame in the video failed to be generated.
 			if result.isFinishedIgnoreImage {
@@ -380,15 +391,45 @@ final class Gifski {
 			}
 
 			do {
+				let frameNumber = result.completedCount - 1
+
 				try gifski?.addFrame(
 					pixelFormat: .argb,
-					frameNumber: result.completedCount - 1,
+					frameNumber: frameNumber,
 					width: pixels.width,
 					height: pixels.height,
 					bytesPerRow: pixels.bytesPerRow,
 					pixels: pixels.bytes,
 					presentationTimestamp: max(0, result.actualTime.seconds - startTime)
 				)
+
+				if conversion.bounce, !result.isFinished {
+					// Inserts the frame again at the reverse index of the natural order.
+					// For example, if this frame at index 2 of 5 in its natural order:
+					//       ↓
+					// 0, 1, 2, 3, 4
+					//
+					// Then the frame should be inserted at 6 of 9 in the reverse order:
+					//                   ↓
+					// 0, 1, 2, 3, 4, 3, 2, 1, 0
+					let reverseFrameNumber = totalFrameCount - frameNumber - 1
+
+					// Determine the reverse timestamp by finding the expected timestamp (frame number / frame rate)
+					// and adjusting for the image generator's slippage (actualTime - requestedTime)
+					let expectedReverseTimestamp = TimeInterval(reverseFrameNumber) / TimeInterval(frameRate)
+					let timestampSlippage = result.actualTime - result.requestedTime
+					let actualReverseTimestamp = max(0, expectedReverseTimestamp + timestampSlippage.seconds)
+
+					try gifski?.addFrame(
+						pixelFormat: .argb,
+						frameNumber: reverseFrameNumber,
+						width: pixels.width,
+						height: pixels.height,
+						bytesPerRow: pixels.bytesPerRow,
+						pixels: pixels.bytes,
+						presentationTimestamp: actualReverseTimestamp
+					)
+				}
 			} catch {
 				return .failure(.addFrameFailed(error))
 			}
@@ -399,6 +440,15 @@ final class Gifski {
 		case .failure(let error):
 			return .failure(.generateFrameFailed(error))
 		}
+	}
+
+	private func totalFrameCount(for conversion: Conversion, sourceFrameCount: Int) -> Int {
+		// Bouncing doubles the frame count except for the frame at the apex (middle) of the bounce
+		// For example, a sequence of 5 frames becomes a sequence of 9 frames when bounced
+		// 0, 1, 2, 3, 4
+		//             ↓
+		// 0, 1, 2, 3, 4, 3, 2, 1, 0
+		conversion.bounce ? (sourceFrameCount * 2 - 1) : sourceFrameCount
 	}
 
 	func cancel() {

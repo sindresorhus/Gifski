@@ -73,7 +73,8 @@ final class EditVideoViewController: NSViewController {
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue,
-			loopCount: loopCount
+			loopCount: loopCount,
+			bounce: Defaults[.bounceGif]
 		)
 	}
 
