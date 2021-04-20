@@ -426,7 +426,13 @@ final class EditVideoViewController: NSViewController {
 		Defaults.observe(.loopGif) { [weak self] in
 			self?.playerViewController.loopPlayback = $0.newValue
 		}
-			.tieToLifetime(of: self)
+		.tieToLifetime(of: self)
+
+		Defaults.observe(.bounceGif) { [weak self] in
+			self?.playerViewController.bouncePlayback = $0.newValue
+			self?.estimateFileSize()
+		}
+		.tieToLifetime(of: self)
 
 		add(childController: playerViewController, to: playerViewWrapper)
 	}
