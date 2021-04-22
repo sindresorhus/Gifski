@@ -3345,6 +3345,23 @@ extension AVPlayer {
 			toleranceAfter: .zero
 		)
 	}
+
+	/**
+	Seek to the end of the playable range of the video.
+
+	The start might not be at `duration` if, for example, the video has been trimmed in `AVPlayerView` trim mode.
+	*/
+	func seekToEnd() {
+		guard let seconds = currentItem?.playbackRange?.upperBound ?? currentItem?.duration.seconds else {
+			return
+		}
+
+		seek(
+			to: CMTime(seconds: seconds, preferredTimescale: .video),
+			toleranceBefore: .zero,
+			toleranceAfter: .zero
+		)
+	}
 }
 
 
@@ -3375,8 +3392,11 @@ final class LoopingPlayer: AVPlayer {
 				NotificationCenter.default.removeObserver(observationToken)
 				self.observationToken = nil
 			}
+			actionAtItemEnd = .pause
 			return
 		}
+
+		actionAtItemEnd = .none
 
 		guard observationToken == nil else {
 			// Already observing, no need to update
@@ -3390,8 +3410,11 @@ final class LoopingPlayer: AVPlayer {
 			}
 
 			if self.bouncePlayback, self.currentItem?.canPlayReverse == true, (self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0) {
+				self.pause()
+				self.seekToEnd()
 				self.rate = -1
 			} else if self.loopPlayback {
+				self.pause()
 				self.seekToStart()
 				self.rate = 1
 			}
