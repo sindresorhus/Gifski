@@ -251,7 +251,7 @@
                                     </stepper>
                                     <button verticalHuggingPriority="750" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="6Zb-wc-GCx">
                                         <rect key="frame" x="197" y="17" width="72" height="18"/>
-                                        <string key="toolTip">When enabled the GIFs will playback normally then playback in reverse. Resulting in a GIF that is double the length and double the filesize.</string>
+                                        <string key="toolTip">Makes the GIF play normally and then in reverse, resulting in a GIF that is double the length and double the file size.</string>
                                         <buttonCell key="cell" type="check" title="Bounce" bezelStyle="regularSquare" imagePosition="left" inset="2" id="Pn4-Io-BK6">
                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                             <font key="font" metaFont="system"/>
