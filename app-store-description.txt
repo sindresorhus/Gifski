@@ -7,6 +7,7 @@ It converts videos to animated GIFs that use thousands of colors per frame. This
 
 - Video trimming
 - Precise control of dimensions
+- Control over GIF looping and bouncing (yo-yo) playback
 - Copy, share, or drag the GIF
 - Share extension
 - System service
@@ -33,6 +34,11 @@ You can share a macOS screen recording with Gifski by clicking on the thumbnail 
 ■ System service
 
 Gifski includes a system service that lets you quickly convert a video to GIF from the “Services” menu in any app that provides a compatible video file.
+
+
+■ Bounce (yo-yo) GIF playback
+
+Gifski includes the option to create GIFs that bounce back and forth between forward and backward playback. This option doubles the number of frames in the GIF so the file size will double as well.
 
 
 ■ Tips
