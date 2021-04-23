@@ -369,9 +369,9 @@ final class EditVideoViewController: NSViewController {
 				}
 			}
 
-			let keyframeRate = Double(keyframeCount) / Double(frameCount)
-			if keyframeRate < (1.0 / 30.0) {
-				print("Low keyframe interval \(keyframeRate)")
+			let keyframeInterval = frameCount / keyframeCount
+			if keyframeInterval > 30 {
+				print("Low keyframe interval \(keyframeInterval)")
 
 				DispatchQueue.main.async { [weak self] in
 					if let self = self {
