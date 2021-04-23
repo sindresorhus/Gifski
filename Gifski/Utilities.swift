@@ -704,6 +704,62 @@ extension AVAssetTrack {
 	}
 }
 
+extension AVAssetTrack {
+	struct VideoKeyframeInfo {
+		let frameCount: Int
+		let keyframeCount: Int
+
+		var keyframeInterval: Double {
+			Double(frameCount) / Double(keyframeCount)
+		}
+
+		var keyframeRate: Double {
+			Double(keyframeCount) / Double(frameCount)
+		}
+	}
+
+	func getKeyframeInfo() -> VideoKeyframeInfo? {
+		guard
+			let asset = self.asset,
+			let reader = try? AVAssetReader(asset: asset)
+		else {
+			return nil
+		}
+
+		let trackReaderOutput = AVAssetReaderTrackOutput(track: self, outputSettings: nil)
+		reader.add(trackReaderOutput)
+
+		guard reader.startReading() else {
+			return nil
+		}
+
+		var frameCount = 0
+		var keyframeCount = 0
+
+		while true {
+			guard let sampleBuffer = trackReaderOutput.copyNextSampleBuffer() else {
+				reader.cancelReading()
+				break
+			}
+
+			// TODO: Use `sampleBuffer.numSamples` when targeting macOS 10.15.
+			if CMSampleBufferGetNumSamples(sampleBuffer) > 0 {
+				frameCount += 1
+
+				// TODO: Use `sampleBuffer.sampleAttachments` when targeting macOS 10.15.
+				if
+					let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [NSDictionary],
+					attachments.first?[kCMSampleAttachmentKey_NotSync] == nil
+				{
+					keyframeCount += 1
+				}
+			}
+		}
+
+		return VideoKeyframeInfo(frameCount: frameCount, keyframeCount: keyframeCount)
+	}
+}
+
 
 /*
 > FOURCC is short for "four character code" - an identifier for a video codec, compression format, color or pixel format used in media files.
