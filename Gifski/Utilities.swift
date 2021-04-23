@@ -3409,12 +3409,12 @@ final class LoopingPlayer: AVPlayer {
 				return
 			}
 
+			self.pause()
+
 			if self.bouncePlayback, self.currentItem?.canPlayReverse == true, (self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0) {
-				self.pause()
 				self.seekToEnd()
 				self.rate = -1
 			} else if self.loopPlayback {
-				self.pause()
 				self.seekToStart()
 				self.rate = 1
 			}
