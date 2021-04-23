@@ -42,6 +42,7 @@ final class EditVideoViewController: NSViewController {
 	private var predefinedSizes: [PredefinedSizeItem]!
 	private let formatter = ByteCountFormatter()
 	private var playerViewController: TrimmingAVPlayerViewController!
+	private var playerRateObserver: NSKeyValueObservation?
 
 	private var timeRange: ClosedRange<Double>? { playerViewController?.timeRange }
 
@@ -324,6 +325,68 @@ final class EditVideoViewController: NSViewController {
 		}
 	}
 
+	private func showKeyframeRateWarningIfNeeded() {
+		DispatchQueue.global(qos: .utility).async { [weak self] in
+			guard
+				Defaults[.bounceGif],
+				let asset = self?.asset,
+				let videoTrack = asset.firstVideoTrack,
+				let reader = try? AVAssetReader(asset: asset)
+			else {
+				return
+			}
+
+			let trackReaderOutput = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: nil)
+			reader.add(trackReaderOutput)
+
+			guard reader.startReading() else {
+				return
+			}
+
+			var frameCount: UInt = 0
+			var keyframeCount: UInt = 0
+
+			while true {
+				guard self != nil else {
+					reader.cancelReading()
+					return
+				}
+
+				guard let sampleBuffer = trackReaderOutput.copyNextSampleBuffer() else {
+					reader.cancelReading()
+					break
+				}
+
+				if CMSampleBufferGetNumSamples(sampleBuffer) > 0 {
+					frameCount += 1
+
+					if
+						let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [NSDictionary],
+						attachments.first?[kCMSampleAttachmentKey_NotSync] == nil
+					{
+						keyframeCount += 1
+					}
+				}
+			}
+
+			let keyframeRate = Double(keyframeCount) / Double(frameCount)
+			if keyframeRate < (1.0 / 30.0) {
+				print("Low keyframe interval \(keyframeRate)")
+
+				DispatchQueue.main.async { [weak self] in
+					if let self = self {
+						NSAlert.showModal(
+							for: self.view.window,
+							title: "Reverse Playback Preview Limitation",
+							message: "Reverse playback may stutter when the video has a low keyframe rate.\nThe GIF will not have the same stutter.",
+							defaultButtonIndex: -1
+						)
+					}
+				}
+			}
+		}
+	}
+
 	private func setUpWidthAndHeightTextFields() {
 		widthTextField.onBlur = { [weak self] width in
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
@@ -433,6 +496,14 @@ final class EditVideoViewController: NSViewController {
 			self?.estimateFileSize()
 		}
 		.tieToLifetime(of: self)
+
+		playerRateObserver = playerViewController.playerView.player?.observe(\.rate, options: [.new]) { [weak self] _, change in
+			if change.newValue != 0 {
+				SSApp.runOnce(identifier: "lowKeyframeRateWarning") {
+					self?.showKeyframeRateWarningIfNeeded()
+				}
+			}
+		}
 
 		add(childController: playerViewController, to: playerViewWrapper)
 	}
