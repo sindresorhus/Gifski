@@ -135,6 +135,9 @@ extension NSView {
 
 extension NSWindow {
 	private enum AssociatedKeys {
+//		@available(macOS 10.15, *)
+//		static let cancellable = ObjectAssociation<AnyCancellable?>()
+
 		static let observationToken = ObjectAssociation<NSKeyValueObservation?>()
 	}
 
@@ -142,17 +145,25 @@ extension NSWindow {
 		// So there seems to be a visual effect view already created by NSWindow.
 		// If we can attach ourselves to it and make it a vibrant one - awesome.
 		// If not, let's just add our view as a first one so it is vibrant anyways.
-		if let visualEffectView = contentView?.superview?.subviews.lazy.compactMap({ $0 as? NSVisualEffectView }).first {
-			visualEffectView.blendingMode = .behindWindow
-			visualEffectView.material = .underWindowBackground
+		guard let visualEffectView = contentView?.superview?.subviews.lazy.compactMap({ $0 as? NSVisualEffectView }).first else {
+			contentView?.superview?.insertVibrancyView(material: .underWindowBackground)
+			return
+		}
 
+		visualEffectView.blendingMode = .behindWindow
+		visualEffectView.material = .underWindowBackground
+
+//		if #available(macOS 10.15, *) {
+//			AssociatedKeys.cancellable[self] = visualEffectView.publisher(for: \.effectiveAppearance).sink { _ in
+//				visualEffectView.blendingMode = .behindWindow
+//				visualEffectView.material = .underWindowBackground
+//			}
+//		} else {
 			AssociatedKeys.observationToken[self] = visualEffectView.observe(\.effectiveAppearance) { _, _ in
 				visualEffectView.blendingMode = .behindWindow
 				visualEffectView.material = .underWindowBackground
 			}
-		} else {
-			contentView?.superview?.insertVibrancyView(material: .underWindowBackground)
-		}
+//		}
 	}
 }
 
@@ -824,6 +835,9 @@ enum AVFormat: String {
 	// https://en.wikipedia.org/wiki/QuickTime_Graphics
 	case quickTimeGraphics
 
+	// https://en.wikipedia.org/wiki/Avid_DNxHD
+	case avidDNxHD
+
 	init?(fourCC: String) {
 		switch fourCC.trimmingCharacters(in: .whitespaces) {
 		case "hvc1":
@@ -868,6 +882,8 @@ enum AVFormat: String {
 			self = .cineFormHD
 		case "smc":
 			self = .quickTimeGraphics
+		case "AVdh":
+			self = .avidDNxHD
 		default:
 			return nil
 		}
@@ -921,6 +937,8 @@ enum AVFormat: String {
 			return "CFHD"
 		case .quickTimeGraphics:
 			return "smc"
+		case .avidDNxHD:
+			return "AVdh"
 		}
 	}
 
@@ -989,6 +1007,8 @@ extension AVFormat: CustomStringConvertible {
 			return "CineForm HD"
 		case .quickTimeGraphics:
 			return "QuickTime Graphics"
+		case .avidDNxHD:
+			return "Avid DNxHD"
 		}
 	}
 }
@@ -1011,9 +1031,10 @@ extension AVMediaType: CustomDebugStringConvertible {
 			return "Depth data"
 		case .metadata:
 			return "Metadata"
-		// iOS
-		// case .metadataObject:
-		// return "Metadata objects"
+		#if os(iOS) || os(tvOS) || targetEnvironment(macCatalyst)
+		case .metadataObject:
+			return "Metadata objects"
+		#endif
 		case .muxed:
 			return "Muxed media"
 		case .subtitle:
@@ -3435,6 +3456,7 @@ final class LoopingPlayer: AVPlayer {
 	var bouncePlayback = false {
 		didSet {
 			updateObserver()
+
 			if !bouncePlayback, rate == -1 {
 				rate = 1
 			}
@@ -3448,7 +3470,9 @@ final class LoopingPlayer: AVPlayer {
 				NotificationCenter.default.removeObserver(observationToken)
 				self.observationToken = nil
 			}
+
 			actionAtItemEnd = .pause
+
 			return
 		}
 
@@ -3467,7 +3491,10 @@ final class LoopingPlayer: AVPlayer {
 
 			self.pause()
 
-			if self.bouncePlayback, self.currentItem?.canPlayReverse == true, (self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0) {
+			if
+				self.bouncePlayback, self.currentItem?.canPlayReverse == true,
+				self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0
+			{
 				self.seekToEnd()
 				self.rate = -1
 			} else if self.loopPlayback {

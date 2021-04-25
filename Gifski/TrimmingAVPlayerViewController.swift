@@ -18,18 +18,14 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	}
 
 	var loopPlayback: Bool {
-		get {
-			player.loopPlayback
-		}
+		get { player.loopPlayback }
 		set {
 			player.loopPlayback = newValue
 		}
 	}
 
 	var bouncePlayback: Bool {
-		get {
-			player.bouncePlayback
-		}
+		get { player.bouncePlayback }
 		set {
 			player.bouncePlayback = newValue
 		}

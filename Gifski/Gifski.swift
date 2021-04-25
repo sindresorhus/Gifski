@@ -138,12 +138,15 @@ final class Gifski {
 		}
 	}
 
-	/// Generates GIF data for the provided conversion.
-	/// - Parameters:
-	///   - conversion: The source information of the conversion.
-	///   - isEstimation: Whether the frame is part of a size estimation job.
-	///   - jobKey: The string used to identify the current conversion job.
-	///   - completionHandler: Closure called when the data conversion completes or an error is encountered.
+	/**
+	Generates GIF data for the provided conversion.
+
+	- Parameters:
+		- conversion: The source information of the conversion.
+		- isEstimation: Whether the frame is part of a size estimation job.
+		- jobKey: The string used to identify the current conversion job.
+		- completionHandler: Closure called when the data conversion completes or an error is encountered.
+	*/
 	private func generateData(
 		for conversion: Conversion,
 		isEstimation: Bool,
@@ -159,7 +162,6 @@ final class Gifski {
 			generator = result.generator
 			times = result.times
 			fps = result.fps
-
 		case .failure(let error):
 			completionHandler(.failure(error))
 			return
@@ -210,18 +212,20 @@ final class Gifski {
 
 					completionHandler(result)
 				}
-
 			case .failure(let error):
 				completionHandler(.failure(error))
 			}
 		}
 	}
 
-	/// Creates an image generator for the provided conversion.
-	/// - Parameters:
-	///   - conversion: The conversion source of the image generator.
-	///   - jobKey: The string used to identify the current conversion job.
-	/// - Returns: An AVAssetImageGenerator along with the times of the frames requested by the conversion.
+	/**
+	Creates an image generator for the provided conversion.
+
+	- Parameters:
+		- conversion: The conversion source of the image generator.
+		- jobKey: The string used to identify the current conversion job.
+		- Returns: An `AVAssetImageGenerator` along with the times of the frames requested by the conversion.
+	*/
 	private func imageGenerator(
 		for conversion: Conversion,
 		jobKey: String
@@ -348,15 +352,18 @@ final class Gifski {
 		return .success((generator, frameForTimes, Int(fps)))
 	}
 
-	/// Generates image data from an image frame and sends that data to the Gifski image API for processing.
-	/// - Parameters:
-	///   - result: The image size
-	///   - startTime: The start time of all the frames being processed. (not the time of the current frame).
-	///   - frameRate: The frames per second of the job.
-	///   - conversion: The source information of the conversion.
-	///   - isEstimation: Whether the frame is part of a size estimation job.
-	///   - jobKey: The string used to identify the current conversion job.
-	/// - Returns: A result containing if an error occurred or if the frame is the last frame in the conversion.
+	/**
+	Generates image data from an image frame and sends that data to the Gifski image API for processing.
+
+	- Parameters:
+		- result: The image size.
+		- startTime: The start time of all the frames being processed. (Not the time of the current frame).
+		- frameRate: The frames per second of the job.
+		- conversion: The source information of the conversion.
+		- isEstimation: Whether the frame is part of a size estimation job.
+		- jobKey: The string used to identify the current conversion job.
+	- Returns: A result containing whether an error occurred or if the frame is the last frame in the conversion.
+	*/
 	private func processFrame(
 		for result: Result<AVAssetImageGenerator.CompletionHandlerResult, Swift.Error>,
 		at startTime: TimeInterval,
@@ -404,18 +411,26 @@ final class Gifski {
 				)
 
 				if conversion.bounce, !result.isFinished {
-					// Inserts the frame again at the reverse index of the natural order.
-					// For example, if this frame at index 2 of 5 in its natural order:
-					//       ↓
-					// 0, 1, 2, 3, 4
-					//
-					// Then the frame should be inserted at 6 of 9 in the reverse order:
-					//                   ↓
-					// 0, 1, 2, 3, 4, 3, 2, 1, 0
+					/*
+					Inserts the frame again at the reverse index of the natural order.
+
+					For example, if this frame is at index 2 of 5 in its natural order:
+
+					```
+						  ↓
+					0, 1, 2, 3, 4
+					```
+
+					Then the frame should be inserted at 6 of 9 in the reverse order:
+
+					```
+									  ↓
+					0, 1, 2, 3, 4, 3, 2, 1, 0
+					```
+					*/
 					let reverseFrameNumber = totalFrameCount - frameNumber - 1
 
-					// Determine the reverse timestamp by finding the expected timestamp (frame number / frame rate)
-					// and adjusting for the image generator's slippage (actualTime - requestedTime)
+					// Determine the reverse timestamp by finding the expected timestamp (frame number / frame rate) and adjusting for the image generator's slippage (actualTime - requestedTime)
 					let expectedReverseTimestamp = TimeInterval(reverseFrameNumber) / TimeInterval(frameRate)
 					let timestampSlippage = result.actualTime - result.requestedTime
 					let actualReverseTimestamp = max(0, expectedReverseTimestamp + timestampSlippage.seconds)
@@ -443,11 +458,17 @@ final class Gifski {
 	}
 
 	private func totalFrameCount(for conversion: Conversion, sourceFrameCount: Int) -> Int {
-		// Bouncing doubles the frame count except for the frame at the apex (middle) of the bounce
-		// For example, a sequence of 5 frames becomes a sequence of 9 frames when bounced
-		// 0, 1, 2, 3, 4
-		//             ↓
-		// 0, 1, 2, 3, 4, 3, 2, 1, 0
+		/*
+		Bouncing doubles the frame count except for the frame at the apex (middle) of the bounce.
+
+		For example, a sequence of 5 frames becomes a sequence of 9 frames when bounced:
+
+		```
+		0, 1, 2, 3, 4
+		            ↓
+		0, 1, 2, 3, 4, 3, 2, 1, 0
+		```
+		*/
 		conversion.bounce ? (sourceFrameCount * 2 - 1) : sourceFrameCount
 	}
 

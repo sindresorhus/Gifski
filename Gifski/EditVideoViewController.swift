@@ -221,11 +221,17 @@ final class EditVideoViewController: NSViewController {
 			}
 
 			let oldOrNewSelectedIndex = selectedIndex ?? self.predefinedSizesDropdown.indexOfSelectedItem
-			if let size = self.predefinedSizes?[safe: oldOrNewSelectedIndex], case .custom = size {
+
+			if
+				let size = self.predefinedSizes?[safe: oldOrNewSelectedIndex],
+				case .custom = size
+			{
 				// We don't care if it's newly selected index or not, if it's custom, set its size
 				self.updateSelectedItemAsCustomWithSize()
-			} else if let index = selectedIndex, let size = self.predefinedSizes?[safe: index],
-				case .dimensions(let dimensions) = size {
+			} else if
+				let index = selectedIndex, let size = self.predefinedSizes?[safe: index],
+				case .dimensions(let dimensions) = size
+			{
 				// But we care if it's newly selected index for dimensions, we don't want to recalculate
 				// if we don't have to
 				self.resizableDimensions.change(dimensionsType: dimensions.currentDimensions.type)
