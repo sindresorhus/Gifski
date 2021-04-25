@@ -43,6 +43,7 @@ final class EditVideoViewController: NSViewController {
 	private let formatter = ByteCountFormatter()
 	private var playerViewController: TrimmingAVPlayerViewController!
 	private var playerRateObserver: NSKeyValueObservation?
+	private var isKeyframeRateChecked = false
 
 	private var timeRange: ClosedRange<Double>? { playerViewController?.timeRange }
 
@@ -326,6 +327,12 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func showKeyframeRateWarningIfNeeded(maximumKeyframeInterval: Double = 30) {
+		guard !isKeyframeRateChecked, !Defaults[.suppressKeyframeWarning] else {
+			return
+		}
+
+		isKeyframeRateChecked = true
+
 		DispatchQueue.global(qos: .utility).async { [weak self] in
 			guard
 				let keyframeInfo = self?.asset.firstVideoTrack?.getKeyframeInfo(),
@@ -341,12 +348,18 @@ final class EditVideoViewController: NSViewController {
 					return
 				}
 
-				NSAlert.showModal(
-					for: self.view.window,
+				let alert = NSAlert(
 					title: "Reverse Playback Preview Limitation",
 					message: "Reverse playback may stutter when the video has a low keyframe rate. The GIF will not have the same stutter.",
 					defaultButtonIndex: -1
 				)
+
+				alert.showsSuppressionButton = true
+				alert.runModal(for: self.view.window)
+
+				if alert.suppressionButton?.state == .on {
+					Defaults[.suppressKeyframeWarning] = true
+				}
 			}
 		}
 	}
@@ -466,9 +479,7 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			SSApp.runOnce(identifier: "lowKeyframeRateWarning") {
-				self?.showKeyframeRateWarningIfNeeded()
-			}
+			self?.showKeyframeRateWarningIfNeeded()
 		}
 
 		add(childController: playerViewController, to: playerViewWrapper)
