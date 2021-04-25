@@ -37,6 +37,10 @@ Gifski includes a share extension that lets you share videos to Gifski. Just sel
 
 Gifski includes a [system service](https://www.computerworld.com/article/2476298/os-x-a-quick-guide-to-services-on-your-mac.html) that lets you quickly convert a video to GIF from the **Services** menu in any app that provides a compatible video file.
 
+### Bounce (yo-yo) GIF playback
+
+Gifski includes the option to create GIFs that bounce back and forth between forward and backward playback. This is a similar effect to the bounce effect in [iOS's Live Photo effects](https://support.apple.com/en-us/HT207310). This option doubles the number of frames in the GIF so the file size will double as well.
+
 ## Tips
 
 #### Quickly copy or save the GIF

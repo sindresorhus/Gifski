@@ -42,6 +42,8 @@ final class EditVideoViewController: NSViewController {
 	private var predefinedSizes: [PredefinedSizeItem]!
 	private let formatter = ByteCountFormatter()
 	private var playerViewController: TrimmingAVPlayerViewController!
+	private var playerRateObserver: NSKeyValueObservation?
+	private var isKeyframeRateChecked = false
 
 	private var timeRange: ClosedRange<Double>? { playerViewController?.timeRange }
 
@@ -73,7 +75,8 @@ final class EditVideoViewController: NSViewController {
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
 			frameRate: frameRateSlider.integerValue,
-			loopCount: loopCount
+			loopCount: loopCount,
+			bounce: Defaults[.bounceGif]
 		)
 	}
 
@@ -323,6 +326,44 @@ final class EditVideoViewController: NSViewController {
 		}
 	}
 
+	private func showKeyframeRateWarningIfNeeded(maximumKeyframeInterval: Double = 30) {
+		guard !isKeyframeRateChecked, !Defaults[.suppressKeyframeWarning] else {
+			return
+		}
+
+		isKeyframeRateChecked = true
+
+		DispatchQueue.global(qos: .utility).async { [weak self] in
+			guard
+				let keyframeInfo = self?.asset.firstVideoTrack?.getKeyframeInfo(),
+				keyframeInfo.keyframeInterval > maximumKeyframeInterval
+			else {
+				return
+			}
+
+			print("Low keyframe interval \(keyframeInfo.keyframeInterval)")
+
+			DispatchQueue.main.async { [weak self] in
+				guard let self = self else {
+					return
+				}
+
+				let alert = NSAlert(
+					title: "Reverse Playback Preview Limitation",
+					message: "Reverse playback may stutter when the video has a low keyframe rate. The GIF will not have the same stutter.",
+					defaultButtonIndex: -1
+				)
+
+				alert.showsSuppressionButton = true
+				alert.runModal(for: self.view.window)
+
+				if alert.suppressionButton?.state == .on {
+					Defaults[.suppressKeyframeWarning] = true
+				}
+			}
+		}
+	}
+
 	private func setUpWidthAndHeightTextFields() {
 		widthTextField.onBlur = { [weak self] width in
 			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
@@ -425,7 +466,21 @@ final class EditVideoViewController: NSViewController {
 		Defaults.observe(.loopGif) { [weak self] in
 			self?.playerViewController.loopPlayback = $0.newValue
 		}
-			.tieToLifetime(of: self)
+		.tieToLifetime(of: self)
+
+		Defaults.observe(.bounceGif) { [weak self] in
+			self?.playerViewController.bouncePlayback = $0.newValue
+			self?.estimateFileSize()
+		}
+		.tieToLifetime(of: self)
+
+		playerRateObserver = playerViewController.playerView.player?.observe(\.rate, options: [.new]) { [weak self] _, change in
+			guard change.newValue == -1 else {
+				return
+			}
+
+			self?.showKeyframeRateWarningIfNeeded()
+		}
 
 		add(childController: playerViewController, to: playerViewWrapper)
 	}

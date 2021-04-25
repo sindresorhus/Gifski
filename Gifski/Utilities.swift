@@ -704,6 +704,62 @@ extension AVAssetTrack {
 	}
 }
 
+extension AVAssetTrack {
+	struct VideoKeyframeInfo {
+		let frameCount: Int
+		let keyframeCount: Int
+
+		var keyframeInterval: Double {
+			Double(frameCount) / Double(keyframeCount)
+		}
+
+		var keyframeRate: Double {
+			Double(keyframeCount) / Double(frameCount)
+		}
+	}
+
+	func getKeyframeInfo() -> VideoKeyframeInfo? {
+		guard
+			let asset = self.asset,
+			let reader = try? AVAssetReader(asset: asset)
+		else {
+			return nil
+		}
+
+		let trackReaderOutput = AVAssetReaderTrackOutput(track: self, outputSettings: nil)
+		reader.add(trackReaderOutput)
+
+		guard reader.startReading() else {
+			return nil
+		}
+
+		var frameCount = 0
+		var keyframeCount = 0
+
+		while true {
+			guard let sampleBuffer = trackReaderOutput.copyNextSampleBuffer() else {
+				reader.cancelReading()
+				break
+			}
+
+			// TODO: Use `sampleBuffer.numSamples` when targeting macOS 10.15.
+			if CMSampleBufferGetNumSamples(sampleBuffer) > 0 {
+				frameCount += 1
+
+				// TODO: Use `sampleBuffer.sampleAttachments` when targeting macOS 10.15.
+				if
+					let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [NSDictionary],
+					attachments.first?[kCMSampleAttachmentKey_NotSync] == nil
+				{
+					keyframeCount += 1
+				}
+			}
+		}
+
+		return VideoKeyframeInfo(frameCount: frameCount, keyframeCount: keyframeCount)
+	}
+}
+
 
 /*
 > FOURCC is short for "four character code" - an identifier for a video codec, compression format, color or pixel format used in media files.
@@ -3345,33 +3401,78 @@ extension AVPlayer {
 			toleranceAfter: .zero
 		)
 	}
+
+	/**
+	Seek to the end of the playable range of the video.
+
+	The start might not be at `duration` if, for example, the video has been trimmed in `AVPlayerView` trim mode.
+	*/
+	func seekToEnd() {
+		guard let seconds = currentItem?.playbackRange?.upperBound ?? currentItem?.duration.seconds else {
+			return
+		}
+
+		seek(
+			to: CMTime(seconds: seconds, preferredTimescale: .video),
+			toleranceBefore: .zero,
+			toleranceAfter: .zero
+		)
+	}
 }
 
 
-extension AVPlayer {
-	private enum AssociatedKeys {
-		static let observationToken = ObjectAssociation<NSObjectProtocol?>()
-		static let originalActionAtItemEnd = ObjectAssociation<ActionAtItemEnd?>()
-	}
+final class LoopingPlayer: AVPlayer {
+	private var observationToken: NSObjectProtocol?
 
 	/// Loop the playback.
-	var loopPlayback: Bool {
-		get {
-			AssociatedKeys.observationToken[self] != nil
+	var loopPlayback = false {
+		didSet {
+			updateObserver()
 		}
-		set {
-			if newValue {
-				AssociatedKeys.originalActionAtItemEnd[self] = actionAtItemEnd
-				actionAtItemEnd = .none
+	}
 
-				// TODO: Use Combine publisher when targeting macOS 10.15.
-				AssociatedKeys.observationToken[self] = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: currentItem, queue: nil) { [weak self] _ in
-					self?.seekToStart()
-				}
-			} else {
-				actionAtItemEnd = AssociatedKeys.originalActionAtItemEnd[self] ?? actionAtItemEnd
-				AssociatedKeys.originalActionAtItemEnd[self] = nil
-				AssociatedKeys.observationToken[self] = nil
+	/// Bounce the playback.
+	var bouncePlayback = false {
+		didSet {
+			updateObserver()
+			if !bouncePlayback, rate == -1 {
+				rate = 1
+			}
+		}
+	}
+
+	private func updateObserver() {
+		guard bouncePlayback || loopPlayback else {
+			// Stop any existing observations
+			if let observationToken = observationToken {
+				NotificationCenter.default.removeObserver(observationToken)
+				self.observationToken = nil
+			}
+			actionAtItemEnd = .pause
+			return
+		}
+
+		actionAtItemEnd = .none
+
+		guard observationToken == nil else {
+			// Already observing, no need to update
+			return
+		}
+
+		// TODO: Use Combine publisher when targeting macOS 10.15.
+		observationToken = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: currentItem, queue: nil) { [weak self] _ in
+			guard let self = self else {
+				return
+			}
+
+			self.pause()
+
+			if self.bouncePlayback, self.currentItem?.canPlayReverse == true, (self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0) {
+				self.seekToEnd()
+				self.rate = -1
+			} else if self.loopPlayback {
+				self.seekToStart()
+				self.rate = 1
 			}
 		}
 	}
