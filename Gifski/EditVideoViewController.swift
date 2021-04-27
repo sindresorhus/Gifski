@@ -205,7 +205,7 @@ final class EditVideoViewController: NSViewController {
 			case .custom:
 				predefinedSizesDropdown.addItem(withTitle: "Custom")
 			case .spacer:
-				predefinedSizesDropdown.menu?.addItem(NSMenuItem.separator())
+				predefinedSizesDropdown.menu?.addItem(.separator())
 			case .dimensions(let dimensions):
 				predefinedSizesDropdown.addItem(withTitle: "\(dimensions)")
 			}

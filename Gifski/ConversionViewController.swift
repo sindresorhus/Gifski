@@ -71,7 +71,7 @@ final class ConversionViewController: NSViewController {
 		progress?.publish()
 
 		circularProgress.progressInstance = progress
-		DockProgress.style = .squircle(color: SSApp.isDarkMode ? NSColor.white.withAlphaComponent(0.7) : .progressCircleColor)
+		DockProgress.style = .squircle(color: SSApp.isDarkMode ? .white.withAlphaComponent(0.7) : .progressCircleColor)
 		DockProgress.progressInstance = progress
 		timeRemainingEstimator.progress = progress
 		timeRemainingEstimator.start()

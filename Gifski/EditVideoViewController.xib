@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="18122" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17701"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="18122"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -249,9 +249,8 @@
                                         <rect key="frame" x="159" y="34" width="19" height="28"/>
                                         <stepperCell key="cell" continuous="YES" alignment="left" maxValue="100" id="d96-4O-hec"/>
                                     </stepper>
-                                    <button verticalHuggingPriority="750" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="6Zb-wc-GCx">
+                                    <button toolTip="Makes the GIF play normally and then in reverse, resulting in a GIF that is double the length and double the file size." verticalHuggingPriority="750" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="6Zb-wc-GCx">
                                         <rect key="frame" x="197" y="17" width="72" height="18"/>
-                                        <string key="toolTip">Makes the GIF play normally and then in reverse, resulting in a GIF that is double the length and double the file size.</string>
                                         <buttonCell key="cell" type="check" title="Bounce" bezelStyle="regularSquare" imagePosition="left" inset="2" id="Pn4-Io-BK6">
                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                             <font key="font" metaFont="system"/>
