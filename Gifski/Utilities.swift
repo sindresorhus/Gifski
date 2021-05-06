@@ -3001,44 +3001,78 @@ extension URL {
 	var queryDictionary: [String: String] { components?.queryDictionary ?? [:] }
 }
 
+final class ViewControllerPresentationAnimator: NSObject, NSViewControllerPresentationAnimator {
+	var completion: (() -> Void)?
+	var presentingViewController: NSViewController?
+
+	init(completion: (() -> Void)?) {
+		self.completion = completion
+	}
+
+	func animatePresentation(of viewController: NSViewController, from fromViewController: NSViewController) {
+		guard let window = fromViewController.view.window else {
+			return
+		}
+
+		presentingViewController = fromViewController
+
+		showViewControllerOnWindow(viewController, window: window, completion: completion)
+	}
+
+	func animateDismissal(of viewController: NSViewController, from fromViewController: NSViewController) {
+		guard let window = viewController.view.window else {
+			return
+		}
+
+		showViewControllerOnWindow(fromViewController, window: window)
+	}
+}
+
+private func showViewControllerOnWindow(_ viewController: NSViewController, window: NSWindow, completion: (() -> Void)? = nil) {
+	// Workaround for macOS first responder quirk. Still in macOS 10.15.3.
+	// Reproduce: Without the below, if you click convert, hide the window, show the window when the conversion is done, and then drag and drop a new file, the width/height text fields are now not editable.
+	window.makeFirstResponder(viewController)
+
+	let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
+	let newFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
+
+	guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+		DispatchQueue.main.async {
+			window.contentViewController = nil
+			window.setFrame(newFrame, display: true)
+			window.contentViewController = viewController
+			completion?()
+		}
+		return
+	}
+
+	viewController.view.alphaValue = 0.0
+
+	NSAnimationContext.runAnimationGroup({ _ in
+		window.contentViewController?.view.animator().alphaValue = 0.0
+		window.contentViewController = nil
+		window.animator().setFrame(newFrame, display: true)
+	}, completionHandler: {
+		window.contentViewController = viewController
+		viewController.view.animator().alphaValue = 1.0
+		completion?()
+	})
+}
 
 extension NSViewController {
 	func push(viewController: NSViewController, completion: (() -> Void)? = nil) {
+		let animator = ViewControllerPresentationAnimator(completion: completion)
+		present(viewController, animator: animator)
+	}
+
+	func popAll(completion: (() -> Void)? = nil) {
 		guard let window = view.window else {
 			return
 		}
-
-		let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
-		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
-
-		guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
-			window.makeFirstResponder(viewController)
-
-			DispatchQueue.main.async {
-				window.contentViewController = nil
-				window.setFrame(newWindowFrame, display: true)
-				window.contentViewController = viewController
-				completion?()
-			}
-
+		guard let rootVC = (window.windowController as? MainWindowController)?.rootVideoDropViewController else {
 			return
 		}
-
-		viewController.view.alphaValue = 0.0
-
-		// Workaround for macOS first responder quirk. Still in macOS 10.15.3.
-		// Reproduce: Without the below, if you click convert, hide the window, show the window when the conversion is done, and then drag and drop a new file, the width/height text fields are now not editable.
-		window.makeFirstResponder(viewController)
-
-		NSAnimationContext.runAnimationGroup({ _ in
-			window.contentViewController?.view.animator().alphaValue = 0.0
-			window.contentViewController = nil
-			window.animator().setFrame(newWindowFrame, display: true)
-		}, completionHandler: {
-			window.contentViewController = viewController
-			viewController.view.animator().alphaValue = 1.0
-			completion?()
-		})
+		showViewControllerOnWindow(rootVC, window: window, completion: completion)
 	}
 
 	func add(childController: NSViewController) {

@@ -8,8 +8,6 @@ import DockProgress
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	lazy var mainWindowController = MainWindowController()
 
-	var previousEditViewController: EditVideoViewController?
-
 	// Possible workaround for crashing bug because of Crashlytics swizzling.
 	let notificationCenter = UNUserNotificationCenter.current()
 

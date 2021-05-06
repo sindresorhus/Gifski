@@ -90,8 +90,6 @@ final class EditVideoViewController: NSViewController {
 		self.inputUrl = inputUrl
 		self.asset = asset
 		self.videoMetadata = videoMetadata
-
-		AppDelegate.shared.previousEditViewController = self
 	}
 
 	var isConverting = false
@@ -108,9 +106,7 @@ final class EditVideoViewController: NSViewController {
 
 	@IBAction
 	private func cancel(_ sender: Any) {
-		let videoDropController = VideoDropViewController()
-		push(viewController: videoDropController)
-		AppDelegate.shared.previousEditViewController = nil
+		presentingViewController?.dismiss(self)
 	}
 
 	override func viewDidLoad() {
@@ -125,6 +121,10 @@ final class EditVideoViewController: NSViewController {
 		setUpLoopCountControls()
 		setUpDropView()
 		setUpTrimmingView()
+	}
+
+	override func viewWillAppear() {
+		isConverting = false
 	}
 
 	override func viewDidAppear() {

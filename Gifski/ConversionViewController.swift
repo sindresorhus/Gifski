@@ -57,7 +57,9 @@ final class ConversionViewController: NSViewController {
 
 	/// Gets called when the Esc key is pressed.
 	override func cancelOperation(_ sender: Any?) {
-		cancelConversion()
+		if isRunning {
+			cancelConversion()
+		}
 	}
 
 	private func start(conversion: Gifski.Conversion) {
@@ -116,12 +118,8 @@ final class ConversionViewController: NSViewController {
 			progress?.cancel()
 		}
 
-		stopConversion { [weak self] in
-			// It's safe to force-unwrap as there's no scenario where it will be nil.
-			let viewController = AppDelegate.shared.previousEditViewController!
-			viewController.isConverting = false
-
-			self?.push(viewController: viewController)
+		stopConversion { [self] in
+			self.presentingViewController?.dismiss(self)
 		}
 	}
 

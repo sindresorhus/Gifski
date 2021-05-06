@@ -70,6 +70,10 @@ final class ConversionCompletedViewController: NSViewController {
 				return
 			}
 
+			guard self.view.window?.contentViewController == self else {
+				return
+			}
+
 			self.tooltip.show(from: self.draggableFile, preferredEdge: .maxY)
 		}
 
@@ -192,10 +196,7 @@ final class ConversionCompletedViewController: NSViewController {
 
 	@IBAction
 	private func backButton(_ sender: NSButton) {
-		// It's safe to force-unwrap as there's no scenario where it will be nil.
-		let viewController = AppDelegate.shared.previousEditViewController!
-		viewController.isConverting = false
-		push(viewController: viewController)
+		presentingViewController?.presentingViewController?.dismiss(self)
 	}
 }
 

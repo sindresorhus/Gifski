@@ -2,6 +2,8 @@ import Cocoa
 
 final class MainWindowController: NSWindowController {
 	private let videoValidator = VideoValidator()
+	
+	public let rootVideoDropViewController = VideoDropViewController();
 
 	var isConverting: Bool {
 		window?.contentViewController is ConversionViewController
@@ -58,9 +60,10 @@ final class MainWindowController: NSWindowController {
 
 	convenience init() {
 		let window = NSWindow.centeredWindow(size: .zero)
-		window.contentViewController = VideoDropViewController()
 		window.centerNatural()
 		self.init(window: window)
+
+		window.contentViewController = rootVideoDropViewController
 
 		with(window) {
 			$0.delegate = self
@@ -121,8 +124,10 @@ final class MainWindowController: NSWindowController {
 			return
 		}
 
-		let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
-		window?.contentViewController?.push(viewController: editController)
+		rootVideoDropViewController.popAll {
+			let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
+			self.rootVideoDropViewController.push(viewController: editController)
+		}
 	}
 }
 
