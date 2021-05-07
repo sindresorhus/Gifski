@@ -3028,7 +3028,7 @@ final class ViewControllerPresentationAnimator: NSObject, NSViewControllerPresen
 	}
 }
 
-private func showViewControllerOnWindow(_ viewController: NSViewController, window: NSWindow, completion: (() -> Void)? = nil) {
+private func showViewControllerOnWindow(_ viewController: NSViewController, window: NSWindow, animated: Bool = true, completion: (() -> Void)? = nil) {
 	// Workaround for macOS first responder quirk. Still in macOS 10.15.3.
 	// Reproduce: Without the below, if you click convert, hide the window, show the window when the conversion is done, and then drag and drop a new file, the width/height text fields are now not editable.
 	window.makeFirstResponder(viewController)
@@ -3036,7 +3036,7 @@ private func showViewControllerOnWindow(_ viewController: NSViewController, wind
 	let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
 	let newFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
 
-	guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+	if animated == false || NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
 		DispatchQueue.main.async {
 			window.contentViewController = nil
 			window.setFrame(newFrame, display: true)
@@ -3065,14 +3065,14 @@ extension NSViewController {
 		present(viewController, animator: animator)
 	}
 
-	func popAll(completion: (() -> Void)? = nil) {
+	func popToRootViewController(animated: Bool = true, completion: (() -> Void)? = nil) {
 		guard let window = view.window else {
 			return
 		}
 		guard let rootVC = (window.windowController as? MainWindowController)?.rootVideoDropViewController else {
 			return
 		}
-		showViewControllerOnWindow(rootVC, window: window, completion: completion)
+		showViewControllerOnWindow(rootVC, window: window, animated: animated, completion: completion)
 	}
 
 	func add(childController: NSViewController) {
