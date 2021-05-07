@@ -70,7 +70,8 @@ final class ConversionCompletedViewController: NSViewController {
 				return
 			}
 
-			// Prevents a rare situation where the this closure is invoked after user has clicked back or dropped a new video file
+			// Prevents the following tooltip code from failing in a rare situation where
+			// this closure is invoked after user has clicked back or dropped a new video file
 			guard self.view.window?.contentViewController == self else {
 				return
 			}
