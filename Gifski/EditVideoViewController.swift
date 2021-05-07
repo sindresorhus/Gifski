@@ -106,7 +106,7 @@ final class EditVideoViewController: NSViewController {
 
 	@IBAction
 	private func cancel(_ sender: Any) {
-		presentingViewController?.dismiss(self)
+		pop()
 	}
 
 	override func viewDidLoad() {

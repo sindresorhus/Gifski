@@ -3064,6 +3064,10 @@ extension NSViewController {
 		let animator = ViewControllerPresentationAnimator(completion: completion)
 		present(viewController, animator: animator)
 	}
+	
+	func pop() {
+		presentingViewController?.dismiss(self)
+	}
 
 	func popToRootViewController(animated: Bool = true, completion: (() -> Void)? = nil) {
 		guard let window = view.window else {

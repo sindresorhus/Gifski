@@ -118,8 +118,8 @@ final class ConversionViewController: NSViewController {
 			progress?.cancel()
 		}
 
-		stopConversion { [self] in
-			self.presentingViewController?.dismiss(self)
+		stopConversion { [weak self] in
+			self?.pop()
 		}
 	}
 
