@@ -70,6 +70,7 @@ final class ConversionCompletedViewController: NSViewController {
 				return
 			}
 
+			// Prevents a rare situation where the this closure is invoked after user has clicked back or dropped a new video file
 			guard self.view.window?.contentViewController == self else {
 				return
 			}
