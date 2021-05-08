@@ -60,7 +60,7 @@ final class VideoDropViewController: NSViewController {
 			return
 		}
 
-		popToRootViewController(animated: false) {
+		popToRootViewController {
 			let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
 			rootVideoDropViewController.push(viewController: editController)
 		}

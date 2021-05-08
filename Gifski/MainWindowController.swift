@@ -2,8 +2,8 @@ import Cocoa
 
 final class MainWindowController: NSWindowController {
 	private let videoValidator = VideoValidator()
-	
-	public let rootVideoDropViewController = VideoDropViewController();
+
+	let rootVideoDropViewController = VideoDropViewController()
 
 	var isConverting: Bool {
 		window?.contentViewController is ConversionViewController
@@ -124,7 +124,7 @@ final class MainWindowController: NSWindowController {
 			return
 		}
 
-		rootVideoDropViewController.popToRootViewController(animated: false) {
+		rootVideoDropViewController.popToRootViewController {
 			let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
 			self.rootVideoDropViewController.push(viewController: editController)
 		}
