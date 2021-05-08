@@ -124,9 +124,9 @@ final class MainWindowController: NSWindowController {
 			return
 		}
 
-		rootVideoDropViewController.popToRootViewController {
+		rootVideoDropViewController.popToRootViewController { [weak self] in
 			let editController = EditVideoViewController(inputUrl: inputUrl, asset: asset, videoMetadata: videoMetadata)
-			self.rootVideoDropViewController.push(viewController: editController)
+			self?.rootVideoDropViewController.push(viewController: editController)
 		}
 	}
 }
