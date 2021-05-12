@@ -6,7 +6,7 @@ import DockProgress
 
 @main
 final class AppDelegate: NSObject, NSApplicationDelegate {
-	lazy var mainWindowController = MainWindowController()
+	private(set) lazy var mainWindowController = MainWindowController()
 
 	var previousEditViewController: EditVideoViewController?
 

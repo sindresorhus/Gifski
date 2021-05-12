@@ -3055,13 +3055,13 @@ extension NSViewController {
 
 extension NSView {
 	/// Get a subview matching a condition.
-	func firstSubview(where matches: (NSView) -> Bool, deep: Bool = false) -> NSView? {
+	func firstSubview(deep: Bool = false, where matches: (NSView) -> Bool) -> NSView? {
 		for subview in subviews {
 			if matches(subview) {
 				return subview
 			}
 
-			if deep, let match = subview.firstSubview(where: matches, deep: deep) {
+			if deep, let match = subview.firstSubview(deep: deep, where: matches) {
 				return match
 			}
 		}

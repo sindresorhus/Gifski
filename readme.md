@@ -95,6 +95,10 @@ Ensure the images are named in the format `image_000001.png` and adjust the `-fr
 
 [*Command explanation.*](https://avpres.net/FFmpeg/sq_ProRes.html)
 
+#### How can I run multiple conversions at the same time?
+
+This is unfortunately not supported. However, if you know how to run a terminal command, you could run `open -na Gifski` multiple times to open multiple instances of Gifski, where each instance can convert a separate video. You should not have the editor view open in multiple instances though, as changing the quality, for example, will change it in all the instances.
+
 #### Can I contribute localizations?
 
 We don't have any immediate plans to localize the app.

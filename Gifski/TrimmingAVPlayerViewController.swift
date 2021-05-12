@@ -123,7 +123,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	fileprivate func hideTrimButtons() {
 		// This method is a collection of hacks, so it might be acting funky on different OS versions.
 		guard
-			let avTrimView = firstSubview(where: { $0.simpleClassName == "AVTrimView" }, deep: true),
+			let avTrimView = firstSubview(deep: true, where: { $0.simpleClassName == "AVTrimView" }),
 			let superview = avTrimView.superview
 		else {
 			return
