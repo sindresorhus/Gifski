@@ -1,6 +1,10 @@
 import Foundation
+import Combine
 
 final class TimeRemainingEstimator {
+	private var progressCancellable: AnyCancellable?
+	private var isCancelledCancellable: AnyCancellable?
+
 	/// The delay before revealing the estimated time remaining, allowing the estimation to stabilize.
 	let bufferDuration: TimeInterval = 3
 
@@ -12,23 +16,25 @@ final class TimeRemainingEstimator {
 
 	weak var progress: Progress? {
 		didSet {
-			progressObserver = progress?.observe(\.fractionCompleted) { [weak self] sender, _ in
-				guard let self = self else {
-					return
+			progressCancellable = progress?.publisher(for: \.fractionCompleted)
+				.sink { [weak self] in
+					guard let self = self else {
+						return
+					}
+
+					self.percentComplete = $0
 				}
 
-				self.percentComplete = sender.fractionCompleted
-			}
+			isCancelledCancellable = progress?.publisher(for: \.isCancelled)
+				.sink { [weak self] in
+					guard let self = self else {
+						return
+					}
 
-			cancelObserver = progress?.observe(\.isCancelled) { [weak self] sender, _ in
-				guard let self = self else {
-					return
+					if $0 {
+						self.state = .done
+					}
 				}
-
-				if sender.isCancelled {
-					self.state = .done
-				}
-			}
 		}
 	}
 
@@ -91,8 +97,6 @@ final class TimeRemainingEstimator {
 
 	private let label: Label
 	private var startTime = Date()
-	private var progressObserver: NSKeyValueObservation?
-	private var cancelObserver: NSKeyValueObservation?
 
 	private lazy var elapsedTimeFormatter = with(DateComponentsFormatter()) {
 		$0.unitsStyle = .full
@@ -106,7 +110,7 @@ final class TimeRemainingEstimator {
 		return elapsedTimeFormatter.string(from: seconds)
 	}
 
-	private var percentComplete: Double = 0.001 {
+	@Clamping(0.001...100) private var percentComplete = 0.0 {
 		didSet {
 			state = nextState
 			updateLabel()

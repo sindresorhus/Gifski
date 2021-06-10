@@ -1,4 +1,5 @@
 import Cocoa
+import Combine
 import AVKit
 import Defaults
 import FirebaseCrashlytics
@@ -34,6 +35,8 @@ final class EditVideoViewController: NSViewController {
 	@IBOutlet private var loopCountTextField: IntTextField!
 	@IBOutlet private var loopCountStepper: NSStepper!
 
+	private var cancellables = Set<AnyCancellable>()
+
 	var inputUrl: URL!
 	var asset: AVAsset!
 	var videoMetadata: AVAsset.VideoMetadata!
@@ -42,7 +45,6 @@ final class EditVideoViewController: NSViewController {
 	private var predefinedSizes: [PredefinedSizeItem]!
 	private let formatter = ByteCountFormatter()
 	private var playerViewController: TrimmingAVPlayerViewController!
-	private var playerRateObserver: NSKeyValueObservation?
 	private var isKeyframeRateChecked = false
 
 	private var timeRange: ClosedRange<Double>? { playerViewController?.timeRange }
@@ -443,11 +445,13 @@ final class EditVideoViewController: NSViewController {
 			}
 		}
 
-		Defaults.observe(.loopGif) { [weak self] in
-			self?.loopCountTextField.isEnabled = $0.newValue == false
-			self?.loopCountStepper.isEnabled = $0.newValue == false
-		}
-		.tieToLifetime(of: self)
+		Defaults.publisher(.loopGif)
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] in
+				self?.loopCountTextField.isEnabled = !$0.newValue
+				self?.loopCountStepper.isEnabled = !$0.newValue
+			}
+			.store(in: &cancellables)
 
 
 		loopCountStepper.onAction = { [weak self] _ in
@@ -469,24 +473,30 @@ final class EditVideoViewController: NSViewController {
 			self?.estimateFileSize()
 		}
 
-		Defaults.observe(.loopGif) { [weak self] in
-			self?.playerViewController.loopPlayback = $0.newValue
-		}
-		.tieToLifetime(of: self)
-
-		Defaults.observe(.bounceGif) { [weak self] in
-			self?.playerViewController.bouncePlayback = $0.newValue
-			self?.estimateFileSize()
-		}
-		.tieToLifetime(of: self)
-
-		playerRateObserver = playerViewController.playerView.player?.observe(\.rate, options: [.new]) { [weak self] _, change in
-			guard change.newValue == -1 else {
-				return
+		Defaults.publisher(.loopGif)
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] in
+				self?.playerViewController.loopPlayback = $0.newValue
 			}
+			.store(in: &cancellables)
 
-			self?.showKeyframeRateWarningIfNeeded()
-		}
+		Defaults.publisher(.bounceGif)
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] in
+				self?.playerViewController.bouncePlayback = $0.newValue
+				self?.estimateFileSize()
+			}
+			.store(in: &cancellables)
+
+		playerViewController.playerView.player?.publisher(for: \.rate, options: [.new])
+			.sink { [weak self] rate in
+				guard rate == -1 else {
+					return
+				}
+
+				self?.showKeyframeRateWarningIfNeeded()
+			}
+			.store(in: &cancellables)
 
 		add(childController: playerViewController, to: playerViewWrapper)
 	}

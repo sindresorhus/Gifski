@@ -21,6 +21,7 @@ only_rules:
   - custom_rules
   - deployment_target
   - discarded_notification_center_observer
+  - discouraged_assert
   - discouraged_direct_init
   - discouraged_object_literal
   - discouraged_optional_boolean
@@ -86,6 +87,7 @@ only_rules:
   - prefer_zero_over_explicit_init
   - private_action
   - private_outlet
+  - private_subject
   - private_unit_test
   - prohibited_super_call
   - protocol_property_accessors_order
@@ -139,6 +141,7 @@ only_rules:
   - xctfail_message
   - yoda_condition
 analyzer_rules:
+  - capture_variable
   - unused_declaration
   - unused_import
 number_separator:
@@ -163,7 +166,7 @@ identifier_name:
     - 'y1'
     - 'y2'
 deployment_target:
-  macOS_deployment_target: '10.14'
+  macOS_deployment_target: '10.15'
 custom_rules:
   no_nsrect:
     regex: '\bNSRect\b'
@@ -178,8 +181,11 @@ custom_rules:
     match_kinds: typeidentifier
     message: 'Use CGPoint instead of NSPoint'
   swiftui_state_private:
-    regex: '@(State|StateObject)\s+var'
-    message: "SwiftUI @State/@StateObject properties should be private"
+    regex: '@(State|StateObject|ObservedObject|EnvironmentObject)\s+var'
+    message: "SwiftUI @State/@StateObject/@ObservedObject/@EnvironmentObject properties should be private"
+  swiftui_environment_private:
+    regex: '@Environment\(\\\.\w+\)\s+var'
+    message: "SwiftUI @Environment properties should be private"
   final_class:
     regex: '^class [a-zA-Z\d]+[^{]+\{'
     message: "Classes should be marked as final whenever possible. If you actually need it to be subclassable, just add `// swiftlint:disable:next final_class`."

@@ -1,4 +1,5 @@
-import Cocoa
+import SwiftUI
+import Combine
 import AVFoundation
 import class Quartz.QLPreviewPanel
 import StoreKit.SKStoreReviewController
@@ -135,10 +136,7 @@ extension NSView {
 
 extension NSWindow {
 	private enum AssociatedKeys {
-//		@available(macOS 10.15, *)
-//		static let cancellable = ObjectAssociation<AnyCancellable?>()
-
-		static let observationToken = ObjectAssociation<NSKeyValueObservation?>()
+		static let cancellable = ObjectAssociation<AnyCancellable?>()
 	}
 
 	func makeVibrant() {
@@ -153,17 +151,11 @@ extension NSWindow {
 		visualEffectView.blendingMode = .behindWindow
 		visualEffectView.material = .underWindowBackground
 
-//		if #available(macOS 10.15, *) {
-//			AssociatedKeys.cancellable[self] = visualEffectView.publisher(for: \.effectiveAppearance).sink { _ in
-//				visualEffectView.blendingMode = .behindWindow
-//				visualEffectView.material = .underWindowBackground
-//			}
-//		} else {
-			AssociatedKeys.observationToken[self] = visualEffectView.observe(\.effectiveAppearance) { _, _ in
+		AssociatedKeys.cancellable[self] = visualEffectView.publisher(for: \.effectiveAppearance)
+			.sink { _ in
 				visualEffectView.blendingMode = .behindWindow
 				visualEffectView.material = .underWindowBackground
 			}
-//		}
 	}
 }
 
@@ -731,7 +723,7 @@ extension AVAssetTrack {
 
 	func getKeyframeInfo() -> VideoKeyframeInfo? {
 		guard
-			let asset = self.asset,
+			let asset = asset,
 			let reader = try? AVAssetReader(asset: asset)
 		else {
 			return nil
@@ -753,15 +745,10 @@ extension AVAssetTrack {
 				break
 			}
 
-			// TODO: Use `sampleBuffer.numSamples` when targeting macOS 10.15.
-			if CMSampleBufferGetNumSamples(sampleBuffer) > 0 {
+			if sampleBuffer.numSamples > 0 {
 				frameCount += 1
 
-				// TODO: Use `sampleBuffer.sampleAttachments` when targeting macOS 10.15.
-				if
-					let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [NSDictionary],
-					attachments.first?[kCMSampleAttachmentKey_NotSync] == nil
-				{
+				if sampleBuffer.sampleAttachments.first?[.notSync] == nil {
 					keyframeCount += 1
 				}
 			}
@@ -805,7 +792,6 @@ extension FourCharCode {
 }
 
 
-// TODO: Support audio formats too.
 enum AVFormat: String {
 	case hevc
 	case h264
@@ -2013,6 +1999,8 @@ extension URL {
 
 		return values.allValues[key] as? Bool ?? defaultValue
 	}
+
+//	var contentType: UTType? { resourceValue(forKey: .contentTypeKey) }
 
 	/// File UTI.
 	var typeIdentifier: String? { resourceValue(forKey: .typeIdentifierKey) }
@@ -3443,7 +3431,7 @@ extension AVPlayer {
 
 
 final class LoopingPlayer: AVPlayer {
-	private var observationToken: NSObjectProtocol?
+	private var cancellable: AnyCancellable?
 
 	/// Loop the playback.
 	var loopPlayback = false {
@@ -3465,43 +3453,38 @@ final class LoopingPlayer: AVPlayer {
 
 	private func updateObserver() {
 		guard bouncePlayback || loopPlayback else {
-			// Stop any existing observations
-			if let observationToken = observationToken {
-				NotificationCenter.default.removeObserver(observationToken)
-				self.observationToken = nil
-			}
-
+			cancellable = nil
 			actionAtItemEnd = .pause
-
 			return
 		}
 
 		actionAtItemEnd = .none
 
-		guard observationToken == nil else {
-			// Already observing, no need to update
+		guard cancellable == nil else {
+			// Already observing. No need to update.
 			return
 		}
 
-		// TODO: Use Combine publisher when targeting macOS 10.15.
-		observationToken = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: currentItem, queue: nil) { [weak self] _ in
-			guard let self = self else {
-				return
-			}
+		cancellable = NotificationCenter.default
+			.publisher(for: .AVPlayerItemDidPlayToEndTime, object: currentItem)
+			.sink { [weak self] _ in
+				guard let self = self else {
+					return
+				}
 
-			self.pause()
+				self.pause()
 
-			if
-				self.bouncePlayback, self.currentItem?.canPlayReverse == true,
-				self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0
-			{
-				self.seekToEnd()
-				self.rate = -1
-			} else if self.loopPlayback {
-				self.seekToStart()
-				self.rate = 1
+				if
+					self.bouncePlayback, self.currentItem?.canPlayReverse == true,
+					self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0
+				{
+					self.seekToEnd()
+					self.rate = -1
+				} else if self.loopPlayback {
+					self.seekToStart()
+					self.rate = 1
+				}
 			}
-		}
 	}
 }
 
@@ -3720,13 +3703,6 @@ extension NSFont {
 		// It's important that the size is `0` and not `pointSize` as otherwise the descriptor is not able to change the font size.
 		Self(descriptor: descriptor, size: 0) ?? self
 	}
-
-	// TODO: Remove this when targeting macOS 10.15 as it's then built-in.
-	/// Returns a font with the size replaced.
-	/// UIKit polyfill.
-	func withSize(_ size: CGFloat) -> NSFont {
-		withDescriptor(fontDescriptor.withSize(size))
-	}
 }
 
 
@@ -3892,18 +3868,6 @@ extension CGImage {
 
 		return CFDataGetBytePtr(data)
 	}
-
-	// TODO: Investigate which of these are more efficient.
-//	var bytes: [UInt8]? { // wiftlint:disable:this discouraged_optional_collection
-//		guard let data = dataProvider?.data else {
-//			return nil
-//		}
-//
-//		let length = CFDataGetLength(data)
-//		var bytes = [UInt8](repeating: 0, count: length)
-//		CFDataGetBytes(data, CFRange(location: 0, length: length), &bytes)
-//		return bytes
-//	}
 
 	/**
 	The bytes of the image.
@@ -4174,7 +4138,7 @@ extension CGBitmapInfo {
 	var pixelFormat: CGImage.PixelFormat? {
 		// While the host byte order is little-endian, by default, `CGImage` is stored in big-endian format on Intel Macs and little-endian on Apple silicon Macs.
 
-		let alphaInfo = self.alphaInfo
+		let alphaInfo = alphaInfo
 		let isLittleEndian = contains(.byteOrder32Little)
 
 		guard alphaInfo != .none else {
@@ -4194,7 +4158,7 @@ extension CGBitmapInfo {
 
 	/// Whether the alpha channel is premultipled.
 	var isPremultipliedAlpha: Bool {
-		let alphaInfo = self.alphaInfo
+		let alphaInfo = alphaInfo
 		return alphaInfo == .premultipliedFirst || alphaInfo == .premultipliedLast
 	}
 }
@@ -4228,5 +4192,24 @@ extension CGImage {
 		Premultiplied alpha: \(bitmapInfo.isPremultipliedAlpha)
 		Color space: \(colorSpace?.title, default: "nil")
 		"""
+	}
+}
+
+
+@propertyWrapper
+struct Clamping<Value: Comparable> {
+	private var value: Value
+	private let range: ClosedRange<Value>
+
+	init(wrappedValue: Value, _ range: ClosedRange<Value>) {
+		self.value = wrappedValue.clamped(to: range)
+		self.range = range
+	}
+
+	var wrappedValue: Value {
+		get { value }
+		set {
+			value = newValue.clamped(to: range)
+		}
 	}
 }

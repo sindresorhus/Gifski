@@ -258,15 +258,3 @@ extension ConversionCompletedViewController: QLPreviewPanelDelegate {
 		draggableFile.image
 	}
 }
-
-// TODO: This doesn't seem to be needed on macOS 10.15, so drop it when we target that.
-extension ConversionCompletedViewController: NSMenuItemValidation {
-	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-		switch menuItem.action {
-		case #selector(quickLook(_:))?:
-			return true
-		default:
-			return true
-		}
-	}
-}

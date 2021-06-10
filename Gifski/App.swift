@@ -4,6 +4,11 @@ import FirebaseCore
 import FirebaseCrashlytics
 import DockProgress
 
+/**
+TODO when targeting macOS 12:
+- Rewrite `CheckerboardView` to use `SwiftUI.Canvas`.
+*/
+
 @main
 final class AppDelegate: NSObject, NSApplicationDelegate {
 	private(set) lazy var mainWindowController = MainWindowController()
@@ -24,13 +29,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
 		FirebaseApp.configure()
-
+		NSApp.servicesProvider = self
 		notificationCenter.requestAuthorization { _, _ in }
 
 		mainWindowController.showWindow(self)
-
-		NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = true
-		NSApp.servicesProvider = self
 
 		// Set launch completions option if the notification center could not be set up already.
 		LaunchCompletions.applicationDidLaunch()

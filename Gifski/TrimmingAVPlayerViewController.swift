@@ -1,3 +1,4 @@
+import Combine
 import AVKit
 
 /// VC containing AVPlayerView and also extending possibilities for trimming (view) customization.
@@ -69,55 +70,57 @@ final class TrimmingAVPlayerViewController: NSViewController {
 }
 
 final class TrimmingAVPlayerView: AVPlayerView {
-	private var timeRangeObserver: NSKeyValueObservation?
-	private var trimmingObserver: NSKeyValueObservation?
+	private var timeRangeCancellable: AnyCancellable?
+	private var trimmingCancellable: AnyCancellable?
 
 	/// The minimum duration the trimmer can be set to.
 	var minimumTrimDuration = 0.1
 
+	// TODO: This should be a Combine publisher.
 	fileprivate func observeTrimmedTimeRange(_ updateClosure: @escaping (ClosedRange<Double>) -> Void) {
 		var skipNextUpdate = false
 
-		// Observing `.duration` seems buggy on macOS 10.14.
-		// Once we change minimum target to 10.15,
-		// observe `\.duration` instead of `\.forwardPlaybackEndTime`.
-		timeRangeObserver = player?.currentItem?.observe(\.forwardPlaybackEndTime, options: .new) { [weak self] item, _ in
-			guard
-				let self = self,
-				let fullRange = item.durationRange,
-				let playbackRange = item.playbackRange
-			else {
-				return
-			}
+		timeRangeCancellable = player?.currentItem?.publisher(for: \.duration, options: .new)
+			.sink { [weak self] _ in
+				guard
+					let self = self,
+					let item = self.player?.currentItem,
+					let fullRange = item.durationRange,
+					let playbackRange = item.playbackRange
+				else {
+					return
+				}
 
-			/// Prevent infinite recursion.
-			guard !skipNextUpdate else {
-				skipNextUpdate = false
-				updateClosure(playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange))
-				return
-			}
+				/// Prevent infinite recursion.
+				guard !skipNextUpdate else {
+					skipNextUpdate = false
+					updateClosure(playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange))
+					return
+				}
 
-			guard playbackRange.length > self.minimumTrimDuration else {
-				skipNextUpdate = true
-				item.playbackRange = playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange)
-				return
-			}
+				guard playbackRange.length > self.minimumTrimDuration else {
+					skipNextUpdate = true
+					item.playbackRange = playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange)
+					return
+				}
 
-			updateClosure(playbackRange)
-		}
+				updateClosure(playbackRange)
+			}
 	}
 
 	fileprivate func setupTrimmingObserver() {
-		trimmingObserver = observe(\.canBeginTrimming, options: .new) { [weak self] _, change in
-			guard let self = self else {
-				return
-			}
+		trimmingCancellable = publisher(for: \.canBeginTrimming, options: .new)
+			.sink { [weak self] canBeginTrimming in
+				guard
+					let self = self,
+					canBeginTrimming
+				else {
+					return
+				}
 
-			if let canBeginTrimming = change.newValue, canBeginTrimming {
 				self.beginTrimming(completionHandler: nil)
-				self.trimmingObserver?.invalidate()
+				self.trimmingCancellable = nil
 			}
-		}
 	}
 
 	fileprivate func hideTrimButtons() {

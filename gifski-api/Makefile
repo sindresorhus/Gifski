@@ -9,10 +9,10 @@ BUILD: INSTALL_TOOLCHAINS MACOS_ARM64_RELEASE MACOS_X64_RELEASE
 			target/release-universal/libgifski.a
 
 MACOS_ARM64_RELEASE:
-	MACOSX_DEPLOYMENT_TARGET=10.14.4 cargo build --release --target=aarch64-apple-darwin
+	MACOSX_DEPLOYMENT_TARGET=10.15 cargo build --release --target=aarch64-apple-darwin
 
 MACOS_X64_RELEASE:
-	MACOSX_DEPLOYMENT_TARGET=10.14.4 cargo build --release --target=x86_64-apple-darwin
+	MACOSX_DEPLOYMENT_TARGET=10.15 cargo build --release --target=x86_64-apple-darwin
 
 INSTALL_TOOLCHAINS:
 	rustup update

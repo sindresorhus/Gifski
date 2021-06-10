@@ -33,7 +33,7 @@ final class ResizableDimensions: Copyable {
 
 	/// Width bounds for `currentDimensions`.
 	var widthMinMax: ClosedRange<CGFloat> {
-		let multiplier = self.multiplier(for: currentDimensions.type)
+		let multiplier = multiplier(for: currentDimensions.type)
 		let min = (minimumScale * multiplier.width).rounded()
 		let max = (maximumScale * multiplier.width).rounded()
 		return min...max
@@ -41,7 +41,7 @@ final class ResizableDimensions: Copyable {
 
 	/// Height bounds for `currentDimensions`.
 	var heightMinMax: ClosedRange<CGFloat> {
-		let multiplier = self.multiplier(for: currentDimensions.type)
+		let multiplier = multiplier(for: currentDimensions.type)
 		let min = (minimumScale * multiplier.height).rounded()
 		let max = (maximumScale * multiplier.height).rounded()
 		return min...max
@@ -57,7 +57,7 @@ final class ResizableDimensions: Copyable {
 		maximumScale: CGFloat? = nil
 	) {
 		self.originalDimensions = dimensions.rounded()
-		self.currentDimensions = self.originalDimensions
+		self.currentDimensions = originalDimensions
 		self.minimumScale = minimumScale ?? 0.01
 		self.maximumScale = maximumScale ?? 1
 		self.currentScale = 1
@@ -115,7 +115,7 @@ final class ResizableDimensions: Copyable {
 	}
 
 	private func calculateDimensions(for type: DimensionsType) -> Dimensions {
-		let multiplier = self.multiplier(for: type)
+		let multiplier = multiplier(for: type)
 		let width = currentScale * multiplier.width
 		let height = currentScale * multiplier.height
 

@@ -4,29 +4,12 @@ import Cocoa
 class DropView<CompletionType>: SSView {
 	var onComplete: ((CompletionType) -> Void)?
 
-	var dropText: String? {
-		didSet {
-			if let text = dropText {
-				dropLabel.isHidden = false
-				dropLabel.text = text
-			} else {
-				dropLabel.isHidden = true
-			}
-		}
-	}
-
 	var dropView: NSView?
 
-	private let dropLabel = with(Label()) {
-		$0.textColor = .secondaryLabelColor
-		$0.font = .systemFont(ofSize: 14)
-	}
-
-	var highlightColor: NSColor { .controlAccentColorPolyfill }
+	var highlightColor: NSColor { .controlAccentColor }
 
 	var isDropLabelHidden = false {
 		didSet {
-			dropLabel.isHidden = isDropLabelHidden
 			dropView?.isHidden = isDropLabelHidden
 		}
 	}
@@ -53,8 +36,6 @@ class DropView<CompletionType>: SSView {
 	}
 
 	override func didAppear() {
-		addSubviewToCenter(dropLabel)
-
 		if let dropView = dropView {
 			addSubviewToCenter(dropView)
 		}

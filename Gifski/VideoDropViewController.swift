@@ -1,6 +1,5 @@
 import SwiftUI
 
-@available(macOS 10.15, *)
 struct DropCenterView: View {
 	var body: some View {
 		VStack {
@@ -21,11 +20,7 @@ final class VideoDropViewController: NSViewController {
 	private let videoValidator = VideoValidator()
 
 	private lazy var videoDropView = with(VideoDropView()) {
-		if #available(macOS 10.15, *) {
-			$0.dropView = NSHostingView(rootView: DropCenterView())
-		} else {
-			$0.dropText = "Drop a Video"
-		}
+		$0.dropView = NSHostingView(rootView: DropCenterView())
 
 		$0.onComplete = { [weak self] url in
 			NSApp.activate(ignoringOtherApps: true)

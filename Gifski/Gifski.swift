@@ -187,7 +187,10 @@ final class Gifski {
 		let startTime = times.first?.seconds ?? 0
 
 		generator.generateCGImagesAsynchronously(forTimePoints: times) { [weak self] imageResult in
-			guard let self = self, !self.progress.isCancelled else {
+			guard
+				let self = self,
+				!self.progress.isCancelled
+			else {
 				completionHandler(.failure(.cancelled))
 				return
 			}
@@ -374,7 +377,7 @@ final class Gifski {
 	) -> Result<Bool, Error> {
 		switch result {
 		case .success(let result):
-			let totalFrameCount = self.totalFrameCount(for: conversion, sourceFrameCount: result.totalCount)
+			let totalFrameCount = totalFrameCount(for: conversion, sourceFrameCount: result.totalCount)
 			progress.totalUnitCount = Int64(totalFrameCount)
 
 			// This happens if the last frame in the video failed to be generated.

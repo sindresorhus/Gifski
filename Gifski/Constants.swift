@@ -9,7 +9,7 @@ enum Constants {
 }
 
 extension NSColor {
-	static let themeColor = NSColor.controlAccentColorPolyfill
+	static let themeColor = NSColor.controlAccentColor
 	static let progressCircleColor = NSColor(named: "ProgressCircleColor")!
 
 	enum Checkerboard {
