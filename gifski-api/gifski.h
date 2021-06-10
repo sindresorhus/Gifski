@@ -28,6 +28,30 @@ if (res != GIFSKI_OK) return;
 
 It's safe and efficient to call `gifski_add_frame_*` in a loop as fast as you can get frames,
 because it blocks and waits until previous frames are written.
+
+To cancel processing, make progress callback return 0 and call `gifski_finish()`. The write callback
+may still be called between the cancellation and `gifski_finish()` returning.
+
+To build as a library:
+
+```bash
+cargo build --release --lib
+```
+
+it will create `target/release/libgifski.a` (static library)
+and `target/release/libgifski.so`/`dylib` or `gifski.dll` (dynamic library)
+
+Static is recommended.
+
+To build for iOS:
+
+```bash
+rustup target add aarch64-apple-ios
+cargo build --release --lib --target aarch64-apple-ios
+```
+
+it will build `target/aarch64-apple-ios/release/libgifski.a` (ignore the warning about cdylib).
+
 */
 
 /**
@@ -135,6 +159,8 @@ GifskiError gifski_add_frame_png_file(gifski *handle,
  * For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
  * Frames with duplicate or out-of-order PTS will be skipped.
  *
+ * Colors are in sRGB, uncorrelated RGBA, with alpha byte last.
+ *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
 GifskiError gifski_add_frame_rgba(gifski *handle,
@@ -144,10 +170,23 @@ GifskiError gifski_add_frame_rgba(gifski *handle,
                                   const unsigned char *pixels,
                                   double presentation_timestamp);
 
-/** Same as `gifski_add_frame_rgba`, except it expects components in ARGB order.
+/** Same as `gifski_add_frame_rgba`, but with bytes per row arg */
+GifskiError gifski_add_frame_rgba_stride(gifski *handle,
+                                  uint32_t frame_number,
+                                  uint32_t width,
+                                  uint32_t height,
+                                  uint32_t bytes_per_row,
+                                  const unsigned char *pixels,
+                                  double presentation_timestamp);
+
+/** Same as `gifski_add_frame_rgba_stride`, except it expects components in ARGB order.
 
 Bytes per row must be multiple of 4, and greater or equal width×4.
 If the bytes per row value is invalid (e.g. an odd number), frames may look sheared/skewed.
+
+Colors are in sRGB, uncorrelated ARGB, with alpha byte first.
+
+`gifski_add_frame_rgba` is preferred over this function.
 */
 GifskiError gifski_add_frame_argb(gifski *handle,
                                   uint32_t frame_number,
@@ -157,10 +196,14 @@ GifskiError gifski_add_frame_argb(gifski *handle,
                                   const unsigned char *pixels,
                                   double presentation_timestamp);
 
-/** Same as `gifski_add_frame_rgba`, except it expects RGB components (3 bytes per pixel)
+/** Same as `gifski_add_frame_rgba_stride`, except it expects RGB components (3 bytes per pixel)
 
 Bytes per row must be multiple of 3, and greater or equal width×3.
 If the bytes per row value is invalid (not multiple of 3), frames may look sheared/skewed.
+
+Colors are in sRGB, red byte first.
+
+`gifski_add_frame_rgba` is preferred over this function.
 */
 GifskiError gifski_add_frame_rgb(gifski *handle,
                                  uint32_t frame_number,

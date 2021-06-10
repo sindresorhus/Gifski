@@ -148,11 +148,12 @@ final class GifskiWrapper {
 
 			switch pixelFormat {
 			case .rgba:
-				return gifski_add_frame_rgba(
+				return gifski_add_frame_rgba_stride(
 					pointer,
 					UInt32(frameNumber),
 					UInt32(width),
 					UInt32(height),
+					UInt32(bytesPerRow),
 					&pixels,
 					presentationTimestamp
 				)

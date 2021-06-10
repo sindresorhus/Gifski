@@ -395,7 +395,7 @@ final class Gifski {
 
 			let pixels: CGImage.Pixels
 			do {
-				pixels = try result.image.pixels(as: .argb, premultiplyAlpha: false)
+				pixels = try result.image.pixels(as: .rgba, premultiplyAlpha: false)
 			} catch {
 				return .failure(.generateFrameFailed(error))
 			}
@@ -404,7 +404,7 @@ final class Gifski {
 				let frameNumber = result.completedCount - 1
 
 				try gifski?.addFrame(
-					pixelFormat: .argb,
+					pixelFormat: .rgba,
 					frameNumber: frameNumber,
 					width: pixels.width,
 					height: pixels.height,

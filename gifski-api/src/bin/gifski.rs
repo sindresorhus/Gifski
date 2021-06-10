@@ -137,7 +137,7 @@ fn bin_main() -> BinResult<()> {
         fast: matches.is_present("fast"),
         repeat,
     };
-    let quiet = matches.is_present("quiet") || matches!(output_path, DestPath::Stdout);
+    let quiet = matches.is_present("quiet") || output_path == DestPath::Stdout;
     let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;
     let speed: f32 = matches.value_of("fast-forward").ok_or("Missing speed")?.parse().map_err(|_| "Speed must be a number")?;
 
@@ -228,6 +228,7 @@ fn parse_opt<T: ::std::str::FromStr<Err = ::std::num::ParseIntError>>(s: Option<
     }
 }
 
+#[derive(PartialEq)]
 enum DestPath<'a> {
     Path(&'a Path),
     Stdout,
