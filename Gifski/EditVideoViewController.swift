@@ -1,8 +1,7 @@
-import Cocoa
+import SwiftUI
 import Combine
 import AVKit
 import Defaults
-import FirebaseCrashlytics
 
 final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {
@@ -20,7 +19,7 @@ final class EditVideoViewController: NSViewController {
 		}
 	}
 
-	@IBOutlet private var estimatedSizeLabel: NSTextField!
+	@IBOutlet private var estimatedSizeView: NSView!
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
@@ -43,11 +42,16 @@ final class EditVideoViewController: NSViewController {
 
 	private var resizableDimensions: ResizableDimensions!
 	private var predefinedSizes: [PredefinedSizeItem]!
-	private let formatter = ByteCountFormatter()
 	private var playerViewController: TrimmingAVPlayerViewController!
 	private var isKeyframeRateChecked = false
 
 	private var timeRange: ClosedRange<Double>? { playerViewController?.timeRange }
+
+	private lazy var estimatedFileSizeModel = EstimatedFileSizeModel(
+		getConversionSettings: { self.conversionSettings },
+		getNaiveEstimate: getNaiveEstimate,
+		getIsConverting: { self.isConverting }
+	)
 
 	private let tooltip = Tooltip(
 		identifier: "savePanelArrowKeys",
@@ -102,7 +106,7 @@ final class EditVideoViewController: NSViewController {
 	private func convert(_ sender: Any) {
 		isConverting = true
 
-		cancelFileSizeEstimation()
+		estimatedFileSizeModel.cancel()
 
 		let convert = ConversionViewController(conversion: conversionSettings)
 		push(viewController: convert)
@@ -118,8 +122,6 @@ final class EditVideoViewController: NSViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
-		formatter.zeroPadsFractionDigits = true
-		estimatedSizeLabel.font = .monospacedDigitSystemFont(ofSize: 0, weight: .regular)
 		setUpDimensions()
 		setUpDropdowns()
 		setUpSliders()
@@ -127,6 +129,7 @@ final class EditVideoViewController: NSViewController {
 		setUpLoopCountControls()
 		setUpDropView()
 		setUpTrimmingView()
+		setUpEstimatedFileSizeView()
 	}
 
 	override func viewDidAppear() {
@@ -136,6 +139,13 @@ final class EditVideoViewController: NSViewController {
 		setUpTabOrder()
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
+	}
+
+	private func setUpEstimatedFileSizeView() {
+		let view = EstimatedFileSizeView(model: estimatedFileSizeModel)
+		let hostingView = NSHostingView(rootView: view)
+		estimatedSizeView.addSubview(hostingView)
+		hostingView.constrainEdgesToSuperview()
 	}
 
 	private func setUpDimensions() {
@@ -277,7 +287,7 @@ final class EditVideoViewController: NSViewController {
 
 			let frameRate = self.frameRateSlider.integerValue
 			self.frameRateLabel.stringValue = "\(frameRate)"
-			self.estimateFileSize()
+			self.estimatedFileSizeModel.updateEstimate()
 		}
 
 		qualitySlider.onAction = { [weak self] _ in
@@ -286,7 +296,7 @@ final class EditVideoViewController: NSViewController {
 			}
 
 			Defaults[.outputQuality] = self.qualitySlider.doubleValue
-			self.estimateFileSize()
+			self.estimatedFileSizeModel.updateEstimate()
 		}
 
 		// We round it so that `29.970` becomes `30` for practical reasons.
@@ -470,7 +480,7 @@ final class EditVideoViewController: NSViewController {
 
 	private func setUpTrimmingView() {
 		playerViewController = TrimmingAVPlayerViewController(playerItem: AVPlayerItem(asset: asset)) { [weak self] _ in
-			self?.estimateFileSize()
+			self?.estimatedFileSizeModel.updateEstimate()
 		}
 
 		Defaults.publisher(.loopGif)
@@ -484,7 +494,7 @@ final class EditVideoViewController: NSViewController {
 			.receive(on: DispatchQueue.main)
 			.sink { [weak self] in
 				self?.playerViewController.bouncePlayback = $0.newValue
-				self?.estimateFileSize()
+				self?.estimatedFileSizeModel.updateEstimate()
 			}
 			.store(in: &cancellables)
 
@@ -526,85 +536,8 @@ final class EditVideoViewController: NSViewController {
 
 	private func dimensionsUpdated() {
 		updateDimensionsDisplay()
-		estimateFileSize()
+		estimatedFileSizeModel.updateEstimate()
 		selectPredefinedSizeBasedOnCurrentDimensions()
-	}
-
-	private func setEstimatedFileSize(_ string: NSAttributedString) {
-		estimatedSizeLabel.attributedStringValue = "Estimated File Size: ".attributedString + string
-	}
-
-	private var gifski: Gifski?
-
-	private func getNaiveEstimate() -> String {
-		let duration: Double = {
-			guard let timeRange = timeRange else {
-				return videoMetadata.duration
-			}
-
-			return timeRange.upperBound - timeRange.lowerBound
-		}()
-
-		let frameCount = duration * frameRateSlider.doubleValue
-		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
-		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
-		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
-
-		return formatter.string(fromByteCount: Int64(fileSize))
-	}
-
-	private func cancelFileSizeEstimation() {
-		// TODO: Deinit doesn't seem to be called.
-		gifski?.cancel()
-		gifski = nil
-
-		if estimatedSizeLabel.stringValue.contains("Calculating") {
-			setEstimatedFileSize(getNaiveEstimate().attributedString)
-		}
-	}
-
-	private func _estimateFileSize() {
-		self.gifski?.cancel()
-		self.gifski = nil
-
-		setEstimatedFileSize(getNaiveEstimate().attributedString)
-
-		guard !isConverting else {
-			return
-		}
-
-		let gifski = Gifski()
-		self.gifski = gifski
-
-		setEstimatedFileSize(getNaiveEstimate().attributedString + "   Calculating Estimate…".attributedString.withColor(.secondaryLabelColor).withFontSize(NSFont.smallSystemFontSize.double))
-
-		gifski.run(conversionSettings, isEstimation: true) { [weak self] result in
-			guard let self = self else {
-				return
-			}
-
-			switch result {
-			case .success(let data):
-				// We add 10% extra because it's better to estimate slightly too much than too little.
-				let fileSize = (Double(data.count) * gifski.sizeMultiplierForEstimation) * 1.1
-
-				self.setEstimatedFileSize(self.formatter.string(fromByteCount: Int64(fileSize)).attributedString)
-			case .failure(let error):
-				switch error {
-				case .cancelled:
-					break
-				case .notEnoughFrames:
-					self.setEstimatedFileSize(self.getNaiveEstimate().attributedString)
-				default:
-					Crashlytics.recordNonFatalError(error: error)
-					self.setEstimatedFileSize("Error: \(error.localizedDescription)".truncating(to: 86).attributedString.withColor(.secondaryLabelColor).withFontSize(NSFont.smallSystemFontSize.double))
-				}
-			}
-		}
-	}
-
-	private func estimateFileSize() {
-		Debouncer.debounce(delay: 0.5, action: _estimateFileSize)
 	}
 
 	private func updateDimensionsDisplay() {
@@ -635,5 +568,22 @@ final class EditVideoViewController: NSViewController {
 
 	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
 		frameRate.clamped(to: Constants.allowedFrameRate.lowerBound...20)
+	}
+
+	private func getNaiveEstimate() -> Double {
+		let duration: Double = {
+			guard let timeRange = timeRange else {
+				return videoMetadata.duration
+			}
+
+			return timeRange.upperBound - timeRange.lowerBound
+		}()
+
+		let frameCount = duration * frameRateSlider.doubleValue
+		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
+		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
+		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
+
+		return fileSize
 	}
 }

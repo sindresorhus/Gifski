@@ -31,6 +31,7 @@
 		E3339E9A2395768F00303839 /* CircularProgress in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E992395768F00303839 /* CircularProgress */; };
 		E3339E9D2395789500303839 /* DockProgress in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E9C2395789500303839 /* DockProgress */; };
 		E339F011203820ED003B78FB /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* Gifski.swift */; };
+		E3908B7426754568000723A7 /* EstimatedFileSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3908B7326754568000723A7 /* EstimatedFileSize.swift */; };
 		E3A6BD112245345C00F62256 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A6BD102245345C00F62256 /* Constants.swift */; };
 		E3AE62871E5CD2F300035A2F /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3AE62861E5CD2F300035A2F /* App.swift */; };
 		E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E3AE62881E5CD2F300035A2F /* Assets.xcassets */; };
@@ -97,7 +98,8 @@
 		E304EB8725F3A4D2003BCE1F /* gifski.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = SOURCE_ROOT; };
 		E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = InternetAccessPolicy.json; sourceTree = "<group>"; };
 		E339F010203820ED003B78FB /* Gifski.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Gifski.swift; sourceTree = "<group>"; usesTabs = 1; };
-		E3805F542466E68900489E6C /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
+		E3805F542466E68900489E6C /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		E3908B7326754568000723A7 /* EstimatedFileSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EstimatedFileSize.swift; sourceTree = "<group>"; };
 		E3A6BD102245345C00F62256 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = Constants.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E3AE62831E5CD2F300035A2F /* Gifski.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gifski.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E3AE62861E5CD2F300035A2F /* App.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = App.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -177,7 +179,7 @@
 		E3AE627A1E5CD2F300035A2F = {
 			isa = PBXGroup;
 			children = (
-				E3805F542466E68900489E6C /* Shared.xcconfig */,
+				E3805F542466E68900489E6C /* Config.xcconfig */,
 				E3AE62851E5CD2F300035A2F /* Gifski */,
 				0E79251C2329BDBE00058B94 /* ShareExtension */,
 				E3AE62841E5CD2F300035A2F /* Products */,
@@ -203,6 +205,7 @@
 				E3FC365B2377FA0000CF7C59 /* Shared.swift */,
 				C2AFA91B204FFEFD00FC5A7F /* MainWindowController.swift */,
 				858380E522BFD0E30086BC98 /* VideoDropViewController.swift */,
+				E3908B7326754568000723A7 /* EstimatedFileSize.swift */,
 				E3DF3E86203BD2B900055855 /* EditVideoViewController.swift */,
 				E3DF3E87203BD2B900055855 /* EditVideoViewController.xib */,
 				85FD155D22BFF12B00957AF1 /* ConversionViewController.swift */,
@@ -391,6 +394,7 @@
 				E3A6BD112245345C00F62256 /* Constants.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
 				8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */,
+				E3908B7426754568000723A7 /* EstimatedFileSize.swift in Sources */,
 				D957BCDE234941C200A9A9F9 /* CheckerboardView.swift in Sources */,
 				858380EA22BFD38C0086BC98 /* ExtendedAttributes.swift in Sources */,
 				E3CB1DD71F7E4CBC00D79BFC /* VideoDropView.swift in Sources */,
@@ -502,7 +506,7 @@
 		};
 		E3AE628E1E5CD2F300035A2F /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E3805F542466E68900489E6C /* Shared.xcconfig */;
+			baseConfigurationReference = E3805F542466E68900489E6C /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -563,7 +567,7 @@
 		};
 		E3AE628F1E5CD2F300035A2F /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E3805F542466E68900489E6C /* Shared.xcconfig */;
+			baseConfigurationReference = E3805F542466E68900489E6C /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;

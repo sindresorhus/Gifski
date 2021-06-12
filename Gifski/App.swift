@@ -6,6 +6,7 @@ import DockProgress
 
 /**
 TODO when targeting macOS 12:
+- Rewrite everything to use async/await, AsyncSequence, and actors.
 - Rewrite `CheckerboardView` to use `SwiftUI.Canvas`.
 */
 

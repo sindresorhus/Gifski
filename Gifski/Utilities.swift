@@ -4213,3 +4213,30 @@ struct Clamping<Value: Comparable> {
 		}
 	}
 }
+
+
+extension Font {
+	/// The default system font size.
+	static let systemFontSize = NSFont.systemFontSize.double
+
+	/// The system font in default size.
+	static func system(
+		weight: Font.Weight = .regular,
+		design: Font.Design = .default
+	) -> Self {
+		system(size: systemFontSize.cgFloat, weight: weight, design: design)
+	}
+}
+
+extension Font {
+	/// The default small system font size.
+	static let smallSystemFontSize = NSFont.smallSystemFontSize.double
+
+	/// The system font in small size.
+	static func smallSystem(
+		weight: Font.Weight = .regular,
+		design: Font.Design = .default
+	) -> Self {
+		system(size: smallSystemFontSize.cgFloat, weight: weight, design: design)
+	}
+}
