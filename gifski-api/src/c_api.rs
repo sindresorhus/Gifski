@@ -19,6 +19,26 @@
 //!
 //! To cancel processing, make progress callback return 0 and call `gifski_finish()`. The write callback
 //! may still be called between the cancellation and `gifski_finish()` returning.
+//!
+//! To build as a library:
+//!
+//! ```bash
+//! cargo build --release --lib
+//! ```
+//!
+//! it will create `target/release/libgifski.a` (static library)
+//! and `target/release/libgifski.so`/`dylib` or `gifski.dll` (dynamic library)
+//!
+//! Static is recommended.
+//!
+//! To build for iOS:
+//!
+//! ```bash
+//! rustup target add aarch64-apple-ios
+//! cargo build --release --lib --target aarch64-apple-ios
+//! ```
+//!
+//! it will build `target/aarch64-apple-ios/release/libgifski.a` (ignore the warning about cdylib).
 
 use super::*;
 use std::ffi::CStr;
@@ -150,23 +170,45 @@ pub unsafe extern "C" fn gifski_add_frame_png_file(handle: *const GifskiHandle, 
 ///
 /// The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
 ///
+/// Colors are in sRGB, uncorrelated RGBA, with alpha byte last.
+///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_add_frame_rgba(handle: *const GifskiHandle, frame_number: u32, width: u32, height: u32, pixels: *const RGBA8, presentation_timestamp: f64) -> GifskiError {
     if pixels.is_null() {
         return GifskiError::NULL_ARG;
     }
+    if width < 1 || height < 1 || width > 0xFFFF || height > 0xFFFF {
+        return GifskiError::INVALID_INPUT;
+    }
     let pixels = slice::from_raw_parts(pixels, width as usize * height as usize);
-    add_frame_rgba(handle, frame_number, ImgVec::new(pixels.to_owned(), width as usize, height as usize), presentation_timestamp)
+    add_frame_rgba(handle, frame_number, Img::new(pixels.into(), width as usize, height as usize), presentation_timestamp)
 }
 
-fn add_frame_rgba(handle: *const GifskiHandle, frame_number: u32, frame: ImgVec<RGBA8>, presentation_timestamp: f64) -> GifskiError {
+/// Same as `gifski_add_frame_rgba`, but with bytes per row arg.
+#[no_mangle]
+pub unsafe extern "C" fn gifski_add_frame_rgba_stride(handle: *const GifskiHandle, frame_number: u32, width: u32, height: u32, bytes_per_row: u32, pixels: *const RGBA8, presentation_timestamp: f64) -> GifskiError {
+    if pixels.is_null() {
+        return GifskiError::NULL_ARG;
+    }
+    let stride = bytes_per_row as usize / mem::size_of_val(&*pixels);
+    let width = width as usize;
+    let height = height as usize;
+    if stride < width || height < 1 {
+        return GifskiError::INVALID_INPUT;
+    }
+    let pixels = slice::from_raw_parts(pixels, stride * height + width - stride);
+    let img = Img::new_stride(pixels.into(), width, height, stride);
+    add_frame_rgba(handle, frame_number, img, presentation_timestamp)
+}
+
+fn add_frame_rgba(handle: *const GifskiHandle, frame_number: u32, frame: Img<Cow<[RGBA8]>>, presentation_timestamp: f64) -> GifskiError {
     let g = match unsafe { borrow(handle) } {
         Some(g) => g,
         None => return GifskiError::NULL_ARG,
     };
     if let Some(ref mut c) = *g.collector.lock().unwrap() {
-        c.add_frame_rgba(frame_number as usize, frame, presentation_timestamp).into()
+        c.add_frame_rgba_cow(frame_number as usize, frame, presentation_timestamp).into()
     } else {
         eprintln!("frames can't be added any more, because gifski_end_adding_frames has been called already");
         GifskiError::INVALID_STATE
@@ -176,6 +218,10 @@ fn add_frame_rgba(handle: *const GifskiHandle, frame_number: u32, frame: ImgVec<
 /// Same as `gifski_add_frame_rgba`, except it expects components in ARGB order.
 ///
 /// Bytes per row must be multiple of 4 and greater or equal width×4.
+///
+/// Colors are in sRGB, uncorrelated ARGB, with alpha byte first.
+///
+/// `gifski_add_frame_rgba` is preferred over this function.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_add_frame_argb(handle: *const GifskiHandle, frame_number: u32, width: u32, bytes_per_row: u32, height: u32, pixels: *const ARGB8, presentation_timestamp: f64) -> GifskiError {
     if pixels.is_null() {
@@ -187,17 +233,22 @@ pub unsafe extern "C" fn gifski_add_frame_argb(handle: *const GifskiHandle, fram
         return GifskiError::INVALID_INPUT;
     }
     let pixels = slice::from_raw_parts(pixels, stride * height as usize);
-    add_frame_rgba(handle, frame_number, ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|p| RGBA8 {
+    let img = ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|p| RGBA8 {
         r: p.r,
         g: p.g,
         b: p.b,
         a: p.a,
-    })).collect(), width as usize, height as usize), presentation_timestamp)
+    })).collect(), width as usize, height as usize);
+    add_frame_rgba(handle, frame_number, img.into(), presentation_timestamp)
 }
 
 /// Same as `gifski_add_frame_rgba`, except it expects RGB components (3 bytes per pixel).
 ///
 /// Bytes per row must be multiple of 3 and greater or equal width×3.
+///
+/// Colors are in sRGB, red byte first.
+///
+/// `gifski_add_frame_rgba` is preferred over this function.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_add_frame_rgb(handle: *const GifskiHandle, frame_number: u32, width: u32, bytes_per_row: u32, height: u32, pixels: *const RGB8, presentation_timestamp: f64) -> GifskiError {
     if pixels.is_null() {
@@ -209,7 +260,8 @@ pub unsafe extern "C" fn gifski_add_frame_rgb(handle: *const GifskiHandle, frame
         return GifskiError::INVALID_INPUT;
     }
     let pixels = slice::from_raw_parts(pixels, stride * height as usize);
-    add_frame_rgba(handle, frame_number, ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|&p| p.into())).collect(), width as usize, height as usize), presentation_timestamp)
+    let img = ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|&p| p.alpha(255))).collect(), width as usize, height as usize);
+    add_frame_rgba(handle, frame_number, img.into(), presentation_timestamp)
 }
 
 /// Get a callback for frame processed, and abort processing if desired.

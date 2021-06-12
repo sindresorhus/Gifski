@@ -84,25 +84,25 @@ impl FfmpegDecoder {
             Ok(dest.add_frame_rgba(pos as usize, rgba_frame, pts)?)
         };
 
-        let mut packets = self.input_context.packets();
         let mut vid_frame = ffmpeg::util::frame::Video::empty();
         let mut filt_frame = ffmpeg::util::frame::Video::empty();
         let mut i = 0;
         let mut pts_last_packet = 0;
         let pts_frame_step = 1.0 / self.rate.fps as f64;
 
-        loop {
-            let (packet, no_more_packets) = if let Some((s, packet)) = packets.next() {
-                if s.index() != stream_index {
-                    // ignore irrelevant streams
-                    continue;
-                }
-                pts_last_packet = packet.pts().ok_or("ffmpeg format error")? + packet.duration();
-                (packet, false)
+        let packets = self.input_context.packets().filter_map(|(s, packet)| {
+            if s.index() != stream_index {
+                // ignore irrelevant streams
+                None
             } else {
-                (ffmpeg::Packet::empty(), true)
-            };
+                pts_last_packet = packet.pts()? + packet.duration();
+                Some(packet)
+            }
+        })
+        // extra packet to flush remaining frames
+        .chain(std::iter::once(ffmpeg::Packet::empty()));
 
+        for packet in packets {
             let decoded = decoder.decode(&packet, &mut vid_frame)?;
             if decoded {
                 filter.get("in").ok_or("ffmpeg format error")?.source().add(&vid_frame)?;
@@ -112,10 +112,6 @@ impl FfmpegDecoder {
                     add_frame(&filt_frame, pts_frame_step * i as f64, i)?;
                     i += 1;
                 }
-            }
-            // loop to flush decoder's buffer
-            if no_more_packets && !decoded {
-                break;
             }
         }
 
