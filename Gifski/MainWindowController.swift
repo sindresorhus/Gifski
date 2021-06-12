@@ -8,24 +8,6 @@ final class MainWindowController: NSWindowController {
 	}
 
 	private func showWelcomeScreenIfNeeded() {
-		if Device.isRunningNativelyOnMacWithAppleSilicon {
-			SSApp.runOnce(identifier: "appleSiliconWelcomeMessage") {
-				NSAlert.showModal(
-					for: window,
-					title: "Gifski on Apple Silicon",
-					message:
-						"""
-						Gifski now runs natively on Apple silicon.
-
-						If you encounter any problems, use the feedback button in the “Help” menu to report it.
-
-						You can temporarily work around the issue by switching back to Rosetta mode: Right-click the app in Finder, select “Get Info”, and then enable “Open using Rosetta”.
-						""",
-					defaultButtonIndex: -1
-				)
-			}
-		}
-
 		guard SSApp.isFirstLaunch else {
 			return
 		}
@@ -36,17 +18,7 @@ final class MainWindowController: NSWindowController {
 			message:
 				"""
 				Keep in mind that the GIF image format is very space inefficient. Only convert short video clips unless you want huge files.
-				""",
-			buttonTitles: [
-				"Continue"
-			]
-		)
 
-		NSAlert.showModal(
-			for: window,
-			title: "Feedback Welcome 🙌🏻",
-			message:
-				"""
 				If you have any feedback, bug reports, or feature requests, use the feedback button in the “Help” menu. We quickly respond to all submissions.
 				""",
 			buttonTitles: [
