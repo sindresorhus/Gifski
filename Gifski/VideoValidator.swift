@@ -184,6 +184,47 @@ struct VideoValidator {
 			return .failure
 		}
 
-		return .success(newAsset, newVideoMetadata)
+		// Find first non-empty frame
+		do {
+			let reader = try AVAssetReader(asset: newAsset)
+			let readerOutput = AVAssetReaderTrackOutput(track: newAsset.firstVideoTrack!, outputSettings: nil)
+			reader.add(readerOutput)
+			reader.startReading()
+
+			while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
+				// On first non-empty frame
+				if sampleBuffer.totalSampleSize != 0 {
+					let currentTimestamp = CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer)
+
+					// Add video track to composition and remove time range (from the begining up to current frame)
+					let composition = AVMutableComposition()
+					let videoCompTrack = composition.addMutableTrack(withMediaType: AVMediaType.video, preferredTrackID: CMPersistentTrackID())
+
+					try videoCompTrack?.insertTimeRange(CMTimeRangeMake(start: .zero, duration: newAsset.duration), of: newAsset.firstVideoTrack!, at: .zero)
+					videoCompTrack?.removeTimeRange(CMTimeRange(start: .zero, end: currentTimestamp))
+
+					reader.cancelReading()
+
+					return .success(AVPlayerItem(asset: composition).asset, newVideoMetadata)
+				}
+			}
+		} catch {
+			NSAlert.showModalAndReportToCrashlytics(
+				for: window,
+				title: "Could not trim empty frames from video.",
+				message: "This should not happen. Email sindresorhus@gmail.com and include this info:",
+				debugInfo: newAsset.debugInfo
+			)
+
+			return .failure
+		}
+
+		NSAlert.showModal(
+			for: window,
+			title: "Empty video.",
+			message: "This video doesn't appear to have any data."
+		)
+
+		return .failure
 	}
 }

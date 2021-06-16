@@ -367,7 +367,7 @@ extension AVAssetImageGenerator {
 					)
 				)
 			case .failed:
-				// TODO: Ideally, we should trim blank frames when initially reading the video in `VideoValidator.swift`, but I don't know a way to detect blank frames. We should still keep this fix even if we find a way to trim as this handles blank frames in the middle of the video.
+				// Handles blank frames in the middle of the video.
 				// TODO: Report the `xcrun` bug to Apple if it's still an issue in macOS 11.
 				if let error = error as? AVError {
 					// Ugly workaround for when the last frame is a failure.
@@ -391,7 +391,7 @@ extension AVAssetImageGenerator {
 						)
 					}
 
-					// We ignore blank frames. A video can sometimes contain blank frames at the start when you record an iOS simulator using `xcrun simctl io booted recordVideo simulator.mp4`.
+					// We ignore blank frames.
 					if error.code == .noImageAtTime {
 						totalCount -= 1
 						print("No image at time. Completed: \(completedCount) Total: \(totalCount)")
