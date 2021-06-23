@@ -184,10 +184,12 @@ struct VideoValidator {
 			return .failure
 		}
 
-		// Find first non-empty frame
-		guard
-			let trimmedAsset = newAsset.trimBlankFrames()
-		else {
+		// Trim asset
+		do {
+			let trimmedAsset = try newAsset.trimBlankFrames()
+
+			return .success(trimmedAsset, newVideoMetadata)
+		} catch {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
 				title: "Could not trim empty frames from video.",
@@ -197,7 +199,5 @@ struct VideoValidator {
 
 			return .failure
 		}
-
-		return .success(trimmedAsset, newVideoMetadata)
 	}
 }
