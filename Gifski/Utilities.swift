@@ -592,6 +592,54 @@ extension AVAsset {
 		imageGenerator.requestedTimeToleranceBefore = .zero
 		return imageGenerator.image(at: time)
 	}
+
+	func trimBlankFrames() -> AVAsset? {
+		guard let reader = try? AVAssetReader(asset: self) else {
+			return nil
+		}
+
+		guard let videoTrack = self.firstVideoTrack else {
+			return nil
+		}
+
+		let readerOutput = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: nil)
+		reader.add(readerOutput)
+		reader.startReading()
+
+		while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
+			if reader.status != .reading {
+				reader.cancelReading()
+				return nil
+			}
+
+			// On first non-empty frame
+			if sampleBuffer.totalSampleSize != 0 {
+				let currentTimestamp = sampleBuffer.outputPresentationTimeStamp
+
+				// Add video track to composition and remove time range (from the begining up to current frame)
+				let composition = AVMutableComposition()
+				guard let videoCompTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: CMPersistentTrackID()) else {
+					reader.cancelReading()
+					return nil
+				}
+
+				do {
+					try videoCompTrack.insertTimeRange(CMTimeRangeMake(start: .zero, duration: self.duration), of: videoTrack, at: .zero)
+				} catch {
+					reader.cancelReading()
+					return nil
+				}
+
+				videoCompTrack.removeTimeRange(CMTimeRange(start: .zero, end: currentTimestamp))
+
+				reader.cancelReading()
+
+				return AVPlayerItem(asset: composition).asset
+			}
+		}
+
+		return nil
+	}
 }
 
 
