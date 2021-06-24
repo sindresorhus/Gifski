@@ -592,38 +592,17 @@ extension AVAsset {
 		imageGenerator.requestedTimeToleranceBefore = .zero
 		return imageGenerator.image(at: time)
 	}
-
-	/**
-	Removes blank frames from the begining of the asset.
-
-	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
-	*/
-	func trimmingBlankFrames() throws -> AVAsset {
-		guard let videoTrack = self.firstVideoTrack else {
-			throw AVAssetTrack.VideoTrimmingError.assetIsMissingTrack
-		}
-
-		let trimmedTrack = try videoTrack.trimmingBlankFrames()
-
-		guard let trimmedAsset = trimmedTrack.asset else {
-			throw AVAssetTrack.VideoTrimmingError.assetIsNil
-		}
-
-		return trimmedAsset
-	}
 }
 
 
 extension AVAssetTrack {
-	enum VideoTrimmingError: String, Error {
+	enum VideoTrimmingError: Error {
 		case assetIsNil
 		case assetReaderFailure
 		case assetIsEmpty
 		case assetIsMissingTrack
 		case compositionCouldNotBeCreated
-		case compositionIsMissingTrack
 	}
-
 
 	/**
 	Removes blank frames from the begining of the track.
@@ -674,7 +653,41 @@ extension AVAssetTrack {
 
 extension AVAssetTrack.VideoTrimmingError: LocalizedError {
 	public var errorDescription: String? {
-		self.rawValue
+		switch self {
+		case .assetIsNil:
+			return "Asset is nil."
+		case .assetReaderFailure:
+			return "Asset could not be read."
+		case .assetIsEmpty:
+			return "Asset is empty."
+		case .assetIsMissingTrack:
+			return "Asset is missing track."
+		case .compositionCouldNotBeCreated:
+			return "Composition could not be created."
+		}
+	}
+}
+
+extension AVAsset {
+	typealias VideoTrimmingError = AVAssetTrack.VideoTrimmingError
+
+	/**
+	Removes blank frames from the begining of the asset.
+
+	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
+	*/
+	func trimmingBlankFrames() throws -> AVAsset {
+		guard let videoTrack = self.firstVideoTrack else {
+			throw VideoTrimmingError.assetIsMissingTrack
+		}
+
+		let trimmedTrack = try videoTrack.trimmingBlankFrames()
+
+		guard let trimmedAsset = trimmedTrack.asset else {
+			throw VideoTrimmingError.assetIsNil
+		}
+
+		return trimmedAsset
 	}
 }
 
