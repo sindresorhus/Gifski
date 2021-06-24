@@ -2117,6 +2117,70 @@ extension URL {
 	var exists: Bool { FileManager.default.fileExists(atPath: path) }
 
 	var isReadable: Bool { boolResourceValue(forKey: .isReadableKey) }
+
+	var isWritable: Bool { boolResourceValue(forKey: .isWritableKey) }
+
+	var isVolumeReadonly: Bool { boolResourceValue(forKey: .volumeIsReadOnlyKey) }
+}
+
+
+extension URL {
+	/// Returns the user's real home directory when called in a sandboxed app.
+	static let realHomeDirectory = Self(
+		fileURLWithFileSystemRepresentation: getpwuid(getuid())!.pointee.pw_dir!,
+		isDirectory: true,
+		relativeTo: nil
+	)
+}
+
+
+extension URL {
+	func relationship(to url: Self) -> FileManager.URLRelationship {
+		var relationship: FileManager.URLRelationship = .other
+		_ = try? FileManager.default.getRelationship(&relationship, ofDirectoryAt: self, toItemAt: url)
+		return relationship
+	}
+}
+
+
+extension URL {
+	/// Check whether the URL is inside the home directory.
+	var isInsideHomeDirectory: Bool {
+		Self.realHomeDirectory.relationship(to: self) == .contains
+	}
+
+	/**
+	Check whether the URL path is on the main volume; The volume with the root file system.
+
+	- Note: The URL does not need to exist.
+	*/
+	var isOnMainVolume: Bool {
+		// We intentionally do a string check instead of `try? resourceValues(forKeys: [.volumeIsRootFileSystemKey]).volumeIsRootFileSystem` as it's faster and it works on URLs that doesn't exist.
+		!path.hasPrefix("/Volumes/")
+	}
+}
+
+
+extension URL {
+	/// Whether the directory URL is suitable for use as a default directory for a save panel.
+	var canBeDefaultSavePanelDirectory: Bool {
+		// We allow if it's inside the home directory on the main volume or on a different writable volume.
+		isInsideHomeDirectory || (!isOnMainVolume && !isVolumeReadonly)
+	}
+}
+
+
+extension URL {
+	/// Get various common system directories.
+	static func systemDirectory(_ directory: FileManager.SearchPathDirectory) -> Self {
+		// I don't think this can fail, but just in case, we have a sensible fallback.
+		(try? FileManager.default.url(for: directory, in: .userDomainMask, appropriateFor: nil, create: false)) ?? FileManager.default.homeDirectoryForCurrentUser
+	}
+
+	/**
+	- Note: When sandboxed, this returns the directory inside the sandbox container, not in the user's home directory. However, NSSavePanel/NSOpenPanel handles it correctly.
+	*/
+	static let downloadsDirectory = systemDirectory(.downloadsDirectory)
 }
 
 

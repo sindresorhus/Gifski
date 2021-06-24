@@ -92,7 +92,8 @@ final class GifskiWrapper {
 		progressCallback = callback
 
 		gifski_set_progress_callback(
-			pointer, { context in // swiftlint:disable:this opening_brace
+			pointer,
+			{ context in // swiftlint:disable:this opening_brace
 				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
 				return Int32(this.progressCallback())
 			},
@@ -112,7 +113,8 @@ final class GifskiWrapper {
 		writeCallback = callback
 
 		gifski_set_write_callback(
-			pointer, { bufferLength, bufferPointer, context in // swiftlint:disable:this opening_brace
+			pointer,
+			{ bufferLength, bufferPointer, context in // swiftlint:disable:this opening_brace
 				guard
 					bufferLength > 0,
 					let bufferPointer = bufferPointer

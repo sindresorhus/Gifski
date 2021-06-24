@@ -160,9 +160,13 @@ final class ConversionCompletedViewController: NSViewController {
 		panel.canCreateDirectories = true
 		// TODO: Use `.allowedContentTypes` here when targeting macOS 11.
 		panel.allowedFileTypes = [FileType.gif.identifier]
-		panel.directoryURL = inputUrl.directoryURL
 		panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
 		panel.message = "Choose where to save the GIF"
+
+		// Prevent the default directory to be a temporary directory or read-only volume, for example, when directly dragging a screen recording into Gifski. Setting it to the downloads directory is required as otherwise it will automatically use the same directory as used in the open panel, which could be a read-only volume.
+		panel.directoryURL = inputUrl.directoryURL.canBeDefaultSavePanelDirectory
+			? inputUrl.directoryURL
+			: URL.downloadsDirectory
 
 		panel.beginSheetModal(for: view.window!) { [weak self] response in
 			guard
