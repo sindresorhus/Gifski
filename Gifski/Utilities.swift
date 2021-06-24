@@ -584,16 +584,6 @@ extension AVAssetImageGenerator {
 }
 
 
-enum VideoTrimmingError: Error {
-	case assetIsNil
-	case assetReaderFailure
-	case assetIsEmpty
-	case assetIsMissingTrack
-	case compositionCouldNotBeCreated
-	case compositionIsMissingTrack
-}
-
-
 extension AVAsset {
 	func image(at time: CMTime) -> NSImage? {
 		let imageGenerator = AVAssetImageGenerator(asset: self)
@@ -608,18 +598,83 @@ extension AVAsset {
 
 	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
 	*/
-	func trimBlankFrames() throws -> AVAsset {
+	func trimmingBlankFrames() throws -> AVAsset {
 		guard let videoTrack = self.firstVideoTrack else {
-			throw VideoTrimmingError.assetIsMissingTrack
+			throw AVAssetTrack.VideoTrimmingError.assetIsMissingTrack
 		}
 
-		let trimmedTrack = try videoTrack.trimBlankFrames()
+		let trimmedTrack = try videoTrack.trimmingBlankFrames()
 
 		guard let trimmedAsset = trimmedTrack.asset else {
-			throw VideoTrimmingError.assetIsNil
+			throw AVAssetTrack.VideoTrimmingError.assetIsNil
 		}
 
 		return trimmedAsset
+	}
+}
+
+
+extension AVAssetTrack {
+	enum VideoTrimmingError: String, Error {
+		case assetIsNil
+		case assetReaderFailure
+		case assetIsEmpty
+		case assetIsMissingTrack
+		case compositionCouldNotBeCreated
+		case compositionIsMissingTrack
+	}
+
+
+	/**
+	Removes blank frames from the begining of the track.
+
+	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
+	*/
+	func trimmingBlankFrames() throws -> AVAssetTrack {
+		// Create new composition
+		let composition = AVMutableComposition()
+		guard
+			let wrappedTrack = composition.addMutableTrack(withMediaType: mediaType, preferredTrackID: .zero)
+		else {
+			throw VideoTrimmingError.compositionCouldNotBeCreated
+		}
+		try wrappedTrack.insertTimeRange(timeRange, of: self, at: .zero)
+
+		let reader = try AVAssetReader(asset: composition)
+
+		// Create reader for wrapped track
+		let readerOutput = AVAssetReaderTrackOutput(track: wrappedTrack, outputSettings: nil)
+		reader.add(readerOutput)
+		reader.startReading()
+
+		defer {
+			reader.cancelReading()
+		}
+
+		// Iterate through samples until we reach one with a non-zero size
+		while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
+			guard [.completed, .reading].contains(reader.status) else {
+				throw reader.error ?? VideoTrimmingError.assetReaderFailure
+			}
+
+			// On first non-empty frame
+			guard sampleBuffer.totalSampleSize == 0 else {
+				let currentTimestamp = sampleBuffer.outputPresentationTimeStamp
+
+				wrappedTrack.removeTimeRange(.init(start: .zero, end: currentTimestamp))
+
+				return wrappedTrack
+			}
+		}
+
+		throw VideoTrimmingError.assetIsEmpty
+	}
+}
+
+
+extension AVAssetTrack.VideoTrimmingError: LocalizedError {
+	public var errorDescription: String? {
+		self.rawValue
 	}
 }
 
@@ -784,63 +839,6 @@ extension AVAssetTrack {
 		}
 
 		return VideoKeyframeInfo(frameCount: frameCount, keyframeCount: keyframeCount)
-	}
-}
-
-extension AVAssetTrack {
-	/**
-	Removes blank frames from the begining of the track.
-
-	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
-	*/
-	func trimBlankFrames() throws -> AVAssetTrack {
-		guard let asset = self.asset else {
-			throw VideoTrimmingError.assetIsNil
-		}
-
-		let reader = try AVAssetReader(asset: asset)
-
-		let readerOutput = AVAssetReaderTrackOutput(track: self, outputSettings: nil)
-		reader.add(readerOutput)
-		reader.startReading()
-
-		while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
-			guard reader.status == .reading else {
-				reader.cancelReading()
-				throw VideoTrimmingError.assetReaderFailure
-			}
-
-			// On first non-empty frame
-			guard sampleBuffer.totalSampleSize == 0 else {
-				let currentTimestamp = sampleBuffer.outputPresentationTimeStamp
-
-				// Add video track to composition and remove time range (from the begining up to current frame)
-				let composition = AVMutableComposition()
-				guard let videoCompTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: CMPersistentTrackID()) else {
-					reader.cancelReading()
-					throw VideoTrimmingError.compositionCouldNotBeCreated
-				}
-
-				do {
-					try videoCompTrack.insertTimeRange(.init(start: .zero, duration: asset.duration), of: self, at: .zero)
-				} catch {
-					reader.cancelReading()
-					throw error
-				}
-
-				videoCompTrack.removeTimeRange(CMTimeRange(start: .zero, end: currentTimestamp))
-
-				reader.cancelReading()
-
-				guard let trimmedTrack = AVPlayerItem(asset: composition).asset.firstVideoTrack else {
-					throw VideoTrimmingError.compositionIsMissingTrack
-				}
-
-				return trimmedTrack
-			}
-		}
-
-		throw VideoTrimmingError.assetIsEmpty
 	}
 }
 
