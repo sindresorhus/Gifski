@@ -620,7 +620,7 @@ extension AVAssetTrack {
 
 		let reader = try AVAssetReader(asset: composition)
 
-		// Create reader for wrapped track
+		// Create reader for wrapped track.
 		let readerOutput = AVAssetReaderTrackOutput(track: wrappedTrack, outputSettings: nil)
 		reader.add(readerOutput)
 		reader.startReading()
@@ -629,18 +629,16 @@ extension AVAssetTrack {
 			reader.cancelReading()
 		}
 
-		// Iterate through samples until we reach one with a non-zero size
+		// Iterate through samples until we reach one with a non-zero size.
 		while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
 			guard [.completed, .reading].contains(reader.status) else {
 				throw reader.error ?? VideoTrimmingError.unknownAssetReaderFailure
 			}
 
-			// On first non-empty frame
+			// On first non-empty frame.
 			guard sampleBuffer.totalSampleSize == 0 else {
 				let currentTimestamp = sampleBuffer.outputPresentationTimeStamp
-
 				wrappedTrack.removeTimeRange(.init(start: .zero, end: currentTimestamp))
-
 				return wrappedTrack
 			}
 		}
@@ -664,6 +662,7 @@ extension AVAssetTrack.VideoTrimmingError: LocalizedError {
 		}
 	}
 }
+
 
 extension AVAsset {
 	typealias VideoTrimmingError = AVAssetTrack.VideoTrimmingError
