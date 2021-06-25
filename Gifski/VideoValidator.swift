@@ -186,7 +186,7 @@ struct VideoValidator {
 
 		// Trim asset
 		do {
-			let trimmedAsset = try newAsset.trimmingBlankFrames()
+			let trimmedAsset = try newAsset.trimmingBlankFramesFromFirstVideoTrack()
 			return .success(trimmedAsset, newVideoMetadata)
 		} catch {
 			NSAlert.showModalAndReportToCrashlytics(

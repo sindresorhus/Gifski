@@ -597,10 +597,9 @@ extension AVAsset {
 
 extension AVAssetTrack {
 	enum VideoTrimmingError: Error {
-		case assetIsNil
-		case assetReaderFailure
-		case assetIsEmpty
-		case assetIsMissingTrack
+		case unknownAssetReaderFailure
+		case videoTrackIsEmpty
+		case assetIsMissingVideoTrack
 		case compositionCouldNotBeCreated
 	}
 
@@ -633,7 +632,7 @@ extension AVAssetTrack {
 		// Iterate through samples until we reach one with a non-zero size
 		while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
 			guard [.completed, .reading].contains(reader.status) else {
-				throw reader.error ?? VideoTrimmingError.assetReaderFailure
+				throw reader.error ?? VideoTrimmingError.unknownAssetReaderFailure
 			}
 
 			// On first non-empty frame
@@ -646,7 +645,7 @@ extension AVAssetTrack {
 			}
 		}
 
-		throw VideoTrimmingError.assetIsEmpty
+		throw VideoTrimmingError.videoTrackIsEmpty
 	}
 }
 
@@ -654,14 +653,12 @@ extension AVAssetTrack {
 extension AVAssetTrack.VideoTrimmingError: LocalizedError {
 	public var errorDescription: String? {
 		switch self {
-		case .assetIsNil:
-			return "Asset is nil."
-		case .assetReaderFailure:
+		case .unknownAssetReaderFailure:
 			return "Asset could not be read."
-		case .assetIsEmpty:
-			return "Asset is empty."
-		case .assetIsMissingTrack:
-			return "Asset is missing track."
+		case .videoTrackIsEmpty:
+			return "Video track is empty."
+		case .assetIsMissingVideoTrack:
+			return "Asset is missing video track."
 		case .compositionCouldNotBeCreated:
 			return "Composition could not be created."
 		}
@@ -672,19 +669,20 @@ extension AVAsset {
 	typealias VideoTrimmingError = AVAssetTrack.VideoTrimmingError
 
 	/**
-	Removes blank frames from the begining of the asset.
+	Removes blank frames from the begining of the first video track of the asset. The returned asset only includes the first video track.
 
 	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
 	*/
-	func trimmingBlankFrames() throws -> AVAsset {
-		guard let videoTrack = self.firstVideoTrack else {
-			throw VideoTrimmingError.assetIsMissingTrack
+	func trimmingBlankFramesFromFirstVideoTrack() throws -> AVAsset {
+		guard let videoTrack = firstVideoTrack else {
+			throw VideoTrimmingError.assetIsMissingVideoTrack
 		}
 
 		let trimmedTrack = try videoTrack.trimmingBlankFrames()
 
 		guard let trimmedAsset = trimmedTrack.asset else {
-			throw VideoTrimmingError.assetIsNil
+			assertionFailure("Track is somehow missing asset")
+			return AVMutableComposition()
 		}
 
 		return trimmedAsset
