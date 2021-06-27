@@ -367,7 +367,7 @@ extension AVAssetImageGenerator {
 					)
 				)
 			case .failed:
-				// TODO: Ideally, we should trim blank frames when initially reading the video in `VideoValidator.swift`, but I don't know a way to detect blank frames. We should still keep this fix even if we find a way to trim as this handles blank frames in the middle of the video.
+				// Handles blank frames in the middle of the video.
 				// TODO: Report the `xcrun` bug to Apple if it's still an issue in macOS 11.
 				if let error = error as? AVError {
 					// Ugly workaround for when the last frame is a failure.
@@ -391,7 +391,7 @@ extension AVAssetImageGenerator {
 						)
 					}
 
-					// We ignore blank frames. A video can sometimes contain blank frames at the start when you record an iOS simulator using `xcrun simctl io booted recordVideo simulator.mp4`.
+					// We ignore blank frames.
 					if error.code == .noImageAtTime {
 						totalCount -= 1
 						print("No image at time. Completed: \(completedCount) Total: \(totalCount)")
@@ -591,6 +591,100 @@ extension AVAsset {
 		imageGenerator.requestedTimeToleranceAfter = .zero
 		imageGenerator.requestedTimeToleranceBefore = .zero
 		return imageGenerator.image(at: time)
+	}
+}
+
+
+extension AVAssetTrack {
+	enum VideoTrimmingError: Error {
+		case unknownAssetReaderFailure
+		case videoTrackIsEmpty
+		case assetIsMissingVideoTrack
+		case compositionCouldNotBeCreated
+	}
+
+	/**
+	Removes blank frames from the beginning of the track.
+
+	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
+	*/
+	func trimmingBlankFrames() throws -> AVAssetTrack {
+		// Create new composition
+		let composition = AVMutableComposition()
+		guard
+			let wrappedTrack = composition.addMutableTrack(withMediaType: mediaType, preferredTrackID: .zero)
+		else {
+			throw VideoTrimmingError.compositionCouldNotBeCreated
+		}
+		try wrappedTrack.insertTimeRange(timeRange, of: self, at: .zero)
+
+		let reader = try AVAssetReader(asset: composition)
+
+		// Create reader for wrapped track.
+		let readerOutput = AVAssetReaderTrackOutput(track: wrappedTrack, outputSettings: nil)
+		reader.add(readerOutput)
+		reader.startReading()
+
+		defer {
+			reader.cancelReading()
+		}
+
+		// Iterate through samples until we reach one with a non-zero size.
+		while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
+			guard [.completed, .reading].contains(reader.status) else {
+				throw reader.error ?? VideoTrimmingError.unknownAssetReaderFailure
+			}
+
+			// On first non-empty frame.
+			guard sampleBuffer.totalSampleSize == 0 else {
+				let currentTimestamp = sampleBuffer.outputPresentationTimeStamp
+				wrappedTrack.removeTimeRange(.init(start: .zero, end: currentTimestamp))
+				return wrappedTrack
+			}
+		}
+
+		throw VideoTrimmingError.videoTrackIsEmpty
+	}
+}
+
+
+extension AVAssetTrack.VideoTrimmingError: LocalizedError {
+	public var errorDescription: String? {
+		switch self {
+		case .unknownAssetReaderFailure:
+			return "Asset could not be read."
+		case .videoTrackIsEmpty:
+			return "Video track is empty."
+		case .assetIsMissingVideoTrack:
+			return "Asset is missing video track."
+		case .compositionCouldNotBeCreated:
+			return "Composition could not be created."
+		}
+	}
+}
+
+
+extension AVAsset {
+	typealias VideoTrimmingError = AVAssetTrack.VideoTrimmingError
+
+	/**
+	Removes blank frames from the beginning of the first video track of the asset. The returned asset only includes the first video track.
+
+	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
+	*/
+	func trimmingBlankFramesFromFirstVideoTrack() throws -> AVAsset {
+		guard let videoTrack = firstVideoTrack else {
+			throw VideoTrimmingError.assetIsMissingVideoTrack
+		}
+
+		let trimmedTrack = try videoTrack.trimmingBlankFrames()
+
+		guard let trimmedAsset = trimmedTrack.asset else {
+			assertionFailure("Track is somehow missing asset")
+			return AVMutableComposition()
+		}
+
+		return trimmedAsset
 	}
 }
 

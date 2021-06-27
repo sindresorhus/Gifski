@@ -184,6 +184,19 @@ struct VideoValidator {
 			return .failure
 		}
 
-		return .success(newAsset, newVideoMetadata)
+		// Trim asset
+		do {
+			let trimmedAsset = try newAsset.trimmingBlankFramesFromFirstVideoTrack()
+			return .success(trimmedAsset, newVideoMetadata)
+		} catch {
+			NSAlert.showModalAndReportToCrashlytics(
+				for: window,
+				title: "Could not trim empty leading frames from video.",
+				message: "\(error.localizedDescription)\n\nThis should not happen. Email sindresorhus@gmail.com and include this info:",
+				debugInfo: newAsset.debugInfo
+			)
+
+			return .failure
+		}
 	}
 }
