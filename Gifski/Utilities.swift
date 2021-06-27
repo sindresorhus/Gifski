@@ -604,7 +604,7 @@ extension AVAssetTrack {
 	}
 
 	/**
-	Removes blank frames from the begining of the track.
+	Removes blank frames from the beginning of the track.
 
 	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
 	*/
@@ -668,7 +668,7 @@ extension AVAsset {
 	typealias VideoTrimmingError = AVAssetTrack.VideoTrimmingError
 
 	/**
-	Removes blank frames from the begining of the first video track of the asset. The returned asset only includes the first video track.
+	Removes blank frames from the beginning of the first video track of the asset. The returned asset only includes the first video track.
 
 	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
 	*/
