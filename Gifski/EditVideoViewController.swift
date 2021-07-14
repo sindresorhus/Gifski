@@ -3,6 +3,23 @@ import Combine
 import AVKit
 import Defaults
 
+struct SpeedView: View {
+	@Default(.outputSpeed) private var outputSpeed
+
+	var body: some View {
+		HStack(alignment: .firstTextBaseline) {
+			Text("Speed:")
+			Slider(value: $outputSpeed, in: 0.5...5, step: 0.5)
+			Text("\(outputSpeed.formatted)x")
+				.font(.system().monospacedDigit()) // TODO: Use `.monospacedDigit()` view modifier when targeting macOS 12.
+				.frame(width: 30, alignment: .leading)
+		}
+			.padding(.leading, 52)
+			.padding(.trailing, 20)
+			.padding(.bottom)
+	}
+}
+
 final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {
 		case custom
@@ -20,6 +37,7 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	@IBOutlet private var estimatedSizeView: NSView!
+	@IBOutlet private var speedView: NSView!
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
@@ -38,6 +56,7 @@ final class EditVideoViewController: NSViewController {
 
 	var inputUrl: URL!
 	var asset: AVAsset!
+	var modifiedAsset: AVAsset!
 	var videoMetadata: AVAsset.VideoMetadata!
 
 	private var resizableDimensions: ResizableDimensions!
@@ -95,6 +114,7 @@ final class EditVideoViewController: NSViewController {
 
 		self.inputUrl = inputUrl
 		self.asset = asset
+		self.modifiedAsset = asset
 		self.videoMetadata = videoMetadata
 
 		AppDelegate.shared.previousEditViewController = self
@@ -130,6 +150,7 @@ final class EditVideoViewController: NSViewController {
 		setUpDropView()
 		setUpTrimmingView()
 		setUpEstimatedFileSizeView()
+		setUpSpeedView()
 	}
 
 	override func viewDidAppear() {
@@ -139,6 +160,13 @@ final class EditVideoViewController: NSViewController {
 		setUpTabOrder()
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
+	}
+
+	private func setUpSpeedView() {
+		let view = SpeedView()
+		let hostingView = NSHostingView(rootView: view)
+		speedView.addSubview(hostingView)
+		hostingView.constrainEdgesToSuperview()
 	}
 
 	private func setUpEstimatedFileSizeView() {
@@ -353,7 +381,7 @@ final class EditVideoViewController: NSViewController {
 
 		DispatchQueue.global(qos: .utility).async { [weak self] in
 			guard
-				let keyframeInfo = self?.asset.firstVideoTrack?.getKeyframeInfo(),
+				let keyframeInfo = self?.modifiedAsset.firstVideoTrack?.getKeyframeInfo(),
 				keyframeInfo.keyframeInterval > maximumKeyframeInterval
 			else {
 				return
@@ -460,6 +488,20 @@ final class EditVideoViewController: NSViewController {
 			.sink { [weak self] in
 				self?.loopCountTextField.isEnabled = !$0.newValue
 				self?.loopCountStepper.isEnabled = !$0.newValue
+			}
+			.store(in: &cancellables)
+
+		Defaults.publisher(.outputSpeed)
+			.debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] in
+				guard let self = self else {
+					return
+				}
+
+				self.modifiedAsset = self.asset?.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: $0.newValue)
+				self.playerViewController.currentItem = AVPlayerItem(asset: self.modifiedAsset)
+				self.estimatedFileSizeModel.updateEstimate()
 			}
 			.store(in: &cancellables)
 

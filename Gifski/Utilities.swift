@@ -783,9 +783,13 @@ extension AVAssetTrack {
 	/**
 	Extract the track into a new AVAsset.
 
+	Optionally, mutate the track.
+
 	This can be useful if you only want the video or audio of an asset. For example, sometimes the video track duration is shorter than the total asset duration. Extracting the track into a new asset ensures the asset duration is only as long as the video track duration.
 	*/
-	func extractToNewAsset() -> AVAsset? {
+	func extractToNewAsset(
+		_ modify: ((AVMutableCompositionTrack) -> Void)? = nil
+	) -> AVAsset? {
 		let composition = AVMutableComposition()
 
 		guard
@@ -796,6 +800,8 @@ extension AVAssetTrack {
 		}
 
 		track.preferredTransform = preferredTransform
+
+		modify?(track)
 
 		return composition
 	}
@@ -3609,6 +3615,12 @@ final class LoopingPlayer: AVPlayer {
 		}
 	}
 
+	override func replaceCurrentItem(with item: AVPlayerItem?) {
+		super.replaceCurrentItem(with: item)
+		cancellable = nil
+		updateObserver()
+	}
+
 	private func updateObserver() {
 		guard bouncePlayback || loopPlayback else {
 			cancellable = nil
@@ -3633,7 +3645,8 @@ final class LoopingPlayer: AVPlayer {
 				self.pause()
 
 				if
-					self.bouncePlayback, self.currentItem?.canPlayReverse == true,
+					self.bouncePlayback,
+					self.currentItem?.canPlayReverse == true,
 					self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0
 				{
 					self.seekToEnd()
@@ -4396,5 +4409,122 @@ extension Font {
 		design: Font.Design = .default
 	) -> Self {
 		system(size: smallSystemFontSize.cgFloat, weight: weight, design: design)
+	}
+}
+
+
+extension CMTime {
+	static func * (lhs: Self, rhs: Double) -> Self {
+		CMTimeMultiplyByFloat64(lhs, multiplier: rhs)
+	}
+
+	static func *= (lhs: inout Self, rhs: Double) {
+		// swiftlint:disable:next shorthand_operator
+		lhs = lhs * rhs
+	}
+
+	static func / (lhs: Self, rhs: Double) -> Self {
+		lhs * (1.0 / rhs)
+	}
+
+	static func /= (lhs: inout Self, rhs: Double) {
+		// swiftlint:disable:next shorthand_operator
+		lhs = lhs / rhs
+	}
+}
+
+
+extension AVMutableCompositionTrack {
+	/**
+	Change the speed of the track using the given multiplier.
+
+	1 is the current speed. 2 means doubled speed. Etc.
+	*/
+	func changeSpeed(by speedMultiplier: Double) {
+		scaleTimeRange(timeRange, toDuration: timeRange.duration / speedMultiplier)
+	}
+}
+
+
+extension AVAssetTrack {
+	/**
+	Extract the track to a new asset and also change the speed of the track using the given multiplier.
+
+	1 is the current speed. 2 means doubled speed. Etc.
+	*/
+	func extractToNewAssetAndChangeSpeed(to speedMultiplier: Double) -> AVAsset? {
+		extractToNewAsset {
+			$0.changeSpeed(by: speedMultiplier)
+		}
+	}
+}
+
+
+extension AVPlayerItem {
+	/**
+	The played duration percentage (`0...1`).
+	*/
+	var playbackProgress: Double {
+		let totalDuration = duration.seconds
+		let duration = currentTime().seconds
+
+		guard
+			totalDuration != 0,
+			duration != 0
+		else {
+			return 0
+		}
+
+		return duration / totalDuration
+	}
+
+	// TODO: Make it async when targeting macOS 12.
+	/**
+	Seek to the given percentage (`0...1`) of the total duration.
+	*/
+	func seek(toPercentage percentage: Double) {
+		seek(
+			to: duration * percentage,
+			toleranceBefore: .zero,
+			toleranceAfter: .zero,
+			completionHandler: nil
+		)
+	}
+}
+
+
+extension AVPlayerItem {
+	/**
+	The playable range of the item as percentage of the total duration.
+
+	For example, if the video has a duration of 10 seconds and you trim it to the last half, this would return `0.5...1`.
+
+	Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
+	*/
+	var playbackRangePercentage: ClosedRange<Double>? {
+		get {
+			guard
+				let duration = durationRange?.upperBound,
+				let playbackRange = playbackRange
+			else {
+				return nil
+			}
+
+			let lowerPercentage = playbackRange.lowerBound / duration
+			let upperPercentage = playbackRange.upperBound / duration
+			return lowerPercentage...upperPercentage
+		}
+		set {
+			guard
+				let duration = durationRange?.upperBound,
+				let playbackPercentageRange = newValue
+			else {
+				return
+			}
+
+			let lowerBound = duration * playbackPercentageRange.lowerBound
+			let upperBound = duration * playbackPercentageRange.upperBound
+			playbackRange = lowerBound...upperBound
+		}
 	}
 }

@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import FirebaseCrashlytics
+import Defaults
 
 private var conversionCount = 0
 
@@ -233,12 +234,17 @@ final class Gifski {
 		for conversion: Conversion,
 		jobKey: String
 	) -> Result<(generator: AVAssetImageGenerator, times: [CMTime], fps: Int), Error> {
-		let asset = AVURLAsset(
+		// TODO: We should be passing around `AVAsset` instead of loading it again here.
+		var asset: AVAsset = AVURLAsset(
 			url: conversion.video,
 			options: [
 				AVURLAssetPreferPreciseDurationAndTimingKey: true
 			]
 		)
+
+		if let newAsset = asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) {
+			asset = newAsset
+		}
 
 		record(
 			jobKey: jobKey,
@@ -323,13 +329,16 @@ final class Gifski {
 
 		let frameStep = 1 / fps
 		let timescale = asset.duration.timescale
-		let frameForTimes: [CMTime] = (0..<frameCount).map { index in
+		var frameForTimes: [CMTime] = (0..<frameCount).map { index in
 			let presentationTimestamp = startTime + (frameStep * Double(index))
 			return CMTime(
 				seconds: presentationTimestamp,
 				preferredTimescale: timescale
 			)
 		}
+
+		// Ensure we include the last frame. For example, the above might have calculated `[..., 6.25, 6.3]`, but the duration is `6.3647`, so we might miss the last frame if it appears for a short time.
+		frameForTimes.append(asset.duration)
 
 		record(
 			jobKey: jobKey,

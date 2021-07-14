@@ -15,6 +15,8 @@ You can also produce smaller lower quality GIFs when needed with the â€œQualityâ
 
 Gifski supports all the video formats that macOS supports (`.mp4` or `.mov` with H264, HEVC, ProRes, etc). The [QuickTime Animation format](https://en.wikipedia.org/wiki/QuickTime_Animation) is not supported. Use [ProRes 4444 XQ](https://en.wikipedia.org/wiki/Apple_ProRes) instead. It's more efficient, more widely supported, and like QuickTime Animation, it also supports alpha channel.
 
+Gifski has a bunch of settings like changing dimensions, speed, frame rate, quality, looping, and more.
+
 **[Blog post](https://blog.sindresorhus.com/gifski-972692460aa5)** &nbsp;&nbsp; **[Product Hunt](https://www.producthunt.com/posts/gifski-2)**
 
 ## Download

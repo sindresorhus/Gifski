@@ -37,6 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 		// Set launch completions option if the notification center could not be set up already.
 		LaunchCompletions.applicationDidLaunch()
+
+//		#if DEBUG
+//		mainWindowController.convert(URL(fileURLWithPath: "/Users/sindresorhus/Library/Containers/com.sindresorhus.Gifski/Data/Library/Application Support/com.sindresorhus.Gifski/Fixture.mp4"))
+//		#endif
 	}
 
 	/// Returns `nil` if it should not continue.

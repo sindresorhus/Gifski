@@ -8,6 +8,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let player: LoopingPlayer
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
+	private var cancellables = Set<AnyCancellable>()
 
 	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
 
@@ -29,6 +30,28 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		get { player.bouncePlayback }
 		set {
 			player.bouncePlayback = newValue
+		}
+	}
+
+	/**
+	Get or set the current player item.
+
+	When setting an item, it preserves the current playback rate (which means pause state too) and playback position.
+	*/
+	var currentItem: AVPlayerItem {
+		get { player.currentItem! }
+		set {
+			let rate = player.rate
+			let playbackPercentage = player.currentItem?.playbackProgress ?? 0
+			let playbackRangePercentage = player.currentItem?.playbackRangePercentage
+
+			player.replaceCurrentItem(with: newValue)
+
+			DispatchQueue.main.async { [self] in
+				player.rate = rate
+				player.currentItem?.seek(toPercentage: playbackPercentage)
+				player.currentItem?.playbackRangePercentage = playbackRangePercentage
+			}
 		}
 	}
 
@@ -61,11 +84,26 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		super.viewDidAppear()
 
 		playerView.addCheckerboardView()
+
+		// This needs to be both here and in the can trim listener.
 		playerView.hideTrimButtons()
-		playerView.observeTrimmedTimeRange { [weak self] timeRange in
-			self?.timeRange = timeRange
-			self?.timeRangeDidChange?(timeRange)
-		}
+
+		// Support replacing the item.
+		player.publisher(for: \.currentItem)
+			.sink { [weak self] _ in
+				guard let self = self else {
+					return
+				}
+
+				self.playerView.setupTrimmingObserver()
+
+				// This is here as it needs to be refreshed when the current item changes.
+				self.playerView.observeTrimmedTimeRange { [weak self] timeRange in
+					self?.timeRange = timeRange
+					self?.timeRangeDidChange?(timeRange)
+				}
+			}
+			.store(in: &cancellables)
 	}
 }
 
@@ -119,6 +157,8 @@ final class TrimmingAVPlayerView: AVPlayerView {
 				}
 
 				self.beginTrimming(completionHandler: nil)
+				self.hideTrimButtons()
+				self.window?.makeFirstResponder(self)
 				self.trimmingCancellable = nil
 			}
 	}
