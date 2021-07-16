@@ -1,7 +1,6 @@
 import Foundation
 import AVFoundation
 import FirebaseCrashlytics
-import Defaults
 
 private var conversionCount = 0
 
@@ -41,7 +40,8 @@ final class Gifski {
 	- Parameter bounce: Whether output should bounce or not.
 	*/
 	struct Conversion {
-		let video: URL
+		let asset: AVAsset
+		let sourceURL: URL
 		var timeRange: ClosedRange<Double>?
 		var quality: Double = 1
 		var dimensions: CGSize?
@@ -234,17 +234,7 @@ final class Gifski {
 		for conversion: Conversion,
 		jobKey: String
 	) -> Result<(generator: AVAssetImageGenerator, times: [CMTime], fps: Int), Error> {
-		// TODO: We should be passing around `AVAsset` instead of loading it again here.
-		var asset: AVAsset = AVURLAsset(
-			url: conversion.video,
-			options: [
-				AVURLAssetPreferPreciseDurationAndTimingKey: true
-			]
-		)
-
-		if let newAsset = asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) {
-			asset = newAsset
-		}
+		let asset = conversion.asset
 
 		record(
 			jobKey: jobKey,
@@ -294,32 +284,26 @@ final class Gifski {
 
 		let generator = AVAssetImageGenerator(asset: asset)
 		generator.appliesPreferredTrackTransform = true
+		generator.requestedTimeToleranceBefore = .zero
+		generator.requestedTimeToleranceAfter = .zero
 
 		// This improves the performance a little bit.
 		if let dimensions = conversion.dimensions {
 			generator.maximumSize = CGSize(widthHeight: dimensions.longestSide)
 		}
 
-		// Even though we enforce a minimum of 5 FPS in the GUI, a source video could have lower FPS, and we should allow that.
+		// Even though we enforce a minimum of 3 FPS in the GUI, a source video could have lower FPS, and we should allow that.
 		var fps = (conversion.frameRate.map { Double($0) } ?? assetFrameRate).clamped(to: 0.1...Constants.allowedFrameRate.upperBound)
 		fps = min(fps, assetFrameRate)
 
 		print("FPS:", fps)
 
-		// `.zero` tolerance is much slower and fails a lot on macOS 11. (macOS 11.1)
-		if #available(macOS 11, *) {
-			let tolerance = CMTime(seconds: 0.5 / fps, preferredTimescale: .video)
-			generator.requestedTimeToleranceBefore = tolerance
-			generator.requestedTimeToleranceAfter = tolerance
-		} else {
-			generator.requestedTimeToleranceBefore = .zero
-			generator.requestedTimeToleranceAfter = .zero
-		}
-
+		// TODO: Instead of calculating what part of the video to get, we could just trim the actual `AVAssetTrack`.
 		let videoRange = conversion.timeRange?.clamped(to: videoTrackRange) ?? videoTrackRange
 		let startTime = videoRange.lowerBound
 		let duration = videoRange.length
 		let frameCount = Int(duration * fps)
+		let timescale = firstVideoTrack.naturalTimeScale
 
 		guard frameCount >= 2 else {
 			return .failure(.notEnoughFrames(frameCount))
@@ -328,7 +312,6 @@ final class Gifski {
 		print("Frame count:", frameCount)
 
 		let frameStep = 1 / fps
-		let timescale = asset.duration.timescale
 		var frameForTimes: [CMTime] = (0..<frameCount).map { index in
 			let presentationTimestamp = startTime + (frameStep * Double(index))
 			return CMTime(
@@ -338,7 +321,7 @@ final class Gifski {
 		}
 
 		// Ensure we include the last frame. For example, the above might have calculated `[..., 6.25, 6.3]`, but the duration is `6.3647`, so we might miss the last frame if it appears for a short time.
-		frameForTimes.append(asset.duration)
+		frameForTimes.append(CMTime(seconds: duration, preferredTimescale: timescale))
 
 		record(
 			jobKey: jobKey,
@@ -448,7 +431,7 @@ final class Gifski {
 					let actualReverseTimestamp = max(0, expectedReverseTimestamp + timestampSlippage.seconds)
 
 					try gifski?.addFrame(
-						pixelFormat: .argb,
+						pixelFormat: .rgba,
 						frameNumber: reverseFrameNumber,
 						width: pixels.width,
 						height: pixels.height,

@@ -95,7 +95,8 @@ final class EditVideoViewController: NSViewController {
 
 	private var conversionSettings: Gifski.Conversion {
 		.init(
-			video: inputUrl,
+			asset: modifiedAsset,
+			sourceURL: inputUrl,
 			timeRange: timeRange,
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,

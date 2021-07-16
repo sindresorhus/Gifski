@@ -83,7 +83,7 @@ final class ConversionViewController: NSViewController {
 
 			gifski.run(conversion, isEstimation: false) { result in
 				do {
-					let gifUrl = try self.generateTemporaryGifUrl(for: conversion.video)
+					let gifUrl = try self.generateTemporaryGifUrl(for: conversion.sourceURL)
 					try result.get().write(to: gifUrl, options: .atomic)
 					try? gifUrl.setMetadata(key: .itemCreator, value: "\(SSApp.name) \(SSApp.version)")
 					self.didComplete(conversion: conversion, gifUrl: gifUrl)

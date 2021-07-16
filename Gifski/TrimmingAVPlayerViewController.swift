@@ -36,7 +36,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	/**
 	Get or set the current player item.
 
-	When setting an item, it preserves the current playback rate (which means pause state too) and playback position.
+	When setting an item, it preserves the current playback rate (which means pause state too), playback position, and trim range.
 	*/
 	var currentItem: AVPlayerItem {
 		get { player.currentItem! }

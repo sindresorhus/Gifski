@@ -41,7 +41,7 @@ final class ConversionCompletedViewController: NSViewController {
 		if !NSApp.isActive || view.window?.isVisible == false {
 			let notification = UNMutableNotificationContent()
 			notification.title = "Conversion Completed"
-			notification.subtitle = conversion.video.filename
+			notification.subtitle = conversion.sourceURL.filename
 			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
 			// UNUserNotificationCenter.current().add(request)
 			AppDelegate.shared.notificationCenter.add(request)
@@ -154,7 +154,7 @@ final class ConversionCompletedViewController: NSViewController {
 	}
 
 	private func saveGif() {
-		let inputUrl = conversion.video
+		let inputUrl = conversion.sourceURL
 
 		let panel = NSSavePanel()
 		panel.canCreateDirectories = true
