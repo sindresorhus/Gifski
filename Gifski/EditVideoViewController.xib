@@ -219,7 +219,7 @@
                                         <sliderCell key="cell" continuous="YES" state="on" alignment="left" minValue="5" maxValue="30" doubleValue="30" tickMarkPosition="above" sliderType="linear" id="aU8-ka-YW2"/>
                                     </slider>
                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VFJ-xS-F2B">
-                                        <rect key="frame" x="18" y="62" width="60" height="16"/>
+                                        <rect key="frame" x="9" y="62" width="60" height="16"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="56" id="jKq-aA-DK5"/>
                                         </constraints>
@@ -230,7 +230,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="taC-H3-jcv" customClass="IntTextField" customModule="Gifski" customModuleProvider="target">
-                                        <rect key="frame" x="84" y="60" width="70" height="21"/>
+                                        <rect key="frame" x="75" y="60" width="70" height="21"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="70" id="5HI-Ct-v80"/>
                                         </constraints>
@@ -241,11 +241,11 @@
                                         </textFieldCell>
                                     </textField>
                                     <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="x03-mN-zhh">
-                                        <rect key="frame" x="159" y="56" width="19" height="28"/>
+                                        <rect key="frame" x="150" y="56" width="19" height="28"/>
                                         <stepperCell key="cell" continuous="YES" alignment="left" maxValue="100" id="d96-4O-hec"/>
                                     </stepper>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Mk2-3o-6CT">
-                                        <rect key="frame" x="197" y="61" width="106" height="18"/>
+                                        <rect key="frame" x="188" y="61" width="106" height="18"/>
                                         <buttonCell key="cell" type="check" title="Loop Forever" bezelStyle="regularSquare" imagePosition="left" inset="2" id="c3l-oV-Y0b">
                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                             <font key="font" metaFont="system"/>
@@ -260,7 +260,7 @@
                                         </connections>
                                     </button>
                                     <button toolTip="Makes the GIF play normally and then in reverse, resulting in a GIF that is double the length and double the file size." verticalHuggingPriority="750" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="6Zb-wc-GCx">
-                                        <rect key="frame" x="197" y="39" width="72" height="18"/>
+                                        <rect key="frame" x="188" y="39" width="72" height="18"/>
                                         <buttonCell key="cell" type="check" title="Bounce" bezelStyle="regularSquare" imagePosition="left" inset="2" id="Pn4-Io-BK6">
                                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                             <font key="font" metaFont="system"/>
@@ -279,6 +279,7 @@
                                     <constraint firstAttribute="trailing" secondItem="5Ke-gz-J2u" secondAttribute="trailing" constant="20" symbolic="YES" id="2kR-fz-ftG"/>
                                     <constraint firstItem="x03-mN-zhh" firstAttribute="centerY" secondItem="VFJ-xS-F2B" secondAttribute="centerY" id="47z-Zg-it9"/>
                                     <constraint firstItem="Rej-Dl-z8Y" firstAttribute="leading" secondItem="wmm-UU-g6g" secondAttribute="leading" id="5gr-Y1-Ixw"/>
+                                    <constraint firstItem="VFJ-xS-F2B" firstAttribute="trailing" secondItem="iFf-bP-MLi" secondAttribute="trailing" id="7s3-Xe-fhD"/>
                                     <constraint firstItem="Fxs-GY-NUz" firstAttribute="leading" secondItem="iFf-bP-MLi" secondAttribute="leading" id="AOu-eR-uC7"/>
                                     <constraint firstItem="iFf-bP-MLi" firstAttribute="top" secondItem="Fxs-GY-NUz" secondAttribute="bottom" constant="18" id="BdX-Ip-Sfw"/>
                                     <constraint firstItem="VFJ-xS-F2B" firstAttribute="top" secondItem="iFf-bP-MLi" secondAttribute="bottom" constant="18" id="GaU-PP-u4b"/>
@@ -292,7 +293,6 @@
                                     <constraint firstItem="Mk2-3o-6CT" firstAttribute="leading" secondItem="x03-mN-zhh" secondAttribute="trailing" constant="24" id="Sul-hb-FPM"/>
                                     <constraint firstItem="Mk2-3o-6CT" firstAttribute="centerY" secondItem="VFJ-xS-F2B" secondAttribute="centerY" id="XYH-yM-mxX"/>
                                     <constraint firstItem="5Ke-gz-J2u" firstAttribute="firstBaseline" secondItem="Fxs-GY-NUz" secondAttribute="firstBaseline" id="YcA-vG-aBS"/>
-                                    <constraint firstItem="VFJ-xS-F2B" firstAttribute="leading" secondItem="iFf-bP-MLi" secondAttribute="leading" id="eAS-rc-ZTd"/>
                                     <constraint firstItem="5Ke-gz-J2u" firstAttribute="leading" secondItem="Rej-Dl-z8Y" secondAttribute="trailing" constant="8" symbolic="YES" id="eXk-Bv-HWg"/>
                                     <constraint firstItem="Rej-Dl-z8Y" firstAttribute="leading" secondItem="Fxs-GY-NUz" secondAttribute="trailing" constant="8" symbolic="YES" id="er2-bc-7th"/>
                                     <constraint firstItem="Fxs-GY-NUz" firstAttribute="top" secondItem="d7l-jL-VWi" secondAttribute="top" constant="18" id="ivK-Jk-HzZ"/>
