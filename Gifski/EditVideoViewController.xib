@@ -216,7 +216,7 @@
                                         <constraints>
                                             <constraint firstAttribute="width" constant="214" id="BIw-L9-Hls"/>
                                         </constraints>
-                                        <sliderCell key="cell" continuous="YES" state="on" alignment="left" minValue="5" maxValue="30" doubleValue="30" tickMarkPosition="above" sliderType="linear" id="aU8-ka-YW2"/>
+                                        <sliderCell key="cell" continuous="YES" state="on" alignment="left" minValue="3" maxValue="50" doubleValue="30" tickMarkPosition="above" sliderType="linear" id="aU8-ka-YW2"/>
                                     </slider>
                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VFJ-xS-F2B">
                                         <rect key="frame" x="9" y="62" width="60" height="16"/>
