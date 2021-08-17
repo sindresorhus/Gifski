@@ -344,7 +344,7 @@ final class EditVideoViewController: NSViewController {
 
 	private func updateFrameRateSlider() {
 		// We round it so that `29.970` becomes `30` for practical reasons.
-		let frameRate = (videoMetadata.frameRate / Defaults[.outputSpeed]).rounded()
+		let frameRate = (videoMetadata.frameRate * Defaults[.outputSpeed]).rounded()
 
 		frameRateSlider.maxValue = frameRate.clamped(to: Constants.allowedFrameRate)
 		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
