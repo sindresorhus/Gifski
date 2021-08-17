@@ -336,18 +336,22 @@ final class EditVideoViewController: NSViewController {
 			showFpsWarningIfNeeded()
 		}
 
-		updateFrameRateSlider()
+		updateFrameRateSlider(isInit: true)
 
 		qualitySlider.doubleValue = Defaults[.outputQuality]
 		qualitySlider.triggerAction()
 	}
 
-	private func updateFrameRateSlider() {
+	private func updateFrameRateSlider(isInit: Bool) {
 		// We round it so that `29.970` becomes `30` for practical reasons.
 		let frameRate = (videoMetadata.frameRate * Defaults[.outputSpeed]).rounded()
 
 		frameRateSlider.maxValue = frameRate.clamped(to: Constants.allowedFrameRate)
-		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
+
+		if isInit {
+			frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
+		}
+
 		frameRateSlider.triggerAction()
 	}
 
@@ -511,7 +515,7 @@ final class EditVideoViewController: NSViewController {
 				self.modifiedAsset = self.asset?.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: $0.newValue)
 				self.playerViewController.currentItem = AVPlayerItem(asset: self.modifiedAsset)
 				self.estimatedFileSizeModel.updateEstimate()
-				self.updateFrameRateSlider()
+				self.updateFrameRateSlider(isInit: false)
 			}
 			.store(in: &cancellables)
 
