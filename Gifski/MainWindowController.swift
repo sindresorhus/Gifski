@@ -24,7 +24,8 @@ final class MainWindowController: NSWindowController {
 			buttonTitles: [
 				"Get Started"
 			],
-			defaultButtonIndex: -1
+			defaultButtonIndex: -1,
+			minimumWidth: 350
 		)
 	}
 

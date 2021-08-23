@@ -226,7 +226,8 @@ extension NSAlert {
 		detailText: String? = nil,
 		style: Style = .warning,
 		buttonTitles: [String] = [],
-		defaultButtonIndex: Int? = nil
+		defaultButtonIndex: Int? = nil,
+		minimumWidth: Double? = nil
 	) -> NSApplication.ModalResponse {
 		NSAlert(
 			title: title,
@@ -234,7 +235,8 @@ extension NSAlert {
 			detailText: detailText,
 			style: style,
 			buttonTitles: buttonTitles,
-			defaultButtonIndex: defaultButtonIndex
+			defaultButtonIndex: defaultButtonIndex,
+			minimumWidth: minimumWidth
 		).runModal(for: window)
 	}
 
@@ -262,7 +264,8 @@ extension NSAlert {
 		detailText: String? = nil,
 		style: Style = .warning,
 		buttonTitles: [String] = [],
-		defaultButtonIndex: Int? = nil
+		defaultButtonIndex: Int? = nil,
+		minimumWidth: Double? = nil
 	) {
 		self.init()
 		self.messageText = title
@@ -277,13 +280,15 @@ extension NSAlert {
 
 			// We're setting the frame manually here as it's impossible to use auto-layout,
 			// since it has nothing to constrain to. This will eventually be rewritten in SwiftUI anyway.
-			scrollView.frame = CGRect(width: 300, height: 120)
+			scrollView.frame = CGRect(width: minimumWidth?.cgFloat ?? 300, height: 120)
 
-			scrollView.onAddedToSuperview {
-				if let messageTextField = (scrollView.superview?.superview?.subviews.first { $0 is NSTextField }) {
-					scrollView.frame.width = messageTextField.frame.width
-				} else {
-					assertionFailure("Couldn't detect the message textfield view of the NSAlert panel")
+			if minimumWidth == nil {
+				scrollView.onAddedToSuperview {
+					if let messageTextField = (scrollView.superview?.superview?.subviews.first { $0 is NSTextField }) {
+						scrollView.frame.width = messageTextField.frame.width
+					} else {
+						assertionFailure("Couldn't detect the message textfield view of the NSAlert panel")
+					}
 				}
 			}
 
@@ -295,6 +300,8 @@ extension NSAlert {
 			textView.string = detailText
 
 			self.accessoryView = scrollView
+		} else if let minimumWidth = minimumWidth {
+			self.accessoryView = NSView(frame: CGRect(width: minimumWidth.cgFloat, height: 0))
 		}
 
 		addButtons(withTitles: buttonTitles)
