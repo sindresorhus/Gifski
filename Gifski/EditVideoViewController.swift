@@ -3,6 +3,24 @@ import Combine
 import AVKit
 import Defaults
 
+struct SpeedView: View {
+	@Default(.outputSpeed) private var outputSpeed
+
+	var body: some View {
+		HStack(alignment: .firstTextBaseline) {
+			Text("Speed:")
+			Slider(value: $outputSpeed, in: 0.5...5, step: 0.5)
+				.offset(y: OS.isMacOS11OrLater ? 0 : -4)
+			Text("\(outputSpeed.formatted)×")
+				.font(.system().monospacedDigit()) // TODO: Use `.monospacedDigit()` view modifier when targeting macOS 12.
+				.frame(width: 30, alignment: .leading)
+		}
+			.padding(.leading, 52)
+			.padding(.trailing, 20)
+			.padding(.bottom)
+	}
+}
+
 final class EditVideoViewController: NSViewController {
 	enum PredefinedSizeItem {
 		case custom
@@ -20,6 +38,7 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	@IBOutlet private var estimatedSizeView: NSView!
+	@IBOutlet private var speedView: NSView!
 	@IBOutlet private var frameRateSlider: NSSlider!
 	@IBOutlet private var frameRateLabel: NSTextField!
 	@IBOutlet private var qualitySlider: NSSlider!
@@ -38,6 +57,7 @@ final class EditVideoViewController: NSViewController {
 
 	var inputUrl: URL!
 	var asset: AVAsset!
+	var modifiedAsset: AVAsset!
 	var videoMetadata: AVAsset.VideoMetadata!
 
 	private var resizableDimensions: ResizableDimensions!
@@ -76,7 +96,8 @@ final class EditVideoViewController: NSViewController {
 
 	private var conversionSettings: Gifski.Conversion {
 		.init(
-			video: inputUrl,
+			asset: modifiedAsset,
+			sourceURL: inputUrl,
 			timeRange: timeRange,
 			quality: Defaults[.outputQuality],
 			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
@@ -95,6 +116,7 @@ final class EditVideoViewController: NSViewController {
 
 		self.inputUrl = inputUrl
 		self.asset = asset
+		self.modifiedAsset = asset
 		self.videoMetadata = videoMetadata
 
 		AppDelegate.shared.previousEditViewController = self
@@ -130,6 +152,7 @@ final class EditVideoViewController: NSViewController {
 		setUpDropView()
 		setUpTrimmingView()
 		setUpEstimatedFileSizeView()
+		setUpSpeedView()
 	}
 
 	override func viewDidAppear() {
@@ -139,6 +162,13 @@ final class EditVideoViewController: NSViewController {
 		setUpTabOrder()
 
 		tooltip.show(from: widthTextField, preferredEdge: .maxX)
+	}
+
+	private func setUpSpeedView() {
+		let view = SpeedView()
+		let hostingView = NSHostingView(rootView: view)
+		speedView.addSubview(hostingView)
+		hostingView.constrainEdgesToSuperview()
 	}
 
 	private func setUpEstimatedFileSizeView() {
@@ -306,12 +336,23 @@ final class EditVideoViewController: NSViewController {
 			showFpsWarningIfNeeded()
 		}
 
-		frameRateSlider.maxValue = frameRate.clamped(to: Constants.allowedFrameRate)
-		frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
-		frameRateSlider.triggerAction()
+		updateFrameRateSlider(isInit: true)
 
 		qualitySlider.doubleValue = Defaults[.outputQuality]
 		qualitySlider.triggerAction()
+	}
+
+	private func updateFrameRateSlider(isInit: Bool) {
+		// We round it so that `29.970` becomes `30` for practical reasons.
+		let frameRate = (videoMetadata.frameRate * Defaults[.outputSpeed]).rounded()
+
+		frameRateSlider.maxValue = frameRate.clamped(to: Constants.allowedFrameRate)
+
+		if isInit {
+			frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
+		}
+
+		frameRateSlider.triggerAction()
 	}
 
 	private func showFpsWarningIfNeeded() {
@@ -353,7 +394,7 @@ final class EditVideoViewController: NSViewController {
 
 		DispatchQueue.global(qos: .utility).async { [weak self] in
 			guard
-				let keyframeInfo = self?.asset.firstVideoTrack?.getKeyframeInfo(),
+				let keyframeInfo = self?.modifiedAsset.firstVideoTrack?.getKeyframeInfo(),
 				keyframeInfo.keyframeInterval > maximumKeyframeInterval
 			else {
 				return
@@ -460,6 +501,21 @@ final class EditVideoViewController: NSViewController {
 			.sink { [weak self] in
 				self?.loopCountTextField.isEnabled = !$0.newValue
 				self?.loopCountStepper.isEnabled = !$0.newValue
+			}
+			.store(in: &cancellables)
+
+		Defaults.publisher(.outputSpeed)
+			.debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] in
+				guard let self = self else {
+					return
+				}
+
+				self.modifiedAsset = self.asset?.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: $0.newValue)
+				self.playerViewController.currentItem = AVPlayerItem(asset: self.modifiedAsset)
+				self.estimatedFileSizeModel.updateEstimate()
+				self.updateFrameRateSlider(isInit: false)
 			}
 			.store(in: &cancellables)
 

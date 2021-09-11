@@ -8,6 +8,7 @@ It converts videos to animated GIFs that use thousands of colors per frame. This
 - Video trimming
 - Precise control of dimensions
 - Control over GIF looping and bouncing (yo-yo) playback
+- Adjust the speed
 - Copy, share, or drag the GIF
 - Share extension
 - System service
