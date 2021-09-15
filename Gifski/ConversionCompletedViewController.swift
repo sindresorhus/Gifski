@@ -58,7 +58,7 @@ final class ConversionCompletedViewController: NSViewController {
 			if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
 				draggableFile.layer?.animateScaleMove(
 					fromScale: 3,
-					fromY: Double(view.frame.height + draggableFile.frame.size.height)
+					fromY: view.frame.height + draggableFile.frame.size.height
 				)
 			}
 
@@ -113,6 +113,7 @@ final class ConversionCompletedViewController: NSViewController {
 
 	private func copyGif() {
 		NSPasteboard.general.with {
+			// swiftlint:disable:next legacy_objc_type
 			$0.writeObjects([gifUrl as NSURL])
 			$0.setString(gifUrl.filenameWithoutExtension, forType: .urlName)
 		}
@@ -150,6 +151,7 @@ final class ConversionCompletedViewController: NSViewController {
 	}
 
 	private func shareGif() {
+		// swiftlint:disable:next legacy_objc_type
 		NSSharingService.share(items: [gifUrl as NSURL], from: shareButton)
 	}
 
@@ -249,6 +251,7 @@ extension ConversionCompletedViewController: QLPreviewPanelDataSource {
 	func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int { 1 }
 
 	func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> QLPreviewItem! {
+		// swiftlint:disable:next legacy_objc_type
 		gifUrl as NSURL
 	}
 }

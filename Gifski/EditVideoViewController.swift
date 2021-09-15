@@ -172,15 +172,18 @@ final class EditVideoViewController: NSViewController {
 	}
 
 	private func setUpEstimatedFileSizeView() {
-		let view = EstimatedFileSizeView(model: estimatedFileSizeModel)
-		let hostingView = NSHostingView(rootView: view)
-		estimatedSizeView.addSubview(hostingView)
-		hostingView.constrainEdgesToSuperview()
+		// Tries to prevent a weird crash.
+		DispatchQueue.main.async { [self] in
+			let view = EstimatedFileSizeView(model: estimatedFileSizeModel)
+			let hostingView = NSHostingView(rootView: view)
+			estimatedSizeView.addSubview(hostingView)
+			hostingView.constrainEdgesToSuperview()
+		}
 	}
 
 	private func setUpDimensions() {
-		let minimumScale: CGFloat = 0.01
-		let maximumScale: CGFloat = 1
+		let minimumScale = 0.01
+		let maximumScale = 1.0
 		let dimensions = Dimensions(type: .pixels, value: videoMetadata.dimensions)
 
 		resizableDimensions = ResizableDimensions(
@@ -189,7 +192,7 @@ final class EditVideoViewController: NSViewController {
 			maximumScale: maximumScale
 		)
 
-		var pixelCommonSizes: [CGFloat] = [
+		var pixelCommonSizes: [Double] = [
 			960,
 			800,
 			640,
@@ -219,7 +222,7 @@ final class EditVideoViewController: NSViewController {
 			.filter { resizableDimensions.validate(newSize: $0) }
 			.map { resizableDimensions.resized(to: $0) }
 
-		let percentCommonSizes: [CGFloat] = [
+		let percentCommonSizes: [Double] = [
 			50,
 			33,
 			25,
@@ -425,7 +428,7 @@ final class EditVideoViewController: NSViewController {
 
 	private func setUpWidthAndHeightTextFields() {
 		widthTextField.onBlur = { [weak self] width in
-			self?.resizableDimensions.resize(usingWidth: CGFloat(width))
+			self?.resizableDimensions.resize(usingWidth: Double(width))
 			self?.dimensionsUpdated()
 		}
 
@@ -434,12 +437,12 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			self.resizableDimensions.resize(usingWidth: CGFloat(width))
+			self.resizableDimensions.resize(usingWidth: Double(width))
 			self.dimensionsUpdated()
 		}
 
 		heightTextField.onBlur = { [weak self] height in
-			self?.resizableDimensions.resize(usingHeight: CGFloat(height))
+			self?.resizableDimensions.resize(usingHeight: Double(height))
 			self?.dimensionsUpdated()
 		}
 
@@ -448,7 +451,7 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			self.resizableDimensions.resize(usingHeight: CGFloat(height))
+			self.resizableDimensions.resize(usingHeight: Double(height))
 			self.dimensionsUpdated()
 		}
 
@@ -637,7 +640,7 @@ final class EditVideoViewController: NSViewController {
 
 		let frameCount = duration * frameRateSlider.doubleValue
 		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
-		var fileSize = (Double(dimensions.width) * Double(dimensions.height) * frameCount) / 3
+		var fileSize = (dimensions.width * dimensions.height * frameCount) / 3
 		fileSize = fileSize * (qualitySlider.doubleValue + 1.5) / 2.5
 
 		return fileSize

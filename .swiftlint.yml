@@ -23,11 +23,13 @@ only_rules:
   - discarded_notification_center_observer
   - discouraged_assert
   - discouraged_direct_init
+  - discouraged_none_name
   - discouraged_object_literal
   - discouraged_optional_boolean
   - discouraged_optional_collection
   - duplicate_enum_cases
   - duplicate_imports
+  - duplicated_key_in_dictionary_literal
   - dynamic_inline
   - empty_collection_literal
   - empty_count
@@ -63,6 +65,7 @@ only_rules:
   - legacy_nsgeometry_functions
   - legacy_random
   - literal_expression_end_indentation
+  - legacy_objc_type
   - lower_acl_than_parent
   - mark
   - modifier_order
@@ -159,12 +162,14 @@ identifier_name:
   excluded:
     - 'x'
     - 'y'
+    - 'z'
     - 'a'
     - 'b'
     - 'x1'
     - 'x2'
     - 'y1'
     - 'y2'
+    - 'z2'
 deployment_target:
   macOS_deployment_target: '10.15'
 custom_rules:
@@ -180,12 +185,19 @@ custom_rules:
     regex: '\bNSPoint\b'
     match_kinds: typeidentifier
     message: 'Use CGPoint instead of NSPoint'
+  no_cgfloat:
+    regex: '\bCGFloat\b'
+    match_kinds: typeidentifier
+    message: 'Use Double instead of CGFloat'
+  no_cgfloat2:
+    regex: '\bCGFloat\('
+    message: 'Use Double instead of CGFloat'
   swiftui_state_private:
     regex: '@(State|StateObject|ObservedObject|EnvironmentObject)\s+var'
-    message: "SwiftUI @State/@StateObject/@ObservedObject/@EnvironmentObject properties should be private"
+    message: 'SwiftUI @State/@StateObject/@ObservedObject/@EnvironmentObject properties should be private'
   swiftui_environment_private:
     regex: '@Environment\(\\\.\w+\)\s+var'
-    message: "SwiftUI @Environment properties should be private"
+    message: 'SwiftUI @Environment properties should be private'
   final_class:
     regex: '^class [a-zA-Z\d]+[^{]+\{'
-    message: "Classes should be marked as final whenever possible. If you actually need it to be subclassable, just add `// swiftlint:disable:next final_class`."
+    message: 'Classes should be marked as final whenever possible. If you actually need it to be subclassable, just add `// swiftlint:disable:next final_class`.'

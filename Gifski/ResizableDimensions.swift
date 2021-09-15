@@ -1,5 +1,4 @@
-import struct CoreGraphics.CGSize
-import struct CoreGraphics.CGFloat
+import CoreGraphics
 
 enum DimensionsType: String, Equatable, CaseIterable {
 	case pixels
@@ -26,13 +25,13 @@ struct Dimensions: Equatable, CustomStringConvertible {
 
 final class ResizableDimensions: Copyable {
 	/// Minimum scaling, 1.0 being the original size.
-	let minimumScale: CGFloat
+	let minimumScale: Double
 
 	/// Maximum scaling, 1.0 being the original size.
-	let maximumScale: CGFloat
+	let maximumScale: Double
 
 	/// Width bounds for `currentDimensions`.
-	var widthMinMax: ClosedRange<CGFloat> {
+	var widthMinMax: ClosedRange<Double> {
 		let multiplier = multiplier(for: currentDimensions.type)
 		let min = (minimumScale * multiplier.width).rounded()
 		let max = (maximumScale * multiplier.width).rounded()
@@ -40,7 +39,7 @@ final class ResizableDimensions: Copyable {
 	}
 
 	/// Height bounds for `currentDimensions`.
-	var heightMinMax: ClosedRange<CGFloat> {
+	var heightMinMax: ClosedRange<Double> {
 		let multiplier = multiplier(for: currentDimensions.type)
 		let min = (minimumScale * multiplier.height).rounded()
 		let max = (maximumScale * multiplier.height).rounded()
@@ -49,12 +48,12 @@ final class ResizableDimensions: Copyable {
 
 	private(set) var currentDimensions: Dimensions
 	private let originalDimensions: Dimensions
-	private var currentScale: CGFloat
+	private var currentScale: Double
 
 	init(
 		dimensions: Dimensions,
-		minimumScale: CGFloat? = nil,
-		maximumScale: CGFloat? = nil
+		minimumScale: Double? = nil,
+		maximumScale: Double? = nil
 	) {
 		self.originalDimensions = dimensions.rounded()
 		self.currentDimensions = originalDimensions
@@ -87,13 +86,13 @@ final class ResizableDimensions: Copyable {
 		currentDimensions = calculateDimensions(for: currentDimensions.type)
 	}
 
-	func resize(usingWidth width: CGFloat) {
+	func resize(usingWidth width: Double) {
 		let newScale = calculateScale(usingWidth: width)
 		currentScale = validated(scale: newScale)
 		currentDimensions = calculateDimensions(for: currentDimensions.type)
 	}
 
-	func resize(usingHeight height: CGFloat) {
+	func resize(usingHeight height: Double) {
 		let newScale = calculateScale(usingHeight: height)
 		currentScale = validated(scale: newScale)
 		currentDimensions = calculateDimensions(for: currentDimensions.type)
@@ -110,7 +109,7 @@ final class ResizableDimensions: Copyable {
 		return scalesEqual(validated(scale: scale), scale)
 	}
 
-	private func scalesEqual(_ scale1: CGFloat, _ scale2: CGFloat) -> Bool {
+	private func scalesEqual(_ scale1: Double, _ scale2: Double) -> Bool {
 		scale1.isAlmostEqual(to: scale2, tolerance: 0.001)
 	}
 
@@ -123,15 +122,15 @@ final class ResizableDimensions: Copyable {
 		return type == .pixels ? dimensions.rounded() : dimensions.rounded(.down)
 	}
 
-	private func calculateScale(usingWidth width: CGFloat) -> CGFloat {
+	private func calculateScale(usingWidth width: Double) -> Double {
 		width / multiplier(for: currentDimensions.type).width
 	}
 
-	private func calculateScale(usingHeight height: CGFloat) -> CGFloat {
+	private func calculateScale(usingHeight height: Double) -> Double {
 		height / multiplier(for: currentDimensions.type).height
 	}
 
-	private func validated(scale: CGFloat) -> CGFloat {
+	private func validated(scale: Double) -> Double {
 		scale.clamped(to: minimumScale...maximumScale)
 	}
 

@@ -1,7 +1,7 @@
 import Cocoa
 
 final class DraggableFile: NSImageView {
-	var thumbnailFrameSize: CGFloat = 84 {
+	var thumbnailFrameSize = 84.0 {
 		// FIXME: This is actually never set.
 		didSet {
 			guard let image = image else {
@@ -57,6 +57,7 @@ final class DraggableFile: NSImageView {
 			return
 		}
 
+		// swiftlint:disable:next legacy_objc_type
 		let draggingItem = NSDraggingItem(pasteboardWriter: fileUrl as NSURL)
 		let draggingFrame = image.size.aspectFit(to: thumbnailFrameSize).cgRect.centered(in: bounds)
 		draggingItem.setDraggingFrame(draggingFrame, contents: image)

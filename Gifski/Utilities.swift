@@ -163,7 +163,7 @@ extension NSWindow {
 extension NSWindow {
 	var toolbarView: NSView? { standardWindowButton(.closeButton)?.superview }
 	var titlebarView: NSView? { toolbarView?.superview }
-	var titlebarHeight: Double { Double(titlebarView?.bounds.height ?? 0) }
+	var titlebarHeight: Double { titlebarView?.bounds.height ?? 0 }
 }
 
 
@@ -175,7 +175,7 @@ private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: 
 
 	// Adjust sheet position so it goes below the traffic lights.
 	if window.styleMask.contains(.fullSizeContentView) {
-		return rect.offsetBy(dx: 0, dy: CGFloat(-window.titlebarHeight))
+		return rect.offsetBy(dx: 0, dy: -window.titlebarHeight)
 	}
 
 	return rect
@@ -280,7 +280,7 @@ extension NSAlert {
 
 			// We're setting the frame manually here as it's impossible to use auto-layout,
 			// since it has nothing to constrain to. This will eventually be rewritten in SwiftUI anyway.
-			scrollView.frame = CGRect(width: minimumWidth?.cgFloat ?? 300, height: 120)
+			scrollView.frame = CGRect(width: minimumWidth ?? 300, height: 120)
 
 			if minimumWidth == nil {
 				scrollView.onAddedToSuperview {
@@ -301,7 +301,7 @@ extension NSAlert {
 
 			self.accessoryView = scrollView
 		} else if let minimumWidth = minimumWidth {
-			self.accessoryView = NSView(frame: CGRect(width: minimumWidth.cgFloat, height: 0))
+			self.accessoryView = NSView(frame: CGRect(width: minimumWidth, height: 0))
 		}
 
 		addButtons(withTitles: buttonTitles)
@@ -559,14 +559,10 @@ extension Double {
 	}
 }
 
-extension CGFloat {
-	var formatted: String { Double(self).formatted }
-}
-
 
 extension CGSize {
 	/// Example: `140×100`
-	var formatted: String { "\(width.formatted)×\(height.formatted)" }
+	var formatted: String { "\(width.double.formatted)×\(height.double.formatted)" }
 }
 
 
@@ -723,7 +719,7 @@ extension AVAssetTrack {
 			return nil
 		}
 
-		return Double(dimensions.height / dimensions.width)
+		return dimensions.height / dimensions.width
 	}
 
 	/// Example:
@@ -1391,13 +1387,13 @@ extension NSView {
 
 		if let verticalEdge = verticalEdge {
 			constraints.append(
-				self[keyPath: verticalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: verticalEdge.constraintKeyPath], constant: CGFloat(padding))
+				self[keyPath: verticalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: verticalEdge.constraintKeyPath], constant: padding)
 			)
 		}
 
 		if let horizontalEdge = horizontalEdge {
 			constraints.append(
-				self[keyPath: horizontalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: horizontalEdge.constraintKeyPath], constant: CGFloat(padding))
+				self[keyPath: horizontalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: horizontalEdge.constraintKeyPath], constant: padding)
 			)
 		}
 
@@ -1430,13 +1426,13 @@ extension DispatchQueue {
 
 extension NSFont {
 	/// The point size of the font.
-	var size: Double { Double(pointSize) }
+	var size: Double { pointSize }
 
 	var traits: [NSFontDescriptor.TraitKey: AnyObject] {
 		fontDescriptor.object(forKey: .traits) as! [NSFontDescriptor.TraitKey: AnyObject]
 	}
 
-	var weight: NSFont.Weight { .init(traits[.weight] as! CGFloat) }
+	var weight: Weight { .init(traits[.weight] as! Double) }
 }
 
 
@@ -1497,7 +1493,7 @@ final class MonospacedLabel: Label {
 
 	private func setup() {
 		if let font = font {
-			self.font = .monospacedDigitSystemFont(ofSize: CGFloat(font.size), weight: font.weight)
+			self.font = .monospacedDigitSystemFont(ofSize: font.size, weight: font.weight)
 		}
 	}
 }
@@ -1586,6 +1582,7 @@ extension NSPasteboard {
 		}
 
 		guard
+			// swiftlint:disable:next legacy_objc_type
 			let urls = readObjects(forClasses: [NSURL.self], options: options) as? [URL]
 		else {
 			return []
@@ -1815,8 +1812,8 @@ extension NSView {
 
 
 extension String {
-	// `NSString` has some useful properties that `String` does not.
-	var nsString: NSString { self as NSString }
+	/// `NSString` has some useful properties that `String` does not.
+	var nsString: NSString { self as NSString } // swiftlint:disable:this legacy_objc_type
 }
 
 
@@ -2219,51 +2216,47 @@ extension URL {
 
 extension CGSize {
 	static func * (lhs: Self, rhs: Double) -> Self {
-		.init(width: lhs.width * CGFloat(rhs), height: lhs.height * CGFloat(rhs))
-	}
-
-	static func * (lhs: Self, rhs: CGFloat) -> Self {
 		.init(width: lhs.width * rhs, height: lhs.height * rhs)
 	}
 
-	init(widthHeight: CGFloat) {
+	init(widthHeight: Double) {
 		self.init(width: widthHeight, height: widthHeight)
 	}
 
 	var cgRect: CGRect { .init(origin: .zero, size: self) }
 
-	var longestSide: CGFloat { max(width, height) }
+	var longestSide: Double { max(width, height) }
 
 	func aspectFit(to boundingSize: CGSize) -> Self {
 		let ratio = min(boundingSize.width / width, boundingSize.height / height)
 		return self * ratio
 	}
 
-	func aspectFit(to widthHeight: CGFloat) -> Self {
+	func aspectFit(to widthHeight: Double) -> Self {
 		aspectFit(to: Self(width: widthHeight, height: widthHeight))
 	}
 }
 
 
 extension CGRect {
-	init(origin: CGPoint = .zero, width: CGFloat, height: CGFloat) {
+	init(origin: CGPoint = .zero, width: Double, height: Double) {
 		self.init(origin: origin, size: CGSize(width: width, height: height))
 	}
 
-	init(widthHeight: CGFloat) {
+	init(widthHeight: Double) {
 		self.init()
 		self.origin = .zero
 		self.size = CGSize(widthHeight: widthHeight)
 	}
 
-	var x: CGFloat {
+	var x: Double {
 		get { origin.x }
 		set {
 			origin.x = newValue
 		}
 	}
 
-	var y: CGFloat {
+	var y: Double {
 		get { origin.y }
 		set {
 			origin.y = newValue
@@ -2272,14 +2265,14 @@ extension CGRect {
 
 	/// `width` and `height` are defined in Foundation as getters only. We add support for setters too.
 	/// These will not work when imported as a framework: https://bugs.swift.org/browse/SR-4017
-	var width: CGFloat {
+	var width: Double {
 		get { size.width }
 		set {
 			size.width = newValue
 		}
 	}
 
-	var height: CGFloat {
+	var height: Double {
 		get { size.height }
 		set {
 			size.height = newValue
@@ -2288,28 +2281,28 @@ extension CGRect {
 
 	// MARK: - Edges
 
-	var left: CGFloat {
+	var left: Double {
 		get { x }
 		set {
 			x = newValue
 		}
 	}
 
-	var right: CGFloat {
+	var right: Double {
 		get { x + width }
 		set {
 			x = newValue - width
 		}
 	}
 
-	var top: CGFloat {
+	var top: Double {
 		get { y + height }
 		set {
 			y = newValue - height
 		}
 	}
 
-	var bottom: CGFloat {
+	var bottom: Double {
 		get { y }
 		set {
 			y = newValue
@@ -2328,14 +2321,14 @@ extension CGRect {
 		}
 	}
 
-	var centerX: CGFloat {
+	var centerX: Double {
 		get { midX }
 		set {
 			center = CGPoint(x: newValue, y: midY)
 		}
 	}
 
-	var centerY: CGFloat {
+	var centerY: Double {
 		get { midY }
 		set {
 			center = CGPoint(x: midX, y: newValue)
@@ -2351,8 +2344,8 @@ extension CGRect {
 		yOffset: Double = 0
 	) -> Self {
 		.init(
-			x: ((rect.width - size.width) / 2) + CGFloat(xOffset),
-			y: ((rect.height - size.height) / 2) + CGFloat(yOffset),
+			x: ((rect.width - size.width) / 2) + xOffset,
+			y: ((rect.height - size.height) / 2) + yOffset,
 			width: size.width,
 			height: size.height
 		)
@@ -2371,8 +2364,8 @@ extension CGRect {
 	) -> Self {
 		centered(
 			in: rect,
-			xOffset: Double(rect.width) * xOffsetPercent,
-			yOffset: Double(rect.height) * yOffsetPercent
+			xOffset: rect.width * xOffsetPercent,
+			yOffset: rect.height * yOffsetPercent
 		)
 	}
 }
@@ -2557,10 +2550,7 @@ extension NSSharingService {
 }
 
 
-extension Double {
-	var cgFloat: CGFloat { CGFloat(self) }
-}
-
+// swiftlint:disable:next no_cgfloat
 extension CGFloat {
 	var double: Double { Double(self) }
 }
@@ -2568,14 +2558,14 @@ extension CGFloat {
 
 extension CALayer {
 	func animateScaleMove(fromScale: Double, fromX: Double? = nil, fromY: Double? = nil) {
-		let fromX = fromX?.cgFloat ?? bounds.size.width / 2
-		let fromY = fromY?.cgFloat ?? bounds.size.height / 2
+		let fromX = fromX ?? bounds.size.width / 2
+		let fromY = fromY ?? bounds.size.height / 2
 
 		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
 
 		var tr = CATransform3DIdentity
 		tr = CATransform3DTranslate(tr, fromX, fromY, 0)
-		tr = CATransform3DScale(tr, CGFloat(fromScale), CGFloat(fromScale), 1)
+		tr = CATransform3DScale(tr, fromScale, fromScale, 1)
 		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
 
 		springAnimation.damping = 15
@@ -3106,10 +3096,10 @@ extension NSEdgeInsets {
 		right: Double = 0
 	) {
 		self.init()
-		self.top = CGFloat(top)
-		self.left = CGFloat(left)
-		self.bottom = CGFloat(bottom)
-		self.right = CGFloat(right)
+		self.top = top
+		self.left = left
+		self.bottom = bottom
+		self.right = right
 	}
 
 	init(all: Double) {
@@ -3121,8 +3111,8 @@ extension NSEdgeInsets {
 		)
 	}
 
-	var vertical: Double { Double(top + bottom) }
-	var horizontal: Double { Double(left + right) }
+	var vertical: Double { top + bottom }
+	var horizontal: Double { left + right }
 }
 
 
@@ -3247,6 +3237,7 @@ extension NSLayoutConstraint {
 			relatedBy: relation ?? self.relation,
 			toItem: secondItem ?? self.secondItem,
 			attribute: secondAttribute ?? self.secondAttribute,
+			// The compiler fails to auto-convert to CGFloat here.
 			multiplier: multiplier.flatMap(CGFloat.init) ?? self.multiplier,
 			constant: constant.flatMap(CGFloat.init) ?? self.constant
 		)
@@ -3949,7 +3940,7 @@ extension NSAttributedString {
 	}
 
 	func withFontSize(_ fontSize: Double) -> NSAttributedString {
-		addingAttributes([.font: font.withSize(CGFloat(fontSize))])
+		addingAttributes([.font: font.withSize(fontSize)])
 	}
 }
 
@@ -4402,7 +4393,7 @@ extension Font {
 		weight: Font.Weight = .regular,
 		design: Font.Design = .default
 	) -> Self {
-		system(size: systemFontSize.cgFloat, weight: weight, design: design)
+		system(size: systemFontSize, weight: weight, design: design)
 	}
 }
 
@@ -4415,7 +4406,7 @@ extension Font {
 		weight: Font.Weight = .regular,
 		design: Font.Design = .default
 	) -> Self {
-		system(size: smallSystemFontSize.cgFloat, weight: weight, design: design)
+		system(size: smallSystemFontSize, weight: weight, design: design)
 	}
 }
 

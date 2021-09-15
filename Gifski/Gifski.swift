@@ -293,7 +293,7 @@ final class Gifski {
 		}
 
 		// Even though we enforce a minimum of 3 FPS in the GUI, a source video could have lower FPS, and we should allow that.
-		var fps = (conversion.frameRate.map { Double($0) } ?? assetFrameRate).clamped(to: 0.1...Constants.allowedFrameRate.upperBound)
+		var fps = (conversion.frameRate.map(Double.init) ?? assetFrameRate).clamped(to: 0.1...Constants.allowedFrameRate.upperBound)
 		fps = min(fps, assetFrameRate)
 
 		print("FPS:", fps)

@@ -137,7 +137,7 @@ private final class ToolTipViewController: NSViewController {
 		if let maxWidth = maxWidth {
 			let newSize = textField.sizeThatFits(
 				CGSize(
-					width: CGFloat(maxWidth - contentInsets.horizontal),
+					width: maxWidth - contentInsets.horizontal,
 					height: .greatestFiniteMagnitude
 				)
 			)
