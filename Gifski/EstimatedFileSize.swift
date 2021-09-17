@@ -116,10 +116,12 @@ struct EstimatedFileSizeView: View {
 						}
 					}
 				}
-					.animation(.easeInOut, value: model.estimatedFileSize)
+					// This causes SwiftUI to crash internally on macOS 12.0 when changing the trim size many times so the estimation indicator keeps changing.
+//					.animation(.easeInOut, value: model.estimatedFileSize)
 			}
 		}
-			.frame(height: 24)
+			// It's important to set a width here as otherwise it can cause internal SwiftUI crashes on macOS 11 and 12.
+			.frame(width: 500, height: 24, alignment: .leading)
 			.onAppear {
 				if model.estimatedFileSize == nil {
 					model.updateEstimate()

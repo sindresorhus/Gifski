@@ -151,8 +151,8 @@ final class EditVideoViewController: NSViewController {
 		setUpLoopCountControls()
 		setUpDropView()
 		setUpTrimmingView()
-		setUpEstimatedFileSizeView()
 		setUpSpeedView()
+		setUpEstimatedFileSizeView()
 	}
 
 	override func viewDidAppear() {
