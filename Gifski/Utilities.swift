@@ -619,12 +619,15 @@ extension AVAssetTrack {
 		else {
 			throw VideoTrimmingError.compositionCouldNotBeCreated
 		}
+
 		try wrappedTrack.insertTimeRange(timeRange, of: self, at: .zero)
 
 		let reader = try AVAssetReader(asset: composition)
 
 		// Create reader for wrapped track.
 		let readerOutput = AVAssetReaderTrackOutput(track: wrappedTrack, outputSettings: nil)
+		readerOutput.alwaysCopiesSampleData = false
+
 		reader.add(readerOutput)
 		reader.startReading()
 
@@ -1226,7 +1229,7 @@ extension AVAsset {
 				Track #\(track.trackID)
 				----
 				Type: \(track.mediaType.debugDescription)
-				Codec: \(describing: track.mediaType == .video ? track.codec?.debugDescription : track.codecIdentifier)
+				Codec: \(describing: track.mediaType == .video ? (track.codec?.debugDescription ?? track.codecIdentifier) : track.codecIdentifier)
 				Duration: \(describing: durationFormatter.stringSafe(from: track.timeRange.duration.seconds))
 				Dimensions: \(describing: track.dimensions?.formatted)
 				Natural size: \(describing: track.naturalSize)

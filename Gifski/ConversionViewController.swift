@@ -4,10 +4,13 @@ import DockProgress
 import Defaults
 
 final class ConversionViewController: NSViewController {
-	private lazy var circularProgress = with(CircularProgress(size: 160.0)) {
+	private static let circularProgressSize = 160.0
+
+	private lazy var circularProgress = with(CircularProgress(size: Self.circularProgressSize)) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
 		$0.color = .progressCircleColor
 		$0.lineWidth = 3
+		$0.constrain(to: CGSize(widthHeight: Self.circularProgressSize))
 	}
 
 	private lazy var timeRemainingLabel = with(Label()) {
@@ -36,8 +39,8 @@ final class ConversionViewController: NSViewController {
 		wrapper.addSubview(circularProgress)
 		wrapper.addSubview(timeRemainingLabel)
 
-		circularProgress.constrain(to: CGSize(widthHeight: circularProgress.frame.width))
 		circularProgress.center(inView: wrapper)
+
 		timeRemainingLabel.centerX(inView: circularProgress)
 		timeRemainingLabel.constrainToEdges(verticalEdge: .bottom, view: wrapper, padding: -16)
 		NSLayoutConstraint.activate([

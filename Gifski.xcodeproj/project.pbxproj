@@ -738,7 +738,7 @@
 			repositoryURL = "https://github.com/sindresorhus/CircularProgress";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.1;
+				minimumVersion = 2.2.0;
 			};
 		};
 		E3339E9B2395789500303839 /* XCRemoteSwiftPackageReference "DockProgress" */ = {
