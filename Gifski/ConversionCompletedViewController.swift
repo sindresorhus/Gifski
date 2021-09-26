@@ -11,6 +11,7 @@ final class ConversionCompletedViewController: NSViewController {
 	@IBOutlet private var saveAsButton: NSButton!
 	@IBOutlet private var shareButton: NSButton!
 	@IBOutlet private var copyButton: NSButton!
+	@IBOutlet private var openButton: NSButton!
 	@IBOutlet private var wrapperView: NSView!
 
 	private let draggableFile = DraggableFile()
@@ -90,6 +91,12 @@ final class ConversionCompletedViewController: NSViewController {
 		draggableFileWrapper.wantsLayer = true
 		draggableFileWrapper.layer?.masksToBounds = false
 		draggableFile.constrainEdgesToSuperview()
+
+		if #available(macOS 11, *) {
+			openButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "Open")
+		} else {
+			openButton.title = "+"
+		}
 	}
 
 	private func setUp() {
@@ -197,11 +204,16 @@ final class ConversionCompletedViewController: NSViewController {
 	}
 
 	@IBAction
-	private func backButton(_ sender: NSButton) {
+	private func backButtonAction(_ sender: NSButton) {
 		// It's safe to force-unwrap as there's no scenario where it will be nil.
 		let viewController = AppDelegate.shared.previousEditViewController!
 		viewController.isConverting = false
 		push(viewController: viewController)
+	}
+
+	@IBAction
+	private func openButtonAction(_ sender: NSButton) {
+		AppDelegate.shared.mainWindowController.presentOpenPanel()
 	}
 }
 
