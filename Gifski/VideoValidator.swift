@@ -188,6 +188,15 @@ struct VideoValidator {
 		do {
 			let trimmedAsset = try newAsset.trimmingBlankFramesFromFirstVideoTrack()
 			return .success(trimmedAsset, newVideoMetadata)
+		} catch AVAssetTrack.VideoTrimmingError.codecNotSupported {
+			NSAlert.showModal(
+				for: window,
+				title: "Could not trim empty leading frames from video.",
+				message: "We can't trim empty leading frames from this codec, sorry. You can still create a GIF."
+			)
+
+			// Allow user to continue
+			return .success(newAsset, newVideoMetadata)
 		} catch {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,

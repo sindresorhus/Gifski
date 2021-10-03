@@ -604,6 +604,7 @@ extension AVAssetTrack {
 		case videoTrackIsEmpty
 		case assetIsMissingVideoTrack
 		case compositionCouldNotBeCreated
+		case codecNotSupported
 	}
 
 	/**
@@ -612,6 +613,16 @@ extension AVAssetTrack {
 	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
 	*/
 	func trimmingBlankFrames() throws -> AVAssetTrack {
+		// See https://github.com/sindresorhus/Gifski/issues/254 for context.
+		// TL;DR is that some codecs seem to always report a buffer size of 0
+		// when reading, breaking this function.
+		let buggyCodecs = ["v210", "BGRA"]
+		if let codecIdentifier = self.codecIdentifier {
+			if buggyCodecs.contains(codecIdentifier) {
+				throw VideoTrimmingError.codecNotSupported
+			}
+		}
+
 		// Create new composition
 		let composition = AVMutableComposition()
 		guard
@@ -665,6 +676,8 @@ extension AVAssetTrack.VideoTrimmingError: LocalizedError {
 			return "Asset is missing video track."
 		case .compositionCouldNotBeCreated:
 			return "Composition could not be created."
+		case .codecNotSupported:
+			return "Video codec is not supported."
 		}
 	}
 }
