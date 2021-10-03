@@ -93,9 +93,17 @@ final class ConversionCompletedViewController: NSViewController {
 		draggableFile.constrainEdgesToSuperview()
 
 		if #available(macOS 11, *) {
-			openButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "Open")
+			// TODO: Find a better icon for this.
+			openButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "New conversion")
+
+			SSApp.runOnce(identifier: "showOpenButtonLabel") {
+				openButton.imagePosition = .imageLeading
+				openButton.title = "Open"
+				openButton.sizeToFit()
+				openButton.frame.x -= 34
+			}
 		} else {
-			openButton.title = "+"
+			openButton.isHidden = true
 		}
 	}
 
