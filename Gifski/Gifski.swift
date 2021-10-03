@@ -48,6 +48,14 @@ final class Gifski {
 		var frameRate: Int?
 		var loopCount: Int?
 		var bounce: Bool
+
+		var gifDuration: TimeInterval {
+			guard let duration = (timeRange ?? asset.firstVideoTrack?.timeRange.range)?.length else {
+				return 0
+			}
+
+			return bounce ? (duration * 2) : duration
+		}
 	}
 
 	private var gifData = Data()

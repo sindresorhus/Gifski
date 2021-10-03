@@ -4579,3 +4579,70 @@ extension OperatingSystem {
 }
 
 typealias OS = OperatingSystem
+
+
+extension NumberFormatter {
+	func string<Value: Numeric>(from number: Value) -> String? {
+		// swiftlint:disable:next legacy_objc_type
+		guard let nsNumber = number as? NSNumber else {
+			return nil
+		}
+
+		return string(from: nsNumber)
+	}
+}
+
+
+extension FloatingPoint {
+	/**
+	Get the fraction component of a floating point number.
+
+	```
+	let number = 1.22
+
+	print(number.fractionComponent)
+	//=> 0.22
+	```
+	*/
+	var fractionComponent: Self { truncatingRemainder(dividingBy: 1) }
+}
+
+
+extension DateComponentsFormatter {
+	/**
+	Format a duration using a positional style and with fractional seconds.
+
+	```
+	"00:12,45"
+	```
+
+	This utiliity is needed since `formatter.allowsFractionalUnits = true` doesn't work. (macOS 11.6)
+	https://openradar.appspot.com/32024200
+	*/
+	static func localizedStringPositionalWithFractionalSeconds(
+		_ duration: Double,
+		minimumFractionDigits: Int = 2,
+		maximumFractionDigits: Int = 2,
+		includeHours: Bool = false,
+		locale: Locale = .current
+	) -> String {
+		var calendar = Calendar.current
+		calendar.locale = locale
+
+		let durationFormatter = self.init()
+		durationFormatter.calendar = calendar
+		durationFormatter.formattingContext = .standalone
+		durationFormatter.unitsStyle = .positional
+		durationFormatter.allowedUnits = includeHours ? [.hour, .minute, .second] : [.minute, .second]
+		durationFormatter.zeroFormattingBehavior = .pad
+
+		let fractionFormatter = NumberFormatter()
+		fractionFormatter.locale = locale
+		fractionFormatter.maximumIntegerDigits = 0
+		fractionFormatter.minimumFractionDigits = minimumFractionDigits
+		fractionFormatter.maximumFractionDigits = maximumFractionDigits
+		fractionFormatter.alwaysShowsDecimalSeparator = false
+
+		return durationFormatter.string(from: duration)! + fractionFormatter.string(from: duration.fractionComponent)!
+	}
+}
