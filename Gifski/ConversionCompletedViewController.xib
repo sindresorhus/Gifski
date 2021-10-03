@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="18122" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="19162" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="18122"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19162"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -12,6 +12,7 @@
                 <outlet property="draggableFileWrapper" destination="9j4-tJ-yJo" id="VRB-Jv-ZNr"/>
                 <outlet property="fileNameLabel" destination="uI2-zc-34L" id="pQ3-AY-w92"/>
                 <outlet property="fileSizeLabel" destination="gf3-Uh-Jor" id="jQq-RK-lGs"/>
+                <outlet property="openButton" destination="ok2-9s-P9c" id="Q63-57-fiB"/>
                 <outlet property="saveAsButton" destination="Olx-b9-5Qw" id="LNI-8U-pVi"/>
                 <outlet property="shareButton" destination="xNp-Z5-9zb" id="hqI-fr-pgX"/>
                 <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
@@ -98,7 +99,18 @@
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
                             <connections>
-                                <action selector="backButton:" target="-2" id="rTe-95-NTz"/>
+                                <action selector="backButtonAction:" target="-2" id="KlW-Xf-vgD"/>
+                            </connections>
+                        </button>
+                        <button toolTip="Open" verticalHuggingPriority="750" id="ok2-9s-P9c">
+                            <rect key="frame" x="301" y="188" width="30" height="23"/>
+                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" imagePosition="only" alignment="center" borderStyle="border" inset="2" id="zL6-Ix-hy5">
+                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <action selector="openButtonAction:" target="-2" id="SHI-f1-5sW"/>
                             </connections>
                         </button>
                     </subviews>

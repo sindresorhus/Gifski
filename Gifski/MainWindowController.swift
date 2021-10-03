@@ -64,6 +64,7 @@ final class MainWindowController: NSWindowController {
 		panel.canCreateDirectories = false
 		// TODO: Use `.allowedContentTypes` here when targeting macOS 11.
 		panel.allowedFileTypes = Device.supportedVideoTypes
+		panel.message = "Choose a MP4 or MOV video to convert to an animated GIF"
 
 		panel.beginSheetModal(for: window!) { [weak self] in
 			guard
