@@ -614,11 +614,12 @@ extension AVAssetTrack {
 	*/
 	func trimmingBlankFrames() throws -> AVAssetTrack {
 		// See https://github.com/sindresorhus/Gifski/issues/254 for context.
-		// TL;DR is that some codecs seem to always report a buffer size of 0
-		// when reading, breaking this function.
+		// In short: Some codecs seem to always report a sample buffer size of 0 when reading, breaking this function. (macOS 11.6)
 		let buggyCodecs = ["v210", "BGRA"]
-		if let codecIdentifier = self.codecIdentifier {
-			if buggyCodecs.contains(codecIdentifier) {
+		if
+			let codecIdentifier = codecIdentifier,
+			buggyCodecs.contains(codecIdentifier)
+		{
 				throw VideoTrimmingError.codecNotSupported
 			}
 		}
