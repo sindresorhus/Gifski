@@ -188,6 +188,9 @@ struct VideoValidator {
 		do {
 			let trimmedAsset = try newAsset.trimmingBlankFramesFromFirstVideoTrack()
 			return .success(trimmedAsset, newVideoMetadata)
+		} catch AVAssetTrack.VideoTrimmingError.codecNotSupported {
+			// Allow user to continue
+			return .success(newAsset, newVideoMetadata)
 		} catch {
 			NSAlert.showModalAndReportToCrashlytics(
 				for: window,
