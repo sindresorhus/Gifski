@@ -620,8 +620,7 @@ extension AVAssetTrack {
 			let codecIdentifier = codecIdentifier,
 			buggyCodecs.contains(codecIdentifier)
 		{
-				throw VideoTrimmingError.codecNotSupported
-			}
+			throw VideoTrimmingError.codecNotSupported
 		}
 
 		// Create new composition
