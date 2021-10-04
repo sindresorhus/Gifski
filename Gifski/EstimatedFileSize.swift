@@ -11,6 +11,9 @@ final class EstimatedFileSizeModel: ObservableObject {
 	@Published var estimatedFileSize: String?
 	@Published var error: Error?
 
+	// This is outside the scope of "file estimate", but it was easier to add this here than doing a separate SwiftUI view. This should be refactored out into a separate view when all of Gifski is SwiftUI.
+	@Published var duration: TimeInterval = 0
+
 	var estimatedFileSizeNaive: String {
 		Self.formatter.string(fromByteCount: Int64(getNaiveEstimate()))
 	}
@@ -76,6 +79,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 
 	func updateEstimate() {
 		Debouncer.debounce(delay: 0.5, action: _estimateFileSize)
+		duration = getConversionSettings().gifDuration
 	}
 }
 
@@ -97,6 +101,7 @@ struct EstimatedFileSizeView: View {
 				HStack(spacing: 0) {
 					Text("Estimated size: ")
 					Text(model.estimatedFileSize ?? model.estimatedFileSizeNaive)
+						// TODO: Use `View#monospacedDigit()` when targeting macOS 12.
 						.font(.system(size: 13).monospacedDigit())
 						.foregroundColor(model.estimatedFileSize == nil ? .secondary : .primary)
 				}
@@ -110,7 +115,7 @@ struct EstimatedFileSizeView: View {
 								.padding(.leading, -4)
 								.help("Calculating file size estimate")
 						} else {
-							Text("Calculating Estimate…")
+							Text("Estimating…")
 								.foregroundColor(.secondary)
 								.font(.smallSystem())
 						}
@@ -121,7 +126,24 @@ struct EstimatedFileSizeView: View {
 			}
 		}
 			// It's important to set a width here as otherwise it can cause internal SwiftUI crashes on macOS 11 and 12.
-			.frame(width: 500, height: 24, alignment: .leading)
+			.frame(width: 500, height: 22, alignment: .leading)
+			.overlay(
+				Group {
+					if #available(macOS 11, *), model.error == nil {
+						HStack {
+							Text(DateComponentsFormatter.localizedStringPositionalWithFractionalSeconds(model.duration))
+								// TODO: Use `View#monospacedDigit()` when targeting macOS 12.
+								.font(.system(size: 13).monospacedDigit())
+								.padding(.horizontal, 6)
+								.padding(.vertical, 3)
+								.background(Color.primary.opacity(0.04))
+								.clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+						}
+							.frame(maxWidth: .infinity)
+							.padding(.leading, 220)
+					}
+				}
+			)
 			.onAppear {
 				if model.estimatedFileSize == nil {
 					model.updateEstimate()

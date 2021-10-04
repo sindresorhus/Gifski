@@ -3288,22 +3288,32 @@ extension CMTimeRange {
 
 
 extension AVPlayerItem {
-	/// The duration range of the item.
-	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
+	/**
+	The duration range of the item.
+
+	Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
+	*/
 	var durationRange: ClosedRange<Double>? { duration.durationRange }
 
-	/// The playable range of the item.
-	/// Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream.
+	/**
+	The playable range of the item.
+
+	Can be `nil` when the `.duration` is not available, for example, when the asset has not yet been fully loaded or if it's a live stream. Or if the user is dragging the trim handle of a video.
+	*/
 	var playbackRange: ClosedRange<Double>? {
 		get {
-			guard let range = durationRange else {
+			// These are not available while the user is dragging the video trim handle of `AVPlayerView`.
+			guard
+				reversePlaybackEndTime.isNumeric,
+				forwardPlaybackEndTime.isNumeric
+			else {
 				return nil
 			}
 
-			let startTime = reversePlaybackEndTime.isNumeric ? reversePlaybackEndTime.seconds : range.lowerBound
-			let endTime = forwardPlaybackEndTime.isNumeric ? forwardPlaybackEndTime.seconds : range.upperBound
+			let startTime = reversePlaybackEndTime.seconds
+			let endTime = forwardPlaybackEndTime.seconds
 
-			return startTime < endTime ? startTime...endTime : endTime...startTime
+			return .fromGraceful(startTime, endTime)
 		}
 		set {
 			guard let range = newValue else {
@@ -4579,3 +4589,82 @@ extension OperatingSystem {
 }
 
 typealias OS = OperatingSystem
+
+
+extension NumberFormatter {
+	func string<Value: Numeric>(from number: Value) -> String? {
+		// swiftlint:disable:next legacy_objc_type
+		guard let nsNumber = number as? NSNumber else {
+			return nil
+		}
+
+		return string(from: nsNumber)
+	}
+}
+
+
+extension FloatingPoint {
+	/**
+	Get the fraction component of a floating point number.
+
+	```
+	let number = 1.22
+
+	print(number.fractionComponent)
+	//=> 0.22
+	```
+	*/
+	var fractionComponent: Self { truncatingRemainder(dividingBy: 1) }
+}
+
+
+extension DateComponentsFormatter {
+	/**
+	Format a duration using a positional style and with fractional seconds.
+
+	```
+	"00:12,45"
+	```
+
+	This utiliity is needed since `formatter.allowsFractionalUnits = true` doesn't work. (macOS 11.6)
+	https://openradar.appspot.com/32024200
+	*/
+	static func localizedStringPositionalWithFractionalSeconds(
+		_ duration: Double,
+		minimumFractionDigits: Int = 2,
+		maximumFractionDigits: Int = 2,
+		includeHours: Bool = false,
+		locale: Locale = .current
+	) -> String {
+		var calendar = Calendar.current
+		calendar.locale = locale
+
+		let durationFormatter = self.init()
+		durationFormatter.calendar = calendar
+		durationFormatter.formattingContext = .standalone
+		durationFormatter.unitsStyle = .positional
+		durationFormatter.allowedUnits = includeHours ? [.hour, .minute, .second] : [.minute, .second]
+		durationFormatter.zeroFormattingBehavior = .pad
+
+		let fractionFormatter = NumberFormatter()
+		fractionFormatter.locale = locale
+		fractionFormatter.maximumIntegerDigits = 0
+		fractionFormatter.minimumFractionDigits = minimumFractionDigits
+		fractionFormatter.maximumFractionDigits = maximumFractionDigits
+		fractionFormatter.alwaysShowsDecimalSeparator = false
+
+		return durationFormatter.string(from: duration)! + fractionFormatter.string(from: duration.fractionComponent)!
+	}
+}
+
+
+extension ClosedRange {
+	/**
+	Create a `ClosedRange` where it does not matter which bound is upper and lower.
+
+	Using a range literal would hard crash if the lower bound is higher than the upper bound.
+	*/
+	static func fromGraceful(_ bound1: Bound, _ bound2: Bound) -> Self {
+		bound1 <= bound2 ? bound1...bound2 : bound2...bound1
+	}
+}

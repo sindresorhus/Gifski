@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="18122" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="19162" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="18122"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19162"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -28,17 +28,17 @@
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customView id="Hz6-mo-xeY">
-            <rect key="frame" x="0.0" y="0.0" width="805" height="650"/>
+            <rect key="frame" x="0.0" y="0.0" width="764" height="660"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <box title="Trimming" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="O0D-L4-chv">
-                    <rect key="frame" x="26" y="208" width="754" height="414"/>
+                    <rect key="frame" x="19" y="218" width="727" height="414"/>
                     <view key="contentView" id="A4L-BH-n0C">
-                        <rect key="frame" x="3" y="3" width="748" height="408"/>
+                        <rect key="frame" x="3" y="3" width="721" height="408"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="64m-0V-WWu">
-                                <rect key="frame" x="4" y="4" width="740" height="400"/>
+                                <rect key="frame" x="4" y="4" width="713" height="400"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="400" id="u0s-Fn-zEv"/>
                                 </constraints>
@@ -53,12 +53,12 @@
                     </view>
                 </box>
                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="dmb-Gl-vWp">
-                    <rect key="frame" x="29" y="40" width="748" height="164"/>
+                    <rect key="frame" x="22" y="50" width="721" height="164"/>
                     <subviews>
-                        <box titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="EGL-as-iA7">
-                            <rect key="frame" x="-3" y="-4" width="391" height="170"/>
+                        <box borderType="bezel" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="EGL-as-iA7">
+                            <rect key="frame" x="-3" y="-4" width="360" height="170"/>
                             <view key="contentView" id="0XA-H7-N8J">
-                                <rect key="frame" x="3" y="3" width="385" height="164"/>
+                                <rect key="frame" x="3" y="3" width="354" height="164"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="CcL-WC-3WC">
@@ -70,7 +70,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <popUpButton verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="BWw-q9-45K" customClass="MenuPopUpButton" customModule="Gifski" customModuleProvider="target">
-                                        <rect key="frame" x="98" y="123" width="271" height="25"/>
+                                        <rect key="frame" x="98" y="123" width="240" height="25"/>
                                         <popUpButtonCell key="cell" type="push" title="Custom" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="HdF-GF-uLW" id="SEY-z7-JVq">
                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="menu"/>
@@ -91,9 +91,9 @@
                                         </textFieldCell>
                                     </textField>
                                     <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Jqk-p7-DIM" customClass="IntTextField" customModule="Gifski" customModuleProvider="target">
-                                        <rect key="frame" x="101" y="92" width="150" height="21"/>
+                                        <rect key="frame" x="101" y="92" width="127" height="21"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="150" id="f0p-wK-4JS"/>
+                                            <constraint firstAttribute="width" constant="127" id="f0p-wK-4JS"/>
                                         </constraints>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="prS-l9-juW">
                                             <font key="font" usesAppearanceFont="YES"/>
@@ -110,9 +110,9 @@
                                         </textFieldCell>
                                     </textField>
                                     <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bzf-LM-SxO" customClass="IntTextField" customModule="Gifski" customModuleProvider="target">
-                                        <rect key="frame" x="101" y="60" width="150" height="22"/>
+                                        <rect key="frame" x="101" y="60" width="127" height="22"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="150" id="rW2-DE-8b1"/>
+                                            <constraint firstAttribute="width" constant="127" id="rW2-DE-8b1"/>
                                         </constraints>
                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="Kna-1o-1a5">
                                             <font key="font" usesAppearanceFont="YES"/>
@@ -121,9 +121,9 @@
                                         </textFieldCell>
                                     </textField>
                                     <popUpButton verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="aVG-zO-Cd7" customClass="MenuPopUpButton" customModule="Gifski" customModuleProvider="target">
-                                        <rect key="frame" x="262" y="74" width="107" height="25"/>
+                                        <rect key="frame" x="239" y="74" width="99" height="25"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="100" id="aVb-nw-wpN"/>
+                                            <constraint firstAttribute="width" constant="92" id="aVb-nw-wpN"/>
                                         </constraints>
                                         <popUpButtonCell key="cell" type="push" title="pixels" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="7ml-rS-kJf" id="Emv-9m-sNX">
                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -139,7 +139,7 @@
                                         </popUpButtonCell>
                                     </popUpButton>
                                     <customView autoresizesSubviews="NO" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Jqs-Co-IF8">
-                                        <rect key="frame" x="0.0" y="0.0" width="385" height="48"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="354" height="48"/>
                                     </customView>
                                 </subviews>
                                 <constraints>
@@ -174,10 +174,10 @@
                                 <constraint firstItem="Jqs-Co-IF8" firstAttribute="leading" secondItem="EGL-as-iA7" secondAttribute="leading" id="uoX-8I-4ov"/>
                             </constraints>
                         </box>
-                        <box titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="PQ8-dZ-N1k">
-                            <rect key="frame" x="405" y="-4" width="346" height="170"/>
+                        <box borderType="bezel" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="PQ8-dZ-N1k">
+                            <rect key="frame" x="364" y="-4" width="360" height="170"/>
                             <view key="contentView" id="d7l-jL-VWi">
-                                <rect key="frame" x="3" y="3" width="340" height="164"/>
+                                <rect key="frame" x="3" y="3" width="354" height="164"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="751" verticalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="Fxs-GY-NUz">
@@ -189,11 +189,11 @@
                                         </textFieldCell>
                                     </textField>
                                     <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wmm-UU-g6g">
-                                        <rect key="frame" x="73" y="87" width="218" height="28"/>
-                                        <sliderCell key="cell" continuous="YES" alignment="left" minValue="0.5" maxValue="1" doubleValue="0.50459439766839376" tickMarkPosition="above" sliderType="linear" id="EO3-Q8-SDC"/>
+                                        <rect key="frame" x="73" y="87" width="232" height="28"/>
+                                        <sliderCell key="cell" continuous="YES" state="on" alignment="left" minValue="0.5" maxValue="1" doubleValue="0.50459439766839376" tickMarkPosition="above" sliderType="linear" id="EO3-Q8-SDC"/>
                                     </slider>
                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="5Ke-gz-J2u" customClass="MonospacedLabel" customModule="Gifski" customModuleProvider="target">
-                                        <rect key="frame" x="295" y="130" width="27" height="16"/>
+                                        <rect key="frame" x="309" y="130" width="27" height="16"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="23" id="Pld-9q-pDl"/>
                                         </constraints>
@@ -212,9 +212,9 @@
                                         </textFieldCell>
                                     </textField>
                                     <slider verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Rej-Dl-z8Y">
-                                        <rect key="frame" x="73" y="121" width="218" height="28"/>
+                                        <rect key="frame" x="73" y="121" width="232" height="28"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="214" id="BIw-L9-Hls"/>
+                                            <constraint firstAttribute="width" constant="228" id="BIw-L9-Hls"/>
                                         </constraints>
                                         <sliderCell key="cell" continuous="YES" state="on" alignment="left" minValue="3" maxValue="50" doubleValue="30" tickMarkPosition="above" sliderType="linear" id="aU8-ka-YW2"/>
                                     </slider>
@@ -307,7 +307,7 @@
                         </box>
                     </subviews>
                     <constraints>
-                        <constraint firstItem="PQ8-dZ-N1k" firstAttribute="leading" secondItem="EGL-as-iA7" secondAttribute="trailing" constant="23" id="1kK-kK-nAt"/>
+                        <constraint firstItem="PQ8-dZ-N1k" firstAttribute="leading" secondItem="EGL-as-iA7" secondAttribute="trailing" constant="13" id="1kK-kK-nAt"/>
                         <constraint firstItem="EGL-as-iA7" firstAttribute="leading" secondItem="dmb-Gl-vWp" secondAttribute="leading" id="701-A6-oGO"/>
                         <constraint firstItem="EGL-as-iA7" firstAttribute="top" secondItem="dmb-Gl-vWp" secondAttribute="top" id="Ngg-6l-Hhg"/>
                         <constraint firstAttribute="trailing" secondItem="PQ8-dZ-N1k" secondAttribute="trailing" id="SKl-ZO-irQ"/>
@@ -317,7 +317,7 @@
                     </constraints>
                 </customView>
                 <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="7" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hHF-zN-Wqa">
-                    <rect key="frame" x="639" y="10" width="138" height="20"/>
+                    <rect key="frame" x="605" y="15" width="138" height="20"/>
                     <subviews>
                         <button horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="AF4-ry-iae">
                             <rect key="frame" x="-7" y="-7" width="76" height="32"/>
@@ -353,14 +353,14 @@ DQ
                     </customSpacing>
                 </stackView>
                 <customView autoresizesSubviews="NO" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Khl-D6-Nlh">
-                    <rect key="frame" x="29" y="10" width="590" height="22"/>
+                    <rect key="frame" x="22" y="15" width="563" height="22"/>
                 </customView>
             </subviews>
             <constraints>
-                <constraint firstItem="Khl-D6-Nlh" firstAttribute="top" secondItem="dmb-Gl-vWp" secondAttribute="bottom" constant="8" symbolic="YES" id="3VS-cf-Vfz"/>
+                <constraint firstItem="Khl-D6-Nlh" firstAttribute="top" secondItem="dmb-Gl-vWp" secondAttribute="bottom" constant="13" id="3VS-cf-Vfz"/>
                 <constraint firstItem="hHF-zN-Wqa" firstAttribute="leading" secondItem="Khl-D6-Nlh" secondAttribute="trailing" priority="250" constant="20" id="8T0-ep-vxC"/>
                 <constraint firstItem="Khl-D6-Nlh" firstAttribute="bottom" secondItem="hHF-zN-Wqa" secondAttribute="bottom" id="Dvd-ZR-Aeh"/>
-                <constraint firstItem="hHF-zN-Wqa" firstAttribute="top" secondItem="dmb-Gl-vWp" secondAttribute="bottom" constant="10" id="Ik7-TN-Ier"/>
+                <constraint firstItem="hHF-zN-Wqa" firstAttribute="top" secondItem="dmb-Gl-vWp" secondAttribute="bottom" constant="15" id="Ik7-TN-Ier"/>
                 <constraint firstItem="Khl-D6-Nlh" firstAttribute="leading" secondItem="dmb-Gl-vWp" secondAttribute="leading" id="N1j-1o-AqA"/>
                 <constraint firstItem="O0D-L4-chv" firstAttribute="centerX" secondItem="Hz6-mo-xeY" secondAttribute="centerX" id="OtD-aL-U92"/>
                 <constraint firstItem="hHF-zN-Wqa" firstAttribute="trailing" secondItem="PQ8-dZ-N1k" secondAttribute="trailing" id="YKH-2e-sJa"/>
@@ -369,7 +369,7 @@ DQ
                 <constraint firstItem="O0D-L4-chv" firstAttribute="trailing" secondItem="dmb-Gl-vWp" secondAttribute="trailing" id="rSm-mQ-HZm"/>
                 <constraint firstItem="O0D-L4-chv" firstAttribute="leading" secondItem="dmb-Gl-vWp" secondAttribute="leading" id="sNI-Gg-Rs0"/>
             </constraints>
-            <point key="canvasLocation" x="45.5" y="191"/>
+            <point key="canvasLocation" x="45" y="191"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="YjB-2D-chi"/>
     </objects>
