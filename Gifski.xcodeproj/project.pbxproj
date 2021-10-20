@@ -730,7 +730,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.0;
+				minimumVersion = 6.1.0;
 			};
 		};
 		E3339E982395768F00303839 /* XCRemoteSwiftPackageReference "CircularProgress" */ = {
@@ -754,7 +754,7 @@
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 8.7.0;
+				minimumVersion = 8.8.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
