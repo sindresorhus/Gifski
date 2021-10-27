@@ -631,6 +631,8 @@ extension AVAssetTrack {
 			throw VideoTrimmingError.compositionCouldNotBeCreated
 		}
 
+		wrappedTrack.preferredTransform = preferredTransform
+
 		try wrappedTrack.insertTimeRange(timeRange, of: self, at: .zero)
 
 		let reader = try AVAssetReader(asset: composition)
