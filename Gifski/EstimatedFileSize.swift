@@ -111,7 +111,8 @@ struct EstimatedFileSizeView: View {
 						if #available(macOS 11, *) {
 							ProgressView()
 								.controlSize(.small)
-								.scaleEffect(0.7)
+								// TODO: This causes a crash on macOS 12.0.1
+//								.scaleEffect(0.7)
 								.padding(.leading, -4)
 								.help("Calculating file size estimate")
 						} else {
