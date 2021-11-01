@@ -18,6 +18,7 @@ struct SpeedView: View {
 			.padding(.leading, 52)
 			.padding(.trailing, 20)
 			.padding(.bottom)
+			.frame(width: 352, height: 36)
 	}
 }
 

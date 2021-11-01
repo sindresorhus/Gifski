@@ -4683,3 +4683,21 @@ extension ClosedRange {
 		bound1 <= bound2 ? bound1...bound2 : bound2...bound1
 	}
 }
+
+
+// TODO: Remove when targeting macOS 12.
+extension View {
+	func overlay2<Overlay: View>(
+		alignment: Alignment = .center,
+		@ViewBuilder content: () -> Overlay
+	) -> some View {
+		overlay(ZStack(content: content), alignment: alignment)
+	}
+
+	func background2<V: View>(
+		alignment: Alignment = .center,
+		@ViewBuilder content: () -> V
+	) -> some View {
+		background(ZStack(content: content), alignment: alignment)
+	}
+}

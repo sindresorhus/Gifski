@@ -128,23 +128,20 @@ struct EstimatedFileSizeView: View {
 		}
 			// It's important to set a width here as otherwise it can cause internal SwiftUI crashes on macOS 11 and 12.
 			.frame(width: 500, height: 22, alignment: .leading)
-			.overlay(
-				Group {
-					if #available(macOS 11, *), model.error == nil {
-						HStack {
-							Text(DateComponentsFormatter.localizedStringPositionalWithFractionalSeconds(model.duration))
-								// TODO: Use `View#monospacedDigit()` when targeting macOS 12.
-								.font(.system(size: 13).monospacedDigit())
-								.padding(.horizontal, 6)
-								.padding(.vertical, 3)
-								.background(Color.primary.opacity(0.04))
-								.clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-						}
-							.frame(maxWidth: .infinity)
-							.padding(.leading, 220)
+			.overlay2 {
+				if #available(macOS 11, *), model.error == nil {
+					HStack {
+						Text(DateComponentsFormatter.localizedStringPositionalWithFractionalSeconds(model.duration))
+							// TODO: Use `View#monospacedDigit()` when targeting macOS 12.
+							.font(.system(size: 13).monospacedDigit())
+							.padding(.horizontal, 6)
+							.padding(.vertical, 3)
+							.background(Color.primary.opacity(0.04))
+							.clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
 					}
+						.padding(.leading, 220)
 				}
-			)
+			}
 			.onAppear {
 				if model.estimatedFileSize == nil {
 					model.updateEstimate()
