@@ -3,10 +3,14 @@ import AppKit
 final class IntTextField: NSTextField, NSTextFieldDelegate {
 	override var canBecomeKeyView: Bool { true }
 
-	/// Delta used for arrow navigation.
+	/**
+	Delta used for arrow navigation.
+	*/
 	var delta = 1
 
-	/// Delta used for option + arrow navigation.
+	/**
+	Delta used for option + arrow navigation.
+	*/
 	var alternativeDelta = 10
 
 	var onValueChange: ((Int) -> Void)?

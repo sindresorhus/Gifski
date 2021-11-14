@@ -43,11 +43,15 @@ extension NSView {
 }
 
 
-/// This is useful as `awakeFromNib` is not called for programatically created views.
+/**
+This is useful as `awakeFromNib` is not called for programatically created views.
+*/
 class SSView: NSView { // swiftlint:disable:this final_class
 	var didAppearWasCalled = false
 
-	/// Meant to be overridden in subclasses
+	/**
+	Should be overridden in subclasses.
+	*/
 	func didAppear() {}
 
 	override func viewDidMoveToSuperview() {
@@ -98,7 +102,9 @@ extension NSWindow {
 		self.init(contentRect: contentRect, styleMask: NSWindow.defaultStyleMask, backing: .buffered, defer: true)
 	}
 
-	/// Moves the window to the center of the screen, slightly more in the center than `window#center()`.
+	/**
+	Moves the window to the center of the screen, slightly more in the center than `window#center()`.
+	*/
 	func centerNatural() {
 		setFrame(NSWindow.centeredOnScreen(rect: frame), display: true)
 	}
@@ -106,7 +112,9 @@ extension NSWindow {
 
 
 extension NSWindowController {
-	/// Expose the `view` like in NSViewController.
+	/**
+	Expose the `view` like in NSViewController.
+	*/
 	var view: NSView? { window?.contentView }
 }
 
@@ -180,7 +188,10 @@ private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: 
 
 	return rect
 }
-/// - Note: Ensure you set `window.delegate = self` in the NSWindowController subclass.
+
+/**
+- Note: Ensure you set `window.delegate = self` in the NSWindowController subclass.
+*/
 extension NSWindowController: NSWindowDelegate {
 	public func window(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
 		__windowSheetPosition(window, willPositionSheet: sheet, using: rect)
@@ -217,7 +228,9 @@ extension NSView {
 
 
 extension NSAlert {
-	/// Show an alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
+	/**
+	Show an alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
+	*/
 	@discardableResult
 	static func showModal(
 		for window: NSWindow? = nil,
@@ -240,8 +253,11 @@ extension NSAlert {
 		).runModal(for: window)
 	}
 
-	/// The index in the `buttonTitles` array for the button to use as default.
-	/// Set `-1` to not have any default. Useful for really destructive actions.
+	/**
+	The index in the `buttonTitles` array for the button to use as default.
+
+	Set `-1` to not have any default. Useful for really destructive actions.
+	*/
 	var defaultButtonIndex: Int {
 		get {
 			buttons.firstIndex { $0.keyEquivalent == "\r" } ?? -1
@@ -311,7 +327,9 @@ extension NSAlert {
 		}
 	}
 
-	/// Runs the alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
+	/**
+	Runs the alert as a window-modal sheet, or as an app-modal (window-indepedendent) alert if the window is `nil` or not given.
+	*/
 	@discardableResult
 	func runModal(for window: NSWindow? = nil) -> NSApplication.ModalResponse {
 		guard let window = window else {
@@ -325,7 +343,9 @@ extension NSAlert {
 		return NSApp.runModal(for: window)
 	}
 
-	/// Adds buttons with the given titles to the alert.
+	/**
+	Adds buttons with the given titles to the alert.
+	*/
 	func addButtons(withTitles buttonTitles: [String]) {
 		for buttonTitle in buttonTitles {
 			addButton(withTitle: buttonTitle)
@@ -345,7 +365,9 @@ extension AVAssetImageGenerator {
 		let isFinishedIgnoreImage: Bool
 	}
 
-	/// - Note: If you use `result.completedCount`, don't forget to update its usage in each `completionHandler` call as it can change if frames are skipped, for example, blank frames.
+	/**
+	- Note: If you use `result.completedCount`, don't forget to update its usage in each `completionHandler` call as it can change if frames are skipped, for example, blank frames.
+	*/
 	func generateCGImagesAsynchronously(
 		forTimePoints timePoints: [CMTime],
 		completionHandler: @escaping (Swift.Result<CompletionHandlerResult, Error>) -> Void
@@ -441,46 +463,32 @@ extension CMTimeScale {
 
 
 extension Comparable {
-	/// Note: It's not possible to implement `Range` or `PartialRangeUpTo` here as we can't know what `1.1..<1.53` would be. They only work with Stridable in our case.
-
-	/// Example: 20.5.clamped(from: 10.3, to: 15)
 	func clamped(from lowerBound: Self, to upperBound: Self) -> Self {
 		min(max(self, lowerBound), upperBound)
 	}
 
-	/// Example: 20.5.clamped(to: 10.3...15)
 	func clamped(to range: ClosedRange<Self>) -> Self {
 		clamped(from: range.lowerBound, to: range.upperBound)
 	}
 
-	/// Example: 20.5.clamped(to: ...10.3)
-	/// => 10.3
 	func clamped(to range: PartialRangeThrough<Self>) -> Self {
 		min(self, range.upperBound)
 	}
 
-	/// Example: 5.5.clamped(to: 10.3...)
-	/// => 10.3
 	func clamped(to range: PartialRangeFrom<Self>) -> Self {
 		max(self, range.lowerBound)
 	}
 }
 
 extension Strideable where Stride: SignedInteger {
-	/// Example: 20.clamped(to: 5..<10)
-	/// => 9
 	func clamped(to range: CountableRange<Self>) -> Self {
 		clamped(from: range.lowerBound, to: range.upperBound.advanced(by: -1))
 	}
 
-	/// Example: 20.clamped(to: 5...10)
-	/// => 10
 	func clamped(to range: CountableClosedRange<Self>) -> Self {
 		clamped(from: range.lowerBound, to: range.upperBound)
 	}
 
-	/// Example: 20.clamped(to: ..<10)
-	/// => 9
 	func clamped(to range: PartialRangeUpTo<Self>) -> Self {
 		min(self, range.upperBound.advanced(by: -1))
 	}
@@ -488,8 +496,11 @@ extension Strideable where Stride: SignedInteger {
 
 
 extension FixedWidthInteger {
-	/// Returns the integer formatted as a human readble file size.
-	/// Example: `2.3 GB`
+	/**
+	Returns the integer formatted as a human readble file size.
+
+	Example: `2.3 GB`
+	*/
 	var bytesFormattedAsFileSize: String {
 		ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
 	}
@@ -561,16 +572,19 @@ extension Double {
 
 
 extension CGSize {
-	/// Example: `140×100`
+	/**
+	Example: `140×100`
+	*/
 	var formatted: String { "\(width.double.formatted)×\(height.double.formatted)" }
 }
 
 
 extension NSImage {
-	/// `UIImage` polyfill.
+	/**
+	`UIImage` polyfill.
+	*/
 	convenience init(cgImage: CGImage) {
-		let size = CGSize(width: cgImage.width, height: cgImage.height)
-		self.init(cgImage: cgImage, size: size)
+		self.init(cgImage: cgImage, size: .zero)
 	}
 }
 
@@ -711,7 +725,9 @@ extension AVAsset {
 
 
 extension AVAssetTrack {
-	/// Returns the dimensions of the track if it's a video.
+	/**
+	Returns the dimensions of the track if it's a video.
+	*/
 	var dimensions: CGSize? {
 		guard naturalSize != .zero else {
 			return nil
@@ -728,10 +744,14 @@ extension AVAssetTrack {
 		return preferredSize
 	}
 
-	/// Returns the frame rate of the track if it's a video.
+	/**
+	Returns the frame rate of the track if it's a video.
+	*/
 	var frameRate: Double? { Double(nominalFrameRate) }
 
-	/// Returns the aspect ratio of the track if it's a video.
+	/**
+	Returns the aspect ratio of the track if it's a video.
+	*/
 	var aspectRatio: Double? {
 		guard let dimensions = dimensions else {
 			return nil
@@ -740,9 +760,11 @@ extension AVAssetTrack {
 		return dimensions.height / dimensions.width
 	}
 
-	/// Example:
-	/// `avc1` (video)
-	/// `aac` (audio)
+	/**
+	Example:
+	`avc1` (video)
+	`aac` (audio)
+	*/
 	var codecIdentifier: String? {
 		guard
 			let rawDescription = formatDescriptions.first
@@ -765,11 +787,16 @@ extension AVAssetTrack {
 		return AVFormat(fourCC: codecString)
 	}
 
-	/// Use this for presenting the codec to the user. This is either the codec name, if known, or the codec identifier. You can just default to `"Unknown"` if this is `nil`.
+	/**
+	Use this for presenting the codec to the user. This is either the codec name, if known, or the codec identifier. You can just default to `"Unknown"` if this is `nil`.
+	*/
 	var codecTitle: String? { codec?.description ?? codecIdentifier }
 
-	/// Returns a debug string with the media format.
-	/// Example: `vide/avc1`
+	/**
+	Returns a debug string with the media format.
+
+	Example: `vide/avc1`
+	*/
 	var mediaFormat: String {
 		// This is the only way to do it. It's guaranteed to be this type.
 		// swiftlint:disable:next force_cast
@@ -789,7 +816,9 @@ extension AVAssetTrack {
 		return format.joined(separator: ",")
 	}
 
-	/// Estimated file size of the track in bytes.
+	/**
+	Estimated file size of the track in bytes.
+	*/
 	var estimatedFileSize: Int {
 		let dataRateInBytes = Double(estimatedDataRate / 8)
 		return Int(timeRange.duration.seconds * dataRateInBytes)
@@ -798,7 +827,9 @@ extension AVAssetTrack {
 
 
 extension AVAssetTrack {
-	/// Whether the track's duration is the same as the total asset duration.
+	/**
+	Whether the track's duration is the same as the total asset duration.
+	*/
 	var isFullDuration: Bool { timeRange.duration == asset?.duration }
 
 	/**
@@ -884,7 +915,9 @@ extension AVAssetTrack {
 > FOURCC is short for "four character code" - an identifier for a video codec, compression format, color or pixel format used in media files.
 */
 extension FourCharCode {
-	/// Create a String representation of a FourCC.
+	/**
+	Create a String representation of a FourCC.
+	*/
 	func fourCharCodeToString() -> String {
 		let a_ = self >> 24
 		let b_ = self >> 16
@@ -1062,7 +1095,9 @@ enum AVFormat: String {
 		].contains(self)
 	}
 
-	/// - Important: This check only covers known (by us) compatible formats. It might be missing some. Don't use it for strict matching. Also keep in mind that even though a codec is supported, it might still not be decodable as the codec profile level might not be supported.
+	/**
+	- Important: This check only covers known (by us) compatible formats. It might be missing some. Don't use it for strict matching. Also keep in mind that even though a codec is supported, it might still not be decodable as the codec profile level might not be supported.
+	*/
 	var isSupported: Bool {
 		self == .hevc || self == .h264 || isAppleProRes
 	}
@@ -1160,7 +1195,9 @@ extension AVMediaType: CustomDebugStringConvertible {
 
 
 extension AVAsset {
-	/// Whether the first video track is decodable.
+	/**
+	Whether the first video track is decodable.
+	*/
 	var isVideoDecodable: Bool {
 		guard
 			isReadable,
@@ -1172,36 +1209,58 @@ extension AVAsset {
 		return firstVideoTrack.isDecodable
 	}
 
-	/// Returns a boolean of whether there are any video tracks.
+	/**
+	Returns a boolean of whether there are any video tracks.
+	*/
 	var hasVideo: Bool { !tracks(withMediaType: .video).isEmpty }
 
-	/// Returns a boolean of whether there are any audio tracks.
+	/**
+	Returns a boolean of whether there are any audio tracks.
+	*/
 	var hasAudio: Bool { !tracks(withMediaType: .audio).isEmpty }
 
-	/// Returns the first video track if any.
+	/**
+	Returns the first video track if any.
+	*/
 	var firstVideoTrack: AVAssetTrack? { tracks(withMediaType: .video).first }
 
-	/// Returns the first audio track if any.
+	/**
+	Returns the first audio track if any.
+	*/
 	var firstAudioTrack: AVAssetTrack? { tracks(withMediaType: .audio).first }
 
-	/// Returns the dimensions of the first video track if any.
+	/**
+	Returns the dimensions of the first video track if any.
+	*/
 	var dimensions: CGSize? { firstVideoTrack?.dimensions }
 
-	/// Returns the frame rate of the first video track if any.
+	/**
+	Returns the frame rate of the first video track if any.
+	*/
 	var frameRate: Double? { firstVideoTrack?.frameRate }
 
-	/// Returns the aspect ratio of the first video track if any.
+	/**
+	Returns the aspect ratio of the first video track if any.
+	*/
 	var aspectRatio: Double? { firstVideoTrack?.aspectRatio }
 
-	/// Returns the video codec of the first video track if any.
+	/**
+	Returns the video codec of the first video track if any.
+	*/
 	var videoCodec: AVFormat? { firstVideoTrack?.codec }
 
-	/// Returns the audio codec of the first audio track if any.
-	/// Example: `aac`
+	/**
+	Returns the audio codec of the first audio track if any.
+
+	Example: `aac`
+	*/
 	var audioCodec: String? { firstAudioTrack?.codecIdentifier }
 
-	/// The file size of the asset in bytes.
-	/// - Note: If self is an `AVAsset` and not an `AVURLAsset`, the file size will just be an estimate.
+	/**
+	The file size of the asset in bytes.
+
+	- Note: If self is an `AVAsset` and not an `AVURLAsset`, the file size will just be an estimate.
+	*/
 	var fileSize: Int {
 		guard let urlAsset = self as? AVURLAsset else {
 			return tracks.sum(\.estimatedFileSize)
@@ -1214,7 +1273,9 @@ extension AVAsset {
 }
 
 extension AVAsset {
-	/// Returns debug info for the asset to use in logging and error messages.
+	/**
+	Returns debug info for the asset to use in logging and error messages.
+	*/
 	var debugInfo: String {
 		var output = [String]()
 
@@ -1261,7 +1322,6 @@ extension AVAsset {
 }
 
 
-/// Video metadata.
 extension AVAsset {
 	struct VideoMetadata {
 		let dimensions: CGSize
@@ -1421,7 +1481,9 @@ extension NSView {
 
 
 extension NSControl {
-	/// Trigger the `.action` selector on the control.
+	/**
+	Trigger the `.action` selector on the control.
+	*/
 	func triggerAction() {
 		sendAction(action, to: target)
 	}
@@ -1443,7 +1505,9 @@ extension DispatchQueue {
 
 
 extension NSFont {
-	/// The point size of the font.
+	/**
+	The point size of the font.
+	*/
 	var size: Double { pointSize }
 
 	var traits: [NSFontDescriptor.TraitKey: AnyObject] {
@@ -1467,14 +1531,18 @@ class Label: NSTextField { // swiftlint:disable:this final_class
 		}
 	}
 
-	/// Allow the it to be disabled like other `NSControl`'s.
+	/**
+	Allow the it to be disabled like other `NSControl`'s.
+	*/
 	override var isEnabled: Bool {
 		didSet {
 			textColor = isEnabled ? .controlTextColor : .disabledControlTextColor
 		}
 	}
 
-	/// Support setting the text later with the `.text` property.
+	/**
+	Support setting the text later with the `.text` property.
+	*/
 	convenience init() {
 		self.init(labelWithString: "")
 	}
@@ -1497,7 +1565,9 @@ class Label: NSTextField { // swiftlint:disable:this final_class
 }
 
 
-/// Use it in Interface Builder as a class or programmatically.
+/**
+Use it in Interface Builder as a class or programmatically.
+*/
 final class MonospacedLabel: Label {
 	override init(frame: CGRect) {
 		super.init(frame: frame)
@@ -1539,7 +1609,9 @@ func unimplemented(
 
 
 extension NSPasteboard.PasteboardType {
-	/// The name of the URL if you put a URL on the pasteboard.
+	/**
+	The name of the URL if you put a URL on the pasteboard.
+	*/
 	static let urlName = Self("public.url-name")
 }
 
@@ -1589,7 +1661,9 @@ extension NSPasteboard {
 
 
 extension NSPasteboard {
-	/// Get the file URLs from dragged and dropped files.
+	/**
+	Get the file URLs from dragged and dropped files.
+	*/
 	func fileURLs(types: [String] = []) -> [URL] {
 		var options: [ReadingOptionKey: Any] = [
 			.urlReadingFileURLsOnly: true
@@ -1611,7 +1685,9 @@ extension NSPasteboard {
 }
 
 
-/// Subclass this in Interface Builder with the title "Send Feedback…".
+/**
+Subclass this in Interface Builder with the title "Send Feedback…".
+*/
 final class FeedbackMenuItem: NSMenuItem {
 	required init(coder decoder: NSCoder) {
 		super.init(coder: decoder)
@@ -1623,7 +1699,9 @@ final class FeedbackMenuItem: NSMenuItem {
 }
 
 
-/// Subclass this in Interface Builder and set the `Url` field there.
+/**
+Subclass this in Interface Builder and set the `Url` field there.
+*/
 final class UrlMenuItem: NSMenuItem {
 	@IBInspectable var url: String?
 
@@ -1693,7 +1771,7 @@ extension ObjectAssociation {
 }
 
 
-/// Identical to above, but for NSMenuItem.
+// Identical to above, but for NSMenuItem.
 extension NSMenuItem {
 	typealias ActionClosure = ((NSMenuItem) -> Void)
 
@@ -1830,7 +1908,9 @@ extension NSView {
 
 
 extension String {
-	/// `NSString` has some useful properties that `String` does not.
+	/**
+	`NSString` has some useful properties that `String` does not.
+	*/
 	var nsString: NSString { self as NSString } // swiftlint:disable:this legacy_objc_type
 }
 
@@ -1917,8 +1997,10 @@ extension URL {
 }
 
 
-/// Convenience for opening URLs.
 extension URL {
+	/**
+	Convenience for opening URLs.
+	*/
 	func open() {
 		NSWorkspace.shared.open(self)
 	}
@@ -1995,21 +2077,30 @@ typealias QueryDictionary = [String: String]
 
 
 extension CharacterSet {
-	/// Characters allowed to be unescaped in an URL
-	/// https://tools.ietf.org/html/rfc3986#section-2.3
+	/**
+	Characters allowed to be unescaped in an URL.
+
+	https://tools.ietf.org/html/rfc3986#section-2.3
+	*/
 	static let urlUnreservedRFC3986 = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
 }
 
-/// This should really not be necessary, but it's at least needed for my `formspree.io` form...
-/// Otherwise is results in "Internal Server Error" after submitting the form
-/// Relevant: https://www.djackson.org/why-we-do-not-use-urlcomponents/
+/**
+This should really not be necessary, but it's at least needed for my `formspree.io` form...
+
+Otherwise is results in "Internal Server Error" after submitting the form.
+
+Relevant: https://www.djackson.org/why-we-do-not-use-urlcomponents/
+*/
 private func escapeQueryComponent(_ query: String) -> String {
 	query.addingPercentEncoding(withAllowedCharacters: .urlUnreservedRFC3986)!
 }
 
 
 extension Dictionary where Key == String {
-	/// This correctly escapes items. See `escapeQueryComponent`.
+	/**
+	This correctly escapes items. See `escapeQueryComponent`.
+	*/
 	var toQueryItems: [URLQueryItem] {
 		map {
 			URLQueryItem(
@@ -2035,19 +2126,23 @@ extension Dictionary {
 
 
 extension URLComponents {
-	/// This correctly escapes items. See `escapeQueryComponent`.
+	/**
+	This correctly escapes items. See `escapeQueryComponent`.
+	*/
 	init?(string: String, query: QueryDictionary) {
 		self.init(string: string)
 		self.queryDictionary = query
 	}
 
-	/// This correctly escapes items. See `escapeQueryComponent`.
+	/**
+	This correctly escapes items. See `escapeQueryComponent`.
+	*/
 	var queryDictionary: QueryDictionary {
 		get {
 			queryItems?.toDictionary { ($0.name, $0.value) }.compactValues() ?? [:]
 		}
 		set {
-			/// Using `percentEncodedQueryItems` instead of `queryItems` since the query items are already custom-escaped. See `escapeQueryComponent`.
+			// Using `percentEncodedQueryItems` instead of `queryItems` since the query items are already custom-escaped. See `escapeQueryComponent`.
 			percentEncodedQueryItems = newValue.toQueryItems
 		}
 	}
@@ -2124,10 +2219,11 @@ extension URL {
 
 //	var contentType: UTType? { resourceValue(forKey: .contentTypeKey) }
 
-	/// File UTI.
 	var typeIdentifier: String? { resourceValue(forKey: .typeIdentifierKey) }
 
-	/// File size in bytes.
+	/**
+	File size in bytes.
+	*/
 	var fileSize: Int { resourceValue(forKey: .fileSizeKey) ?? 0 }
 
 	var fileSizeFormatted: String {
@@ -2135,7 +2231,9 @@ extension URL {
 	}
 
 	// TODO: Use the below instead when targeting macOS 10.15. Also in `AVAsset#fileSize`.
-	/// File size in bytes.
+	/**
+	File size in bytes.
+	*/
 //	var fileSize: Measurement<UnitInformationStorage> { Measurement<UnitInformationStorage>(value: resourceValue(forKey: .fileSizeKey) ?? 0, unit: .bytes) }
 //
 //	var fileSizeFormatted: String {
@@ -2153,7 +2251,9 @@ extension URL {
 
 
 extension URL {
-	/// Returns the user's real home directory when called in a sandboxed app.
+	/**
+	Returns the user's real home directory when called in a sandboxed app.
+	*/
 	static let realHomeDirectory = Self(
 		fileURLWithFileSystemRepresentation: getpwuid(getuid())!.pointee.pw_dir!,
 		isDirectory: true,
@@ -2172,7 +2272,9 @@ extension URL {
 
 
 extension URL {
-	/// Check whether the URL is inside the home directory.
+	/**
+	Check whether the URL is inside the home directory.
+	*/
 	var isInsideHomeDirectory: Bool {
 		Self.realHomeDirectory.relationship(to: self) == .contains
 	}
@@ -2190,7 +2292,9 @@ extension URL {
 
 
 extension URL {
-	/// Whether the directory URL is suitable for use as a default directory for a save panel.
+	/**
+	Whether the directory URL is suitable for use as a default directory for a save panel.
+	*/
 	var canBeDefaultSavePanelDirectory: Bool {
 		// We allow if it's inside the home directory on the main volume or on a different writable volume.
 		isInsideHomeDirectory || (!isOnMainVolume && !isVolumeReadonly)
@@ -2199,7 +2303,9 @@ extension URL {
 
 
 extension URL {
-	/// Get various common system directories.
+	/**
+	Get various common system directories.
+	*/
 	static func systemDirectory(_ directory: FileManager.SearchPathDirectory) -> Self {
 		// I don't think this can fail, but just in case, we have a sensible fallback.
 		(try? FileManager.default.url(for: directory, in: .userDomainMask, appropriateFor: nil, create: false)) ?? FileManager.default.homeDirectoryForCurrentUser
@@ -2281,8 +2387,6 @@ extension CGRect {
 		}
 	}
 
-	/// `width` and `height` are defined in Foundation as getters only. We add support for setters too.
-	/// These will not work when imported as a framework: https://bugs.swift.org/browse/SR-4017
 	var width: Double {
 		get { size.width }
 		set {
@@ -2390,7 +2494,9 @@ extension CGRect {
 
 
 public protocol CancellableError: Error {
-	/// Returns true if this Error represents a cancelled condition.
+	/**
+	Returns true if this Error represents a cancelled condition.
+	*/
 	var isCancelled: Bool { get }
 }
 
@@ -2501,7 +2607,9 @@ final class Once {
 	}
 
 	// TODO: Support any number of arguments when Swift supports variadics.
-	/// Wraps a single-argument function.
+	/**
+	Wraps a single-argument function.
+	*/
 	func wrap<T, U>(_ function: @escaping ((T) -> U)) -> ((T) -> U) {
 		{ [self] parameter in
 			run {
@@ -2510,7 +2618,9 @@ final class Once {
 		}
 	}
 
-	/// Wraps an optional single-argument function.
+	/**
+	Wraps an optional single-argument function.
+	*/
 	func wrap<T, U>(_ function: ((T) -> U)?) -> ((T) -> U)? {
 		guard let function = function else {
 			return nil
@@ -2523,7 +2633,9 @@ final class Once {
 		}
 	}
 
-	/// Wraps a single-argument throwing function.
+	/**
+	Wraps a single-argument throwing function.
+	*/
 	func wrap<T, U>(_ function: @escaping ((T) throws -> U)) -> ((T) throws -> U) {
 		{ [self] parameter in
 			try run {
@@ -2532,7 +2644,9 @@ final class Once {
 		}
 	}
 
-	/// Wraps an optional single-argument throwing function.
+	/**
+	Wraps an optional single-argument throwing function.
+	*/
 	func wrap<T, U>(_ function: ((T) throws -> U)?) -> ((T) throws -> U)? {
 		guard let function = function else {
 			return nil
@@ -2548,7 +2662,9 @@ final class Once {
 
 
 extension NSResponder {
-	/// Presents the error in the given window if it's not nil, otherwise falls back to an app-modal dialog.
+	/**
+	Presents the error in the given window if it's not nil, otherwise falls back to an app-modal dialog.
+	*/
 	open func presentError(_ error: Error, modalFor window: NSWindow?) {
 		guard let window = window else {
 			presentError(error)
@@ -2634,7 +2750,9 @@ extension NSError {
 		)
 	}
 
-	/// Returns a new error with the user info appended.
+	/**
+	Returns a new error with the user info appended.
+	*/
 	func appending(userInfo newUserInfo: [String: Any]) -> Self {
 		.init(
 			domain: domain,
@@ -2679,8 +2797,11 @@ extension NSError {
 
 
 extension Dictionary {
-	/// Adds the elements of the given dictionary to a copy of self and returns that.
-	/// Identical keys in the given dictionary overwrites keys in the copy of self.
+	/**
+	Adds the elements of the given dictionary to a copy of self and returns that.
+
+	Identical keys in the given dictionary overwrites keys in the copy of self.
+	*/
 	func appending(_ dictionary: [Key: Value]) -> [Key: Value] {
 		var newDictionary = self
 
@@ -2697,7 +2818,9 @@ extension Dictionary {
 import FirebaseCrashlytics
 
 extension Crashlytics {
-	/// A better error recording method. Captures more debug info.
+	/**
+	A better error recording method. Captures more debug info.
+	*/
 	static func recordNonFatalError(error: Error, userInfo: [String: Any] = [:]) {
 		#if !DEBUG
 		// This forces Crashlytics to actually provide some useful info for Swift errors.
@@ -2713,7 +2836,9 @@ extension Crashlytics {
 		#endif
 	}
 
-	/// Set a value for a for a key to be associated with your crash data which will be visible in Crashlytics.
+	/**
+	Set a value for a for a key to be associated with your crash data which will be visible in Crashlytics.
+	*/
 	static func record(key: String, value: Any?) {
 		#if !DEBUG
 		crashlytics().setCustomValue(value as Any, forKey: key)
@@ -2722,7 +2847,9 @@ extension Crashlytics {
 }
 
 extension NSAlert {
-	/// Show a modal alert sheet on a window, or as an app-model alert if the given window is nil, and also report it as a non-fatal error to Crashlytics.
+	/**
+	Show a modal alert sheet on a window, or as an app-model alert if the given window is nil, and also report it as a non-fatal error to Crashlytics.
+	*/
 	@discardableResult
 	static func showModalAndReportToCrashlytics(
 		for window: NSWindow? = nil,
@@ -2933,7 +3060,9 @@ extension QLPreviewPanel {
 
 
 extension NSView {
-	/// Get the view frame in screen coordinates.
+	/**
+	Get the view frame in screen coordinates.
+	*/
 	var boundsInScreenCoordinates: CGRect? {
 		window?.convertToScreen(convert(bounds, to: nil))
 	}
@@ -2941,7 +3070,9 @@ extension NSView {
 
 
 extension Collection {
-	/// Returns the element at the specified index if it is within bounds, otherwise nil.
+	/**
+	Returns the element at the specified index if it is within bounds, otherwise `nil`.
+	*/
 	subscript(safe index: Index) -> Element? {
 		indices.contains(index) ? self[index] : nil
 	}
@@ -2962,105 +3093,21 @@ extension Copyable {
 // Source: https://github.com/apple/swift-evolution/blob/9940e45977e2006a29eccccddf6b62305758c5c3/proposals/0259-approximately-equal.md
 // swiftlint:disable all
 extension FloatingPoint {
-	/// Test approximate equality with relative tolerance.
-	///
-	/// Do not use this function to check if a number is approximately
-	/// zero; no reasoned relative tolerance can do what you want for
-	/// that case. Use `isAlmostZero` instead for that case.
-	///
-	/// The relation defined by this predicate is symmetric and reflexive
-	/// (except for NaN), but *is not* transitive. Because of this, it is
-	/// often unsuitable for use for key comparisons, but it can be used
-	/// successfully in many other contexts.
-	///
-	/// The internet is full advice about what not to do when comparing
-	/// floating-point values:
-	///
-	/// - "Never compare floats for equality."
-	/// - "Always use an epsilon."
-	/// - "Floating-point values are always inexact."
-	///
-	/// Much of this advice is false, and most of the rest is technically
-	/// correct but misleading. Almost none of it provides specific and
-	/// correct recommendations for what you *should* do if you need to
-	/// compare floating-point numbers.
-	///
-	/// There is no uniformly correct notion of "approximate equality", and
-	/// there is no uniformly correct tolerance that can be applied without
-	/// careful analysis. This function considers two values to be almost
-	/// equal if the relative difference between them is smaller than the
-	/// specified `tolerance`.
-	///
-	/// The default value of `tolerance` is `sqrt(.ulpOfOne)`; this value
-	/// comes from the common numerical analysis wisdom that if you don't
-	/// know anything about a computation, you should assume that roughly
-	/// half the bits may have been lost to rounding. This is generally a
-	/// pretty safe choice of tolerance--if two values that agree to half
-	/// their bits but are not meaningfully almost equal, the computation
-	/// is likely ill-conditioned and should be reformulated.
-	///
-	/// For more complete guidance on an appropriate choice of tolerance,
-	/// consult with a friendly numerical analyst.
-	///
-	/// - Parameters:
-	///   - other: the value to compare with `self`
-	///   - tolerance: the relative tolerance to use for the comparison.
-	///     Should be in the range (.ulpOfOne, 1).
-	///
-	/// - Returns: `true` if `self` is almost equal to `other`; otherwise
-	///   `false`.
 	@inlinable
 	public func isAlmostEqual(
 		to other: Self,
 		tolerance: Self = Self.ulpOfOne.squareRoot()
 	) -> Bool {
-		// tolerances outside of [.ulpOfOne,1) yield well-defined but useless results,
-		// so this is enforced by an assert rathern than a precondition.
 		assert(tolerance >= .ulpOfOne && tolerance < 1, "tolerance should be in [.ulpOfOne, 1).")
-		// The simple computation below does not necessarily give sensible
-		// results if one of self or other is infinite; we need to rescale
-		// the computation in that case.
+
 		guard self.isFinite, other.isFinite else {
 			return rescaledAlmostEqual(to: other, tolerance: tolerance)
 		}
-		// This should eventually be rewritten to use a scaling facility to be
-		// defined on FloatingPoint suitable for hypot and scaled sums, but the
-		// following is good enough to be useful for now.
+
 		let scale = max(abs(self), abs(other), .leastNormalMagnitude)
 		return abs(self - other) < scale * tolerance
 	}
 
-	/// Test if this value is nearly zero with a specified `absoluteTolerance`.
-	///
-	/// This test uses an *absolute*, rather than *relative*, tolerance,
-	/// because no number should be equal to zero when a relative tolerance
-	/// is used.
-	///
-	/// Some very rough guidelines for selecting a non-default tolerance for
-	/// your computation can be provided:
-	///
-	/// - If this value is the result of floating-point additions or
-	///   subtractions, use a tolerance of `.ulpOfOne * n * scale`, where
-	///   `n` is the number of terms that were summed and `scale` is the
-	///   magnitude of the largest term in the sum.
-	///
-	/// - If this value is the result of floating-point multiplications,
-	///   consider each term of the product: what is the smallest value that
-	///   should be meaningfully distinguished from zero? Multiply those terms
-	///   together to get a tolerance.
-	///
-	/// - More generally, use half of the smallest value that should be
-	///   meaningfully distinct from zero for the purposes of your computation.
-	///
-	/// For more complete guidance on an appropriate choice of tolerance,
-	/// consult with a friendly numerical analyst.
-	///
-	/// - Parameter absoluteTolerance: values with magnitude smaller than
-	///   this value will be considered to be zero. Must be greater than
-	///   zero.
-	///
-	/// - Returns: `true` if `abs(self)` is less than `absoluteTolerance`.
-	///            `false` otherwise.
 	@inlinable
 	public func isAlmostZero(
 		absoluteTolerance tolerance: Self = Self.ulpOfOne.squareRoot()
@@ -3069,19 +3116,12 @@ extension FloatingPoint {
 		return abs(self) < tolerance
 	}
 
-	/// Rescales self and other to give meaningful results when one of them
-	/// is infinite. We also handle NaN here so that the fast path doesn't
-	/// need to worry about it.
 	@usableFromInline
 	internal func rescaledAlmostEqual(to other: Self, tolerance: Self) -> Bool {
-		// NaN is considered to be not approximately equal to anything, not even
-		// itself.
 		if self.isNaN || other.isNaN { return false }
 		if self.isInfinite {
 			if other.isInfinite { return self == other }
-			// Self is infinite and other is finite. Replace self with the binade
-			// of the greatestFiniteMagnitude, and reduce the exponent of other by
-			// one to compensate.
+
 			let scaledSelf = Self(
 				sign: self.sign,
 				exponent: Self.greatestFiniteMagnitude.exponent,
@@ -3092,11 +3132,10 @@ extension FloatingPoint {
 				exponent: -1,
 				significand: other
 			)
-			// Now both values are finite, so re-run the naive comparison.
+
 			return scaledSelf.isAlmostEqual(to: scaledOther, tolerance: tolerance)
 		}
-		// If self is finite and other is infinite, flip order and use scaling
-		// defined above, since this relation is symmetric.
+
 		return other.rescaledAlmostEqual(to: self, tolerance: tolerance)
 	}
 }
@@ -3143,7 +3182,9 @@ extension NSControl {
 
 extension URL {
 	enum MetadataKey {
-		/// The app used to create the file, for example, `Gifski 2.0.0`, `QuickTime Player 10.5`, etc.
+		/**
+		The app used to create the file, for example, `Gifski 2.0.0`, `QuickTime Player 10.5`, etc.
+		*/
 		case itemCreator
 
 		var attributeKey: String {
@@ -3221,7 +3262,9 @@ extension NSViewController {
 
 
 extension NSView {
-	/// Get a subview matching a condition.
+	/**
+	Get a subview matching a condition.
+	*/
 	func firstSubview(deep: Bool = false, where matches: (NSView) -> Bool) -> NSView? {
 		for subview in subviews {
 			if matches(subview) {
@@ -3239,7 +3282,9 @@ extension NSView {
 
 
 extension NSLayoutConstraint {
-	/// Returns copy of the constraint with changed properties provided as arguments.
+	/**
+	Returns copy of the constraint with changed properties provided as arguments.
+	*/
 	func changing(
 		firstItem: Any? = nil,
 		firstAttribute: Attribute? = nil,
@@ -3265,17 +3310,24 @@ extension NSLayoutConstraint {
 
 extension NSObject {
 	// Note: It's intentionally a getter to get the dynamic self.
-	/// Returns the class name without module name.
+	/**
+	Returns the class name without module name.
+	*/
 	static var simpleClassName: String { String(describing: self) }
 
-	/// Returns the class name of the instance without module name.
+	/**
+	Returns the class name of the instance without module name.
+	*/
 	var simpleClassName: String { Self.simpleClassName }
 }
 
 
 extension CMTime {
-	/// Get the `CMTime` as a duration from zero to the seconds value of `self`.
-	/// Can be `nil` when the `.duration` is not available, for example, when an asset has not yet been fully loaded or if it's a live stream.
+	/**
+	Get the `CMTime` as a duration from zero to the seconds value of `self`.
+
+	Can be `nil` when the `.duration` is not available, for example, when an asset has not yet been fully loaded or if it's a live stream.
+	*/
 	var durationRange: ClosedRange<Double>? {
 		guard isNumeric else {
 			return nil
@@ -3287,8 +3339,11 @@ extension CMTime {
 
 
 extension CMTimeRange {
-	/// Get `self` as a range in seconds.
-	/// Can be `nil` when the range is not available, for example, when an asset has not yet been fully loaded or if it's a live stream.
+	/**
+	Get `self` as a range in seconds.
+
+	Can be `nil` when the range is not available, for example, when an asset has not yet been fully loaded or if it's a live stream.
+	*/
 	var range: ClosedRange<Double>? {
 		guard
 			start.isNumeric,
@@ -3343,7 +3398,9 @@ extension AVPlayerItem {
 
 
 extension FileManager {
-	/// Copy a file and optionally overwrite the destination if it exists.
+	/**
+	Copy a file and optionally overwrite the destination if it exists.
+	*/
 	func copyItem(
 		at sourceURL: URL,
 		to destinationURL: URL,
@@ -3359,7 +3416,9 @@ extension FileManager {
 
 
 extension ClosedRange where Bound: AdditiveArithmetic {
-	/// Get the length between the lower and upper bound.
+	/**
+	Get the length between the lower and upper bound.
+	*/
 	var length: Bound { upperBound - lowerBound }
 }
 
@@ -3557,14 +3616,20 @@ extension NSResponder {
 }
 
 extension Error {
-	/// Present the error as an async sheet on the given window.
-	/// - Note: This exists because the built-in `NSResponder#presentError(forModal:)` method requires too many arguments, selector as callback, and it says it's modal but it's not blocking, which is surprising.
+	/**
+	Present the error as an async sheet on the given window.
+
+	- Note: This exists because the built-in `NSResponder#presentError(forModal:)` method requires too many arguments, selector as callback, and it says it's modal but it's not blocking, which is surprising.
+	*/
 	func presentAsSheet(for window: NSWindow, didPresent: (() -> Void)?) {
 		NSApp.presentErrorAsSheet(self, for: window, didPresent: didPresent)
 	}
 
-	/// Present the error as a blocking modal sheet on the given window.
-	/// If the window is nil, the error will be presented in an app-level modal dialog.
+	/**
+	Present the error as a blocking modal sheet on the given window.
+
+	If the window is nil, the error will be presented in an app-level modal dialog.
+	*/
 	func presentAsModalSheet(for window: NSWindow?) {
 		guard let window = window else {
 			presentAsModal()
@@ -3578,7 +3643,9 @@ extension Error {
 		NSApp.runModal(for: window)
 	}
 
-	/// Present the error as a blocking app-level modal dialog.
+	/**
+	Present the error as a blocking app-level modal dialog.
+	*/
 	func presentAsModal() {
 		NSApp.presentError(self)
 	}
@@ -3623,14 +3690,18 @@ extension AVPlayer {
 final class LoopingPlayer: AVPlayer {
 	private var cancellable: AnyCancellable?
 
-	/// Loop the playback.
+	/**
+	Loop the playback.
+	*/
 	var loopPlayback = false {
 		didSet {
 			updateObserver()
 		}
 	}
 
-	/// Bounce the playback.
+	/**
+	Bounce the playback.
+	*/
 	var bouncePlayback = false {
 		didSet {
 			updateObserver()
@@ -3687,8 +3758,11 @@ final class LoopingPlayer: AVPlayer {
 
 
 extension DateComponentsFormatter {
-	/// Like `string(from: TimeInterval)` but does not cause an `NSInternalInconsistencyException` exception for `NaN` and `Infinity`.
-	/// This is especially useful when formatting `CMTime#seconds` which can often be `NaN`.
+	/**
+	Like `string(from: TimeInterval)` but does not cause an `NSInternalInconsistencyException` exception for `NaN` and `Infinity`.
+
+	This is especially useful when formatting `CMTime#seconds` which can often be `NaN`.
+	*/
 	func stringSafe(from timeInterval: TimeInterval) -> String? {
 		guard !timeInterval.isNaN else {
 			return "NaN"
@@ -3719,7 +3793,9 @@ extension Numeric {
 extension SSApp {
 	private static let key = Defaults.Key("SSApp_requestReview", default: 0)
 
-	/// Requests a review only after this method has been called the given amount of times.
+	/**
+	Requests a review only after this method has been called the given amount of times.
+	*/
 	static func requestReviewAfterBeingCalledThisManyTimes(_ counts: [Int]) {
 		guard counts.contains(Defaults[key].increment()) else {
 			return
@@ -3756,7 +3832,9 @@ extension Sequence {
 
 
 extension Collection where Index == Int {
-	/// Return a subset of the array of the given length by sampling "evenly distributed" elements.
+	/**
+	Return a subset of the array of the given length by sampling "evenly distributed" elements.
+	*/
 	func sample(length: Int) -> [Element] {
 		precondition(length >= 0, "The length cannot be negative.")
 
@@ -3895,7 +3973,9 @@ extension Sequence where Element: Sequence {
 
 
 extension NSFont {
-	/// Returns a new version of the font with the existing font descriptor replaced by the given font descriptor.
+	/**
+	Returns a new version of the font with the existing font descriptor replaced by the given font descriptor.
+	*/
 	func withDescriptor(_ descriptor: NSFontDescriptor) -> NSFont {
 		// It's important that the size is `0` and not `pointSize` as otherwise the descriptor is not able to change the font size.
 		Self(descriptor: descriptor, size: 0) ?? self
@@ -3934,7 +4014,9 @@ extension NSAttributedString {
 		attributeForWholeString(.font) as? NSFont ?? .systemFont(ofSize: NSFont.systemFontSize)
 	}
 
-	/// Get an attribute if it applies to the whole string.
+	/**
+	Get an attribute if it applies to the whole string.
+	*/
 	func attributeForWholeString(_ key: Key) -> Any? {
 		guard length > 0 else {
 			return nil
@@ -3950,7 +4032,9 @@ extension NSAttributedString {
 		return result
 	}
 
-	/// Returns a `NSMutableAttributedString` version.
+	/**
+	Returns a `NSMutableAttributedString` version.
+	*/
 	func mutable() -> NSMutableAttributedString {
 		// Force-casting here is safe as it can only be nil if there's no `mutableCopy` implementation, but we know there is for `NSMutableAttributedString`.
 		// swiftlint:disable:next force_cast
@@ -4021,13 +4105,17 @@ extension UnsafeMutableRawPointer {
 
 
 extension Data {
-	/// The bytes of the data.
+	/**
+	The bytes of the data.
+	*/
 	var bytes: [UInt8] { [UInt8](self) }
 }
 
 
 extension Array where Element == UInt8 {
-	/// Convert the array to data.
+	/**
+	Convert the array to data.
+	*/
 	var data: Data { Data(self) }
 }
 
@@ -4124,7 +4212,9 @@ extension CGContext {
 
 
 extension vImage_Buffer {
-	/// The bytes of the image.
+	/**
+	The bytes of the image.
+	*/
 	var bytes: [UInt8] {
 		data?.toArray(to: UInt8.self, capacity: rowBytes * Int(height)) ?? []
 	}
@@ -4234,16 +4324,24 @@ extension CGImage {
 
 extension CGImage {
 	enum PixelFormat {
-		/// Big-endian, alpha first.
+		/**
+		Big-endian, alpha first.
+		*/
 		case argb
 
-		/// Big-endian, alpha last.
+		/**
+		Big-endian, alpha last.
+		*/
 		case rgba
 
-		/// Little-endian, alpha first.
+		/**
+		Little-endian, alpha first.
+		*/
 		case abgr
 
-		/// Little-endian, alpha last.
+		/**
+		Little-endian, alpha last.
+		*/
 		case bgra
 
 		var title: String {
@@ -4319,7 +4417,9 @@ extension CGImage {
 
 
 extension CGBitmapInfo {
-	/// The alpha info of the current `CGBitmapInfo`.
+	/**
+	The alpha info of the current `CGBitmapInfo`.
+	*/
 	var alphaInfo: CGImageAlphaInfo {
 		get {
 			CGImageAlphaInfo(rawValue: rawValue & Self.alphaInfoMask.rawValue) ?? .none
@@ -4330,8 +4430,11 @@ extension CGBitmapInfo {
 		}
 	}
 
-	/// The pixel format of the image.
-	/// Returns `nil` if the pixel format is not supported, for example, non-alpha.
+	/**
+	The pixel format of the image.
+
+	Returns `nil` if the pixel format is not supported, for example, non-alpha.
+	*/
 	var pixelFormat: CGImage.PixelFormat? {
 		// While the host byte order is little-endian, by default, `CGImage` is stored in big-endian format on Intel Macs and little-endian on Apple silicon Macs.
 
@@ -4353,7 +4456,9 @@ extension CGBitmapInfo {
 		}
 	}
 
-	/// Whether the alpha channel is premultipled.
+	/**
+	Whether the alpha channel is premultipled.
+	*/
 	var isPremultipliedAlpha: Bool {
 		let alphaInfo = alphaInfo
 		return alphaInfo == .premultipliedFirst || alphaInfo == .premultipliedLast
@@ -4362,7 +4467,9 @@ extension CGBitmapInfo {
 
 
 extension CGColorSpace {
-	/// Presentable title of the color space.
+	/**
+	Presentable title of the color space.
+	*/
 	var title: String {
 		guard let name = name else {
 			return "Unknown"
@@ -4413,10 +4520,14 @@ struct Clamping<Value: Comparable> {
 
 
 extension Font {
-	/// The default system font size.
+	/**
+	The default system font size.
+	*/
 	static let systemFontSize = NSFont.systemFontSize.double
 
-	/// The system font in default size.
+	/**
+	The system font in default size.
+	*/
 	static func system(
 		weight: Font.Weight = .regular,
 		design: Font.Design = .default
@@ -4426,10 +4537,14 @@ extension Font {
 }
 
 extension Font {
-	/// The default small system font size.
+	/**
+	The default small system font size.
+	*/
 	static let smallSystemFontSize = NSFont.smallSystemFontSize.double
 
-	/// The system font in small size.
+	/**
+	The system font in small size.
+	*/
 	static func smallSystem(
 		weight: Font.Weight = .regular,
 		design: Font.Design = .default
@@ -4576,7 +4691,9 @@ enum OperatingSystem {
 }
 
 extension OperatingSystem {
-	/// - Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
+	/**
+	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
+	*/
 	static let isMacOS12OrLater: Bool = {
 		#if os(macOS)
 		if #available(macOS 12, *) {
@@ -4589,7 +4706,9 @@ extension OperatingSystem {
 		#endif
 	}()
 
-	/// - Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
+	/**
+	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
+	*/
 	static let isMacOS11OrLater: Bool = {
 		#if os(macOS)
 		if #available(macOS 11, *) {

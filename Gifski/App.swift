@@ -43,7 +43,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 //		#endif
 	}
 
-	/// Returns `nil` if it should not continue.
+	/**
+	Returns `nil` if it should not continue.
+	*/
 	func extractSharedVideoUrlIfAny(from url: URL) -> URL? {
 		guard url.host == "shareExtension" else {
 			return url
@@ -114,7 +116,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 extension AppDelegate {
-	/// This is called from NSApp as a service resolver
+	/**
+	This is called from NSApp as a service resolver.
+	*/
 	@objc
 	func convertToGif(_ pasteboard: NSPasteboard, userData: String, error: NSErrorPointer) {
 		guard let url = pasteboard.fileURLs().first else {

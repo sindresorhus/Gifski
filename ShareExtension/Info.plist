@@ -35,9 +35,9 @@
 				SUBQUERY (
 					$extensionItem.attachments,
 					$attachment,
-					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.mpeg-4" ||
-					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.apple.m4v-video" ||
-					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.apple.quicktime-movie"
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO &quot;public.mpeg-4&quot; ||
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO &quot;com.apple.m4v-video&quot; ||
+					ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO &quot;com.apple.quicktime-movie&quot;
 				).@count == $extensionItem.attachments.@count
 			).@count == 1</string>
 		</dict>
@@ -46,5 +46,7 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).ShareViewController</string>
 	</dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

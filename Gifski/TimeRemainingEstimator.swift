@@ -5,13 +5,19 @@ final class TimeRemainingEstimator {
 	private var progressCancellable: AnyCancellable?
 	private var isCancelledCancellable: AnyCancellable?
 
-	/// The delay before revealing the estimated time remaining, allowing the estimation to stabilize.
+	/**
+	The delay before revealing the estimated time remaining, allowing the estimation to stabilize.
+	*/
 	let bufferDuration: TimeInterval = 3
 
-	/// Don't show the estimate at all if the total time estimate (after it stabilizes) is less than this amount.
+	/**
+	Don't show the estimate at all if the total time estimate (after it stabilizes) is less than this amount.
+	*/
 	let skipThreshold: TimeInterval = 10
 
-	/// Begin fade out when remaining time reaches this amount.
+	/**
+	Begin fade out when remaining time reaches this amount.
+	*/
 	let fadeOutThreshold: TimeInterval = 1
 
 	weak var progress: Progress? {

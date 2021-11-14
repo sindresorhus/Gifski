@@ -1,7 +1,9 @@
 import Combine
 import AVKit
 
-/// VC containing AVPlayerView and also extending possibilities for trimming (view) customization.
+/**
+A view controller containing AVPlayerView and also extending possibilities for trimming (view) customization.
+*/
 final class TrimmingAVPlayerViewController: NSViewController {
 	private(set) var timeRange: ClosedRange<Double>?
 	private let playerItem: AVPlayerItem
@@ -12,7 +14,9 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
 
-	/// The minimum duration the trimmer can be set to.
+	/**
+	The minimum duration the trimmer can be set to.
+	*/
 	var minimumTrimDuration = 0.1 {
 		didSet {
 			playerView.minimumTrimDuration = minimumTrimDuration
@@ -111,7 +115,9 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	private var timeRangeCancellable: AnyCancellable?
 	private var trimmingCancellable: AnyCancellable?
 
-	/// The minimum duration the trimmer can be set to.
+	/**
+	The minimum duration the trimmer can be set to.
+	*/
 	var minimumTrimDuration = 0.1
 
 	// TODO: This should be a Combine publisher.
@@ -129,7 +135,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 					return
 				}
 
-				/// Prevent infinite recursion.
+				// Prevent infinite recursion.
 				guard !skipNextUpdate else {
 					skipNextUpdate = false
 					updateClosure(playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange))
@@ -203,6 +209,8 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		contentOverlayView?.addSubview(overlayView)
 	}
 
-	/// Prevent user from dismissing trimming view
+	/**
+	Prevent user from dismissing trimming view.
+	*/
 	override func cancelOperation(_ sender: Any?) {}
 }

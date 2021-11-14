@@ -1,7 +1,9 @@
 import AppKit
 
 extension POSIXError {
-	/// Create an error from the global C `errno`.
+	/**
+	Create an error from the global C `errno`.
+	*/
 	static let fromErrno = Self(errno: errno)
 
 	/**
@@ -124,7 +126,9 @@ final class ExtendedAttributes {
 		}
 	}
 
-	/// Get all the extended attribute names.
+	/**
+	Get all the extended attribute names.
+	*/
 	func all() throws -> [String] {
 		try checkIfFileURL()
 

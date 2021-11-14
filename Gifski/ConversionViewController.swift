@@ -58,7 +58,9 @@ final class ConversionViewController: NSViewController {
 		start(conversion: conversion)
 	}
 
-	/// Gets called when the Esc key is pressed.
+	/**
+	Gets called when the Esc key is pressed.
+	*/
 	override func cancelOperation(_ sender: Any?) {
 		cancelConversion()
 	}

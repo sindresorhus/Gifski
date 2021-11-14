@@ -47,7 +47,9 @@ enum GifskiWrapperError: UInt32, LocalizedError {
 	}
 }
 
-/// - Important: Don't forget to call `.release()` when done, whether it succeeded or failed.
+/**
+- Important: Don't forget to call `.release()` when done, whether it succeeded or failed.
+*/
 final class GifskiWrapper {
 	enum PixelFormat {
 		case rgba

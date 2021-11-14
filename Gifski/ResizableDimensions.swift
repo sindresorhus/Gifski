@@ -24,13 +24,19 @@ struct Dimensions: Equatable, CustomStringConvertible {
 }
 
 final class ResizableDimensions: Copyable {
-	/// Minimum scaling, 1.0 being the original size.
+	/**
+	Minimum scaling, 1.0 being the original size.
+	*/
 	let minimumScale: Double
 
-	/// Maximum scaling, 1.0 being the original size.
+	/**
+	Maximum scaling, 1.0 being the original size.
+	*/
 	let maximumScale: Double
 
-	/// Width bounds for `currentDimensions`.
+	/**
+	Width bounds for `currentDimensions`.
+	*/
 	var widthMinMax: ClosedRange<Double> {
 		let multiplier = multiplier(for: currentDimensions.type)
 		let min = (minimumScale * multiplier.width).rounded()
@@ -38,7 +44,9 @@ final class ResizableDimensions: Copyable {
 		return min...max
 	}
 
-	/// Height bounds for `currentDimensions`.
+	/**
+	Height bounds for `currentDimensions`.
+	*/
 	var heightMinMax: ClosedRange<Double> {
 		let multiplier = multiplier(for: currentDimensions.type)
 		let min = (minimumScale * multiplier.height).rounded()
