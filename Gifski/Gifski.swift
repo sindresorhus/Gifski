@@ -236,7 +236,7 @@ final class Gifski {
 	- Parameters:
 		- conversion: The conversion source of the image generator.
 		- jobKey: The string used to identify the current conversion job.
-		- Returns: An `AVAssetImageGenerator` along with the times of the frames requested by the conversion.
+	- Returns: An `AVAssetImageGenerator` along with the times of the frames requested by the conversion.
 	*/
 	private func imageGenerator(
 		for conversion: Conversion,

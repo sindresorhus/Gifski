@@ -4190,10 +4190,10 @@ extension CGContext {
 		case .rgba:
 			byteOrder = .byteOrder32Big
 			alphaInfo = withAlpha ? .premultipliedLast : .noneSkipLast
-		case .abgr:
-			byteOrder = .byteOrder32Little
-			alphaInfo = withAlpha ? .premultipliedFirst : .noneSkipFirst
 		case .bgra:
+			byteOrder = .byteOrder32Little
+			alphaInfo = withAlpha ? .premultipliedFirst : .noneSkipFirst // This might look wrong, but the order is inverse because of little endian.
+		case .abgr:
 			byteOrder = .byteOrder32Little
 			alphaInfo = withAlpha ? .premultipliedLast : .noneSkipLast
 		}
@@ -4248,10 +4248,10 @@ extension CGImage {
 		case .rgba:
 			byteOrder = .byteOrder32Big
 			alphaInfo = alphaLast
-		case .abgr:
-			byteOrder = .byteOrder32Little
-			alphaInfo = alphaFirst
 		case .bgra:
+			byteOrder = .byteOrder32Little
+			alphaInfo = alphaFirst // This might look wrong, but the order is inverse because of little endian.
+		case .abgr:
 			byteOrder = .byteOrder32Little
 			alphaInfo = alphaLast
 		}
@@ -4337,12 +4337,12 @@ extension CGImage {
 		/**
 		Little-endian, alpha first.
 		*/
-		case abgr
+		case bgra
 
 		/**
 		Little-endian, alpha last.
 		*/
-		case bgra
+		case abgr
 
 		var title: String {
 			switch self {
@@ -4350,10 +4350,10 @@ extension CGImage {
 				return "ARGB"
 			case .rgba:
 				return "RGBA"
-			case .abgr:
-				return "ABGR"
 			case .bgra:
 				return "BGRA"
+			case .abgr:
+				return "ABGR"
 			}
 		}
 	}
