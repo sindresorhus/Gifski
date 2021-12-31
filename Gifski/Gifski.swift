@@ -328,8 +328,11 @@ final class Gifski {
 			)
 		}
 
-		// Ensure we include the last frame. For example, the above might have calculated `[..., 6.25, 6.3]`, but the duration is `6.3647`, so we might miss the last frame if it appears for a short time.
-		frameForTimes.append(CMTime(seconds: duration, preferredTimescale: timescale))
+		// We don't do this when "bounce" is enabled as the bounce calculations are not able to handle this.
+		if !conversion.bounce {
+			// Ensure we include the last frame. For example, the above might have calculated `[..., 6.25, 6.3]`, but the duration is `6.3647`, so we might miss the last frame if it appears for a short time.
+			frameForTimes.append(CMTime(seconds: duration, preferredTimescale: timescale))
+		}
 
 		record(
 			jobKey: jobKey,
