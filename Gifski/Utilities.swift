@@ -3222,7 +3222,8 @@ extension NSViewController {
 		guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
 			window.makeFirstResponder(viewController)
 
-			DispatchQueue.main.async {
+			// The delay is needed to prevent weird UI race issues on macOS 12. For example, it caused the video in the editor to not show up.
+			delay(seconds: 0.2) {
 				window.contentViewController = nil
 				window.setFrame(newWindowFrame, display: true)
 				window.contentViewController = viewController
