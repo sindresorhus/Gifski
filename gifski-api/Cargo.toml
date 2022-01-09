@@ -10,7 +10,7 @@ license = "AGPL-3.0+"
 name = "gifski"
 readme = "README.md"
 repository = "https://github.com/ImageOptim/gifski"
-version = "1.4.4"
+version = "1.6.1"
 autobins = false
 edition = "2018"
 
@@ -20,32 +20,32 @@ name = "gifski"
 
 [dependencies]
 gifsicle = { version = "1.92.5", optional = true }
-clap = "2.33.3"
-gif = "0.11.2"
+clap = "2.34.0"
+gif = "0.11.3"
 gif-dispose = "3.1.1"
-imagequant = "3.0.4-alpha.2"
-imgref = "1.9.0"
-lodepng = "3.4.5"
+imagequant = "4.0.0-beta.4"
+imgref = "1.9.1"
+lodepng = "3.4.7"
 pbr = "1.0.4"
 resize = "0.7.2"
-rgb = "0.8.27"
+rgb = "0.8.31"
 wild = "2.0.4"
 natord = "1.0.9"
 quick-error = "2.0.1"
-dunce = "1.0.1"
-crossbeam-channel = "0.5.1"
+dunce = "1.0.2"
+crossbeam-channel = "0.5.2"
 
 [dependencies.ffmpeg]
 package = "ffmpeg-next"
-version = "4.3.8"
+version = "4.4.0"
 optional = true
 default-features = false
 features = ["codec", "format", "filter", "software-resampling", "software-scaling"]
 
 [features]
 default = ["gifsicle"]
-openmp = ["imagequant/openmp"]
-openmp-static = ["openmp", "imagequant/openmp-static"]
+openmp = [] # deprecated, obsolete
+openmp-static = [] # deprecated, obsolete
 video = ["ffmpeg"]
 video-static = ["video", "ffmpeg/build"]
 

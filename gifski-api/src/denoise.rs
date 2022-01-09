@@ -82,8 +82,8 @@ impl<T> Denoiser<T> {
         };
         Self {
             frames: 0,
-            processed: Vec::with_capacity(4),
-            metadatas: Vec::with_capacity(4),
+            processed: Vec::with_capacity(LOOKAHEAD),
+            metadatas: Vec::with_capacity(LOOKAHEAD),
             threshold: (55 - u32::from(quality) / 2).pow(2),
             splat: ImgVec::new(vec![clear; area], width, height),
         }
@@ -114,7 +114,6 @@ impl<T> Denoiser<T> {
                 let median1 = ImgVec::new(median1, self.splat.width(), self.splat.height());
                 let imp_map1 = ImgVec::new(imp_map1, self.splat.width(), self.splat.height());
                 self.processed.insert(0, (median1, imp_map1));
-            } else {
             }
         }
     }
@@ -169,10 +168,18 @@ impl<T> Denoiser<T> {
                 acc.stayed_for += 1;
                 // If this is the second, corrective frame, then
                 // give it weight proportional to its staying duration
-                let max = if acc.stayed_for != 1 { 0 } else {
+                let max = if acc.stayed_for > 1 { 0 } else {
                     [0, 40, 80, 100, 110][acc.can_stay_for.min(4) as usize]
                 };
-                return (acc.bg_set, imp(diff_with_bg, threshold, 0, max));
+                // min == 0 may wipe pixels totally clear, so give them at least a second chance,
+                // if quality setting allows
+                let min = match threshold {
+                    0..=300 if acc.stayed_for <= 3 => 1, // q >= 75
+                    300..=500 if acc.stayed_for <= 2 => 1,
+                    400..=900 if acc.stayed_for <= 1 => 1, // q >= 50
+                    _ => 0,
+                };
+                return (acc.bg_set, pixel_importance(diff_with_bg, threshold, min, max));
             }
 
             // if it's still good, keep rolling with it
@@ -193,7 +200,7 @@ impl<T> Denoiser<T> {
             // fast path for regular changing pixel
             if stays_frames == 0 {
                 acc.bg_set = curr.alpha(255);
-                return (acc.bg_set, imp(diff_with_bg, threshold, 10, 110));
+                return (acc.bg_set, pixel_importance(diff_with_bg, threshold, 10, 110));
             }
             let smoothed_curr = RGB8::new(
                 get_median(&acc.r, stays_frames + 1),
@@ -202,11 +209,11 @@ impl<T> Denoiser<T> {
             );
 
             let imp = if stays_frames <= 1 {
-                imp(diff_with_bg, threshold, 5, 80)
+                pixel_importance(diff_with_bg, threshold, 5, 80)
             } else if stays_frames == 2 {
-                imp(diff_with_bg, threshold, 15, 190)
+                pixel_importance(diff_with_bg, threshold, 15, 190)
             } else {
-                imp(diff_with_bg, threshold, 50, 205)
+                pixel_importance(diff_with_bg, threshold, 50, 205)
             };
 
             acc.bg_set = smoothed_curr.alpha(255);
@@ -236,7 +243,7 @@ fn cohort(color: RGB8) -> bool {
 
 /// importance = how much it exceeds percetible threshold
 #[inline(always)]
-fn imp(diff_with_bg: u32, threshold: u32, min: u8, max: u8) -> u8 {
+fn pixel_importance(diff_with_bg: u32, threshold: u32, min: u8, max: u8) -> u8 {
     assert!((min as u32 + max as u32) <= 255);
     let exceeds = diff_with_bg.saturating_sub(threshold);
     min + (exceeds.saturating_mul(max as u32) / (threshold.saturating_mul(48))).min(max as u32) as u8

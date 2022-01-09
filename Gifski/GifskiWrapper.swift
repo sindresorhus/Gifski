@@ -28,7 +28,7 @@ enum GifskiWrapperError: UInt32, LocalizedError {
 		case .gif:
 			return "Internal error related to GIF composing"
 		case .threadLost:
-			return "Internal error related to multithreading"
+			return "Internal error related (panic)"
 		case .notFound:
 			return "I/O error: File or directory not found"
 		case .permissionDenied:

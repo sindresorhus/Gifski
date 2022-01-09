@@ -2,7 +2,9 @@
 //! How to use from C
 //!
 //! ```c
-//! gifski *g = gifski_new(&(GifskiSettings){});
+//! gifski *g = gifski_new(&(GifskiSettings){
+//!     .quality = 90,
+//! });
 //! gifski_set_file_output(g, "file.gif");
 //!
 //! for(int i=0; i < frames; i++) {
