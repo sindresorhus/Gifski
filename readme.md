@@ -73,7 +73,6 @@ To build the app in Xcode, you need to have [Rust](https://www.rust-lang.org) in
 curl https://sh.rustup.rs -sSf | sh
 brew install SwiftLint
 xcode-select --install
-cd gifski-api && make
 ```
 
 ## FAQ
