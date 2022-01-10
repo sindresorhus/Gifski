@@ -4,7 +4,7 @@ quick_error! {
     #[derive(Debug)]
     pub enum Error {
         ThreadSend {
-            display("thread aborted")
+            display("Internal error; unexpectedly aborted")
         }
         Aborted {
             display("aborted")

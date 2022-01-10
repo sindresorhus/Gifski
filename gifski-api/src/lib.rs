@@ -20,7 +20,7 @@
 #[macro_use]
 extern crate quick_error;
 
-use imagequant::*;
+use imagequant::{Image, QuantizationResult, Attributes};
 use imgref::*;
 use rgb::*;
 
@@ -168,7 +168,14 @@ struct FrameMessage {
 ///
 /// You feed input frames to the `Collector`, and ask the `Writer` to
 /// start writing the GIF.
+#[inline]
 pub fn new(settings: Settings) -> CatResult<(Collector, Writer)> {
+    if settings.quality == 0 || settings.quality > 100 {
+        return Err(Error::WrongSize("quality must be 1-100".into())); // I forgot to add a better error variant
+    }
+    if settings.width.unwrap_or(0) > 1<<16 || settings.height.unwrap_or(0) > 1<<16 {
+        return Err(Error::WrongSize("image size too large".into()));
+    }
     let (queue, queue_iter) = ordqueue::new(4);
 
     Ok((
@@ -193,10 +200,12 @@ impl Collector {
     ///
     /// If the first frame doesn't start at pts=0, the delay will be used for the last frame.
     pub fn add_frame_rgba(&mut self, frame_index: usize, image: ImgVec<RGBA8>, presentation_timestamp: f64) -> CatResult<()> {
+        debug_assert!(frame_index == 0 || presentation_timestamp > 0.);
         self.queue.push(frame_index, Ok((Self::resized_binary_alpha(image.into(), self.width, self.height)?, presentation_timestamp)))
     }
 
     pub(crate) fn add_frame_rgba_cow(&mut self, frame_index: usize, image: Img<Cow<[RGBA8]>>, presentation_timestamp: f64) -> CatResult<()> {
+        debug_assert!(frame_index == 0 || presentation_timestamp > 0.);
         self.queue.push(frame_index, Ok((Self::resized_binary_alpha(image, self.width, self.height)?, presentation_timestamp)))
     }
 
@@ -301,12 +310,12 @@ impl Writer {
             100 // the first frame is too important to ruin it
         };
         liq.set_quality(0, quality);
-        let mut img = liq.new_image_stride_copy(image.buf(), image.width(), image.height(), image.stride(), 0.)?;
+        let mut img = liq.new_image_stride(image.buf(), image.width(), image.height(), image.stride(), 0.)?;
         img.set_importance_map(importance_map)?;
         if has_prev_frame {
             img.add_fixed_color(RGBA8::new(0, 0, 0, 0));
         }
-        let res = liq.quantize(&img)?;
+        let res = liq.quantize(&mut img)?;
         Ok((liq, res, img))
     }
 
@@ -398,7 +407,7 @@ impl Writer {
 
     fn make_diffs(mut inputs: OrdQueueIter<DecodedImage>, quant_queue: Sender<DiffMessage>, settings: &Settings) -> CatResult<()> {
         let (first_frame, first_frame_pts) = inputs.next().transpose()?.ok_or(Error::NoFrames)?;
-        let mut prev_frame_pts = -1.0;
+        let mut prev_frame_pts = f64::NAN;
 
         let mut denoiser = Denoiser::new(first_frame.width(), first_frame.height(), settings.quality);
 
@@ -453,12 +462,14 @@ impl Writer {
 
                 // conversion from pts to delay
                 let end_pts = if let Some((_, next_pts)) = next_frame {
+                    debug_assert!(next_pts > 0.);
                     next_pts - first_frame_pts
                 } else if first_frame_pts > 1. / 100. {
                     // this is gifski's weird rule that non-zero first-frame pts
                     // shifts the whole anim and is the delay of the last frame
                     pts + first_frame_pts
                 } else {
+                    debug_assert!(prev_frame_pts.is_finite());
                     // otherwise assume steady framerate
                     pts + (pts - prev_frame_pts)
                 };
@@ -498,8 +509,19 @@ impl Writer {
 
     fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: Sender<RemapMessage>, settings: &Settings) -> CatResult<()> {
         let mut prev_frame_keeps = false;
-        while let Some(DiffMessage {image, end_pts, dispose, ordinal_frame_number, mut importance_map}) = inputs.recv().ok() {
+        let mut consecutive_frame_num = 0;
+        while let Some(DiffMessage {mut image, end_pts, dispose, ordinal_frame_number, mut importance_map}) = inputs.recv().ok() {
             if !prev_frame_keeps || importance_map.iter().any(|&px| px > 0) {
+
+                if prev_frame_keeps {
+                    // if denoiser says the background didn't change, then believe it
+                    // (except higher quality settings, which try to improve it every time)
+                    let bg_keep_likelyhood = (settings.quality.saturating_sub(80) / 4) as u32;
+                    if settings.fast || (settings.quality < 100 && (consecutive_frame_num % 5) >= bg_keep_likelyhood) {
+                        image.pixels_mut().zip(&importance_map).filter(|&(_, &m)| m == 0).for_each(|(px, _)| *px = RGBA8::new(0,0,0,0));
+                    }
+                }
+
                 let (liq, remap, liq_image) = Self::quantize(image.as_ref(), &importance_map, ordinal_frame_number > 1, settings)?;
                 let max_loss = settings.gifsicle_loss();
                 for imp in &mut importance_map {
@@ -513,6 +535,7 @@ impl Writer {
                     liq, remap,
                     liq_image,
                 })?;
+                consecutive_frame_num += 1;
             }
             prev_frame_keeps = dispose == gif::DisposalMethod::Keep;
         }

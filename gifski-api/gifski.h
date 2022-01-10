@@ -15,7 +15,9 @@ typedef struct gifski gifski;
 How to use from C
 
 ```c
-gifski *g = gifski_new(&(GifskiSettings){});
+gifski *g = gifski_new(&(GifskiSettings){
+  .quality = 90,
+});
 gifski_set_file_output(g, "file.gif");
 
 for(int i=0; i < frames; i++) {
@@ -90,7 +92,7 @@ enum GifskiError {
   GIFSKI_QUANT,
   /** internal error related to gif composing */
   GIFSKI_GIF,
-  /** internal error related to multithreading */
+  /** internal error - unexpectedly aborted */
   GIFSKI_THREAD_LOST,
   /** I/O error: file or directory not found */
   GIFSKI_NOT_FOUND,
