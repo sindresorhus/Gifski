@@ -238,6 +238,7 @@
 				"CARGO_XCODE_TARGET_OS[sdk=iphoneos*]" = ios;
 				"CARGO_XCODE_TARGET_OS[sdk=iphonesimulator*]" = "ios-sim";
 				"CARGO_XCODE_TARGET_OS[sdk=macosx*]" = darwin;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_NAME = gifski;
 				SDKROOT = macosx;
 				SUPPORTS_MACCATALYST = YES;
@@ -259,6 +260,7 @@
 				"CARGO_XCODE_TARGET_OS[sdk=iphoneos*]" = ios;
 				"CARGO_XCODE_TARGET_OS[sdk=iphonesimulator*]" = "ios-sim";
 				"CARGO_XCODE_TARGET_OS[sdk=macosx*]" = darwin;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = gifski;
 				SDKROOT = macosx;
