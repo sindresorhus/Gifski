@@ -396,6 +396,9 @@ final class Gifski {
 				)
 			}
 			
+			// TODO: This is just a workaround. Look into the cause of this.
+			// https://github.com/sindresorhus/Gifski/pull/262
+			// Skip incorrect out-of-range frames.
 			if result.actualTime.seconds < startTime {
 				return .success(true)
 			}
