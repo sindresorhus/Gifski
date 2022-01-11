@@ -395,6 +395,13 @@ final class Gifski {
 					value: result.image.debugInfo
 				)
 			}
+			
+			// TODO: This is just a workaround. Look into the cause of this.
+			// https://github.com/sindresorhus/Gifski/pull/262
+			// Skip incorrect out-of-range frames.
+			if result.actualTime.seconds < startTime {
+				return .success(true)
+			}
 
 			let pixels: CGImage.Pixels
 			do {
@@ -405,6 +412,7 @@ final class Gifski {
 
 			do {
 				let frameNumber = result.completedCount - 1
+				assert(result.actualTime.seconds > 0 || frameNumber == 0)
 
 				try gifski?.addFrame(
 					pixelFormat: .rgba,
