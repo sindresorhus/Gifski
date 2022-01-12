@@ -64,25 +64,11 @@
 			remoteGlobalIDString = CA603FE154B925B01F7BB01B;
 			remoteInfo = "gifski-staticlib";
 		};
-		5F6ABD85278BA5A20040DDF0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5F6ABD7D278BA5A20040DDF0 /* gifski.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CA60A768E7413BAED3A84472;
-			remoteInfo = "gifski-cdylib";
-		};
-		5F6ABD87278BA5A20040DDF0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5F6ABD7D278BA5A20040DDF0 /* gifski.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CA60E15A6C516A29AABC7E0E;
-			remoteInfo = "gifski-bin";
-		};
 		5FF0DFFC278BA5E200A80F09 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5F6ABD7D278BA5A20040DDF0 /* gifski.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = CA6039844E426B6DAF3613F9;
+			remoteGlobalIDString = CA6080A63FCEFE2C55B82F1B;
 			remoteInfo = "gifski-staticlib";
 		};
 /* End PBXContainerItemProxy section */
@@ -186,8 +172,6 @@
 			isa = PBXGroup;
 			children = (
 				5F6ABD84278BA5A20040DDF0 /* libgifski_static.a */,
-				5F6ABD86278BA5A20040DDF0 /* gifski.dylib */,
-				5F6ABD88278BA5A20040DDF0 /* gifski */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -381,20 +365,6 @@
 			fileType = archive.ar;
 			path = libgifski_static.a;
 			remoteRef = 5F6ABD83278BA5A20040DDF0 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		5F6ABD86278BA5A20040DDF0 /* gifski.dylib */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.dylib";
-			path = gifski.dylib;
-			remoteRef = 5F6ABD85278BA5A20040DDF0 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		5F6ABD88278BA5A20040DDF0 /* gifski */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.executable";
-			path = gifski;
-			remoteRef = 5F6ABD87278BA5A20040DDF0 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -717,9 +687,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -750,9 +718,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -824,7 +790,7 @@
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 8.8.0;
+				minimumVersion = 8.10.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
