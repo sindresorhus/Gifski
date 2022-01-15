@@ -255,9 +255,9 @@ dependencies = [
 
 [[package]]
 name = "getrandom"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fcd999463524c52659517fe2cea98493cfe485d10565e7b0fb07dbba7ad2753"
+checksum = "418d37c8b1d42553c93648be529cb70f920d3baf8ef469b74b9638df426e0b4c"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
@@ -297,7 +297,7 @@ dependencies = [
 
 [[package]]
 name = "gifski"
-version = "1.6.1"
+version = "1.6.3"
 dependencies = [
  "clap",
  "crossbeam-channel",
@@ -343,9 +343,9 @@ dependencies = [
 
 [[package]]
 name = "imagequant"
-version = "4.0.0-beta.4"
+version = "4.0.0-beta.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee66bb3651699933e853d1de9813d46748713cf60fc01da8f014414765175206"
+checksum = "a19e402b08669aee84b5df80b754856aad91d1301e72435c767eab689b289121"
 dependencies = [
  "arrayvec",
  "fallible_collections",
