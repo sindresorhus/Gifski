@@ -297,7 +297,7 @@ dependencies = [
 
 [[package]]
 name = "gifski"
-version = "1.6.3"
+version = "1.6.4"
 dependencies = [
  "clap",
  "crossbeam-channel",
@@ -343,13 +343,14 @@ dependencies = [
 
 [[package]]
 name = "imagequant"
-version = "4.0.0-beta.6"
+version = "4.0.0-beta.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a19e402b08669aee84b5df80b754856aad91d1301e72435c767eab689b289121"
+checksum = "6fbd720ffd79390df8aaf8d83d290d461f3e31f9b42f3eb49b156e05bc1e6d6e"
 dependencies = [
  "arrayvec",
  "fallible_collections",
  "noisy_float",
+ "once_cell",
  "rayon",
  "rgb",
  "thread_local",
@@ -391,9 +392,9 @@ dependencies = [
 
 [[package]]
 name = "lodepng"
-version = "3.4.7"
+version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24844d5c0b922ddd52fb5bf0964a4c7f8e799a946ec01bb463771eb04fc1a323"
+checksum = "ee9bfa86cc28550f1e0f6a23ae4f4811aaec527be710b313f78cf33982cefdc3"
 dependencies = [
  "fallible_collections",
  "flate2",
@@ -667,9 +668,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "wasi"
-version = "0.10.2+wasi-snapshot-preview1"
+version = "0.10.3+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd6fbd9a79829dd1ad0cc20627bf1ed606756a7f77edff7b66b7064f9cb327c6"
+checksum = "46a2e384a3f170b0c7543787a91411175b71afd56ba4d3a0ae5678d4e2243c0e"
 
 [[package]]
 name = "weezl"
