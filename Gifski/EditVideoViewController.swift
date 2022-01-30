@@ -320,6 +320,7 @@ final class EditVideoViewController: NSViewController {
 			}
 
 			let frameRate = self.frameRateSlider.integerValue
+			Defaults[.outputFPS] = frameRate
 			self.frameRateLabel.stringValue = "\(frameRate)"
 			self.estimatedFileSizeModel.updateEstimate()
 		}
@@ -353,7 +354,7 @@ final class EditVideoViewController: NSViewController {
 		frameRateSlider.maxValue = frameRate.clamped(to: Constants.allowedFrameRate)
 
 		if isInit {
-			frameRateSlider.doubleValue = defaultFrameRate(inputFrameRate: frameRate)
+			frameRateSlider.integerValue = Defaults[.outputFPS]
 		}
 
 		frameRateSlider.triggerAction()
@@ -624,10 +625,6 @@ final class EditVideoViewController: NSViewController {
 		let selectedCustomTitle = "Custom - \(newResizableDimensions.currentDimensions)"
 		predefinedSizesDropdown.item(at: 0)?.title = selectedCustomTitle
 		predefinedSizesDropdown.selectItem(at: 0)
-	}
-
-	private func defaultFrameRate(inputFrameRate frameRate: Double) -> Double {
-		frameRate.clamped(to: Constants.allowedFrameRate.lowerBound...20)
 	}
 
 	private func getNaiveEstimate() -> Double {
