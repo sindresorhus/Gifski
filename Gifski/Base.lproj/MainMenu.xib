@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17156" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="19529" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17156"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="19529"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -170,7 +170,7 @@
                             <menuItem title="About Gifski Library" id="TcL-ZY-7a3" customClass="UrlMenuItem" customModule="Gifski" customModuleProvider="target">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://gif.ski"/>
+                                    <userDefinedRuntimeAttribute type="string" keyPath="url" value="https://github.com/ImageOptim/gifski"/>
                                 </userDefinedRuntimeAttributes>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="yQX-Pq-3me"/>
