@@ -17,13 +17,11 @@ Gifski supports all the video formats that macOS supports (`.mp4` or `.mov` with
 
 Gifski has a bunch of settings like changing dimensions, speed, frame rate, quality, looping, and more.
 
-**[Blog post](https://blog.sindresorhus.com/gifski-972692460aa5)** &nbsp;&nbsp; **[Product Hunt](https://www.producthunt.com/posts/gifski-2)**
-
 ## Download
 
 [![](https://tools.applemediaservices.com/api/badges/download-on-the-mac-app-store/black/en-us?size=250x83&releaseDate=1615852800)](https://apps.apple.com/app/id1351639930)
 
-Requires macOS 10.15 or later.
+Requires macOS 11 or later.
 
 #### Older versions
 
@@ -126,12 +124,17 @@ No, but there's a [cross-platform command-line tool](https://github.com/ImageOpt
 
 - [Sindre Sorhus](https://github.com/sindresorhus)
 - [Kornel Lesiński](https://github.com/kornelski)
+
+**Former**
+
 - [Lars-Jørgen Kristiansen](https://github.com/LarsJK)
 - [Boy van Amstel](https://github.com/boyvanamstel)
 - [Łukasz Mróz](https://github.com/sunshinejr)
 
 ## Related
 
+- [Announcement blog post](https://medium.com/sindre-sorhus/gifski-972692460aa5)
+- [Product Hunt](https://www.producthunt.com/posts/gifski-2)
 - [Sindre's apps](https://sindresorhus.com/apps)
 
 ## License

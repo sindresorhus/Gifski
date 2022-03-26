@@ -101,12 +101,12 @@ final class VideoDropView: DropView<URL> {
 	override var acceptedTypes: [NSPasteboard.PasteboardType] { [.fileURL] }
 
 	override func onEntered(_ sender: NSDraggingInfo) -> Bool {
-		sender.draggingPasteboard.fileURLs(types: Device.supportedVideoTypes).count == 1
+		sender.draggingPasteboard.fileURLs(contentTypes: Device.supportedVideoTypes).count == 1
 	}
 
 	override func onPerform(_ sender: NSDraggingInfo) -> Bool {
 		guard
-			let url = sender.draggingPasteboard.fileURLs(types: Device.supportedVideoTypes).first
+			let url = sender.draggingPasteboard.fileURLs(contentTypes: Device.supportedVideoTypes).first
 		else {
 			return false
 		}

@@ -56,6 +56,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 				// We add 10% extra because it's better to estimate slightly too much than too little.
 				let fileSize = (Double(data.count) * gifski.sizeMultiplierForEstimation) * 1.1
 
+				// TODO: Use the new formatter API when targeting macOS 12.
 				self.estimatedFileSize = Self.formatter.string(fromByteCount: Int64(fileSize))
 			case .failure(let error):
 				switch error {
@@ -84,8 +85,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 }
 
 struct EstimatedFileSizeView: View {
-	// TODO: Use `StateObject` when targeting macOS 11.
-	@ObservedObject private var model: EstimatedFileSizeModel
+	@StateObject private var model: EstimatedFileSizeModel
 
 	init(model: EstimatedFileSizeModel) {
 		_model = .init(wrappedValue: model)
@@ -95,8 +95,7 @@ struct EstimatedFileSizeView: View {
 		HStack {
 			if let error = model.error {
 				Text("Failed to get estimate: \(error.localizedDescription)")
-					// TODO: Enable when targeting macOS 11.
-//					.help(error.localizedDescription)
+					.help(error.localizedDescription)
 			} else {
 				HStack(spacing: 0) {
 					Text("Estimated size: ")
@@ -108,18 +107,10 @@ struct EstimatedFileSizeView: View {
 					.foregroundColor(.secondary)
 				HStack {
 					if model.estimatedFileSize == nil {
-						if #available(macOS 11, *) {
-							ProgressView()
-								.controlSize(.small)
-								// TODO: This causes a crash on macOS 12.0.1
-//								.scaleEffect(0.7)
-								.padding(.leading, -4)
-								.help("Calculating file size estimate")
-						} else {
-							Text("Estimating…")
-								.foregroundColor(.secondary)
-								.font(.smallSystem())
-						}
+						ProgressView()
+							.controlSize(.mini)
+							.padding(.leading, -4)
+							.help("Calculating file size estimate")
 					}
 				}
 					// This causes SwiftUI to crash internally on macOS 12.0 when changing the trim size many times so the estimation indicator keeps changing.
@@ -129,7 +120,7 @@ struct EstimatedFileSizeView: View {
 			// It's important to set a width here as otherwise it can cause internal SwiftUI crashes on macOS 11 and 12.
 			.frame(width: 500, height: 22, alignment: .leading)
 			.overlay2 {
-				if #available(macOS 11, *), model.error == nil {
+				if model.error == nil {
 					HStack {
 						Text(DateComponentsFormatter.localizedStringPositionalWithFractionalSeconds(model.duration))
 							// TODO: Use `View#monospacedDigit()` when targeting macOS 12.

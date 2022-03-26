@@ -65,7 +65,6 @@ only_rules:
   - legacy_nsgeometry_functions
   - legacy_random
   - literal_expression_end_indentation
-  - legacy_objc_type
   - lower_acl_than_parent
   - mark
   - modifier_order
@@ -86,6 +85,7 @@ only_rules:
   - operator_whitespace
   - orphaned_doc_comment
   - overridden_super_call
+  - prefer_self_in_static_references
   - prefer_self_type_over_type_of_self
   - prefer_zero_over_explicit_init
   - private_action
@@ -106,6 +106,8 @@ only_rules:
   - redundant_void_return
   - required_enum_case
   - return_arrow_whitespace
+  - return_value_from_void_function
+  - self_in_property_initialization
   - shorthand_operator
   - sorted_first_last
   - statement_position
@@ -122,6 +124,7 @@ only_rules:
   - trailing_newline
   - trailing_semicolon
   - trailing_whitespace
+  - unavailable_condition
   - unavailable_function
   - unneeded_break_in_switch
   - unneeded_parentheses_in_closure_argument
@@ -139,7 +142,6 @@ only_rules:
   - vertical_whitespace_closing_braces
   - vertical_whitespace_opening_braces
   - void_return
-  - weak_delegate
   - xct_specific_matcher
   - xctfail_message
   - yoda_condition
@@ -147,6 +149,7 @@ analyzer_rules:
   - capture_variable
   - unused_declaration
   - unused_import
+  - typesafe_array_init
 number_separator:
   minimum_length: 5
 identifier_name:
@@ -171,7 +174,7 @@ identifier_name:
     - 'y2'
     - 'z2'
 deployment_target:
-  macOS_deployment_target: '10.15'
+  macOS_deployment_target: '11'
 custom_rules:
   no_nsrect:
     regex: '\bNSRect\b'

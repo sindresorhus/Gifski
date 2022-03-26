@@ -175,12 +175,7 @@ extension NSWindow {
 }
 
 
-// TODO: Remove these when targeting macOS 11.
 private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
-	if #available(macOS 11, *) {
-		return rect
-	}
-
 	// Adjust sheet position so it goes below the traffic lights.
 	if window.styleMask.contains(.fullSizeContentView) {
 		return rect.offsetBy(dx: 0, dy: -window.titlebarHeight)
@@ -1636,7 +1631,7 @@ extension NSPasteboard {
 	Read more: http://nspasteboard.org
 	*/
 	func setSourceApp() {
-		setString(SSApp.id, forType: .sourceAppBundleIdentifier)
+		setString(SSApp.idString, forType: .sourceAppBundleIdentifier)
 	}
 }
 
@@ -1644,7 +1639,7 @@ extension NSPasteboard {
 	/**
 	Starts a new pasteboard writing session. Do all pasteboard write operations in the given closure.
 
-	It takes care of calling `NSPasteboard#clearContents()` for you and also adds a marker for the source app (`NSPasteboard#setSourceApp()`).
+	It takes care of calling `NSPasteboard#prepareForNewContents()` for you and also adds a marker for the source app (`NSPasteboard#setSourceApp()`).
 
 	```
 	NSPasteboard.general.with {
@@ -1653,7 +1648,7 @@ extension NSPasteboard {
 	```
 	*/
 	func with(_ callback: (NSPasteboard) -> Void) {
-		clearContents()
+		prepareForNewContents()
 		callback(self)
 		setSourceApp()
 	}
@@ -1664,13 +1659,13 @@ extension NSPasteboard {
 	/**
 	Get the file URLs from dragged and dropped files.
 	*/
-	func fileURLs(types: [String] = []) -> [URL] {
+	func fileURLs(contentTypes: [UTType] = []) -> [URL] {
 		var options: [ReadingOptionKey: Any] = [
 			.urlReadingFileURLsOnly: true
 		]
 
-		if !types.isEmpty {
-			options[.urlReadingContentsConformToTypes] = types
+		if !contentTypes.isEmpty {
+			options[.urlReadingContentsConformToTypes] = contentTypes.map(\.identifier)
 		}
 
 		guard
@@ -1921,7 +1916,7 @@ extension NSAppearance {
 
 
 enum SSApp {
-	static let id = Bundle.main.bundleIdentifier!
+	static let idString = Bundle.main.bundleIdentifier!
 	static let name = Bundle.main.object(forInfoDictionaryKey: kCFBundleNameKey as String) as! String
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
 	static let build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
@@ -1943,14 +1938,14 @@ enum SSApp {
 	static func openSendFeedbackPage() {
 		let metadata =
 			"""
-			\(SSApp.name) \(SSApp.versionWithBuild) - \(SSApp.id)
+			\(name) \(versionWithBuild) - \(idString)
 			macOS \(Device.osVersion)
 			\(Device.hardwareModel)
 			\(Device.architecture)
 			"""
 
 		let query: [String: String] = [
-			"product": SSApp.name,
+			"product": name,
 			"metadata": metadata
 		]
 
@@ -2065,10 +2060,9 @@ enum Device {
 		#endif
 	}()
 
-	static let supportedVideoTypes = [
-		AVFileType.mp4.rawValue,
-		AVFileType.m4v.rawValue,
-		AVFileType.mov.rawValue
+	static let supportedVideoTypes: [UTType] = [
+		.mpeg4Movie,
+		.quickTimeMovie
 	]
 }
 
@@ -2217,9 +2211,7 @@ extension URL {
 		return values.allValues[key] as? Bool ?? defaultValue
 	}
 
-//	var contentType: UTType? { resourceValue(forKey: .contentTypeKey) }
-
-	var typeIdentifier: String? { resourceValue(forKey: .typeIdentifierKey) }
+	var contentType: UTType? { resourceValue(forKey: .contentTypeKey) }
 
 	/**
 	File size in bytes.
@@ -2227,18 +2219,9 @@ extension URL {
 	var fileSize: Int { resourceValue(forKey: .fileSizeKey) ?? 0 }
 
 	var fileSizeFormatted: String {
+		// TODO: Use `.formatted(.byteCount(style: .file))` when targeting macOS 12.
 		ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
 	}
-
-	// TODO: Use the below instead when targeting macOS 10.15. Also in `AVAsset#fileSize`.
-	/**
-	File size in bytes.
-	*/
-//	var fileSize: Measurement<UnitInformationStorage> { Measurement<UnitInformationStorage>(value: resourceValue(forKey: .fileSizeKey) ?? 0, unit: .bytes) }
-//
-//	var fileSizeFormatted: String {
-//		ByteCountFormatter.string(from: fileSize, countStyle: .file)
-//	}
 
 	var exists: Bool { FileManager.default.fileExists(atPath: path) }
 
@@ -2315,26 +2298,6 @@ extension URL {
 	- Note: When sandboxed, this returns the directory inside the sandbox container, not in the user's home directory. However, NSSavePanel/NSOpenPanel handles it correctly.
 	*/
 	static let downloadsDirectory = systemDirectory(.downloadsDirectory)
-}
-
-
-// TODO: Use UTType when targeting macOS 11.
-extension URL {
-	/**
-	Check if the file conforms to the given type identifier.
-
-	```
-	URL(fileURLWithPath: "video.mp4", isDirectory: false).conformsTo(typeIdentifier: "public.movie")
-	//=> true
-	```
-	*/
-	func conformsTo(typeIdentifier parentTypeIdentifier: String) -> Bool {
-		guard let typeIdentifier = typeIdentifier else {
-			return false
-		}
-
-		return UTTypeConformsTo(typeIdentifier as CFString, parentTypeIdentifier as CFString)
-	}
 }
 
 
@@ -2493,30 +2456,14 @@ extension CGRect {
 }
 
 
-public protocol CancellableError: Error {
-	/**
-	Returns true if this Error represents a cancelled condition.
-	*/
-	var isCancelled: Bool { get }
-}
-
-public struct CancellationError: CancellableError {
-	public var isCancelled = true
-}
-
 extension Error {
 	public var isCancelled: Bool {
 		do {
 			throw self
-		} catch let error as CancellableError {
-			return error.isCancelled
-		} catch URLError.cancelled {
-			return true
-		} catch CocoaError.userCancelled {
+		} catch is CancellationError, URLError.cancelled, CocoaError.userCancelled {
 			return true
 		} catch {
-			let pair = { ($0.domain, $0.code) }(error as NSError)
-			return pair == ("SKErrorDomain", 2)
+			return false
 		}
 	}
 }
@@ -2744,7 +2691,7 @@ extension NSError {
 		let errorName = "\(error)".split(separator: "(").first ?? ""
 
 		return .init(
-			domain: "\(SSApp.id) - \(nsError.domain)\(errorName.isEmpty ? "" : ".")\(errorName)",
+			domain: "\(SSApp.idString) - \(nsError.domain)\(errorName.isEmpty ? "" : ".")\(errorName)",
 			code: nsError.code,
 			userInfo: userInfo
 		)
@@ -2788,7 +2735,7 @@ extension NSError {
 		}
 
 		return .init(
-			domain: domainPostfix.map { "\(SSApp.id) - \($0)" } ?? SSApp.id,
+			domain: domainPostfix.map { "\(SSApp.idString) - \($0)" } ?? SSApp.idString,
 			code: 1, // This is what Swift errors end up as.
 			userInfo: userInfo
 		)
@@ -4228,7 +4175,6 @@ extension CGImage {
 
 	- Parameter premultiplyAlpha: Whether the alpha channel should be premultiplied.
 	*/
-	@available(macOS 11, *)
 	func toVImageBuffer(
 		pixelFormat: PixelFormat,
 		premultiplyAlpha: Bool
@@ -4384,23 +4330,6 @@ extension CGImage {
 		as pixelFormat: PixelFormat,
 		premultiplyAlpha: Bool
 	) throws -> Pixels {
-		// For macOS 10.15 and older, we don't handle the `premultiplyAlpha` option as it never correctly worked before and I'm too lazy to fix it there.
-		guard #available(macOS 11, *) else {
-			guard
-				let image = converting(to: pixelFormat),
-				let bytes = image.bytes
-			else {
-				throw NSError.appError("Could not get the pixels of the image.")
-			}
-
-			return Pixels(
-				bytes: bytes,
-				width: image.width,
-				height: image.height,
-				bytesPerRow: image.bytesPerRow
-			)
-		}
-
 		let buffer = try toVImageBuffer(pixelFormat: pixelFormat, premultiplyAlpha: premultiplyAlpha)
 
 		defer {
@@ -4695,9 +4624,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS12OrLater: Bool = {
+	static let isMacOS13OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 12, *) {
+		if #available(macOS 13, *) {
 			return true
 		} else {
 			return false
@@ -4710,9 +4639,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS11OrLater: Bool = {
+	static let isMacOS12OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 11, *) {
+		if #available(macOS 12, *) {
 			return true
 		} else {
 			return false

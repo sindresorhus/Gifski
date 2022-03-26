@@ -120,7 +120,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	*/
 	var minimumTrimDuration = 0.1
 
-	// TODO: This should be a Combine publisher.
+	// TODO: This should be an AsyncSequence.
 	fileprivate func observeTrimmedTimeRange(_ updateClosure: @escaping (ClosedRange<Double>) -> Void) {
 		var skipNextUpdate = false
 

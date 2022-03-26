@@ -2,12 +2,11 @@ import SwiftUI
 
 struct DropCenterView: View {
 	var body: some View {
-		VStack {
+		VStack(spacing: 6) {
 			Text("Drop a Video")
 			Text("or")
 				.font(.system(size: 10))
 				.italic()
-				.padding(.top, 6)
 			Button("Open") {
 				AppDelegate.shared.mainWindowController.presentOpenPanel()
 			}

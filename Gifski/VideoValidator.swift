@@ -35,13 +35,12 @@ struct VideoValidator {
 			return .failure
 		}
 
-		// TODO: Use `UTType#conforms(to:)` when targeting macOS 11.
 		// This is very unlikely to happen. We have a lot of file type filters in place, so the only way this can happen is if the user right-clicks a non-video in Finder, chooses "Open With", then "Other…", chooses "All Applications", and then selects Gifski. Yet, some people are doing this…
-		guard inputUrl.conformsTo(typeIdentifier: kUTTypeMovie as String) else {
+		guard inputUrl.contentType?.conforms(to: .movie) == true else {
 			NSAlert.showModal(
 				for: window,
 				title: "The selected file could not be converted because it's not a video.",
-				message: "Try again with a video file, usually with the file extension “mp4” or “mov”."
+				message: "Try again with a video file, usually with the file extension “mp4”, “m4v”, or “mov”."
 			)
 
 			return .failure

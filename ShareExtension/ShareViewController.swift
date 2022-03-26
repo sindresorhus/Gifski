@@ -21,13 +21,10 @@ final class ShareViewController: NSViewController {
 			return
 		}
 
-		// TODO: Use `UTType` here when targeting macOS 11.
 		var typeIdentifier: String
-		if item.hasItemConformingToTypeIdentifier("public.mpeg-4") {
+		if item.hasItemConforming(to: .mpeg4Movie) {
 			typeIdentifier = "public.mpeg-4"
-		} else if item.hasItemConformingToTypeIdentifier("com.apple.m4v-video") {
-			typeIdentifier = "com.apple.m4v-video"
-		} else if item.hasItemConformingToTypeIdentifier("com.apple.quicktime-movie") {
+		} else if item.hasItemConforming(to: .quickTimeMovie) {
 			typeIdentifier = "com.apple.quicktime-movie"
 		} else {
 			presentError(message: "The shared item is not in a supported video format.")

@@ -64,8 +64,6 @@
 	<string>gif,convert,video</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
-	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
 	<key>NSServices</key>
 	<array>
 		<dict>
@@ -77,7 +75,7 @@
 			<key>NSMessage</key>
 			<string>convertToGif</string>
 			<key>NSPortName</key>
-			<string>Gifski</string>
+			<string>${EXECUTABLE_NAME}</string>
 			<key>NSRequiredContext</key>
 			<dict/>
 			<key>NSSendFileTypes</key>

@@ -93,18 +93,14 @@ final class ConversionCompletedViewController: NSViewController {
 		draggableFileWrapper.layer?.masksToBounds = false
 		draggableFile.constrainEdgesToSuperview()
 
-		if #available(macOS 11, *) {
-			// TODO: Find a better icon for this.
-			openButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "New conversion")
+		// TODO: Find a better icon for this.
+		openButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "New conversion")
 
-			SSApp.runOnce(identifier: "showOpenButtonLabel") {
-				openButton.imagePosition = .imageLeading
-				openButton.title = "Open"
-				openButton.sizeToFit()
-				openButton.frame.x -= 34
-			}
-		} else {
-			openButton.isHidden = true
+		SSApp.runOnce(identifier: "showOpenButtonLabel") {
+			openButton.imagePosition = .imageLeading
+			openButton.title = "Open"
+			openButton.sizeToFit()
+			openButton.frame.x -= 34
 		}
 	}
 
@@ -176,8 +172,7 @@ final class ConversionCompletedViewController: NSViewController {
 
 		let panel = NSSavePanel()
 		panel.canCreateDirectories = true
-		// TODO: Use `.allowedContentTypes` here when targeting macOS 11.
-		panel.allowedFileTypes = [FileType.gif.identifier]
+		panel.allowedContentTypes = [.gif]
 		panel.nameFieldStringValue = inputUrl.filenameWithoutExtension
 		panel.message = "Choose where to save the GIF"
 

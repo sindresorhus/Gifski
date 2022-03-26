@@ -1,27 +1,5 @@
 import AppKit
-
-extension POSIXError {
-	/**
-	Create an error from the global C `errno`.
-	*/
-	static let fromErrno = Self(errno: errno)
-
-	/**
-	Create an error from the given C `errno`.
-
-	```
-	let length = getxattr(fileSystemPath, name, nil, 0, 0, 0)
-
-	guard length >= 0 else {
-		throw POSIXError(errno: errno)
-	}
-	```
-	*/
-	init(errno errorCode: Int32) {
-		self.init(POSIXErrorCode(rawValue: errorCode) ?? .EPERM)
-	}
-}
-
+import System
 
 final class ExtendedAttributes {
 	let url: URL
@@ -53,7 +31,7 @@ final class ExtendedAttributes {
 			let length = getxattr(fileSystemPath, name, nil, 0, 0, 0)
 
 			guard length >= 0 else {
-				throw POSIXError.fromErrno
+				throw System.Errno.fromErrno
 			}
 
 			var data = Data(count: length)
@@ -63,7 +41,7 @@ final class ExtendedAttributes {
 			}
 
 			guard result >= 0 else {
-				throw POSIXError.fromErrno
+				throw System.Errno.fromErrno
 			}
 
 			return data
@@ -100,7 +78,7 @@ final class ExtendedAttributes {
 			}
 
 			guard result >= 0 else {
-				throw POSIXError.fromErrno
+				throw System.Errno.fromErrno
 			}
 		}
 	}
@@ -121,7 +99,7 @@ final class ExtendedAttributes {
 
 		try url.withUnsafeFileSystemRepresentation { fileSystemPath in
 			guard removexattr(fileSystemPath, name, 0) >= 0 else {
-				throw POSIXError.fromErrno
+				throw System.Errno.fromErrno
 			}
 		}
 	}
@@ -136,7 +114,7 @@ final class ExtendedAttributes {
 			let length = listxattr(fileSystemPath, nil, 0, 0)
 
 			guard length >= 0 else {
-				throw POSIXError.fromErrno
+				throw System.Errno.fromErrno
 			}
 
 			var data = Data(count: length)
@@ -146,7 +124,7 @@ final class ExtendedAttributes {
 			}
 
 			guard result >= 0 else {
-				throw POSIXError.fromErrno
+				throw System.Errno.fromErrno
 			}
 
 			let list = data.split(separator: 0).compactMap {
@@ -164,7 +142,13 @@ final class ExtendedAttributes {
 	}
 }
 
-
 extension URL {
 	var attributes: ExtendedAttributes { .init(url: self) }
+}
+
+extension System.Errno {
+	/**
+	Create an error from the global C `errno`.
+	*/
+	static let fromErrno = Self(rawValue: errno)
 }
