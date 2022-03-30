@@ -31,7 +31,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 	func applicationDidFinishLaunching(_ notification: Notification) {
 		FirebaseApp.configure()
 		NSApp.servicesProvider = self
-		notificationCenter.requestAuthorization { _, _ in }
+
+		// We have to include `.badge` otherwise system preferences does not show the checkbox to turn off sounds.
+		notificationCenter.requestAuthorization(options: [.sound, .badge]) { _, _ in }
 
 		mainWindowController.showWindow(self)
 

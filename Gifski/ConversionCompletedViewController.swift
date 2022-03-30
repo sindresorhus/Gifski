@@ -43,6 +43,7 @@ final class ConversionCompletedViewController: NSViewController {
 			let notification = UNMutableNotificationContent()
 			notification.title = "Conversion Completed"
 			notification.subtitle = conversion.sourceURL.filename
+			notification.sound = .default
 			let request = UNNotificationRequest(identifier: "conversionCompleted", content: notification, trigger: nil)
 			// UNUserNotificationCenter.current().add(request)
 			AppDelegate.shared.notificationCenter.add(request)
