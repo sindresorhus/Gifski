@@ -19,7 +19,7 @@ It converts videos to animated GIFs that use thousands of colors per frame. This
 ■ To convert, either:
 
 - Drag and drop your HEIC images onto the window or the Dock icon.
-- Click the “Open” button in the window (macOS 10.15 and later) or in the “File” menu and then choose your HEIC images.
+- Click the “Open” button in the window or in the “File” menu and then choose your HEIC images.
 - Right-click your HEIC images in Finder and select this app in the “Open With” menu.
 
 Gifski supports all the video formats that macOS supports (.mp4 or .mov with H264, HEVC, ProRes, etc). The QuickTime Animation format is not supported. Use ProRes 4444 XQ instead. It's more efficient, more widely supported, and like QuickTime Animation, it also supports alpha channel.
@@ -66,4 +66,4 @@ Browsers throttle frame rates above 50 FPS, playing them at 10 FPS.
 
 ■ Support
 
-Click the “Send Feedback…” menu item in the “Help” menu in the app.
+Click the “Send Feedback” button in the “Help” menu in the app or email me at sindresorhus@gmail.com

@@ -81,7 +81,11 @@ impl From<CatResult<()>> for GifskiError {
                 Pal(_) => GifskiError::GIF,
                 ThreadSend => GifskiError::THREAD_LOST,
                 Io(ref err) => err.kind().into(),
-                _ => GifskiError::OTHER,
+                Aborted => GifskiError::ABORTED,
+                Gifsicle | Gif(_) => GifskiError::GIF,
+                NoFrames => GifskiError::INVALID_STATE,
+                WrongSize(_) => GifskiError::INVALID_INPUT,
+                PNG(_) => GifskiError::OTHER,
             },
         }
     }

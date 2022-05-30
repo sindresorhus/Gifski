@@ -111,10 +111,15 @@ enum GifskiError {
   /** misc I/O error */
   GIFSKI_UNEXPECTED_EOF,
   /** progress callback returned 0, writing aborted */
-  ABORTED,
+  GIFSKI_ABORTED,
   /** should not happen, file a bug */
   GIFSKI_OTHER,
 };
+
+/* workaround for a wrong definition in an older version of this header. Please use GIFSKI_ABORTED directly */
+#ifndef ABORTED
+#define ABORTED GIFSKI_ABORTED
+#endif
 
 typedef enum GifskiError GifskiError;
 

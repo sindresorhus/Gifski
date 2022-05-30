@@ -37,7 +37,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		NSApp.servicesProvider = self
 
 		// We have to include `.badge` otherwise system preferences does not show the checkbox to turn off sounds. (macOS 12.4)
-		notificationCenter.requestAuthorization(options: [.sound, .badge]) { _, _ in }
+		notificationCenter.requestAuthorization(options: [.sound, .badge]) { success, _ in
+			guard
+				!SSApp.isFirstLaunch,
+				success
+			else {
+				return
+			}
+
+			DispatchQueue.main.async {
+				// TODO: Remove this in 2023.
+				SSApp.runOnce(identifier: "notificationSoundNotice") {
+					NSAlert.showModal(
+						title: "The conversion completed notification now plays a sound.",
+						message: "If you don't want this, you can turn it off in “System Preferences › Notifications & Focus › Gifski”."
+					)
+				}
+			}
+		}
 
 		mainWindowController.showWindow(self)
 

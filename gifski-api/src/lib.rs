@@ -40,7 +40,6 @@ mod encodegifsicle;
 
 use crossbeam_channel::{Receiver, Sender};
 use std::io::prelude::*;
-use std::path::PathBuf;
 use std::thread;
 use std::borrow::Cow;
 
@@ -66,6 +65,13 @@ pub struct Settings {
     pub fast: bool,
     /// Sets the looping method for the image sequence.
     pub repeat: Repeat,
+}
+
+#[derive(Copy, Clone)]
+#[non_exhaustive]
+struct SettingsExt {
+    pub s: Settings,
+    pub extra_effort: bool,
 }
 
 impl Settings {
@@ -110,7 +116,7 @@ pub struct Collector {
 pub struct Writer {
     /// Input frame decoder results
     queue_iter: Option<OrdQueueIter<DecodedImage>>,
-    settings: Settings,
+    settings: SettingsExt,
 }
 
 struct GIFFrame {
@@ -187,7 +193,10 @@ pub fn new(settings: Settings) -> CatResult<(Collector, Writer)> {
         },
         Writer {
             queue_iter: Some(queue_iter),
-            settings,
+            settings: SettingsExt {
+                s: settings,
+                extra_effort: false,
+            }
         },
     ))
 }
@@ -217,7 +226,8 @@ impl Collector {
     /// Presentation timestamp is time in seconds (since file start at 0) when this frame is to be displayed.
     ///
     /// If the first frame doesn't start at pts=0, the delay will be used for the last frame.
-    pub fn add_frame_png_file(&mut self, frame_index: usize, path: PathBuf, presentation_timestamp: f64) -> CatResult<()> {
+    #[cfg(feature = "png")]
+    pub fn add_frame_png_file(&mut self, frame_index: usize, path: std::path::PathBuf, presentation_timestamp: f64) -> CatResult<()> {
         let width = self.width;
         let height = self.height;
         let image = lodepng::decode32_file(&path)
@@ -245,6 +255,24 @@ impl Collector {
             image.into_owned()
         };
 
+        // dithering of anti-aliased edges can look very fuzzy, so disable it near the edges
+        let mut anti_aliasing = Vec::with_capacity(image.width() * image.height());
+        loop9::loop9(image.as_ref(), 0, 0, image.width(), image.height(), |_x,_y, top, mid, bot| {
+            anti_aliasing.push(if mid.curr.a == 255 || mid.curr.a == 0 {
+                false
+            } else {
+                fn is_edge(a: u8, b: u8) -> bool {
+                    a < 12 && b >= 240 ||
+                    b < 12 && a >= 240
+                }
+                is_edge(top.curr.a, bot.curr.a) ||
+                is_edge(mid.prev.a, mid.next.a) ||
+                is_edge(top.prev.a, bot.next.a) ||
+                is_edge(top.next.a, bot.prev.a)
+            });
+        });
+
+        // this table is already biased, so that px.a doesn't need to be changed
         const DITHER: [u8; 64] = [
          0*2+8,48*2+8,12*2+8,60*2+8, 3*2+8,51*2+8,15*2+8,63*2+8,
         32*2+8,16*2+8,44*2+8,28*2+8,35*2+8,19*2+8,47*2+8,31*2+8,
@@ -256,10 +284,14 @@ impl Collector {
         42*2+8,26*2+8,38*2+8,22*2+8,41*2+8,25*2+8,37*2+8,21*2+8];
 
         // Make transparency binary
-        for (y, row) in image.rows_mut().enumerate() {
-            for (x, px) in row.iter_mut().enumerate() {
+        for (y, (row, aa)) in image.rows_mut().zip(anti_aliasing.chunks_exact(width)).enumerate() {
+            for (x, (px, aa)) in row.iter_mut().zip(aa.iter().copied()).enumerate() {
                 if px.a < 255 {
-                    px.a = if px.a < DITHER[(y & 7) * 8 + (x & 7)] { 0 } else { 255 };
+                    if aa {
+                        px.a = if px.a < 89 { 0 } else { 255 };
+                    } else {
+                        px.a = if px.a < DITHER[(y & 7) * 8 + (x & 7)] { 0 } else { 255 };
+                    }
                 }
             }
         }
@@ -295,18 +327,26 @@ fn dimensions_for_image((img_w, img_h): (usize, usize), resize_to: (Option<u32>,
 
 /// Encode collected frames
 impl Writer {
+    #[deprecated(note="please don't use, it will be in Settings eventually")]
+    #[doc(hidden)]
+    pub fn set_extra_effort(&mut self) {
+        self.settings.extra_effort = true;
+    }
+
     /// `importance_map` is computed from previous and next frame.
     /// Improves quality of pixels visible for longer.
     /// Avoids wasting palette on pixels identical to the background.
     ///
     /// `background` is the previous frame.
-    fn quantize(image: ImgVec<RGBA8>, importance_map: &[u8], first_frame: bool, needs_transparency: bool, prev_frame_keeps: bool, settings: &Settings) -> CatResult<(Attributes, QuantizationResult, Image<'static>)> {
+    fn quantize(image: ImgVec<RGBA8>, importance_map: &[u8], first_frame: bool, needs_transparency: bool, prev_frame_keeps: bool, SettingsExt {s: settings, extra_effort}: &SettingsExt) -> CatResult<(Attributes, QuantizationResult, Image<'static>)> {
         let mut liq = Attributes::new();
         if settings.fast {
             liq.set_speed(10)?;
+        } else if *extra_effort {
+            liq.set_speed(1)?;
         }
         let quality = if !first_frame {
-            settings.color_quality().into()
+            settings.color_quality()
         } else {
             100 // the first frame is too important to ruin it
         };
@@ -384,8 +424,8 @@ impl Writer {
 
         #[cfg(feature = "gifsicle")]
         {
-            if self.settings.quality < 100 {
-                let mut gifsicle = encodegifsicle::Gifsicle::new(self.settings.gifsicle_loss(), &mut writer);
+            if self.settings.s.quality < 100 {
+                let mut gifsicle = encodegifsicle::Gifsicle::new(self.settings.s.gifsicle_loss(), &mut writer);
                 return self.write_with_encoder(&mut gifsicle, reporter);
             }
         }
@@ -395,20 +435,21 @@ impl Writer {
     fn write_with_encoder(mut self, encoder: &mut dyn Encoder, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         let decode_queue_recv = self.queue_iter.take().ok_or(Error::Aborted)?;
 
-        let settings = self.settings;
+        let settings_ext = self.settings;
+        let settings = self.settings.s;
         let (quant_queue, quant_queue_recv) = crossbeam_channel::bounded(4);
         let diff_thread = thread::Builder::new().name("diff".into()).spawn(move || {
             Self::make_diffs(decode_queue_recv, quant_queue, &settings)
         })?;
         let (remap_queue, remap_queue_recv) = crossbeam_channel::bounded(8);
         let quant_thread = thread::Builder::new().name("quant".into()).spawn(move || {
-            Self::quantize_frames(quant_queue_recv, remap_queue, &settings)
+            Self::quantize_frames(quant_queue_recv, remap_queue, &settings_ext)
         })?;
         let (write_queue, write_queue_recv) = crossbeam_channel::bounded(6);
         let remap_thread = thread::Builder::new().name("remap".into()).spawn(move || {
             Self::remap_frames(remap_queue_recv, write_queue, &settings)
         })?;
-        Self::write_frames(write_queue_recv, encoder, &self.settings, reporter)?;
+        Self::write_frames(write_queue_recv, encoder, &self.settings.s, reporter)?;
         diff_thread.join().map_err(|_| Error::ThreadSend)??;
         quant_thread.join().map_err(|_| Error::ThreadSend)??;
         remap_thread.join().map_err(|_| Error::ThreadSend)??;
@@ -460,14 +501,12 @@ impl Writer {
                     } else {
                         gif::DisposalMethod::Keep
                     }
+                } else if first_frame_has_transparency {
+                    // Last frame should reset to background to avoid breaking transparent looped anims
+                    gif::DisposalMethod::Background
                 } else {
-                    if first_frame_has_transparency {
-                        // Last frame should reset to background to avoid breaking transparent looped anims
-                        gif::DisposalMethod::Background
-                    } else {
-                        // macOS preview gets Background wrong
-                        gif::DisposalMethod::Keep
-                    }
+                    // macOS preview gets Background wrong
+                    gif::DisposalMethod::Keep
                 };
 
                 // conversion from pts to delay
@@ -517,23 +556,23 @@ impl Writer {
         Ok(())
     }
 
-    fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: Sender<RemapMessage>, settings: &Settings) -> CatResult<()> {
+    fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: Sender<RemapMessage>, settings: &SettingsExt) -> CatResult<()> {
         let mut prev_frame_keeps = false;
         let mut consecutive_frame_num = 0;
-        while let Some(DiffMessage {mut image, end_pts, dispose, ordinal_frame_number, needs_transparency, mut importance_map}) = inputs.recv().ok() {
+        while let Ok(DiffMessage {mut image, end_pts, dispose, ordinal_frame_number, needs_transparency, mut importance_map}) = inputs.recv() {
             if !prev_frame_keeps || importance_map.iter().any(|&px| px > 0) {
 
                 if prev_frame_keeps {
                     // if denoiser says the background didn't change, then believe it
                     // (except higher quality settings, which try to improve it every time)
-                    let bg_keep_likelyhood = (settings.quality.saturating_sub(80) / 4) as u32;
-                    if settings.fast || (settings.quality < 100 && (consecutive_frame_num % 5) >= bg_keep_likelyhood) {
+                    let bg_keep_likelyhood = (settings.s.quality.saturating_sub(80) / 4) as u32;
+                    if settings.s.fast || (settings.s.quality < 100 && (consecutive_frame_num % 5) >= bg_keep_likelyhood) {
                         image.pixels_mut().zip(&importance_map).filter(|&(_, &m)| m == 0).for_each(|(px, _)| *px = RGBA8::new(0,0,0,0));
                     }
                 }
 
                 let (liq, remap, liq_image) = Self::quantize(image, &importance_map, consecutive_frame_num == 0, needs_transparency, prev_frame_keeps, settings)?;
-                let max_loss = settings.gifsicle_loss();
+                let max_loss = settings.s.gifsicle_loss();
                 for imp in &mut importance_map {
                     // encoding assumes rgba background looks like encoded background, which is not true for lossy
                     *imp = ((256 - (*imp) as u32) * max_loss / 256).min(255) as u8;

@@ -10,40 +10,49 @@ license = "AGPL-3.0+"
 name = "gifski"
 readme = "README.md"
 repository = "https://github.com/ImageOptim/gifski"
-version = "1.6.4"
+version = "1.7.0"
 autobins = false
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 doctest = false
 name = "gifski"
+required-features = ["clap", "png", "pbr", "wild", "natord", "dunce"]
+
+[[test]]
+name = "tests"
+required-features = ["png"]
 
 [dependencies]
 gifsicle = { version = "1.92.5", optional = true }
-clap = "2.34.0"
+clap = { version = "3.0.14", features = ["cargo"], optional = true }
 gif = "0.11.3"
 gif-dispose = "3.1.1"
-imagequant = "4.0.0-beta.7"
+imagequant = "4.0.0"
 imgref = "1.9.1"
-lodepng = "3.5.0"
-pbr = "1.0.4"
+lodepng = { version = "3.6.1", optional = true }
+pbr = { version = "1.0.4", optional = true }
 resize = "0.7.2"
 rgb = "0.8.31"
-wild = "2.0.4"
-natord = "1.0.9"
+wild = { version = "2.0.4", optional = true }
+natord = { version = "1.0.9", optional = true }
 quick-error = "2.0.1"
-dunce = "1.0.2"
+dunce = { version = "1.0.2", optional = true }
 crossbeam-channel = "0.5.2"
+loop9 = "0.1.3"
 
 [dependencies.ffmpeg]
 package = "ffmpeg-next"
-version = "4.4.0"
+version = ">= 4.4.0, <6"
 optional = true
 default-features = false
 features = ["codec", "format", "filter", "software-resampling", "software-scaling"]
 
 [features]
-default = ["gifsicle"]
+# cargo build will skip the binaries with missing required-features
+# so all CLI dependencies have to be enabled by default
+default = ["gifsicle", "clap", "png", "pbr", "wild", "natord", "dunce"]
+png = ["lodepng"]
 openmp = [] # deprecated, obsolete
 openmp-static = [] # deprecated, obsolete
 video = ["ffmpeg"]
@@ -69,3 +78,7 @@ opt-level = 3
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
+
+# [patch.crates-io]
+# ffmpeg-next = { git = "https://github.com/zmwangx/rust-ffmpeg.git", rev = "feae6b21b8c9f76d399260f812c0deb620bf02ad" }
+# ffmpeg-sys-next = { git = "https://github.com/kornelski/rust-ffmpeg-sys-1.git", rev = "c6dc629aecebfcc12893aa1bc4338f99e9b71bef" }

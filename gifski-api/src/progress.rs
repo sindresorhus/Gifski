@@ -1,5 +1,5 @@
+#[cfg(feature = "pbr")]
 pub use pbr::ProgressBar;
-use std::io::Stdout;
 use std::os::raw::{c_int, c_void};
 
 /// A trait that is used to report progress to some consumer.
@@ -44,7 +44,8 @@ impl ProgressReporter for ProgressCallback {
 
 /// Implement the progress reporter trait for a progress bar,
 /// to make it usable for frame processing reporting.
-impl ProgressReporter for ProgressBar<Stdout> {
+#[cfg(feature = "pbr")]
+impl<T> ProgressReporter for ProgressBar<T> where T: std::io::Write + Send {
     fn increase(&mut self) -> bool {
         self.inc();
         true

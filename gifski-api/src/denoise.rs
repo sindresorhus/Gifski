@@ -295,7 +295,7 @@ fn color_diff(x: RGB8, y: RGB8) -> u32 {
 #[cfg(test)]
 fn px<T>(f: Denoised<T>) -> (RGBA8, T) {
     if let Denoised::Frame { frame, meta, .. } = f {
-        (frame.pixels().nth(0).unwrap(), meta)
+        (frame.pixels().next().unwrap(), meta)
     } else { panic!("no frame") }
 }
 

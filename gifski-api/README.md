@@ -12,9 +12,9 @@ It's a CLI tool, but it can also be compiled [as a C library](https://docs.rs/gi
 
 See [releases](https://github.com/ImageOptim/gifski/releases) page for executables.
 
-If you have [Rust](https://www.rust-lang.org/install.html) 1.49+, you can also get it with [`cargo install gifski`](https://crates.rs/crates/gifski). Run `cargo build --release --features=openmp` or `cargo build --release --features=video,openmp` to build from source.
-
 If you have [Homebrew](https://brew.sh/), you can also get it with `brew install gifski`.
+
+If you have [Rust](https://www.rust-lang.org/install.html) 1.49+, you can also build it from source with [`cargo install gifski`](https://lib.rs/crates/gifski).
 
 ## Usage
 
@@ -44,11 +44,9 @@ See `gifski -h` for more options.
 2. Clone the repository: `git clone https://github.com/ImageOptim/gifski`
 3. In the cloned directory, run: `cargo build --release`
 
-Enable OpenMP by adding `--features=openmp` to Cargo build flags (supported on macOS and Linux with GCC). It makes encoding more than twice as fast.
-
 ### Using from C
 
-[See `gifski.h` for the API](https://docs.rs/gifski). To build the library, run:
+[See `gifski.h`](https://github.com/ImageOptim/gifski/blob/main/gifski.h) for [the C API](https://docs.rs/gifski/latest/gifski/c_api/#functions). To build the library, run:
 
 ```sh
 cargo build --release
@@ -58,15 +56,15 @@ and link with `target/release/libgifski.a`. Please observe the [LICENSE](LICENSE
 
 ## License
 
-AGPL 3 or later. Let [me](https://kornel.ski/contact) know if you'd like to use it in a product incompatible with this license. I can offer alternative licensing options, including [commercial licenses](https://supso.org/projects/pngquant).
+AGPL 3 or later. I can offer alternative licensing options, including [commercial licenses](https://supso.org/projects/pngquant). Let [me](https://kornel.ski/contact) know if you'd like to use it in a product incompatible with this license.
 
 ## With built-in video support
 
 The tool optionally supports decoding video directly, but unfortunately it relies on ffmpeg 4.x, which may be *very hard* to get working, so it's not enabled by default.
 
-You must have `ffmpeg` and `libclang` installed, both with their C headers intalled in default system include paths. Details depend on the platform and version, but you usually need to install packages such as `libavformat-dev`, `libavfilter-dev`, `libavdevice-dev`, `libclang-dev`, `clang`. Please note that installation of these dependencies may be quite difficult. Especially on macOS and Windows it takes *expert knowledge* to just get them installed without wasting several hours on endless stupid installation and compilation errors, which I can't help with.
+You must have `ffmpeg` and `libclang` installed, both with their C headers intalled in default system include paths. Details depend on the platform and version, but you usually need to install packages such as `libavformat-dev`, `libavfilter-dev`, `libavdevice-dev`, `libclang-dev`, `clang`. Please note that installation of these dependencies may be quite difficult. Especially on macOS and Windows it takes *expert knowledge* to just get them installed without wasting several hours on endless stupid installation and compilation errors, which I can't help with. If you're cross-compiling, try uncommenting `[patch.crates-io]` section at the end of `Cargo.toml`, which includes some experimental fixes for ffmpeg.
 
-Once you have dependencies installed, compile with `cargo build --release --features=video,openmp` or `cargo build --release --features=video-static`.
+Once you have dependencies installed, compile with `cargo build --release --features=video` or `cargo build --release --features=video-static`.
 
 When compiled with video support [ffmpeg licenses](https://www.ffmpeg.org/legal.html) apply. You may need to have a patent license to use H.264/H.265 video (I recommend using VP9/WebM instead).
 
@@ -75,6 +73,10 @@ gifski -o out.gif video.mp4
 ```
 
 ## Cross-compilation for iOS
+
+The easy option is to use the included `gifski.xcodeproj` file to build the library automatically for all Apple platforms. Add it as a [subproject](https://lib.rs/crates/cargo-xcode) to your Xcode project, and link with `gifski-staticlib` Xcode target. See [the GUI app](https://github.com/sindresorhus/Gifski) for an example how to integrate the library.
+
+### Cross-compilation for iOS manually
 
 Make sure you have Rust installed via [rustup](https://rustup.rs/). Run once:
 
@@ -88,10 +90,9 @@ and then to build the library:
 cargo build --lib --release --target=aarch64-apple-ios
 ```
 
-The build will print "dropping unsupported crate type `cdylib`". This is normal and expected.
+The build will print "dropping unsupported crate type `cdylib`" warning. This is normal and expected when building for iOS (the cdylib option exists for other platforms).
 
 This will create a static library in `./target/aarch64-apple-ios/release/libgifski.a`. You can add this library to your Xcode project. See [gifski.app](https://github.com/sindresorhus/Gifski) for an example how to use libgifski from Swift.
 
-You can also [use `cargo lipo` command](https://lib.rs/crates/cargo-lipo) to integrate with Xcode project to have it built automatically.
 
 

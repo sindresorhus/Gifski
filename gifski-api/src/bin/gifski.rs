@@ -44,71 +44,75 @@ fn bin_main() -> BinResult<()> {
     let matches = App::new(crate_name!())
                         .version(crate_version!())
                         .about("https://gif.ski by Kornel Lesiński")
-                        .setting(AppSettings::UnifiedHelpMessage)
                         .setting(AppSettings::DeriveDisplayOrder)
                         .setting(AppSettings::ArgRequiredElseHelp)
                         .setting(AppSettings::AllowNegativeNumbers)
-                        .arg(Arg::with_name("output")
+                        .arg(Arg::new("output")
                             .long("output")
-                            .short("o")
+                            .short('o')
                             .help("Destination file to write to; \"-\" means stdout")
-                            .empty_values(false)
+                            .forbid_empty_values(true)
                             .takes_value(true)
                             .value_name("a.gif")
                             .required(true))
-                        .arg(Arg::with_name("fps")
+                        .arg(Arg::new("fps")
                             .long("fps")
-                            .short("r")
-                            .help("Frame rate of animation. If using PNG files as \n\
-                                   input, this means the speed, as all frames are \n\
-                                   kept. If video is used, it will be resampled to \n\
-                                   this constant rate by dropping and/or duplicating \n\
+                            .short('r')
+                            .help("Frame rate of animation. If using PNG files as \
+                                   input, this means the speed, as all frames are \
+                                   kept. If video is used, it will be resampled to \
+                                   this constant rate by dropping and/or duplicating \
                                    frames")
-                            .empty_values(false)
+                            .forbid_empty_values(true)
                             .value_name("num")
                             .default_value("20"))
-                        .arg(Arg::with_name("fast-forward")
+                        .arg(Arg::new("fast-forward")
                             .long("fast-forward")
                             .help("Multiply speed of video by a factor\n(no effect when using images as input)")
-                            .empty_values(false)
+                            .forbid_empty_values(true)
                             .value_name("x")
                             .default_value("1"))
-                        .arg(Arg::with_name("fast")
+                        .arg(Arg::new("fast")
                             .long("fast")
-                            .help("3 times faster encoding, but 10% lower quality and \nlarger file size"))
-                        .arg(Arg::with_name("quality")
+                            .help("50% faster encoding, but 10% worse quality and larger file size"))
+                        .arg(Arg::new("extra")
+                            .long("extra")
+                            .conflicts_with("fast")
+                            .help("50% slower encoding, but 1% better quality"))
+                        .arg(Arg::new("quality")
                             .long("quality")
-                            .short("Q")
+                            .short('Q')
                             .value_name("1-100")
                             .takes_value(true)
                             .default_value("90")
                             .help("Lower quality may give smaller file"))
-                        .arg(Arg::with_name("width")
+                        .arg(Arg::new("width")
                             .long("width")
-                            .short("W")
+                            .short('W')
                             .takes_value(true)
                             .value_name("px")
                             .help("Maximum width.\nBy default anims are limited to about 800x600"))
-                        .arg(Arg::with_name("height")
+                        .arg(Arg::new("height")
                             .long("height")
-                            .short("H")
+                            .short('H')
                             .takes_value(true)
                             .value_name("px")
                             .help("Maximum height (stretches if the width is also set)"))
-                        .arg(Arg::with_name("nosort")
-                            .long("nosort")
-                            .help("Use files exactly in the order given, rather than \nsorted"))
-                        .arg(Arg::with_name("quiet")
+                        .arg(Arg::new("nosort")
+                            .alias("nosort")
+                            .long("no-sort")
+                            .help("Use files exactly in the order given, rather than sorted"))
+                        .arg(Arg::new("quiet")
                             .long("quiet")
-                            .short("q")
+                            .short('q')
                             .help("Do not display anything on standard output/console"))
-                        .arg(Arg::with_name("FILE")
+                        .arg(Arg::new("FILE")
                             .help(VIDEO_FRAMES_ARG_HELP)
                             .min_values(1)
-                            .empty_values(false)
+                            .forbid_empty_values(true)
                             .use_delimiter(false)
                             .required(true))
-                        .arg(Arg::with_name("repeat")
+                        .arg(Arg::new("repeat")
                             .long("repeat")
                             .help("Number of times the animation is repeated (-1 none, 0 forever or <value> repetitions")
                             .takes_value(true)
@@ -132,6 +136,7 @@ fn bin_main() -> BinResult<()> {
         _ => repeat = Repeat::Finite(repeat_int as u16),
     }
 
+    let extra = matches.is_present("extra");
     let settings = Settings {
         width,
         height,
@@ -147,16 +152,16 @@ fn bin_main() -> BinResult<()> {
 
     if settings.quality < 20 {
         if settings.quality < 1 {
-            Err("Quality too low")?;
+            return Err("Quality too low".into());
         } else if !quiet {
             eprintln!("warning: quality {} will give really bad results", settings.quality);
         }
     } else if settings.quality > 100 {
-        Err("Quality 100 is maximum")?;
+        return Err("Quality 100 is maximum".into());
     }
 
     if fps > 100.0 {
-        Err("100 fps is maximum")?;
+        return Err("100 fps is maximum".into());
     }
     else if !quiet && fps > 50.0 {
         eprintln!("warning: web browsers support max 50 fps");
@@ -165,21 +170,21 @@ fn bin_main() -> BinResult<()> {
     check_if_paths_exist(&frames)?;
 
     let mut decoder = if frames.is_empty() {
-        Err("Please specify input files")?
+        return Err("Please specify input files".into())
     } else if frames.len() == 1 {
         match file_type(&frames[0]).unwrap_or(FileType::Other) {
-            FileType::PNG | FileType::JPEG => Err("Only a single image file was given as an input. This is not enough to make an animation.")?,
+            FileType::PNG | FileType::JPEG => return Err("Only a single image file was given as an input. This is not enough to make an animation.".into()),
             _ => get_video_decoder(&frames[0], rate, settings)?,
         }
     } else {
         if let Ok(FileType::JPEG) = file_type(&frames[0]) {
-            Err("JPEG format is unsuitable for conversion to GIF.\n\n\
+            return Err("JPEG format is unsuitable for conversion to GIF.\n\n\
                 JPEG's compression artifacts and color space are very problematic for palette-based\n\
                 compression. Please don't use JPEG for making GIF animations. Please re-export\n\
-                your animation using the PNG format.")?
+                your animation using the PNG format.".into())
         }
         if speed != 1.0 {
-            Err("Speed is for videos. It doesn't make sense for images. Use fps only")?;
+            return Err("Speed is for videos. It doesn't make sense for images. Use fps only".into());
         }
         Box::new(png::Lodecoder::new(frames, &rate))
     };
@@ -198,7 +203,11 @@ fn bin_main() -> BinResult<()> {
         &mut pb
     };
 
-    let (mut collector, writer) = gifski::new(settings)?;
+    let (mut collector, mut writer) = gifski::new(settings)?;
+    if extra {
+        #[allow(deprecated)]
+        writer.set_extra_effort();
+    }
     let decode_thread = thread::Builder::new().name("decode".into()).spawn(move || {
         decoder.collect(&mut collector)
     })?;
@@ -246,7 +255,7 @@ fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
             } else if path.is_relative() {
                 msg += &format!(" (searched in \"{}\")", env::current_dir()?.display());
             }
-            Err(msg)?
+            return Err(msg.into())
         }
     }
     Ok(())
@@ -304,5 +313,5 @@ cargo install gifski --features=video
 
 Alternatively, use ffmpeg command to export PNG frames, and then specify
 the PNG files as input for this executable. Instructions on https://gif.ski
-")?
+".into())
 }

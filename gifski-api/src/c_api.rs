@@ -143,6 +143,7 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
+#[cfg(feature = "png")]
 pub unsafe extern "C" fn gifski_add_frame_png_file(handle: *const GifskiHandle, frame_number: u32, file_path: *const c_char, presentation_timestamp: f64) -> GifskiError {
     if file_path.is_null() {
         return GifskiError::NULL_ARG;
@@ -489,6 +490,33 @@ fn c_cb() {
     }
     assert!(write_called);
     assert_eq!(2, progress_called);
+}
+
+#[test]
+fn progress_abort() {
+    let g = unsafe {
+        gifski_new(&GifskiSettings {
+            width: 1,
+            height: 1,
+            quality: 100,
+            fast: false,
+            repeat: -1,
+        })
+    };
+    assert!(!g.is_null());
+    unsafe extern "C" fn cb(_size: usize, _buf: *const u8, _user_data: *mut c_void) -> c_int {
+        0
+    }
+    unsafe extern "C" fn pcb(_user_data: *mut c_void) -> c_int {
+        0
+    }
+    unsafe {
+        assert_eq!(GifskiError::OK, gifski_set_progress_callback(g, pcb, ptr::null_mut()));
+        assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), ptr::null_mut()));
+        assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 3.));
+        assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 10.));
+        assert_eq!(GifskiError::OK, gifski_finish(g));
+    }
 }
 
 #[test]

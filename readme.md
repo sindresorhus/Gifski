@@ -23,8 +23,9 @@ Gifski has a bunch of settings like changing dimensions, speed, frame rate, qual
 
 Requires macOS 11 or later.
 
-#### Older versions
+**Older versions**
 
+- [Last macOS 10.15 compatible version](https://github.com/sindresorhus/Gifski/releases/download/v2.20.2/Gifski.2.20.2.-.macOS.10.15.zip) *(2.20.2)*
 - [Last macOS 10.14 compatible version](https://github.com/sindresorhus/Gifski/releases/download/v2.16.0/Gifski.2.16.0.-.macOS.10.14.zip) *(2.16.0)*
 - [Last macOS 10.13 compatible version](https://github.com/sindresorhus/Gifski/files/3991913/Gifski.2.4.0.-.High.Sierra.zip) *(2.4.0)*
 
