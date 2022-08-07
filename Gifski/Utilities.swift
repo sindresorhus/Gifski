@@ -589,6 +589,7 @@ extension CGImage {
 }
 
 
+// TODO: Remove this when targeting macOS 13 and use https://developer.apple.com/documentation/avfoundation/avassetimagegenerator/3930658-image?changes=latest_minor instead.
 extension AVAssetImageGenerator {
 	func image(at time: CMTime) -> NSImage? {
 		(try? copyCGImage(at: time, actualTime: nil))?.nsImage
@@ -656,6 +657,8 @@ extension AVAssetTrack {
 		defer {
 			reader.cancelReading()
 		}
+
+		// TODO: When targeting macOS 13, use this instead: https://developer.apple.com/documentation/avfoundation/avsamplebuffergenerator/3950878-makebatch?changes=latest_minor
 
 		// Iterate through samples until we reach one with a non-zero size.
 		while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
@@ -4169,6 +4172,7 @@ extension vImage_Buffer {
 }
 
 
+// TODO: Use `vImage.PixelBuffer` for all pixel buffer stuff when targeting macOS 13: https://developer.apple.com/documentation/accelerate/vimage/pixelbuffer?changes=latest_minor
 extension CGImage {
 	/**
 	Convert an image to a `vImage` buffer of the given pixel format.
