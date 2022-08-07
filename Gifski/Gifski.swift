@@ -295,10 +295,12 @@ final class Gifski {
 		generator.requestedTimeToleranceBefore = .zero
 		generator.requestedTimeToleranceAfter = .zero
 
+		// Disabled as it can create a green line on the side if the size is not a multiple of the original size. For example, when the orignal is 1080 and you want the size 112. However 108 does not create a green line. (macOS 12.5)
+		// https://github.com/sindresorhus/Gifski/pull/278
 		// This improves the performance a little bit.
-		if let dimensions = conversion.dimensions {
-			generator.maximumSize = CGSize(widthHeight: dimensions.longestSide)
-		}
+//		if let dimensions = conversion.dimensions {
+//			generator.maximumSize = CGSize(widthHeight: dimensions.longestSide)
+//		}
 
 		// Even though we enforce a minimum of 3 FPS in the GUI, a source video could have lower FPS, and we should allow that.
 		var fps = (conversion.frameRate.map(Double.init) ?? assetFrameRate).clamped(to: 0.1...Constants.allowedFrameRate.upperBound)
