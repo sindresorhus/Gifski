@@ -29,6 +29,14 @@ Requires macOS 11 or later.
 - [Last macOS 10.14 compatible version](https://github.com/sindresorhus/Gifski/releases/download/v2.16.0/Gifski.2.16.0.-.macOS.10.14.zip) *(2.16.0)*
 - [Last macOS 10.13 compatible version](https://github.com/sindresorhus/Gifski/files/3991913/Gifski.2.4.0.-.High.Sierra.zip) *(2.4.0)*
 
+**Using Brew**
+
+If preferred, you can install gifski using brew:
+
+```bash
+brew install gifski
+```
+
 ## Features
 
 ### Share extension
