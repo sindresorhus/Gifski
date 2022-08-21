@@ -46,14 +46,15 @@ fn all_dupe_frames() {
     t.join().unwrap();
 
     let mut n = 0;
+    let mut delays = vec![];
     for_each_frame(&out, |frame, actual| {
         let expected = lodepng::decode32_file(frame_filename(1)).unwrap();
         let expected = ImgVec::new(expected.buffer, expected.width, expected.height);
         assert_images_eq(expected.as_ref(), actual, 0.);
-        assert_eq!(frame.delay, 130);
+        delays.push(frame.delay);
         n += 1;
     });
-    assert_eq!(n, 1);
+    assert_eq!(delays, [130]);
 }
 
 #[test]
@@ -70,15 +71,16 @@ fn all_but_one_dupe_frames() {
     w.write(&mut out, &mut progress::NoProgress {}).unwrap();
     t.join().unwrap();
 
+    let mut delays = vec![];
     let mut n = 0;
     for_each_frame(&out, |frame, actual| {
         let expected = lodepng::decode32_file(frame_filename(if n == 0 {0} else {1})).unwrap();
         let expected = ImgVec::new(expected.buffer, expected.width, expected.height);
         assert_images_eq(expected.as_ref(), actual, 0.25);
-        assert_eq!(frame.delay, if n == 0 {120} else {2*10}); // 2*, because 1.2…1.3 + 1.3…1.4 (assumed fps)
+        delays.push(frame.delay);
         n += 1;
     });
-    assert_eq!(n, 2);
+    assert_eq!(delays, [120, 20]);
 }
 
 fn frame_filename(n: usize) -> PathBuf {
