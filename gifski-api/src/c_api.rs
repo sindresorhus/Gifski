@@ -515,7 +515,7 @@ fn progress_abort() {
         assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), ptr::null_mut()));
         assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 3.));
         assert_eq!(GifskiError::OK, gifski_add_frame_rgb(g, 0, 1, 3, 1, &RGB::new(0,0,0), 10.));
-        assert_eq!(GifskiError::OK, gifski_finish(g));
+        assert_eq!(GifskiError::ABORTED, gifski_finish(g));
     }
 }
 
@@ -533,7 +533,7 @@ fn cant_write_after_finish() {
     }
     unsafe {
         assert_eq!(GifskiError::OK, gifski_set_write_callback(g, Some(cb), 0 as _));
-        assert_eq!(GifskiError::OTHER, gifski_finish(g));
+        assert_eq!(GifskiError::INVALID_STATE, gifski_finish(g));
     }
 }
 

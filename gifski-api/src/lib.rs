@@ -141,12 +141,9 @@ trait Encoder {
 struct DiffMessage {
     /// 1..
     ordinal_frame_number: usize,
-    /// presentation timestamp of the next frame (i.e. when this frame finishes being displayed)
-    end_pts: f64,
-    dispose: gif::DisposalMethod,
+    pts: f64, frame_duration: f64,
     image: ImgVec<RGBA8>,
     importance_map: Vec<u8>,
-    needs_transparency: bool,
 }
 
 /// Frame post quantization, before remap
@@ -325,9 +322,30 @@ fn dimensions_for_image((img_w, img_h): (usize, usize), resize_to: (Option<u32>,
     }
 }
 
+#[derive(Copy, Clone)]
+enum LastFrameDuration {
+    FixedOffset(f64),
+    FrameRate(f64),
+}
+
+impl LastFrameDuration {
+    pub fn value(&self) -> f64 {
+        match self {
+            Self::FixedOffset(val) | Self::FrameRate(val) => *val,
+        }
+    }
+
+    pub fn shift_every_pts_by(&self) -> f64 {
+        match self {
+            Self::FixedOffset(offset) => *offset,
+            _ => 0.,
+        }
+    }
+}
+
 /// Encode collected frames
 impl Writer {
-    #[deprecated(note="please don't use, it will be in Settings eventually")]
+    #[deprecated(note = "please don't use, it will be in Settings eventually")]
     #[doc(hidden)]
     pub fn set_extra_effort(&mut self) {
         self.settings.extra_effort = true;
@@ -408,10 +426,10 @@ impl Writer {
             }
         }
         if n_done == 0 {
-            return Err(Error::NoFrames);
+            Err(Error::NoFrames)
+        } else {
+            enc.finish()
         }
-        enc.finish()?;
-        Ok(())
     }
 
     /// Start writing frames. This function will not return until `Collector` is dropped.
@@ -457,15 +475,22 @@ impl Writer {
     }
 
     fn make_diffs(mut inputs: OrdQueueIter<DecodedImage>, quant_queue: Sender<DiffMessage>, settings: &Settings) -> CatResult<()> {
-        let (first_frame, first_frame_pts) = inputs.next().transpose()?.ok_or(Error::NoFrames)?;
-        let mut prev_frame_pts = 0.;
+        let (first_frame, first_frame_raw_pts) = inputs.next().transpose()?.ok_or(Error::NoFrames)?;
+
+        let mut last_frame_duration = if first_frame_raw_pts > 1. / 100. {
+            // this is gifski's weird rule that a non-zero first-frame pts
+            // shifts the whole anim and is the delay of the last frame
+            LastFrameDuration::FixedOffset(first_frame_raw_pts)
+        } else {
+            LastFrameDuration::FrameRate(0.)
+        };
 
         let mut denoiser = Denoiser::new(first_frame.width(), first_frame.height(), settings.quality);
 
-        let first_frame_has_transparency = first_frame.pixels().any(|px| px.a < 128);
 
-        let mut next_frame = Some((first_frame, first_frame_pts));
+        let mut next_frame = Some((first_frame, first_frame_raw_pts));
         let mut ordinal_frame_number = 0;
+        let mut last_frame_pts = 0.;
         loop {
             // NB! There are two interleaved loops here:
             //  - one to feed the denoiser
@@ -479,52 +504,18 @@ impl Writer {
             let curr_frame = next_frame.take();
             next_frame = inputs.next().transpose()?;
 
-            if let Some((image, mut pts)) = curr_frame {
-                pts -= first_frame_pts;
+            if let Some((image, raw_pts)) = curr_frame {
                 ordinal_frame_number += 1;
 
-                let dispose = if let Some((next, _)) = &next_frame {
-                    if next.width() != image.width() || next.height() != image.height() {
-                        return Err(Error::WrongSize(format!("Frame {} has wrong size ({}×{}, expected {}×{})", ordinal_frame_number,
-                            next.width(), next.height(), image.width(), image.height())));
-                    }
+                let pts = raw_pts - last_frame_duration.shift_every_pts_by();
+                if let LastFrameDuration::FrameRate(duration) = &mut last_frame_duration {
+                    *duration = pts - last_frame_pts;
+                }
+                last_frame_pts = pts;
 
-                    // Skip identical frames
-                    if next.as_ref() == image.as_ref() {
-                        prev_frame_pts = pts;
-                        continue;
-                    }
-
-                    // If the next frame becomes transparent, this frame has to clear to bg for it
-                    if next.pixels().zip(image.pixels()).any(|(next, curr)| next.a < curr.a) {
-                        gif::DisposalMethod::Background
-                    } else {
-                        gif::DisposalMethod::Keep
-                    }
-                } else if first_frame_has_transparency {
-                    // Last frame should reset to background to avoid breaking transparent looped anims
-                    gif::DisposalMethod::Background
-                } else {
-                    // macOS preview gets Background wrong
-                    gif::DisposalMethod::Keep
-                };
-
-                // conversion from pts to delay
-                let end_pts = if let Some((_, next_pts)) = next_frame {
-                    debug_assert!(next_pts > 0.);
-                    next_pts - first_frame_pts
-                } else if first_frame_pts > 1. / 100. {
-                    // this is gifski's weird rule that non-zero first-frame pts
-                    // shifts the whole anim and is the delay of the last frame
-                    pts + first_frame_pts
-                } else {
-                    // otherwise assume steady framerate
-                    (pts + (pts - prev_frame_pts)).max(1./100.)
-                };
-                debug_assert!(end_pts > 0.);
-                prev_frame_pts = pts;
-
-                denoiser.push_frame(image.as_ref(), (ordinal_frame_number, end_pts, dispose));
+                denoiser.push_frame(image.as_ref(), (ordinal_frame_number, pts, last_frame_duration)).map_err(|_| {
+                    Error::WrongSize(format!("Frame {} has wrong size ({}×{})", ordinal_frame_number, image.width(), image.height()))
+                })?;
                 if next_frame.is_none() {
                     denoiser.flush();
                 }
@@ -532,7 +523,7 @@ impl Writer {
 
             ////////////////////// Consume denoised frames /////////////////////
 
-            let (importance_map, image, (ordinal_frame_number, end_pts, dispose)) = match denoiser.pop() {
+            let (importance_map, image, (ordinal_frame_number, pts, last_frame_duration)) = match denoiser.pop() {
                 Denoised::Done => {
                     debug_assert!(next_frame.is_none());
                     break
@@ -544,12 +535,10 @@ impl Writer {
             let (importance_map, ..) = importance_map.into_contiguous_buf();
 
             quant_queue.send(DiffMessage {
-                dispose,
                 importance_map,
                 ordinal_frame_number,
-                needs_transparency: ordinal_frame_number > 0 || (ordinal_frame_number == 0 && first_frame_has_transparency),
                 image,
-                end_pts,
+                pts, frame_duration: last_frame_duration.value().max(1. / 100.),
             })?;
         }
 
@@ -557,11 +546,45 @@ impl Writer {
     }
 
     fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: Sender<RemapMessage>, settings: &SettingsExt) -> CatResult<()> {
+        let mut inputs = inputs.into_iter().peekable();
+
+        let DiffMessage {image: first_frame, ..} = inputs.peek().ok_or(Error::NoFrames)?;
+        let first_frame_has_transparency = first_frame.pixels().any(|px| px.a < 128);
+
         let mut prev_frame_keeps = false;
         let mut consecutive_frame_num = 0;
-        while let Ok(DiffMessage {mut image, end_pts, dispose, ordinal_frame_number, needs_transparency, mut importance_map}) = inputs.recv() {
-            if !prev_frame_keeps || importance_map.iter().any(|&px| px > 0) {
+        let mut importance_map = None;
+        while let Some(DiffMessage { mut image, pts, frame_duration, ordinal_frame_number, importance_map: new_importance_map }) = inputs.next() {
 
+            if importance_map.is_none() {
+                importance_map = Some(new_importance_map);
+            }
+
+            let dispose = if let Some(DiffMessage { image: next_image, .. }) = inputs.peek() {
+                // Skip identical frames
+                if next_image.as_ref() == image.as_ref() {
+                    // this keeps importance_map of the previous frame in the identical-frame series
+                    // (important, because subsequent identical frames have all-zero importance_map and would be dropped too)
+                    continue;
+                }
+
+                // If the next frame becomes transparent, this frame has to clear to bg for it
+                if next_image.pixels().zip(image.pixels()).any(|(next, curr)| next.a < curr.a) {
+                    gif::DisposalMethod::Background
+                } else {
+                    gif::DisposalMethod::Keep
+                }
+            } else if first_frame_has_transparency {
+                // Last frame should reset to background to avoid breaking transparent looped anims
+                gif::DisposalMethod::Background
+            } else {
+                // macOS preview gets Background wrong
+                gif::DisposalMethod::Keep
+            };
+
+            let mut importance_map = importance_map.take().unwrap(); // always set at the beginning
+
+            if !prev_frame_keeps || importance_map.iter().any(|&px| px > 0) {
                 if prev_frame_keeps {
                     // if denoiser says the background didn't change, then believe it
                     // (except higher quality settings, which try to improve it every time)
@@ -571,12 +594,21 @@ impl Writer {
                     }
                 }
 
+                let needs_transparency = consecutive_frame_num > 0 || (consecutive_frame_num == 0 && first_frame_has_transparency);
                 let (liq, remap, liq_image) = Self::quantize(image, &importance_map, consecutive_frame_num == 0, needs_transparency, prev_frame_keeps, settings)?;
                 let max_loss = settings.s.gifsicle_loss();
                 for imp in &mut importance_map {
                     // encoding assumes rgba background looks like encoded background, which is not true for lossy
                     *imp = ((256 - (*imp) as u32) * max_loss / 256).min(255) as u8;
                 }
+
+                let end_pts = if let Some(&DiffMessage { pts: next_pts, .. }) = inputs.peek() {
+                    next_pts
+                } else {
+                    pts + frame_duration
+                };
+                debug_assert!(end_pts > 0.);
+
                 remap_queue.send(RemapMessage {
                     ordinal_frame_number,
                     end_pts,
@@ -585,57 +617,35 @@ impl Writer {
                     liq_image,
                 })?;
                 consecutive_frame_num += 1;
-            }
             prev_frame_keeps = dispose == gif::DisposalMethod::Keep;
+        }
         }
         Ok(())
     }
 
     fn remap_frames(inputs: Receiver<RemapMessage>, write_queue: Sender<FrameMessage>, settings: &Settings) -> CatResult<()> {
-        let next_frame = inputs.recv().map_err(|_| Error::NoFrames)?;
-        let mut screen = gif_dispose::Screen::new(next_frame.liq_image.width(), next_frame.liq_image.height(), RGBA8::new(0, 0, 0, 0), None);
+        let mut inputs = inputs.into_iter().peekable();
+        let first_frame = inputs.peek().ok_or(Error::NoFrames)?;
+        let mut screen = gif_dispose::Screen::new(first_frame.liq_image.width(), first_frame.liq_image.height(), RGBA8::new(0, 0, 0, 0), None);
 
-        let mut next_frame = Some(next_frame);
-
-        let mut first_frame = true;
-        while let Some(RemapMessage {ordinal_frame_number, end_pts, dispose, liq, remap, liq_image}) = {
-            // that's not the while loop, that block gets the next element
-            let curr_frame = next_frame.take();
-            next_frame = inputs.recv().ok();
-            curr_frame
-        } {
+        let mut is_first_frame = true;
+        while let Some(RemapMessage {ordinal_frame_number, end_pts, dispose, liq, remap, liq_image}) = inputs.next() {
             let screen_width = screen.pixels.width() as u16;
             let screen_height = screen.pixels.height() as u16;
             let mut screen_after_dispose = screen.dispose();
 
             let (mut image8, mut image8_pal) = {
-                let bg = if !first_frame { Some(screen_after_dispose.pixels()) } else { None };
+                let bg = if !is_first_frame { Some(screen_after_dispose.pixels()) } else { None };
                 Self::remap(liq, remap, liq_image, bg, settings)?
             };
 
-            // Palette may have multiple transparent indices :(
-            let mut transparent_index = None;
-            for (i, p) in image8_pal.iter_mut().enumerate() {
-                if p.a <= 128 {
-                    p.a = 0;
-                    let new_index = i as u8;
-                    if let Some(old_index) = transparent_index {
-                        image8.pixels_mut().filter(|px| **px == new_index).for_each(|px| *px = old_index);
-                    } else {
-                        transparent_index = Some(new_index);
-                    }
-                }
-            }
+            let transparent_index = transparent_index_from_palette(&mut image8_pal, image8.as_mut());
 
-            // Check that palette is fine and has no duplicate transparent indices
-            debug_assert!(image8_pal.iter().enumerate().all(|(idx, color)| {
-                Some(idx as u8) == transparent_index || color.a > 128 || !image8.pixels().any(|px| px == idx as u8)
-            }));
-
-            let (left, top, image8) = if !first_frame && next_frame.is_some() {
+            let next_frame = inputs.peek();
+            let (left, top, image8) = if !is_first_frame && next_frame.is_some() {
                 match trim_image(image8, &image8_pal, transparent_index, screen_after_dispose.pixels()) {
                     Some(trimmed) => trimmed,
-                    None => continue, // no pixels left
+                    None => continue, // no pixels need to be changed after dispose
                 }
             } else {
                 // must keep first and last frame
@@ -661,10 +671,33 @@ impl Writer {
                 frame,
             })?;
 
-            first_frame = false;
+            is_first_frame = false;
         }
         Ok(())
     }
+}
+
+fn transparent_index_from_palette(image8_pal: &mut [RGBA<u8>], mut image8: ImgRefMut<u8>) -> Option<u8> {
+    // Palette may have multiple transparent indices :(
+    let mut transparent_index = None;
+    for (i, p) in image8_pal.iter_mut().enumerate() {
+        if p.a <= 128 {
+            p.a = 0;
+            let new_index = i as u8;
+            if let Some(old_index) = transparent_index {
+                image8.pixels_mut().filter(|px| **px == new_index).for_each(|px| *px = old_index);
+            } else {
+                transparent_index = Some(new_index);
+            }
+        }
+    }
+
+    // Check that palette is fine and has no duplicate transparent indices
+    debug_assert!(image8_pal.iter().enumerate().all(|(idx, color)| {
+        Some(idx as u8) == transparent_index || color.a > 128 || !image8.pixels().any(|px| px == idx as u8)
+    }));
+
+    transparent_index
 }
 
 fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: Option<u8>, screen: ImgRef<RGBA8>) -> Option<(u16, u16, ImgVec<u8>)> {

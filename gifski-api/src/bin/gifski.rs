@@ -1,5 +1,3 @@
-#[macro_use] extern crate clap;
-
 use std::ffi::OsStr;
 use std::io::Read;
 use gifski::{Settings, Repeat};
@@ -14,7 +12,7 @@ use gifski::progress::{NoProgress, ProgressBar, ProgressReporter};
 
 pub type BinResult<T, E = Box<dyn std::error::Error + Send + Sync>> = Result<T, E>;
 
-use clap::{App, AppSettings, Arg};
+use clap::{Command, AppSettings, Arg};
 
 use std::env;
 use std::fmt;
@@ -41,12 +39,12 @@ fn main() {
 
 #[allow(clippy::float_cmp)]
 fn bin_main() -> BinResult<()> {
-    let matches = App::new(crate_name!())
-                        .version(crate_version!())
+    let matches = Command::new(clap::crate_name!())
+                        .version(clap::crate_version!())
                         .about("https://gif.ski by Kornel Lesiński")
                         .setting(AppSettings::DeriveDisplayOrder)
-                        .setting(AppSettings::ArgRequiredElseHelp)
-                        .setting(AppSettings::AllowNegativeNumbers)
+                        .arg_required_else_help(true)
+                        .allow_negative_numbers(true)
                         .arg(Arg::new("output")
                             .long("output")
                             .short('o')
@@ -54,6 +52,7 @@ fn bin_main() -> BinResult<()> {
                             .forbid_empty_values(true)
                             .takes_value(true)
                             .value_name("a.gif")
+                            .allow_invalid_utf8(true)
                             .required(true))
                         .arg(Arg::new("fps")
                             .long("fps")
@@ -110,7 +109,7 @@ fn bin_main() -> BinResult<()> {
                             .help(VIDEO_FRAMES_ARG_HELP)
                             .min_values(1)
                             .forbid_empty_values(true)
-                            .use_delimiter(false)
+                            .use_value_delimiter(false)
                             .required(true))
                         .arg(Arg::new("repeat")
                             .long("repeat")
