@@ -131,7 +131,7 @@ extension NSView {
 		view.material = material
 		view.blendingMode = blendingMode
 
-		if let appearanceName = appearanceName {
+		if let appearanceName {
 			view.appearance = NSAppearance(named: appearanceName)
 		}
 
@@ -282,11 +282,11 @@ extension NSAlert {
 		self.messageText = title
 		self.alertStyle = style
 
-		if let message = message {
+		if let message {
 			self.informativeText = message
 		}
 
-		if let detailText = detailText {
+		if let detailText {
 			let scrollView = NSTextView.scrollableTextView()
 
 			// We're setting the frame manually here as it's impossible to use auto-layout,
@@ -311,13 +311,13 @@ extension NSAlert {
 			textView.string = detailText
 
 			self.accessoryView = scrollView
-		} else if let minimumWidth = minimumWidth {
+		} else if let minimumWidth {
 			self.accessoryView = NSView(frame: CGRect(width: minimumWidth, height: 0))
 		}
 
 		addButtons(withTitles: buttonTitles)
 
-		if let defaultButtonIndex = defaultButtonIndex {
+		if let defaultButtonIndex {
 			self.defaultButtonIndex = defaultButtonIndex
 		}
 	}
@@ -327,7 +327,7 @@ extension NSAlert {
 	*/
 	@discardableResult
 	func runModal(for window: NSWindow? = nil) -> NSApplication.ModalResponse {
-		guard let window = window else {
+		guard let window else {
 			return runModal()
 		}
 
@@ -515,7 +515,7 @@ extension String.StringInterpolation {
 	```
 	*/
 	public mutating func appendInterpolation(_ value: Any?, default defaultValue: String) {
-		if let value = value {
+		if let value {
 			appendInterpolation(value)
 		} else {
 			appendLiteral(defaultValue)
@@ -534,7 +534,7 @@ extension String.StringInterpolation {
 	```
 	*/
 	public mutating func appendInterpolation(describing value: Any?) {
-		if let value = value {
+		if let value {
 			appendInterpolation(value)
 		} else {
 			appendLiteral("nil")
@@ -627,7 +627,7 @@ extension AVAssetTrack {
 		// In short: Some codecs seem to always report a sample buffer size of 0 when reading, breaking this function. (macOS 11.6)
 		let buggyCodecs = ["v210", "BGRA"]
 		if
-			let codecIdentifier = codecIdentifier,
+			let codecIdentifier,
 			buggyCodecs.contains(codecIdentifier)
 		{
 			throw VideoTrimmingError.codecNotSupported
@@ -706,11 +706,11 @@ extension AVAsset {
 	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
 	*/
 	func trimmingBlankFramesFromFirstVideoTrack() throws -> AVAsset {
-		guard let videoTrack = firstVideoTrack else {
+		guard let firstVideoTrack else {
 			throw VideoTrimmingError.assetIsMissingVideoTrack
 		}
 
-		let trimmedTrack = try videoTrack.trimmingBlankFrames()
+		let trimmedTrack = try firstVideoTrack.trimmingBlankFrames()
 
 		guard let trimmedAsset = trimmedTrack.asset else {
 			assertionFailure("Track is somehow missing asset")
@@ -751,7 +751,7 @@ extension AVAssetTrack {
 	Returns the aspect ratio of the track if it's a video.
 	*/
 	var aspectRatio: Double? {
-		guard let dimensions = dimensions else {
+		guard let dimensions else {
 			return nil
 		}
 
@@ -777,12 +777,13 @@ extension AVAssetTrack {
 		return CMFormatDescriptionGetMediaSubType(formatDescription).fourCharCodeToString()
 	}
 
+	// TODO: When I switch to the async `.load()` method to retrieve video properties, this property is moot.
 	var codec: AVFormat? {
-		guard let codecString = codecIdentifier else {
+		guard let codecIdentifier else {
 			return nil
 		}
 
-		return AVFormat(fourCC: codecString)
+		return AVFormat(fourCC: codecIdentifier)
 	}
 
 	/**
@@ -873,7 +874,7 @@ extension AVAssetTrack {
 
 	func getKeyframeInfo() -> VideoKeyframeInfo? {
 		guard
-			let asset = asset,
+			let asset,
 			let reader = try? AVAssetReader(asset: asset)
 		else {
 			return nil
@@ -1330,8 +1331,8 @@ extension AVAsset {
 
 	var videoMetadata: VideoMetadata? {
 		guard
-			let dimensions = dimensions,
-			let frameRate = frameRate
+			let dimensions,
+			let frameRate
 		else {
 			return nil
 		}
@@ -1384,7 +1385,7 @@ extension NSView {
 	}
 
 	func constrainEdgesToSuperview(with insets: NSEdgeInsets = .zero) {
-		guard let superview = superview else {
+		guard let superview else {
 			assertionFailure("There is no superview for this view")
 			return
 		}
@@ -1461,13 +1462,13 @@ extension NSView {
 
 		var constraints = [NSLayoutConstraint]()
 
-		if let verticalEdge = verticalEdge {
+		if let verticalEdge {
 			constraints.append(
 				self[keyPath: verticalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: verticalEdge.constraintKeyPath], constant: padding)
 			)
 		}
 
-		if let horizontalEdge = horizontalEdge {
+		if let horizontalEdge {
 			constraints.append(
 				self[keyPath: horizontalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: horizontalEdge.constraintKeyPath], constant: padding)
 			)
@@ -1578,7 +1579,7 @@ final class MonospacedLabel: Label {
 	}
 
 	private func setup() {
-		if let font = font {
+		if let font {
 			self.font = .monospacedDigitSystemFont(ofSize: font.size, weight: font.weight)
 		}
 	}
@@ -1707,10 +1708,7 @@ final class UrlMenuItem: NSMenuItem {
 		super.init(coder: decoder)
 
 		onAction = { [weak self] _ in
-			guard
-				let self = self,
-				let url = self.url
-			else {
+			guard let url = self?.url else {
 				return
 			}
 
@@ -1771,7 +1769,7 @@ extension ObjectAssociation {
 
 // Identical to above, but for NSMenuItem.
 extension NSMenuItem {
-	typealias ActionClosure = ((NSMenuItem) -> Void)
+	typealias ActionClosure = (NSMenuItem) -> Void
 
 	private enum AssociatedKeys {
 		static let onActionClosure = ObjectAssociation<ActionClosure?>()
@@ -1805,7 +1803,7 @@ extension NSMenuItem {
 
 
 extension NSControl {
-	typealias ActionClosure = ((NSControl) -> Void)
+	typealias ActionClosure = (NSControl) -> Void
 
 	private enum AssociatedKeys {
 		static let onActionClosure = ObjectAssociation<ActionClosure?>()
@@ -1952,7 +1950,7 @@ enum SSApp {
 			"metadata": metadata
 		]
 
-		URL("https://sindresorhus.com/feedback/").settingQueryItems(from: query).open()
+		URL("https://sindresorhus.com/feedback").settingQueryItems(from: query).open()
 	}
 }
 
@@ -2572,7 +2570,7 @@ final class Once {
 	Wraps an optional single-argument function.
 	*/
 	func wrap<T, U>(_ function: ((T) -> U)?) -> ((T) -> U)? {
-		guard let function = function else {
+		guard let function else {
 			return nil
 		}
 
@@ -2598,7 +2596,7 @@ final class Once {
 	Wraps an optional single-argument throwing function.
 	*/
 	func wrap<T, U>(_ function: ((T) throws -> U)?) -> ((T) throws -> U)? {
-		guard let function = function else {
+		guard let function else {
 			return nil
 		}
 
@@ -2615,8 +2613,8 @@ extension NSResponder {
 	/**
 	Presents the error in the given window if it's not nil, otherwise falls back to an app-modal dialog.
 	*/
-	open func presentError(_ error: Error, modalFor window: NSWindow?) {
-		guard let window = window else {
+	public func presentError(_ error: Error, modalFor window: NSWindow?) {
+		guard let window else {
 			presentError(error)
 			return
 		}
@@ -2733,7 +2731,7 @@ extension NSError {
 		var userInfo = userInfo
 		userInfo[NSLocalizedDescriptionKey] = description
 
-		if let recoverySuggestion = recoverySuggestion {
+		if let recoverySuggestion {
 			userInfo[NSLocalizedRecoverySuggestionErrorKey] = recoverySuggestion
 		}
 
@@ -2814,7 +2812,7 @@ extension NSAlert {
 			message: debugInfo
 		)
 
-		return Self.showModal(
+		return showModal(
 			for: window,
 			title: title,
 			message: message,
@@ -3046,11 +3044,11 @@ extension FloatingPoint {
 	@inlinable
 	public func isAlmostEqual(
 		to other: Self,
-		tolerance: Self = Self.ulpOfOne.squareRoot()
+		tolerance: Self = ulpOfOne.squareRoot()
 	) -> Bool {
 		assert(tolerance >= .ulpOfOne && tolerance < 1, "tolerance should be in [.ulpOfOne, 1).")
 
-		guard self.isFinite, other.isFinite else {
+		guard isFinite, other.isFinite else {
 			return rescaledAlmostEqual(to: other, tolerance: tolerance)
 		}
 
@@ -3060,7 +3058,7 @@ extension FloatingPoint {
 
 	@inlinable
 	public func isAlmostZero(
-		absoluteTolerance tolerance: Self = Self.ulpOfOne.squareRoot()
+		absoluteTolerance tolerance: Self = ulpOfOne.squareRoot()
 	) -> Bool {
 		assert(tolerance > 0)
 		return abs(self) < tolerance
@@ -3068,12 +3066,17 @@ extension FloatingPoint {
 
 	@usableFromInline
 	internal func rescaledAlmostEqual(to other: Self, tolerance: Self) -> Bool {
-		if self.isNaN || other.isNaN { return false }
-		if self.isInfinite {
-			if other.isInfinite { return self == other }
+		if isNaN || other.isNaN {
+			return false
+		}
+
+		if isInfinite {
+			if other.isInfinite {
+				return self == other
+			}
 
 			let scaledSelf = Self(
-				sign: self.sign,
+				sign: sign,
 				exponent: Self.greatestFiniteMagnitude.exponent,
 				significand: 1
 			)
@@ -3145,7 +3148,7 @@ extension URL {
 		}
 	}
 
-	func setMetadata<T>(key: MetadataKey, value: T) throws {
+	func setMetadata(key: MetadataKey, value: some Any) throws {
 		try attributes.set("com.apple.metadata:\(key.attributeKey)", value: value)
 	}
 }
@@ -3337,12 +3340,12 @@ extension AVPlayerItem {
 			return .fromGraceful(startTime, endTime)
 		}
 		set {
-			guard let range = newValue else {
+			guard let newValue else {
 				return
 			}
 
-			forwardPlaybackEndTime = CMTime(seconds: range.upperBound, preferredTimescale: .video)
-			reversePlaybackEndTime = CMTime(seconds: range.lowerBound, preferredTimescale: .video)
+			forwardPlaybackEndTime = CMTime(seconds: newValue.upperBound, preferredTimescale: .video)
+			reversePlaybackEndTime = CMTime(seconds: newValue.lowerBound, preferredTimescale: .video)
 		}
 	}
 }
@@ -3403,7 +3406,7 @@ extension ClosedRange {
 	}
 }
 
-extension ClosedRange where Bound == Double {
+extension ClosedRange<Double> {
 	// TODO: Add support for negative ranges.
 	/**
 	Make a new range where the length (difference between the lower and upper bound) is at least the given amount.
@@ -3582,7 +3585,7 @@ extension Error {
 	If the window is nil, the error will be presented in an app-level modal dialog.
 	*/
 	func presentAsModalSheet(for window: NSWindow?) {
-		guard let window = window else {
+		guard let window else {
 			presentAsModal()
 			return
 		}
@@ -3686,7 +3689,7 @@ final class LoopingPlayer: AVPlayer {
 		cancellable = NotificationCenter.default
 			.publisher(for: .AVPlayerItemDidPlayToEndTime, object: currentItem)
 			.sink { [weak self] _ in
-				guard let self = self else {
+				guard let self else {
 					return
 				}
 
@@ -3772,7 +3775,10 @@ extension Sequence {
 	*/
 	func chunked(by chunkSize: Int) -> [[Element]] {
 		reduce(into: []) { result, current in
-			if let last = result.last, last.count < chunkSize {
+			if
+				let last = result.last,
+				last.count < chunkSize
+			{
 				result.append(result.removeLast() + [current])
 			} else {
 				result.append([current])
@@ -4063,7 +4069,7 @@ extension Data {
 }
 
 
-extension Array where Element == UInt8 {
+extension [UInt8] {
 	/**
 	Convert the array to data.
 	*/
@@ -4405,7 +4411,7 @@ extension CGColorSpace {
 	Presentable title of the color space.
 	*/
 	var title: String {
-		guard let name = name else {
+		guard let name else {
 			return "Unknown"
 		}
 
@@ -4579,8 +4585,8 @@ extension AVPlayerItem {
 	var playbackRangePercentage: ClosedRange<Double>? {
 		get {
 			guard
-				let duration = durationRange?.upperBound,
-				let playbackRange = playbackRange
+				let playbackRange,
+				let duration = durationRange?.upperBound
 			else {
 				return nil
 			}
@@ -4660,7 +4666,7 @@ typealias OS = OperatingSystem
 
 
 extension NumberFormatter {
-	func string<Value: Numeric>(from number: Value) -> String? {
+	func string(from number: some Numeric) -> String? {
 		// swiftlint:disable:next legacy_objc_type
 		guard let nsNumber = number as? NSNumber else {
 			return nil
@@ -4740,16 +4746,16 @@ extension ClosedRange {
 
 // TODO: Remove when targeting macOS 12.
 extension View {
-	func overlay2<Overlay: View>(
+	func overlay2(
 		alignment: Alignment = .center,
-		@ViewBuilder content: () -> Overlay
+		@ViewBuilder content: () -> some View
 	) -> some View {
 		overlay(ZStack(content: content), alignment: alignment)
 	}
 
-	func background2<V: View>(
+	func background2(
 		alignment: Alignment = .center,
-		@ViewBuilder content: () -> V
+		@ViewBuilder content: () -> some View
 	) -> some View {
 		background(ZStack(content: content), alignment: alignment)
 	}

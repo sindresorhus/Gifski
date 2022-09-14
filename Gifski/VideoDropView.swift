@@ -36,7 +36,7 @@ class DropView<CompletionType>: SSView {
 	}
 
 	override func didAppear() {
-		if let dropView = dropView {
+		if let dropView {
 			addSubviewToCenter(dropView)
 		}
 	}

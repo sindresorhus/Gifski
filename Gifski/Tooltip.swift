@@ -134,13 +134,14 @@ private final class ToolTipViewController: NSViewController {
 		let textField = NSTextField(wrappingLabelWithString: text)
 		textField.isSelectable = false
 
-		if let maxWidth = maxWidth {
+		if let maxWidth {
 			let newSize = textField.sizeThatFits(
 				CGSize(
 					width: maxWidth - contentInsets.horizontal,
 					height: .greatestFiniteMagnitude
 				)
 			)
+
 			textField.constrain(to: newSize)
 		}
 

@@ -119,7 +119,7 @@ final class GifskiWrapper {
 			{ bufferLength, bufferPointer, context in // swiftlint:disable:this opening_brace
 				guard
 					bufferLength > 0,
-					let bufferPointer = bufferPointer
+					let bufferPointer
 				else {
 					return 0
 				}

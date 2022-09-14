@@ -261,7 +261,7 @@ final class EditVideoViewController: NSViewController {
 		}
 
 		predefinedSizesDropdown.onMenuDidClose = { [weak self] selectedIndex in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -274,7 +274,8 @@ final class EditVideoViewController: NSViewController {
 				// We don't care if it's newly selected index or not, if it's custom, set its size
 				self.updateSelectedItemAsCustomWithSize()
 			} else if
-				let index = selectedIndex, let size = self.predefinedSizes?[safe: index],
+				let selectedIndex,
+				let size = self.predefinedSizes?[safe: selectedIndex],
 				case .dimensions(let dimensions) = size
 			{
 				// But we care if it's newly selected index for dimensions, we don't want to recalculate
@@ -290,9 +291,9 @@ final class EditVideoViewController: NSViewController {
 
 		dimensionsTypeDropdown.onMenuDidClose = { [weak self] selectedIndex in
 			guard
-				let self = self,
-				let index = selectedIndex,
-				let item = self.dimensionsTypeDropdown.item(at: index),
+				let self,
+				let selectedIndex,
+				let item = self.dimensionsTypeDropdown.item(at: selectedIndex),
 				let dimensionsType = DimensionsType(rawValue: item.title)
 			else {
 				return
@@ -314,7 +315,7 @@ final class EditVideoViewController: NSViewController {
 
 	private func setUpSliders() {
 		frameRateSlider.onAction = { [weak self] _ in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -325,7 +326,7 @@ final class EditVideoViewController: NSViewController {
 		}
 
 		qualitySlider.onAction = { [weak self] _ in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -407,7 +408,7 @@ final class EditVideoViewController: NSViewController {
 			print("Low keyframe interval \(keyframeInfo.keyframeInterval)")
 
 			DispatchQueue.main.async { [weak self] in
-				guard let self = self else {
+				guard let self else {
 					return
 				}
 
@@ -434,7 +435,7 @@ final class EditVideoViewController: NSViewController {
 		}
 
 		widthTextField.onValueChange = { [weak self] width in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -448,7 +449,7 @@ final class EditVideoViewController: NSViewController {
 		}
 
 		heightTextField.onValueChange = { [weak self] height in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -461,7 +462,7 @@ final class EditVideoViewController: NSViewController {
 
 	private func setUpLoopCountControls() {
 		loopCountTextField.onBlur = { [weak self] loopCount in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -474,7 +475,7 @@ final class EditVideoViewController: NSViewController {
 		}
 
 		loopCountTextField.onValueChange = { [weak self] loopCount in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -488,7 +489,7 @@ final class EditVideoViewController: NSViewController {
 		}
 
 		loopCheckbox.onAction = { [weak self] _ in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -512,7 +513,7 @@ final class EditVideoViewController: NSViewController {
 			.debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)
 			.receive(on: DispatchQueue.main)
 			.sink { [weak self] in
-				guard let self = self else {
+				guard let self else {
 					return
 				}
 
@@ -525,7 +526,7 @@ final class EditVideoViewController: NSViewController {
 
 
 		loopCountStepper.onAction = { [weak self] _ in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -628,7 +629,7 @@ final class EditVideoViewController: NSViewController {
 
 	private func getNaiveEstimate() -> Double {
 		let duration: Double = {
-			guard let timeRange = timeRange else {
+			guard let timeRange else {
 				return videoMetadata.duration
 			}
 

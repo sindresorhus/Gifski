@@ -47,7 +47,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 		error = nil
 
 		gifski.run(getConversionSettings(), isEstimation: true) { [weak self] result in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 

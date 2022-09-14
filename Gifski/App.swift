@@ -5,12 +5,10 @@ import FirebaseCrashlytics
 import DockProgress
 
 /**
-TODO when targeting macOS 12:
+TODO when targeting macOS 13:
 - Rewrite everything to use async/await, AsyncSequence, and actors.
 - Rewrite `CheckerboardView` to use `SwiftUI.Canvas`.
 - Make `final class Gifski` an actor.
-
-TODO when targeting macOS 13:
 - Use `@MainActor`
 */
 

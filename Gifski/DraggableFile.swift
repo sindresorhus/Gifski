@@ -4,7 +4,7 @@ final class DraggableFile: NSImageView {
 	var thumbnailFrameSize = 84.0 {
 		// FIXME: This is actually never set.
 		didSet {
-			guard let image = image else {
+			guard let image else {
 				return
 			}
 
@@ -16,7 +16,7 @@ final class DraggableFile: NSImageView {
 	var fileUrl: URL? {
 		didSet {
 			guard
-				let fileUrl = fileUrl,
+				let fileUrl,
 				let image = NSImage(contentsOf: fileUrl)
 			else {
 				return
@@ -51,8 +51,8 @@ final class DraggableFile: NSImageView {
 
 	override func mouseDragged(with event: NSEvent) {
 		guard
-			let fileUrl = fileUrl,
-			let image = image
+			let fileUrl,
+			let image
 		else {
 			return
 		}

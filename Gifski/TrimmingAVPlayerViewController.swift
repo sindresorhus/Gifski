@@ -95,7 +95,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		// Support replacing the item.
 		player.publisher(for: \.currentItem)
 			.sink { [weak self] _ in
-				guard let self = self else {
+				guard let self else {
 					return
 				}
 
@@ -127,7 +127,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		timeRangeCancellable = player?.currentItem?.publisher(for: \.duration, options: .new)
 			.sink { [weak self] _ in
 				guard
-					let self = self,
+					let self,
 					let item = self.player?.currentItem,
 					let fullRange = item.durationRange,
 					let playbackRange = item.playbackRange
@@ -156,7 +156,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		trimmingCancellable = publisher(for: \.canBeginTrimming, options: .new)
 			.sink { [weak self] canBeginTrimming in
 				guard
-					let self = self,
+					let self,
 					canBeginTrimming
 				else {
 					return

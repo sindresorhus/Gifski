@@ -68,7 +68,7 @@ final class ConversionCompletedViewController: NSViewController {
 		}
 
 		delay(seconds: 1) { [weak self] in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -153,7 +153,7 @@ final class ConversionCompletedViewController: NSViewController {
 		}
 
 		delay(seconds: 1) { [weak self] in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 
@@ -183,7 +183,7 @@ final class ConversionCompletedViewController: NSViewController {
 
 		panel.beginSheetModal(for: view.window!) { [weak self] response in
 			guard
-				let self = self,
+				let self,
 				response == .OK,
 				let outputUrl = panel.url
 			else {

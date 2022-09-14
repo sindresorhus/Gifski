@@ -84,14 +84,14 @@ final class Gifski {
 
 		progress = Progress(parent: .current())
 
-		let completionHandlerOnce = Once().wrap { [weak self] (_ result: Result<Data, Error>) -> Void in
+		let completionHandlerOnce = Once().wrap { [weak self] (_ result: Result<Data, Error>) in
 			// Ensure libgifski finishes no matter what.
 			try? self?.gifski?.finish()
 			self?.gifski?.release()
 
 			DispatchQueue.main.async {
 				guard
-					let self = self,
+					let self,
 					!self.progress.isCancelled
 				else {
 					completionHandler(.failure(.cancelled))
@@ -112,13 +112,13 @@ final class Gifski {
 
 		self.gifski = GifskiWrapper(settings: settings)
 
-		guard let gifski = gifski else {
+		guard let gifski else {
 			completionHandlerOnce(.failure(.invalidSettings))
 			return
 		}
 
 		gifski.setProgressCallback { [weak self] in
-			guard let self = self else {
+			guard let self else {
 				return 1
 			}
 
@@ -128,7 +128,7 @@ final class Gifski {
 		}
 
 		gifski.setWriteCallback { [weak self] bufferLength, bufferPointer in
-			guard let self = self else {
+			guard let self else {
 				return 0
 			}
 
@@ -197,7 +197,7 @@ final class Gifski {
 
 		generator.generateCGImagesAsynchronously(forTimePoints: times) { [weak self] imageResult in
 			guard
-				let self = self,
+				let self,
 				!self.progress.isCancelled
 			else {
 				completionHandler(.failure(.cancelled))

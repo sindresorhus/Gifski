@@ -82,7 +82,7 @@ final class ConversionViewController: NSViewController {
 		timeRemainingEstimator.start()
 
 		progress?.performAsCurrent(withPendingUnitCount: 1) { [weak self] in
-			guard let self = self else {
+			guard let self else {
 				return
 			}
 

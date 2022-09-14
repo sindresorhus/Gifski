@@ -83,7 +83,7 @@ final class ExtendedAttributes {
 		}
 	}
 
-	func set<T>(_ name: String, value: T) throws {
+	func set(_ name: String, value: some Any) throws {
 		try checkIfFileURL()
 
 		guard PropertyListSerialization.propertyList(value, isValidFor: .binary) else {

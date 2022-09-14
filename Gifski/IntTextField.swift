@@ -91,7 +91,7 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 	}
 
 	private func isValid(_ value: Int) -> Bool {
-		guard let minMax = minMax else {
+		guard let minMax else {
 			return true
 		}
 

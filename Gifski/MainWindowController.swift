@@ -67,7 +67,7 @@ final class MainWindowController: NSWindowController {
 
 		panel.beginSheetModal(for: window!) { [weak self] in
 			guard
-				let self = self,
+				let self,
 				$0 == .OK,
 				let url = panel.url
 			else {

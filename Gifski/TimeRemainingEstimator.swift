@@ -24,7 +24,7 @@ final class TimeRemainingEstimator {
 		didSet {
 			progressCancellable = progress?.publisher(for: \.fractionCompleted)
 				.sink { [weak self] in
-					guard let self = self else {
+					guard let self else {
 						return
 					}
 
@@ -33,7 +33,7 @@ final class TimeRemainingEstimator {
 
 			isCancelledCancellable = progress?.publisher(for: \.isCancelled)
 				.sink { [weak self] in
-					guard let self = self else {
+					guard let self else {
 						return
 					}
 
