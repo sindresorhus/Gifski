@@ -10,8 +10,8 @@ struct SpeedView: View {
 		HStack(alignment: .firstTextBaseline) {
 			Text("Speed:")
 			Slider(value: $outputSpeed, in: 0.5...5, step: 0.5)
-			Text("\(outputSpeed.formatted)×")
-				.font(.system().monospacedDigit()) // TODO: Use `.monospacedDigit()` view modifier when targeting macOS 12.
+			Text("\(outputSpeed.formatted())×")
+				.monospacedDigit()
 				.frame(width: 30, alignment: .leading)
 		}
 			.padding(.leading, 52)

@@ -21,13 +21,20 @@ Gifski has a bunch of settings like changing dimensions, speed, frame rate, qual
 
 [![](https://tools.applemediaservices.com/api/badges/download-on-the-mac-app-store/black/en-us?size=250x83&releaseDate=1615852800)](https://apps.apple.com/app/id1351639930)
 
-Requires macOS 11 or later.
+Requires macOS 12 or later.
 
 **Older versions**
 
+- [Last macOS 11 compatible version](https://github.com/sindresorhus/Gifski/releases/download/v2.21.2/Gifski.2.21.2.-.macOS.11.zip) *(2.21.2)*
 - [Last macOS 10.15 compatible version](https://github.com/sindresorhus/Gifski/releases/download/v2.20.2/Gifski.2.20.2.-.macOS.10.15.zip) *(2.20.2)*
 - [Last macOS 10.14 compatible version](https://github.com/sindresorhus/Gifski/releases/download/v2.16.0/Gifski.2.16.0.-.macOS.10.14.zip) *(2.16.0)*
 - [Last macOS 10.13 compatible version](https://github.com/sindresorhus/Gifski/files/3991913/Gifski.2.4.0.-.High.Sierra.zip) *(2.4.0)*
+
+**Non-App Store version**
+
+A special version for users that cannot access the App Store. It won't receive updates.
+
+[Download](https://dsc.cloud/sindresorhus/Gifski-2.21.2-1670550897) *(2.21.2 · macOS 12+)*
 
 ## Features
 
@@ -135,7 +142,6 @@ No, but there's a [cross-platform command-line tool](https://github.com/ImageOpt
 ## Related
 
 - [Announcement blog post](https://medium.com/sindre-sorhus/gifski-972692460aa5)
-- [Product Hunt](https://www.producthunt.com/posts/gifski-2)
 - [Sindre's apps](https://sindresorhus.com/apps)
 
 ## License

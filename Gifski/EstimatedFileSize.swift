@@ -2,12 +2,6 @@ import SwiftUI
 import FirebaseCrashlytics
 
 final class EstimatedFileSizeModel: ObservableObject {
-	static let formatter: ByteCountFormatter = {
-		let formatter = ByteCountFormatter()
-		formatter.zeroPadsFractionDigits = true
-		return formatter
-	}()
-
 	@Published var estimatedFileSize: String?
 	@Published var error: Error?
 
@@ -15,7 +9,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 	@Published var duration: TimeInterval = 0
 
 	var estimatedFileSizeNaive: String {
-		Self.formatter.string(fromByteCount: Int64(getNaiveEstimate()))
+		Int(getNaiveEstimate()).formatted(.byteCount(style: .file))
 	}
 
 	private let getConversionSettings: () -> GIFGenerator.Conversion
@@ -56,8 +50,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 				// We add 10% extra because it's better to estimate slightly too much than too little.
 				let fileSize = (Double(data.count) * gifski.sizeMultiplierForEstimation) * 1.1
 
-				// TODO: Use the new formatter API when targeting macOS 12.
-				self.estimatedFileSize = Self.formatter.string(fromByteCount: Int64(fileSize))
+				self.estimatedFileSize = Int(fileSize).formatted(.byteCount(style: .file))
 			case .failure(let error):
 				switch error {
 				case .cancelled:
@@ -100,18 +93,15 @@ struct EstimatedFileSizeView: View {
 				HStack(spacing: 0) {
 					Text("Estimated size: ")
 					Text(model.estimatedFileSize ?? model.estimatedFileSizeNaive)
-						// TODO: Use `View#monospacedDigit()` when targeting macOS 12.
-						.font(.system(size: 13).monospacedDigit())
-						.foregroundColor(model.estimatedFileSize == nil ? .secondary : .primary)
+						.monospacedDigit()
+						.foregroundStyle(model.estimatedFileSize == nil ? .secondary : .primary)
 				}
-					.foregroundColor(.secondary)
-				HStack {
-					if model.estimatedFileSize == nil {
-						ProgressView()
-							.controlSize(.mini)
-							.padding(.leading, -4)
-							.help("Calculating file size estimate")
-					}
+					.foregroundStyle(.secondary)
+				if model.estimatedFileSize == nil {
+					ProgressView()
+						.controlSize(.mini)
+						.padding(.leading, -4)
+						.help("Calculating file size estimate")
 				}
 					// This causes SwiftUI to crash internally on macOS 12.0 when changing the trim size many times so the estimation indicator keeps changing.
 //					.animation(.easeInOut, value: model.estimatedFileSize)
@@ -119,12 +109,19 @@ struct EstimatedFileSizeView: View {
 		}
 			// It's important to set a width here as otherwise it can cause internal SwiftUI crashes on macOS 11 and 12.
 			.frame(width: 500, height: 22, alignment: .leading)
-			.overlay2 {
+			.overlay {
 				if model.error == nil {
 					HStack {
+						// TODO: Use the below instead when targeting macOS 13.
+						/*
+						Duration.seconds(duration)
+							.formatted(
+								.time(pattern: .minuteSecond(padMinuteToLength: 2, fractionalSecondsLength: 2))
+								.locale(locale)
+							)
+						*/
 						Text(DateComponentsFormatter.localizedStringPositionalWithFractionalSeconds(model.duration))
-							// TODO: Use `View#monospacedDigit()` when targeting macOS 12.
-							.font(.system(size: 13).monospacedDigit())
+							.monospacedDigit()
 							.padding(.horizontal, 6)
 							.padding(.vertical, 3)
 							.background(Color.primary.opacity(0.04))
@@ -133,7 +130,7 @@ struct EstimatedFileSizeView: View {
 						.padding(.leading, 220)
 				}
 			}
-			.onAppear {
+			.task {
 				if model.estimatedFileSize == nil {
 					model.updateEstimate()
 				}

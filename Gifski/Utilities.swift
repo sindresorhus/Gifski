@@ -542,35 +542,11 @@ extension String.StringInterpolation {
 	}
 }
 
-
-extension Double {
-	/**
-	Converts the number to a string and strips fractional trailing zeros.
-
-	```
-	let x = 1.0
-
-	print(1.0)
-	//=> "1.0"
-
-	print(1.0.formatted)
-	//=> "1"
-
-	print(0.0100.formatted)
-	//=> "0.01"
-	```
-	*/
-	var formatted: String {
-		truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", self) : String(self)
-	}
-}
-
-
 extension CGSize {
 	/**
 	Example: `140×100`
 	*/
-	var formatted: String { "\(width.double.formatted)×\(height.double.formatted)" }
+	var formatted: String { "\(width.formatted())×\(height.formatted())" }
 }
 
 
@@ -2005,10 +1981,10 @@ extension URL {
 extension String {
 	/*
 	```
-	"https://sindresorhus.com".openUrl()
+	"https://sindresorhus.com".openURL()
 	```
 	*/
-	func openUrl() {
+	func openURL() {
 		URL(string: self)?.open()
 	}
 }
@@ -2220,8 +2196,7 @@ extension URL {
 	var fileSize: Int { resourceValue(forKey: .fileSizeKey) ?? 0 }
 
 	var fileSizeFormatted: String {
-		// TODO: Use `.formatted(.byteCount(style: .file))` when targeting macOS 12.
-		ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
+		fileSize.formatted(.byteCount(style: .file))
 	}
 
 	var exists: Bool { FileManager.default.fileExists(atPath: path) }
@@ -2493,7 +2468,6 @@ extension Result {
 }
 
 
-// TODO: Find a way to reduce the number of overloads for `wrap()`.
 final class Once {
 	private var lock = os_unfair_lock()
 	private var hasRun = false
@@ -3929,17 +3903,6 @@ extension Sequence where Element: Sequence {
 }
 
 
-extension NSFont {
-	/**
-	Returns a new version of the font with the existing font descriptor replaced by the given font descriptor.
-	*/
-	func withDescriptor(_ descriptor: NSFontDescriptor) -> NSFont {
-		// It's important that the size is `0` and not `pointSize` as otherwise the descriptor is not able to change the font size.
-		Self(descriptor: descriptor, size: 0) ?? self
-	}
-}
-
-
 extension String {
 	var attributedString: NSAttributedString { NSAttributedString(string: self) }
 }
@@ -4037,15 +4000,6 @@ extension String {
 }
 
 
-extension NSExtensionContext {
-	var inputItemsTyped: [NSExtensionItem] { inputItems as! [NSExtensionItem] }
-
-	var attachments: [NSItemProvider] {
-		inputItemsTyped.compactMap(\.attachments).flatten()
-	}
-}
-
-
 extension UnsafeMutableRawPointer {
 	/**
 	Convert an unsafe mutable raw pointer to an array.
@@ -4066,14 +4020,6 @@ extension Data {
 	The bytes of the data.
 	*/
 	var bytes: [UInt8] { [UInt8](self) }
-}
-
-
-extension [UInt8] {
-	/**
-	Convert the array to data.
-	*/
-	var data: Data { Data(self) }
 }
 
 
@@ -4559,7 +4505,6 @@ extension AVPlayerItem {
 		return duration / totalDuration
 	}
 
-	// TODO: Make it async when targeting macOS 12.
 	/**
 	Seek to the given percentage (`0...1`) of the total duration.
 	*/
@@ -4634,9 +4579,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS13OrLater: Bool = {
+	static let isMacOS14OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 13, *) {
+		if #available(macOS 14, *) {
 			return true
 		} else {
 			return false
@@ -4649,9 +4594,9 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS12OrLater: Bool = {
+	static let isMacOS13OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 12, *) {
+		if #available(macOS 13, *) {
 			return true
 		} else {
 			return false
@@ -4740,23 +4685,5 @@ extension ClosedRange {
 	*/
 	static func fromGraceful(_ bound1: Bound, _ bound2: Bound) -> Self {
 		bound1 <= bound2 ? bound1...bound2 : bound2...bound1
-	}
-}
-
-
-// TODO: Remove when targeting macOS 12.
-extension View {
-	func overlay2(
-		alignment: Alignment = .center,
-		@ViewBuilder content: () -> some View
-	) -> some View {
-		overlay(ZStack(content: content), alignment: alignment)
-	}
-
-	func background2(
-		alignment: Alignment = .center,
-		@ViewBuilder content: () -> some View
-	) -> some View {
-		background(ZStack(content: content), alignment: alignment)
 	}
 }
