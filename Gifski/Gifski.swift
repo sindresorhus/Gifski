@@ -4,64 +4,9 @@ import FirebaseCrashlytics
 
 private var conversionCount = 0
 
-final class Gifski {
-	enum Error: LocalizedError {
-		case invalidSettings
-		case unreadableFile
-		case notEnoughFrames(Int)
-		case generateFrameFailed(Swift.Error)
-		case addFrameFailed(Swift.Error)
-		case writeFailed(Swift.Error)
-		case cancelled
-
-		var errorDescription: String? {
-			switch self {
-			case .invalidSettings:
-				return "Invalid settings."
-			case .unreadableFile:
-				return "The selected file is no longer readable."
-			case .notEnoughFrames(let frameCount):
-				return "An animated GIF requires a minimum of 2 frames. Your video contains \(frameCount) frame\(frameCount == 1 ? "" : "s")."
-			case .generateFrameFailed(let error):
-				return "Failed to generate frame: \(error.localizedDescription)"
-			case .addFrameFailed(let error):
-				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
-			case .writeFailed(let error):
-				return "Failed to write, with underlying error: \(error.localizedDescription)"
-			case .cancelled:
-				return "The conversion was cancelled."
-			}
-		}
-	}
-
-	/**
-	- Parameter frameRate: Clamped to `5...30`. Uses the frame rate of `input` if not specified.
-	- Parameter loopGif: Whether output should loop infinitely or not.
-	- Parameter bounce: Whether output should bounce or not.
-	*/
-	struct Conversion {
-		let asset: AVAsset
-		let sourceURL: URL
-		var timeRange: ClosedRange<Double>?
-		var quality: Double = 1
-		var dimensions: CGSize?
-		var frameRate: Int?
-		var loopCount: Int?
-		var bounce: Bool
-
-		var gifDuration: TimeInterval {
-			guard let duration = (timeRange ?? asset.firstVideoTrack?.timeRange.range)?.length else {
-				return 0
-			}
-
-			return bounce ? (duration * 2) : duration
-		}
-	}
-
-	private var gifData = Data()
+final class GIFGenerator {
+	private var gifski: Gifski?
 	private var progress: Progress!
-	private var gifski: GifskiWrapper?
-
 	private(set) var sizeMultiplierForEstimation = 1.0
 
 	deinit {
@@ -85,9 +30,8 @@ final class Gifski {
 		progress = Progress(parent: .current())
 
 		let completionHandlerOnce = Once().wrap { [weak self] (_ result: Result<Data, Error>) in
-			// Ensure libgifski finishes no matter what.
-			try? self?.gifski?.finish()
-			self?.gifski?.release()
+			// Ensure Gifski finishes no matter what.
+			self?.gifski = nil
 
 			DispatchQueue.main.async {
 				guard
@@ -102,39 +46,14 @@ final class Gifski {
 			}
 		}
 
-		let settings = GifskiSettings(
-			width: UInt32(conversion.dimensions?.width ?? 0),
-			height: UInt32(conversion.dimensions?.height ?? 0),
-			quality: UInt8(conversion.quality * 100),
-			fast: false,
-			repeat: Int16(conversion.loopCount ?? 0)
+		self.gifski = Gifski(
+			dimensions: conversion.dimensions,
+			quality: conversion.quality,
+			loop: conversion.loop
 		)
 
-		self.gifski = GifskiWrapper(settings: settings)
-
-		guard let gifski else {
-			completionHandlerOnce(.failure(.invalidSettings))
-			return
-		}
-
-		gifski.setProgressCallback { [weak self] in
-			guard let self else {
-				return 1
-			}
-
-			self.progress.completedUnitCount += 1
-
-			return self.progress.isCancelled ? 0 : 1
-		}
-
-		gifski.setWriteCallback { [weak self] bufferLength, bufferPointer in
-			guard let self else {
-				return 0
-			}
-
-			self.gifData.append(bufferPointer, count: bufferLength)
-
-			return 0
+		self.gifski?.onProgress = { [weak self] in
+			self?.progress.completedUnitCount += 1
 		}
 
 		DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -216,11 +135,15 @@ final class Gifski {
 			switch frameResult {
 			case .success(let finished):
 				if finished {
-					let result = Result<Data, Swift.Error> {
-						try self.gifski?.finish()
-						return self.gifData
+					guard let gifski = self.gifski else {
+						completionHandler(.failure(.cancelled))
+						return
 					}
-					.mapError(Error.writeFailed)
+
+					let result = Result<Data, Swift.Error> {
+						try gifski.finish()
+					}
+						.mapError(Error.writeFailed)
 
 					completionHandler(result)
 				}
@@ -400,24 +323,12 @@ final class Gifski {
 				return .success(true)
 			}
 
-			let pixels: CGImage.Pixels
-			do {
-				pixels = try result.image.pixels(as: .rgba, premultiplyAlpha: false)
-			} catch {
-				return .failure(.generateFrameFailed(error))
-			}
-
 			do {
 				let frameNumber = result.completedCount - 1
 				assert(result.actualTime.seconds > 0 || frameNumber == 0)
 
 				try gifski?.addFrame(
-					pixelFormat: .rgba,
-					frameNumber: frameNumber,
-					width: pixels.width,
-					height: pixels.height,
-					bytesPerRow: pixels.bytesPerRow,
-					pixels: pixels.bytes,
+					result.image,
 					presentationTimestamp: max(0, result.actualTime.seconds - startTime)
 				)
 
@@ -447,12 +358,8 @@ final class Gifski {
 					let actualReverseTimestamp = max(0, expectedReverseTimestamp + timestampSlippage.seconds)
 
 					try gifski?.addFrame(
-						pixelFormat: .rgba,
+						result.image,
 						frameNumber: reverseFrameNumber,
-						width: pixels.width,
-						height: pixels.height,
-						bytesPerRow: pixels.bytesPerRow,
-						pixels: pixels.bytes,
 						presentationTimestamp: actualReverseTimestamp
 					)
 				}
@@ -485,6 +392,63 @@ final class Gifski {
 
 	func cancel() {
 		progress?.cancel()
+	}
+}
+
+extension GIFGenerator {
+	/**
+	- Parameter frameRate: Clamped to `5...30`. Uses the frame rate of `input` if not specified.
+	- Parameter loopGif: Whether output should loop infinitely or not.
+	- Parameter bounce: Whether output should bounce or not.
+	*/
+	struct Conversion {
+		let asset: AVAsset
+		let sourceURL: URL
+		var timeRange: ClosedRange<Double>?
+		var quality: Double = 1
+		var dimensions: (width: Int, height: Int)?
+		var frameRate: Int?
+		var loop: Gifski.Loop
+		var bounce: Bool
+
+		var gifDuration: TimeInterval {
+			guard let duration = (timeRange ?? asset.firstVideoTrack?.timeRange.range)?.length else {
+				return 0
+			}
+
+			return bounce ? (duration * 2) : duration
+		}
+	}
+}
+
+extension GIFGenerator {
+	enum Error: LocalizedError {
+		case invalidSettings
+		case unreadableFile
+		case notEnoughFrames(Int)
+		case generateFrameFailed(Swift.Error)
+		case addFrameFailed(Swift.Error)
+		case writeFailed(Swift.Error)
+		case cancelled
+
+		var errorDescription: String? {
+			switch self {
+			case .invalidSettings:
+				return "Invalid settings."
+			case .unreadableFile:
+				return "The selected file is no longer readable."
+			case .notEnoughFrames(let frameCount):
+				return "An animated GIF requires a minimum of 2 frames. Your video contains \(frameCount) frame\(frameCount == 1 ? "" : "s")."
+			case .generateFrameFailed(let error):
+				return "Failed to generate frame: \(error.localizedDescription)"
+			case .addFrameFailed(let error):
+				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
+			case .writeFailed(let error):
+				return "Failed to write, with underlying error: \(error.localizedDescription)"
+			case .cancelled:
+				return "The conversion was cancelled."
+			}
+		}
 	}
 }
 

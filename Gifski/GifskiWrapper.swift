@@ -1,55 +1,5 @@
 import Foundation
 
-enum GifskiWrapperError: UInt32, LocalizedError {
-	case nullArg = 1
-	case invalidState
-	case quant
-	case gif
-	case threadLost
-	case notFound
-	case permissionDenied
-	case alreadyExists
-	case invalidInput
-	case timedOut
-	case writeZero
-	case interrupted
-	case unexpectedEof
-	case aborted
-	case other
-
-	var errorDescription: String? {
-		switch self {
-		case .nullArg:
-			return "One of input arguments was NULL"
-		case .invalidState:
-			return "A one-time function was called twice, or functions were called in wrong order"
-		case .quant:
-			return "Internal error related to palette quantization"
-		case .gif:
-			return "Internal error related to GIF composing"
-		case .threadLost:
-			return "Internal error related (panic)"
-		case .notFound:
-			return "I/O error: File or directory not found"
-		case .permissionDenied:
-			return "I/O error: Permission denied"
-		case .alreadyExists:
-			return "I/O error: File already exists"
-		case .invalidInput:
-			return "Invalid arguments passed to function"
-		case .timedOut, .writeZero, .interrupted, .unexpectedEof:
-			return "Misc I/O error"
-		case .aborted:
-			return "Progress callback returned 0, writing aborted"
-		case .other:
-			return "Should not happen, file a bug: https://github.com/ImageOptim/gifski"
-		}
-	}
-}
-
-/**
-- Important: Don't forget to call `.release()` when done, whether it succeeded or failed.
-*/
 final class GifskiWrapper {
 	enum PixelFormat {
 		case rgba
@@ -57,11 +7,16 @@ final class GifskiWrapper {
 		case rgb
 	}
 
+	typealias ProgressCallback = () -> Int
+	typealias WriteCallback = (Int, UnsafePointer<UInt8>) -> Int
+
 	private let pointer: OpaquePointer
 	private var unmanagedSelf: Unmanaged<GifskiWrapper>!
 	private var hasFinished = false
+	private var progressCallback: ProgressCallback!
+	private var writeCallback: WriteCallback!
 
-	init?(settings: GifskiSettings) {
+	init?(_ settings: GifskiSettings) {
 		var settings = settings
 
 		guard let pointer = gifski_new(&settings) else {
@@ -78,13 +33,9 @@ final class GifskiWrapper {
 		let result = fn()
 
 		guard result == GIFSKI_OK else {
-			throw GifskiWrapperError(rawValue: result.rawValue) ?? .other
+			throw Error(rawValue: result.rawValue) ?? .other
 		}
 	}
-
-	typealias ProgressCallback = () -> Int
-
-	private var progressCallback: ProgressCallback!
 
 	func setProgressCallback(_ callback: @escaping ProgressCallback) {
 		guard !hasFinished else {
@@ -96,16 +47,16 @@ final class GifskiWrapper {
 		gifski_set_progress_callback(
 			pointer,
 			{ context in // swiftlint:disable:this opening_brace
-				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
+				guard let context else {
+					return 0
+				}
+
+				let this = Unmanaged<GifskiWrapper>.fromOpaque(context).takeUnretainedValue()
 				return Int32(this.progressCallback())
 			},
 			unmanagedSelf.toOpaque()
 		)
 	}
-
-	typealias WriteCallback = (Int, UnsafePointer<UInt8>) -> Int
-
-	private var writeCallback: WriteCallback!
 
 	func setWriteCallback(_ callback: @escaping WriteCallback) {
 		guard !hasFinished else {
@@ -119,12 +70,13 @@ final class GifskiWrapper {
 			{ bufferLength, bufferPointer, context in // swiftlint:disable:this opening_brace
 				guard
 					bufferLength > 0,
-					let bufferPointer
+					let bufferPointer,
+					let context
 				else {
 					return 0
 				}
 
-				let this = Unmanaged<GifskiWrapper>.fromOpaque(context!).takeUnretainedValue()
+				let this = Unmanaged<GifskiWrapper>.fromOpaque(context).takeUnretainedValue()
 				return Int32(this.writeCallback(bufferLength, bufferPointer))
 			},
 			unmanagedSelf.toOpaque()
@@ -142,7 +94,7 @@ final class GifskiWrapper {
 		presentationTimestamp: Double
 	) throws {
 		guard !hasFinished else {
-			return
+			throw Error.invalidState
 		}
 
 		try wrap {
@@ -185,15 +137,66 @@ final class GifskiWrapper {
 
 	func finish() throws {
 		guard !hasFinished else {
-			return
+			throw Error.invalidState
 		}
 
 		hasFinished = true
 
-		try wrap { gifski_finish(pointer) }
-	}
+		defer {
+			unmanagedSelf.release()
+		}
 
-	func release() {
-		unmanagedSelf.release()
+		try wrap {
+			gifski_finish(pointer)
+		}
+	}
+}
+
+extension GifskiWrapper {
+	enum Error: UInt32, LocalizedError {
+		case nullArg = 1
+		case invalidState
+		case quant
+		case gif
+		case threadLost
+		case notFound
+		case permissionDenied
+		case alreadyExists
+		case invalidInput
+		case timedOut
+		case writeZero
+		case interrupted
+		case unexpectedEof
+		case aborted
+		case other
+
+		var errorDescription: String? {
+			switch self {
+			case .nullArg:
+				return "One of input arguments was NULL"
+			case .invalidState:
+				return "A one-time function was called twice, or functions were called in wrong order"
+			case .quant:
+				return "Internal error related to palette quantization"
+			case .gif:
+				return "Internal error related to GIF composing"
+			case .threadLost:
+				return "Internal error related (panic)"
+			case .notFound:
+				return "I/O error: File or directory not found"
+			case .permissionDenied:
+				return "I/O error: Permission denied"
+			case .alreadyExists:
+				return "I/O error: File already exists"
+			case .invalidInput:
+				return "Invalid arguments passed to function"
+			case .timedOut, .writeZero, .interrupted, .unexpectedEof:
+				return "Misc I/O error"
+			case .aborted:
+				return "Progress callback returned 0, writing aborted"
+			case .other:
+				return "Should not happen, file a bug: https://github.com/ImageOptim/gifski"
+			}
+		}
 	}
 }

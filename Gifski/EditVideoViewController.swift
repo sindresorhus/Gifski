@@ -80,7 +80,7 @@ final class EditVideoViewController: NSViewController {
 		maxWidth: 300
 	)
 
-	private var loopCount: Int {
+	private var loop: Gifski.Loop {
 		/*
 		Looping values are:
 		 -1 | No loops
@@ -88,21 +88,26 @@ final class EditVideoViewController: NSViewController {
 		>=1 | Loop n times
 		*/
 		guard Defaults[.loopGif] else {
-			return Int(loopCountTextField.intValue) == 0 ? -1 : Int(loopCountTextField.intValue)
+			return loopCountTextField.intValue == 0 ? .never : .count(Int(loopCountTextField.intValue))
 		}
 
-		return 0
+		return .forever
 	}
 
-	private var conversionSettings: Gifski.Conversion {
-		.init(
+	private var conversionSettings: GIFGenerator.Conversion {
+		let dimensions = resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value
+
+		return .init(
 			asset: modifiedAsset,
 			sourceURL: inputUrl,
 			timeRange: timeRange,
 			quality: Defaults[.outputQuality],
-			dimensions: resizableDimensions.changed(dimensionsType: .pixels).currentDimensions.value,
+			dimensions: (
+				Int(dimensions.width),
+				Int(dimensions.height)
+			),
 			frameRate: frameRateSlider.integerValue,
-			loopCount: loopCount,
+			loop: loop,
 			bounce: Defaults[.bounceGif]
 		)
 	}

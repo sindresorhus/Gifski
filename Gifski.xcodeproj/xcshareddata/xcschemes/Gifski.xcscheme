@@ -38,16 +38,6 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E39B73A620D117BD00E71150"
-               BuildableName = "GifskiTests.xctest"
-               BlueprintName = "GifskiTests"
-               ReferencedContainer = "container:Gifski.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

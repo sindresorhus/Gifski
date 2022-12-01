@@ -18,13 +18,13 @@ final class EstimatedFileSizeModel: ObservableObject {
 		Self.formatter.string(fromByteCount: Int64(getNaiveEstimate()))
 	}
 
-	private let getConversionSettings: () -> Gifski.Conversion
+	private let getConversionSettings: () -> GIFGenerator.Conversion
 	private let getNaiveEstimate: () -> Double
 	private let getIsConverting: () -> Bool
-	private var gifski: Gifski?
+	private var gifski: GIFGenerator?
 
 	init(
-		getConversionSettings: @escaping () -> Gifski.Conversion,
+		getConversionSettings: @escaping () -> GIFGenerator.Conversion,
 		getNaiveEstimate: @escaping () -> Double,
 		getIsConverting: @escaping () -> Bool
 	) {
@@ -40,7 +40,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 			return
 		}
 
-		let gifski = Gifski()
+		let gifski = GIFGenerator()
 		self.gifski = gifski
 
 		estimatedFileSize = nil
