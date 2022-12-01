@@ -81,12 +81,6 @@ final class EditVideoViewController: NSViewController {
 	)
 
 	private var loop: Gifski.Loop {
-		/*
-		Looping values are:
-		 -1 | No loops
-		  0 | Loop forever
-		>=1 | Loop n times
-		*/
 		guard Defaults[.loopGif] else {
 			return loopCountTextField.intValue == 0 ? .never : .count(Int(loopCountTextField.intValue))
 		}
