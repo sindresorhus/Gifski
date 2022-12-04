@@ -1,5 +1,5 @@
 only_rules:
-  - anyobject_protocol
+  - accessibility_trait_for_button
   - array_init
   - block_based_kvo
   - class_delegate_protocol
@@ -10,6 +10,7 @@ only_rules:
   - collection_alignment
   - colon
   - comma
+  - comma_inheritance
   - compiler_protocol_init
   - computed_accessors_order
   - conditional_returns_on_newline
@@ -68,7 +69,6 @@ only_rules:
   - lower_acl_than_parent
   - mark
   - modifier_order
-  - multiline_arguments
   - multiline_function_chains
   - multiline_literal_brackets
   - multiline_parameters
@@ -78,12 +78,12 @@ only_rules:
   - no_fallthrough_only
   - no_space_in_method_call
   - notification_center_detachment
+  - ns_number_init_as_function_reference
   - nsobject_prefer_isequal
   - number_separator
   - opening_brace
   - operator_usage_whitespace
   - operator_whitespace
-  - orphaned_doc_comment
   - overridden_super_call
   - prefer_self_in_static_references
   - prefer_self_type_over_type_of_self
@@ -107,8 +107,10 @@ only_rules:
   - required_enum_case
   - return_arrow_whitespace
   - return_value_from_void_function
+  - self_binding
   - self_in_property_initialization
   - shorthand_operator
+  - shorthand_optional_binding
   - sorted_first_last
   - statement_position
   - static_operator
@@ -138,9 +140,9 @@ only_rules:
   - unused_setter_value
   - valid_ibinspectable
   - vertical_parameter_alignment
-  - vertical_parameter_alignment_on_call
   - vertical_whitespace_closing_braces
   - vertical_whitespace_opening_braces
+  - void_function_in_ternary
   - void_return
   - xct_specific_matcher
   - xctfail_message
@@ -150,6 +152,8 @@ analyzer_rules:
   - unused_declaration
   - unused_import
   - typesafe_array_init
+for_where:
+  allow_for_as_filter: true
 number_separator:
   minimum_length: 5
 identifier_name:
@@ -204,3 +208,6 @@ custom_rules:
   final_class:
     regex: '^class [a-zA-Z\d]+[^{]+\{'
     message: 'Classes should be marked as final whenever possible. If you actually need it to be subclassable, just add `// swiftlint:disable:next final_class`.'
+  no_alignment_center:
+    regex: '\b\(alignment: .center\b'
+    message: 'This alignment is the default.'

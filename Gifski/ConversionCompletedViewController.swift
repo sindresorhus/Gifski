@@ -15,7 +15,7 @@ final class ConversionCompletedViewController: NSViewController {
 	@IBOutlet private var wrapperView: NSView!
 
 	private let draggableFile = DraggableFile()
-	private var conversion: Gifski.Conversion!
+	private var conversion: GIFGenerator.Conversion!
 	private var gifUrl: URL!
 
 	private let tooltip = Tooltip(
@@ -25,7 +25,7 @@ final class ConversionCompletedViewController: NSViewController {
 		maxWidth: 260
 	)
 
-	convenience init(conversion: Gifski.Conversion, gifUrl: URL) {
+	convenience init(conversion: GIFGenerator.Conversion, gifUrl: URL) {
 		self.init()
 
 		self.conversion = conversion

@@ -5,6 +5,9 @@ import FirebaseCrashlytics
 import DockProgress
 
 /**
+TODO when targeting macOS 12:
+- Upload non-App Store version.
+
 TODO when targeting macOS 13:
 - Rewrite everything to use async/await, AsyncSequence, and actors.
 - Rewrite `CheckerboardView` to use `SwiftUI.Canvas`.

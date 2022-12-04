@@ -22,12 +22,12 @@ final class ConversionViewController: NSViewController {
 
 	private lazy var timeRemainingEstimator = TimeRemainingEstimator(label: timeRemainingLabel)
 
-	private var conversion: Gifski.Conversion!
+	private var conversion: GIFGenerator.Conversion!
 	private var progress: Progress?
 	private var isRunning = false
-	private let gifski = Gifski()
+	private let gifski = GIFGenerator()
 
-	convenience init(conversion: Gifski.Conversion) {
+	convenience init(conversion: GIFGenerator.Conversion) {
 		self.init()
 
 		self.conversion = conversion
@@ -65,7 +65,7 @@ final class ConversionViewController: NSViewController {
 		cancelConversion()
 	}
 
-	private func start(conversion: Gifski.Conversion) {
+	private func start(conversion: GIFGenerator.Conversion) {
 		guard !isRunning else {
 			return
 		}
@@ -92,7 +92,7 @@ final class ConversionViewController: NSViewController {
 					try result.get().write(to: gifUrl, options: .atomic)
 					try? gifUrl.setMetadata(key: .itemCreator, value: "\(SSApp.name) \(SSApp.version)")
 					self.didComplete(conversion: conversion, gifUrl: gifUrl)
-				} catch Gifski.Error.cancelled {
+				} catch GIFGenerator.Error.cancelled {
 					self.cancelConversion()
 				} catch {
 					error.presentAsModalSheet(for: self.view.window)
@@ -130,7 +130,7 @@ final class ConversionViewController: NSViewController {
 		}
 	}
 
-	private func didComplete(conversion: Gifski.Conversion, gifUrl: URL) {
+	private func didComplete(conversion: GIFGenerator.Conversion, gifUrl: URL) {
 		let conversionCompleted = ConversionCompletedViewController(conversion: conversion, gifUrl: gifUrl)
 		stopConversion { [weak self] in
 			self?.push(viewController: conversionCompleted)

@@ -2,6 +2,8 @@ Convert videos to high-quality GIFs.
 
 It converts videos to animated GIFs that use thousands of colors per frame. This is made possible by some fancy features for efficient cross-frame palettes and temporal dithering.
 
+Keep in mind that Gifski is a converter, not a GIF creator. It will never support features like adding text and elements to a GIF. That's better done in a proper video editing app.
+
 
 ■ Features
 
