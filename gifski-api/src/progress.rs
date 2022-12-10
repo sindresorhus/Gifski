@@ -4,11 +4,14 @@ use std::os::raw::{c_int, c_void};
 
 /// A trait that is used to report progress to some consumer.
 pub trait ProgressReporter: Send {
-    /// Increase the progress counter. Return `false` to abort processing.
+    /// Called after each frame has been written.
+    ///
+    /// This method may return `false` to abort processing.
     fn increase(&mut self) -> bool;
 
-    /// Mark the progress as done.
-    fn done(&mut self, msg: &str);
+    /// Not used :(
+    /// Writing is done when `Writer::write()` call returns
+    fn done(&mut self, _msg: &str) {}
 }
 
 /// No-op progress reporter

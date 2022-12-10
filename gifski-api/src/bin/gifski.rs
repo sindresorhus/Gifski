@@ -6,7 +6,7 @@ use gifski::{Settings, Repeat};
 mod ffmpeg_source;
 mod png;
 mod source;
-use crate::source::*;
+use crate::source::Source;
 
 use gifski::progress::{NoProgress, ProgressBar, ProgressReporter};
 
@@ -29,9 +29,9 @@ const VIDEO_FRAMES_ARG_HELP: &str = "PNG image files";
 
 fn main() {
     if let Err(e) = bin_main() {
-        eprintln!("error: {}", e);
+        eprintln!("error: {e}");
         if let Some(e) = e.source() {
-            eprintln!("error: {}", e);
+            eprintln!("error: {e}");
         }
         std::process::exit(1);
     }
@@ -85,6 +85,16 @@ fn bin_main() -> BinResult<()> {
                             .takes_value(true)
                             .default_value("90")
                             .help("Lower quality may give smaller file"))
+                        .arg(Arg::new("motion-quality")
+                            .long("motion-quality")
+                            .value_name("1-100")
+                            .takes_value(true)
+                            .help("Lower values reduce motion"))
+                        .arg(Arg::new("lossy-quality")
+                            .long("lossy-quality")
+                            .value_name("1-100")
+                            .takes_value(true)
+                            .help("Lower values introduce noise and streaks"))
                         .arg(Arg::new("width")
                             .long("width")
                             .short('W')
@@ -128,26 +138,28 @@ fn bin_main() -> BinResult<()> {
     let width = parse_opt(matches.value_of("width")).map_err(|_| "Invalid width")?;
     let height = parse_opt(matches.value_of("height")).map_err(|_| "Invalid height")?;
     let repeat_int = parse_opt(matches.value_of("repeat")).map_err(|_| "Invalid repeat count")?.unwrap_or(0) as i16;
-    let repeat;
-    match repeat_int {
-        -1 => repeat = Repeat::Finite(0),
-        0 => repeat = Repeat::Infinite,
-        _ => repeat = Repeat::Finite(repeat_int as u16),
-    }
+    let repeat = match repeat_int {
+        -1 => Repeat::Finite(0),
+        0 => Repeat::Infinite,
+        _ => Repeat::Finite(repeat_int as u16),
+    };
 
     let extra = matches.is_present("extra");
+    let motion_quality = parse_opt(matches.value_of("motion-quality")).map_err(|_| "Invalid motion quality")?;
+    let lossy_quality = parse_opt(matches.value_of("lossy-quality")).map_err(|_| "Invalid lossy quality")?;
+    let fast = matches.is_present("fast");
     let settings = Settings {
         width,
         height,
         quality: parse_opt(matches.value_of("quality")).map_err(|_| "Invalid quality")?.unwrap_or(100),
-        fast: matches.is_present("fast"),
+        fast,
         repeat,
     };
     let quiet = matches.is_present("quiet") || output_path == DestPath::Stdout;
     let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;
     let speed: f32 = matches.value_of("fast-forward").ok_or("Missing speed")?.parse().map_err(|_| "Speed must be a number")?;
 
-    let rate = source::Fps { speed, fps };
+    let rate = source::Fps { fps, speed };
 
     if settings.quality < 20 {
         if settings.quality < 1 {
@@ -185,7 +197,7 @@ fn bin_main() -> BinResult<()> {
         if speed != 1.0 {
             return Err("Speed is for videos. It doesn't make sense for images. Use fps only".into());
         }
-        Box::new(png::Lodecoder::new(frames, &rate))
+        Box::new(png::Lodecoder::new(frames, rate, if fast { 7 } else { 4 }))
     };
 
     let mut pb;
@@ -205,7 +217,15 @@ fn bin_main() -> BinResult<()> {
     let (mut collector, mut writer) = gifski::new(settings)?;
     if extra {
         #[allow(deprecated)]
-        writer.set_extra_effort();
+        writer.set_extra_effort(true);
+    }
+    if let Some(motion_quality) = motion_quality {
+        #[allow(deprecated)]
+        writer.set_motion_quality(motion_quality);
+    }
+    if let Some(lossy_quality) = lossy_quality {
+        #[allow(deprecated)]
+        writer.set_lossy_quality(lossy_quality);
     }
     let decode_thread = thread::Builder::new().name("decode".into()).spawn(move || {
         decoder.collect(&mut collector)
@@ -214,7 +234,7 @@ fn bin_main() -> BinResult<()> {
     match output_path {
         DestPath::Path(p) => {
             let file = File::create(p)
-                .map_err(|e| format!("Can't write to {}: {}", p.display(), e))?;
+                .map_err(|e| format!("Can't write to {}: {e}", p.display()))?;
             writer.write(file, progress)?;
         },
         DestPath::Stdout => {
@@ -222,7 +242,7 @@ fn bin_main() -> BinResult<()> {
         },
     };
     decode_thread.join().map_err(|_| "thread died?")??;
-    progress.done(&format!("gifski created {}", output_path));
+    progress.done(&format!("gifski created {output_path}"));
 
     Ok(())
 }

@@ -3,12 +3,12 @@ use std::path::PathBuf;
 use imgref::ImgVec;
 use imgref::ImgRef;
 use rgb::RGBA8;
-use gifski::*;
+use gifski::{Settings, new, progress};
 
 #[test]
 fn n_frames() {
     for num_frames in 1..=11 {
-        let (mut c, w) = new(Settings::default()).unwrap();
+        let (c, w) = new(Settings::default()).unwrap();
 
         let t = std::thread::spawn(move || {
             for n in 0..num_frames {
@@ -24,7 +24,7 @@ fn n_frames() {
         for_each_frame(&out, |_, actual| {
             let expected = lodepng::decode32_file(frame_filename(n)).unwrap();
             let expected = ImgVec::new(expected.buffer, expected.width, expected.height);
-            assert_images_eq(expected.as_ref(), actual, 0.31);
+            assert_images_eq(expected.as_ref(), actual, 0.8);
             n += 1;
         });
         assert_eq!(n, num_frames);
@@ -33,7 +33,7 @@ fn n_frames() {
 
 #[test]
 fn all_dupe_frames() {
-    let (mut c, w) = new(Settings::default()).unwrap();
+    let (c, w) = new(Settings::default()).unwrap();
 
     let t = std::thread::spawn(move || {
         c.add_frame_png_file(0, frame_filename(1), 0.1).unwrap();
@@ -59,7 +59,7 @@ fn all_dupe_frames() {
 
 #[test]
 fn all_but_one_dupe_frames() {
-    let (mut c, w) = new(Settings::default()).unwrap();
+    let (c, w) = new(Settings::default()).unwrap();
 
     let t = std::thread::spawn(move || {
         c.add_frame_png_file(0, frame_filename(0), 0.0).unwrap();
@@ -76,7 +76,7 @@ fn all_but_one_dupe_frames() {
     for_each_frame(&out, |frame, actual| {
         let expected = lodepng::decode32_file(frame_filename(if n == 0 {0} else {1})).unwrap();
         let expected = ImgVec::new(expected.buffer, expected.width, expected.height);
-        assert_images_eq(expected.as_ref(), actual, 0.25);
+        assert_images_eq(expected.as_ref(), actual, 1.7);
         delays.push(frame.delay);
         n += 1;
     });
@@ -102,12 +102,12 @@ fn for_each_frame(mut gif_data: &[u8], mut cb: impl FnMut(&gif::Frame, ImgRef<RG
 #[track_caller]
 fn assert_images_eq(a: ImgRef<RGBA8>, b: ImgRef<RGBA8>, max_diff: f64) {
     let diff = a.pixels().zip(b.pixels()).map(|(a,b)| {
-        let a = a.map(|c| c as i32);
-        let b = b.map(|c| c as i32);
+        let a = a.map(i32::from);
+        let b = b.map(i32::from);
         let d = a - b;
-        (d.r * d.r +
-         d.g * d.g +
+        (d.r * d.r * 2 +
+         d.g * d.g * 3 +
          d.b * d.b) as u64
-    }).sum::<u64>() as f64 / (a.width() * a.height()) as f64;
-    assert!(diff <= max_diff, "{} diff > {}", diff, max_diff);
+    }).sum::<u64>() as f64 / (a.width() * a.height() * 3) as f64;
+    assert!(diff <= max_diff, "{diff} diff > {max_diff}");
 }

@@ -14,7 +14,7 @@ See [releases](https://github.com/ImageOptim/gifski/releases) page for executabl
 
 If you have [Homebrew](https://brew.sh/), you can also get it with `brew install gifski`.
 
-If you have [Rust](https://www.rust-lang.org/install.html) 1.57+, you can also build it from source with [`cargo install gifski`](https://lib.rs/crates/gifski).
+If you have [Rust](https://www.rust-lang.org/install.html) 1.60+, you can also build it from source with [`cargo install gifski`](https://lib.rs/crates/gifski).
 
 ## Usage
 
@@ -49,6 +49,7 @@ See `gifski -h` for more options.
 [See `gifski.h`](https://github.com/ImageOptim/gifski/blob/main/gifski.h) for [the C API](https://docs.rs/gifski/latest/gifski/c_api/#functions). To build the library, run:
 
 ```sh
+rustup update
 cargo build --release
 ```
 
@@ -62,7 +63,7 @@ AGPL 3 or later. I can offer alternative licensing options, including [commercia
 
 The tool optionally supports decoding video directly, but unfortunately it relies on ffmpeg 4.x, which may be *very hard* to get working, so it's not enabled by default.
 
-You must have `ffmpeg` and `libclang` installed, both with their C headers intalled in default system include paths. Details depend on the platform and version, but you usually need to install packages such as `libavformat-dev`, `libavfilter-dev`, `libavdevice-dev`, `libclang-dev`, `clang`. Please note that installation of these dependencies may be quite difficult. Especially on macOS and Windows it takes *expert knowledge* to just get them installed without wasting several hours on endless stupid installation and compilation errors, which I can't help with. If you're cross-compiling, try uncommenting `[patch.crates-io]` section at the end of `Cargo.toml`, which includes some experimental fixes for ffmpeg.
+You must have `ffmpeg` and `libclang` installed, both with their C headers installed in default system include paths. Details depend on the platform and version, but you usually need to install packages such as `libavformat-dev`, `libavfilter-dev`, `libavdevice-dev`, `libclang-dev`, `clang`. Please note that installation of these dependencies may be quite difficult. Especially on macOS and Windows it takes *expert knowledge* to just get them installed without wasting several hours on endless stupid installation and compilation errors, which I can't help with. If you're cross-compiling, try uncommenting `[patch.crates-io]` section at the end of `Cargo.toml`, which includes some experimental fixes for ffmpeg.
 
 Once you have dependencies installed, compile with `cargo build --release --features=video` or `cargo build --release --features=video-static`.
 
@@ -87,6 +88,7 @@ rustup target add aarch64-apple-ios
 and then to build the library:
 
 ```sh
+rustup update
 cargo build --lib --release --target=aarch64-apple-ios
 ```
 

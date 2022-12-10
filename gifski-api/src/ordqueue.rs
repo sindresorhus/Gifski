@@ -1,4 +1,4 @@
-use crate::error::*;
+use crate::error::CatResult;
 use crossbeam_channel::{Receiver, Sender};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -6,6 +6,12 @@ use std::iter::FusedIterator;
 
 pub struct OrdQueue<T> {
     sender: Sender<ReverseTuple<T>>,
+}
+
+impl<T> Clone for OrdQueue<T> {
+    fn clone(&self) -> Self {
+        Self { sender: self.sender.clone() }
+    }
 }
 
 pub struct OrdQueueIter<T> {
@@ -26,7 +32,7 @@ pub fn new<T>(depth: usize) -> (OrdQueue<T>, OrdQueueIter<T>) {
 }
 
 impl<T: Send + 'static> OrdQueue<T> {
-    pub fn push(&mut self, index: usize, item: T) -> CatResult<()> {
+    pub fn push(&self, index: usize, item: T) -> CatResult<()> {
         self.sender.send(ReverseTuple(index, item))?;
         Ok(())
     }

@@ -1,5 +1,7 @@
+use crate::PushInCapacity;
 pub use imgref::ImgRef;
 use imgref::ImgVec;
+use loop9::loop9_img;
 use rgb::ComponentMap;
 use rgb::RGB8;
 pub use rgb::RGBA8;
@@ -11,6 +13,7 @@ struct Acc {
     r: [u8; LOOKAHEAD],
     g: [u8; LOOKAHEAD],
     b: [u8; LOOKAHEAD],
+    blur: [RGB8; LOOKAHEAD],
     alpha_bits: u8,
     can_stay_for: u8,
     stayed_for: u8,
@@ -18,21 +21,26 @@ struct Acc {
 }
 
 impl Acc {
+    /// Actual pixel + blurred pixel
     #[inline(always)]
-    pub fn get(&self, idx: usize) -> Option<RGB8> {
+    pub fn get(&self, idx: usize) -> Option<(RGB8, RGB8)> {
         if self.alpha_bits & (1 << idx) == 0 {
-            Some(RGB8::new(self.r[idx], self.g[idx], self.b[idx]))
+            Some((
+                RGB8::new(self.r[idx], self.g[idx], self.b[idx]),
+                self.blur[idx],
+            ))
         } else {
             None
         }
     }
 
     #[inline(always)]
-    pub fn append(&mut self, val: RGBA8) {
+    pub fn append(&mut self, val: RGBA8, val_blur: RGB8) {
         for n in 1..LOOKAHEAD {
             self.r[n - 1] = self.r[n];
             self.g[n - 1] = self.g[n];
             self.b[n - 1] = self.b[n];
+            self.blur[n - 1] = self.blur[n];
         }
         self.alpha_bits >>= 1;
 
@@ -42,6 +50,7 @@ impl Acc {
             self.r[LOOKAHEAD - 1] = val.r;
             self.g[LOOKAHEAD - 1] = val.g;
             self.b[LOOKAHEAD - 1] = val.b;
+            self.blur[LOOKAHEAD - 1] = val_blur;
         }
     }
 }
@@ -78,6 +87,7 @@ impl<T> Denoiser<T> {
             r: Default::default(),
             g: Default::default(),
             b: Default::default(),
+            blur: Default::default(),
             alpha_bits: (1 << LOOKAHEAD) - 1,
             bg_set: Default::default(),
             stayed_for: 0,
@@ -92,9 +102,9 @@ impl<T> Denoiser<T> {
         }
     }
 
-    fn quick_append(&mut self, frame: ImgRef<RGBA8>) {
-        for (acc, src) in self.splat.pixels_mut().zip(frame.pixels()) {
-            acc.append(src);
+    fn quick_append(&mut self, frame: ImgRef<RGBA8>, frame_blurred: ImgRef<RGB8>) {
+        for ((acc, src), src_blur) in self.splat.pixels_mut().zip(frame.pixels()).zip(frame_blurred.pixels()) {
+            acc.append(src, src_blur);
         }
     }
 
@@ -105,10 +115,10 @@ impl<T> Denoiser<T> {
             let mut imp_map1 = Vec::with_capacity(self.splat.width() * self.splat.height());
 
             for acc in self.splat.pixels_mut() {
-                acc.append(RGBA8::new(0, 0, 0, 0));
-                let (m, i) = Self::acc(acc, self.threshold, self.frames & 1 != 0);
-                median1.push(m);
-                imp_map1.push(i);
+                acc.append(RGBA8::new(0, 0, 0, 0), RGB8::new(0, 0, 0));
+                let (m, i) = acc.next_pixel(self.threshold, self.frames & 1 != 0);
+                median1.push_in_cap(m);
+                imp_map1.push_in_cap(i);
             }
 
             // may need to push down first if there were not enough frames to fill the pipeline
@@ -121,7 +131,13 @@ impl<T> Denoiser<T> {
         }
     }
 
-    pub fn push_frame(&mut self, frame: ImgRef<RGBA8>, frame_metadata: T) -> Result<(), WrongSizeError> {
+    #[cfg(test)]
+    fn push_frame_test(&mut self, frame: ImgRef<RGBA8>, frame_metadata: T) -> Result<(), WrongSizeError> {
+        let frame_blurred = smart_blur(frame);
+        self.push_frame(frame, frame_blurred.as_ref(), frame_metadata)
+    }
+
+    pub fn push_frame(&mut self, frame: ImgRef<RGBA8>, frame_blurred: ImgRef<RGB8>, frame_metadata: T) -> Result<(), WrongSizeError> {
         if frame.width() != self.splat.width() || frame.height() != self.splat.height() {
             return Err(WrongSizeError);
         }
@@ -131,18 +147,18 @@ impl<T> Denoiser<T> {
         self.frames += 1;
         // Can't output anything yet
         if self.frames < LOOKAHEAD {
-            self.quick_append(frame);
+            self.quick_append(frame, frame_blurred);
             return Ok(());
         }
 
         let mut median = Vec::with_capacity(frame.width() * frame.height());
         let mut imp_map = Vec::with_capacity(frame.width() * frame.height());
-        for (acc, src) in self.splat.pixels_mut().zip(frame.pixels()) {
-            acc.append(src);
+        for ((acc, src), src_blur) in self.splat.pixels_mut().zip(frame.pixels()).zip(frame_blurred.pixels()) {
+            acc.append(src, src_blur);
 
-            let (m, i) = Self::acc(acc, self.threshold, self.frames & 1 != 0);
-            median.push(m);
-            imp_map.push(i);
+            let (m, i) = acc.next_pixel(self.threshold, self.frames & 1 != 0);
+            median.push_in_cap(m);
+            imp_map.push_in_cap(i);
         }
 
         let median = ImgVec::new(median, frame.width(), frame.height());
@@ -161,41 +177,47 @@ impl<T> Denoiser<T> {
             Denoised::Done
         }
     }
+}
 
-    fn acc(acc: &mut Acc, threshold: u32, odd_frame: bool) -> (RGBA8, u8) {
+impl Acc {
+    fn next_pixel(&mut self, threshold: u32, odd_frame: bool) -> (RGBA8, u8) {
         // No previous bg set, so find a new one
-        if let Some(curr) = acc.get(0) {
+        if let Some((curr, curr_blur)) = self.get(0) {
             let my_turn = cohort(curr) != odd_frame;
             let threshold = if my_turn { threshold } else { threshold * 2 };
-            let diff_with_bg = if acc.bg_set.a > 0 { color_diff(acc.bg_set.rgb(), curr) } else { 1<<20 };
+            let diff_with_bg = if self.bg_set.a > 0 {
+                let bg = color_diff(self.bg_set.rgb(), curr);
+                let bg_blur = color_diff(self.bg_set.rgb(), curr_blur);
+                if bg < bg_blur { bg } else { (bg + bg_blur) / 2 }
+            } else { 1<<20 };
 
-            if acc.stayed_for < acc.can_stay_for {
-                acc.stayed_for += 1;
+            if self.stayed_for < self.can_stay_for {
+                self.stayed_for += 1;
                 // If this is the second, corrective frame, then
                 // give it weight proportional to its staying duration
-                let max = if acc.stayed_for > 1 { 0 } else {
-                    [0, 40, 80, 100, 110][acc.can_stay_for.min(4) as usize]
+                let max = if self.stayed_for > 1 { 0 } else {
+                    [0, 40, 80, 100, 110][self.can_stay_for.min(4) as usize]
                 };
                 // min == 0 may wipe pixels totally clear, so give them at least a second chance,
                 // if quality setting allows
                 let min = match threshold {
-                    0..=300 if acc.stayed_for <= 3 => 1, // q >= 75
-                    300..=500 if acc.stayed_for <= 2 => 1,
-                    400..=900 if acc.stayed_for <= 1 => 1, // q >= 50
+                    0..=300 if self.stayed_for <= 3 => 1, // q >= 75
+                    300..=500 if self.stayed_for <= 2 => 1,
+                    400..=900 if self.stayed_for <= 1 => 1, // q >= 50
                     _ => 0,
                 };
-                return (acc.bg_set, pixel_importance(diff_with_bg, threshold, min, max));
+                return (self.bg_set, pixel_importance(diff_with_bg, threshold, min, max));
             }
 
             // if it's still good, keep rolling with it
             if diff_with_bg < threshold {
-                return (acc.bg_set, 0);
+                return (self.bg_set, 0);
             }
 
             // See how long this bg can stay
             let mut stays_frames = 0;
             for i in 1..LOOKAHEAD {
-                if acc.get(i).map_or(false, |c| color_diff(c, curr) < threshold) {
+                if self.get(i).map_or(false, |(c, blurred)| color_diff(c, curr) < threshold || color_diff(blurred, curr_blur) < threshold) {
                     stays_frames = i;
                 } else {
                     break;
@@ -204,13 +226,13 @@ impl<T> Denoiser<T> {
 
             // fast path for regular changing pixel
             if stays_frames == 0 {
-                acc.bg_set = curr.alpha(255);
-                return (acc.bg_set, pixel_importance(diff_with_bg, threshold, 10, 110));
+                self.bg_set = curr.alpha(255);
+                return (self.bg_set, pixel_importance(diff_with_bg, threshold, 10, 110));
             }
             let smoothed_curr = RGB8::new(
-                get_median(&acc.r, stays_frames + 1),
-                get_median(&acc.g, stays_frames + 1),
-                get_median(&acc.b, stays_frames + 1),
+                get_median(&self.r, stays_frames + 1),
+                get_median(&self.g, stays_frames + 1),
+                get_median(&self.b, stays_frames + 1),
             );
 
             let imp = if stays_frames <= 1 {
@@ -221,22 +243,60 @@ impl<T> Denoiser<T> {
                 pixel_importance(diff_with_bg, threshold, 50, 205)
             };
 
-            acc.bg_set = smoothed_curr.alpha(255);
+            self.bg_set = smoothed_curr.alpha(255);
             // shorten stay-for to use overlapping ranges for smoother transitions
-            acc.can_stay_for = (stays_frames as u8).min(LOOKAHEAD as u8 - 1);
-            acc.stayed_for = 0;
-            (acc.bg_set, imp)
+            self.can_stay_for = (stays_frames as u8).min(LOOKAHEAD as u8 - 1);
+            self.stayed_for = 0;
+            (self.bg_set, imp)
         } else {
             // pixels with importance == 0 are totally ignored, but that could skip frames
             // which need to set background to clear
-            let imp = if acc.bg_set.a > 0 {
-                acc.bg_set.a = 0;
-                acc.can_stay_for = 0;
+            let imp = if self.bg_set.a > 0 {
+                self.bg_set.a = 0;
+                self.can_stay_for = 0;
                 1
             } else { 0 };
             (RGBA8::new(0,0,0,0), imp)
         }
     }
+}
+
+/// Median of 9 neighboring pixels
+macro_rules! median_channel {
+    ($top:expr, $mid:expr, $bot:expr, $chan:ident) => {
+        *[
+            if $top.prev.a > 0 { $top.prev.$chan } else { $mid.curr.$chan },
+            if $top.curr.a > 0 { $top.curr.$chan } else { $mid.curr.$chan },
+            if $top.next.a > 0 { $top.next.$chan } else { $mid.curr.$chan },
+            if $mid.prev.a > 0 { $mid.prev.$chan } else { $mid.curr.$chan },
+            $mid.curr.$chan, // if the center pixel is transparent, the result won't be used
+            $mid.curr.$chan, // more weight on the center
+            if $mid.next.a > 0 { $mid.next.$chan } else { $mid.curr.$chan },
+            if $bot.prev.a > 0 { $bot.prev.$chan } else { $mid.curr.$chan },
+            if $bot.curr.a > 0 { $bot.curr.$chan } else { $mid.curr.$chan },
+            if $bot.next.a > 0 { $bot.next.$chan } else { $mid.curr.$chan },
+        ].select_nth_unstable(5).1
+    }
+}
+
+pub(crate) fn smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
+    let mut out = Vec::with_capacity(frame.width() * frame.height());
+    loop9_img(frame, |_,_, top, mid, bot| {
+        out.push_in_cap(if mid.curr.a > 0 {
+            let median_r = median_channel!(top, mid, bot, r);
+            let median_g = median_channel!(top, mid, bot, g);
+            let median_b = median_channel!(top, mid, bot, b);
+
+            let blurred = RGB8::new(median_r, median_g, median_b);
+            // diff limit, because median removes thin lines too
+            if color_diff(mid.curr.rgb(), blurred) < 16*16*6 {
+                blurred
+            } else {
+                mid.curr.rgb()
+            }
+        } else { RGB8::new(255,0,255) });
+    });
+    ImgVec::new(out, frame.width(), frame.height())
 }
 
 /// The idea is to split colors into two arbitrary groups, and flip-flop weight between them.
@@ -249,14 +309,14 @@ fn cohort(color: RGB8) -> bool {
 /// importance = how much it exceeds percetible threshold
 #[inline(always)]
 fn pixel_importance(diff_with_bg: u32, threshold: u32, min: u8, max: u8) -> u8 {
-    assert!((min as u32 + max as u32) <= 255);
+    assert!((u32::from(min) + u32::from(max)) <= 255);
     let exceeds = diff_with_bg.saturating_sub(threshold);
-    min + (exceeds.saturating_mul(max as u32) / (threshold.saturating_mul(48))).min(max as u32) as u8
+    min + (exceeds.saturating_mul(u32::from(max)) / (threshold.saturating_mul(48))).min(u32::from(max)) as u8
 }
 
 #[inline(always)]
 fn avg8(a: u8, b: u8) -> u8 {
-    ((a as u16 + b as u16) / 2) as u8
+    ((u16::from(a) + u16::from(b)) / 2) as u8
 }
 
 #[inline(always)]
@@ -308,7 +368,10 @@ fn px<T>(f: Denoised<T>) -> (RGBA8, T) {
 fn one() {
     let mut d = Denoiser::new(1,1, 100);
     let w = RGBA8::new(255,255,255,255);
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
+    let frame = ImgVec::new(vec![w], 1, 1);
+    let frame_blurred = smart_blur(frame.as_ref());
+
+    d.push_frame(frame.as_ref(), frame_blurred.as_ref(), 0).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
     d.flush();
     assert_eq!(px(d.pop()), (w, 0));
@@ -320,8 +383,8 @@ fn two() {
     let mut d = Denoiser::new(1,1, 100);
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), 1).unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), 1).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
     d.flush();
     assert_eq!(px(d.pop()), (w, 0));
@@ -334,9 +397,9 @@ fn three() {
     let mut d = Denoiser::new(1,1, 100);
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), 1).unwrap();
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), 2).unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), 1).unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), 2).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
     d.flush();
     assert_eq!(px(d.pop()), (w, 0));
@@ -352,10 +415,10 @@ fn four() {
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
     let t = RGBA8::new(0,0,0,0);
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
-    d.push_frame(ImgVec::new(vec![t], 1, 1).as_ref(), 1).unwrap();
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), 2).unwrap();
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 3).unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
+    d.push_frame_test(ImgVec::new(vec![t], 1, 1).as_ref(), 1).unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), 2).unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 3).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
     d.flush();
     assert_eq!(px(d.pop()), (w, 0));
@@ -371,12 +434,12 @@ fn five() {
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
     let t = RGBA8::new(0,0,0,0);
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
-    d.push_frame(ImgVec::new(vec![t], 1, 1).as_ref(), 1).unwrap();
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), 2).unwrap();
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), 3).unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
+    d.push_frame_test(ImgVec::new(vec![t], 1, 1).as_ref(), 1).unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), 2).unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), 3).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 4).unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 4).unwrap();
     assert_eq!(px(d.pop()), (w, 0));
     d.flush();
     assert_eq!(px(d.pop()), (t, 1));
@@ -393,17 +456,17 @@ fn six() {
     let b = RGBA8::new(8,7,0,255);
     let t = RGBA8::new(0,0,0,0);
     let x = RGBA8::new(4,5,6,255);
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), 1).unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), 1).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), 2).unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), 2).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![t], 1, 1).as_ref(), 3).unwrap();
+    d.push_frame_test(ImgVec::new(vec![t], 1, 1).as_ref(), 3).unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), 4).unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 4).unwrap();
     assert_eq!(px(d.pop()), (w, 0));
-    d.push_frame(ImgVec::new(vec![x], 1, 1).as_ref(), 5).unwrap();
+    d.push_frame_test(ImgVec::new(vec![x], 1, 1).as_ref(), 5).unwrap();
     d.flush();
     assert_eq!(px(d.pop()), (b, 1));
     assert_eq!(px(d.pop()), (b, 2));
@@ -420,19 +483,19 @@ fn many() {
     let w = RGBA8::new(255,254,253,255);
     let b = RGBA8::new(1,2,3,255);
     let t = RGBA8::new(0,0,0,0);
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), "w0").unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), "w0").unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![w], 1, 1).as_ref(), "w1").unwrap();
+    d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), "w1").unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), "b2").unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), "b2").unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), "b3").unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), "b3").unwrap();
     assert!(matches!(d.pop(), Denoised::NotYet));
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), "b4").unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), "b4").unwrap();
     assert_eq!(px(d.pop()), (w, "w0"));
-    d.push_frame(ImgVec::new(vec![t], 1, 1).as_ref(), "t5").unwrap();
+    d.push_frame_test(ImgVec::new(vec![t], 1, 1).as_ref(), "t5").unwrap();
     assert_eq!(px(d.pop()), (w, "w1"));
-    d.push_frame(ImgVec::new(vec![b], 1, 1).as_ref(), "b6").unwrap();
+    d.push_frame_test(ImgVec::new(vec![b], 1, 1).as_ref(), "b6").unwrap();
     assert_eq!(px(d.pop()), (b, "b2"));
     d.flush();
     assert_eq!(px(d.pop()), (b, "b3"));
