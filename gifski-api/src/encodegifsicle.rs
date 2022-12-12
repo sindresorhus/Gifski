@@ -1,4 +1,4 @@
-use crate::error::*;
+use crate::error::{CatResult, Error};
 use crate::GIFFrame;
 use crate::Settings;
 use crate::{Encoder, Repeat};
@@ -78,11 +78,11 @@ impl Encoder for Gifsicle<'_> {
             gfs.screen_height = screen_height;
             // -1 is no looping, 0 is loop forever, else loop X number of times
             // not sure the else will work.. I need to get gif::Repeat copy-able first to test.
-            match settings.repeat {
-                Repeat::Finite(0) => gfs.loopcount = -1,
-                Repeat::Infinite => gfs.loopcount = 0,
-                Repeat::Finite(x) => gfs.loopcount = x as _,
-            }
+            gfs.loopcount = match settings.repeat {
+                Repeat::Finite(0) => -1,
+                Repeat::Infinite => 0,
+                Repeat::Finite(x) => x as _,
+            };
             unsafe {
                 self.gif_writer = Gif_IncrementalWriteFileInit(gfs, &self.info, ptr::null_mut());
                 if self.gif_writer.is_null() {
@@ -105,12 +105,12 @@ impl Encoder for Gifsicle<'_> {
             gif::DisposalMethod::Background => Disposal::Background,
             gif::DisposalMethod::Previous => Disposal::Previous,
         } as _;
-        g.transparent = transparent_index.map(|i| i as _).unwrap_or(-1);
+        g.transparent = transparent_index.map_or(-1, i16::from);
 
         g.local = unsafe { Gif_NewFullColormap(0, pal.len() as _) }; // it's owned by the image
-        for c in pal.iter() {
+        for c in &pal {
             unsafe {
-                Gif_AddColor((*g).local, &mut Gif_Color {
+                Gif_AddColor(g.local, &mut Gif_Color {
                     gfc_red: c.r,
                     gfc_green: c.g,
                     gfc_blue: c.b,

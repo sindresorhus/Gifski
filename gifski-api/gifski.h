@@ -132,6 +132,22 @@ typedef enum GifskiError GifskiError;
  */
 gifski *gifski_new(const GifskiSettings *settings);
 
+
+/** Quality 1-100 of temporal denoising. Lower values reduce motion. Defaults to `settings.quality`.
+ *
+ * Only valid immediately after calling `gifski_new`, before any frames are added. */
+GifskiError gifski_set_motion_quality(gifski *handle, uint8_t quality);
+
+/** Quality 1-100 of gifsicle compression. Lower values add noise. Defaults to `settings.quality`.
+ * Has no effect if the `gifsicle` feature hasn't been enabled.
+ * Only valid immediately after calling `gifski_new`, before any frames are added. */
+GifskiError gifski_set_lossy_quality(gifski *handle, uint8_t quality);
+
+/** If `true`, encoding will be significantly slower, but may look a bit better.
+ *
+ * Only valid immediately after calling `gifski_new`, before any frames are added. */
+GifskiError gifski_set_extra_effort(gifski *handle, bool extra);
+
 /**
  * Adds a frame to the animation. This function is asynchronous.
  *
@@ -255,7 +271,7 @@ GifskiError gifski_set_file_output(gifski *handle, const char *destination_path)
  * The callback function receives 3 arguments:
  *  - size of the buffer to write, in bytes. IT MAY BE ZERO (when it's zero, either do nothing, or flush internal buffers if necessary).
  *  - pointer to the buffer.
- *  - context pointer to arbitary user data, same as passed in to this function.
+ *  - context pointer to arbitrary user data, same as passed in to this function.
  *
  * The callback should return 0 (`GIFSKI_OK`) on success, and non-zero on error.
  *

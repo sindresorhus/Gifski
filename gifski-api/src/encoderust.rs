@@ -1,8 +1,8 @@
 use crate::error::CatResult;
 use crate::GIFFrame;
 use crate::Settings;
-use crate::{Encoder, Repeat};
-use rgb::*;
+use crate::Encoder;
+use rgb::ComponentBytes;
 use std::io::Write;
 
 pub(crate) struct RustEncoder<W: Write> {
@@ -25,17 +25,11 @@ impl<W: Write> Encoder for RustEncoder<W> {
 
         let writer = &mut self.writer;
 
-        let repeat;
-        match settings.repeat {
-            Repeat::Infinite => repeat = gif::Repeat::Infinite,
-            Repeat::Finite(x) => repeat = gif::Repeat::Finite(x),
-        }
-
         let enc = match self.gif_enc {
             None => {
-                let w = writer.take().expect("writer");
+                let w = writer.take().ok_or(crate::Error::ThreadSend)?;
                 let mut enc = gif::Encoder::new(w, screen_width, screen_height, &[])?;
-                enc.write_extension(gif::ExtensionData::Repetitions(repeat))?;
+                enc.write_extension(gif::ExtensionData::Repetitions(settings.repeat))?;
                 self.gif_enc.get_or_insert(enc)
             },
             Some(ref mut enc) => enc,
@@ -44,7 +38,7 @@ impl<W: Write> Encoder for RustEncoder<W> {
         let (buffer, width, height) = image.into_contiguous_buf();
 
         let mut pal_rgb = Vec::with_capacity(3 * pal.len());
-        for p in pal.iter() {
+        for p in &pal {
             pal_rgb.extend_from_slice([p.rgb()].as_bytes());
         }
 
