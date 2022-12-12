@@ -2,7 +2,6 @@ import Cocoa
 import Quartz
 import UserNotifications
 import StoreKit
-import Defaults
 
 final class ConversionCompletedViewController: NSViewController {
 	@IBOutlet private var draggableFileWrapper: NSView!

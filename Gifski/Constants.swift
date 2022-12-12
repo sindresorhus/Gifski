@@ -1,5 +1,4 @@
 import Cocoa
-import Defaults
 
 enum Constants {
 	static let defaultWindowSize = CGSize(width: 360, height: 240)

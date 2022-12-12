@@ -1,7 +1,5 @@
 import SwiftUI
-import Combine
 import AVKit
-import Defaults
 
 struct SpeedView: View {
 	@Default(.outputSpeed) private var outputSpeed

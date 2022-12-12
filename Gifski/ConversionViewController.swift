@@ -1,7 +1,6 @@
 import AppKit
 import CircularProgress
 import DockProgress
-import Defaults
 
 final class ConversionViewController: NSViewController {
 	private static let circularProgressSize = 160.0

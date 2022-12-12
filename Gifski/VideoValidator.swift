@@ -94,6 +94,8 @@ struct VideoValidator {
 			return .failure
 		}
 
+		let cannotReadVideoExplanation = "This could happen if the video is corrupt or the codec profile level is not supported. macOS unfortunately doesn't provide Gifski a reason for why the video could not be decoded. Try re-exporting using a different configuration or try converting the video to HEVC (MP4) with the free HandBrake app."
+
 		// We already specify the UTIs we support, so this can only happen on invalid video files or unsupported codecs.
 		guard asset.isVideoDecodable else {
 			if
@@ -103,7 +105,7 @@ struct VideoValidator {
 				NSAlert.showModalAndReportToCrashlytics(
 					for: window,
 					title: "The video could not be decoded even though its codec “\(codec)” is supported.",
-					message: "This could happen if the video is corrupt or the codec profile level is not supported. macOS unfortunately doesn't provide Gifski a reason for why the video could not be decoded. Try re-exporting using a different configuration or try converting the video to HEVC (MP4) with the free HandBrake app.",
+					message: cannotReadVideoExplanation,
 					showDebugInfo: false,
 					debugInfo: asset.debugInfo
 				)
@@ -132,10 +134,21 @@ struct VideoValidator {
 				return .failure
 			}
 
-			NSAlert.showModalAndReportToCrashlytics(
+			NSAlert.showModal(
 				for: window,
 				title: "The video codec “\(codecTitle)” is not supported.",
-				message: "Re-export or convert the video to a supported format. For the best possible quality, export to ProRes 4444 XQ (supports alpha). Alternatively, use the free HandBrake app to convert the video to HEVC (MP4).",
+				message: "Re-export or convert the video to a supported format. For the best possible quality, export to ProRes 4444 XQ (supports alpha). Alternatively, use the free HandBrake app to convert the video to HEVC (MP4)."
+			)
+
+			return .failure
+		}
+
+		// AVFoundation reports some videos as `.isReadable == true` even though they are not. We detect this through missing codec info. See "Fixture 211". (macOS 13.1)
+		guard firstVideoTrack.codecTitle != nil else {
+			NSAlert.showModalAndReportToCrashlytics(
+				for: window,
+				title: "The video file is not supported.",
+				message: cannotReadVideoExplanation,
 				showDebugInfo: false,
 				debugInfo: asset.debugInfo
 			)

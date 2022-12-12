@@ -69,7 +69,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 5F6ABD7D278BA5A20040DDF0 /* gifski.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = CA6080A63FCEFE2C55B82F1B;
+			remoteGlobalIDString = CA60A67DACCD4143D7A47BBE;
 			remoteInfo = "gifski-staticlib";
 		};
 		E359A4CB28B2A9A2007435A8 /* PBXContainerItemProxy */ = {
@@ -808,7 +808,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 7.0.0;
+				minimumVersion = 7.1.0;
 			};
 		};
 		E3339E982395768F00303839 /* XCRemoteSwiftPackageReference "CircularProgress" */ = {

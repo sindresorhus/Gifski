@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 
 final class TimeRemainingEstimator {
 	private var progressCancellable: AnyCancellable?

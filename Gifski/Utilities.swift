@@ -6,6 +6,10 @@ import StoreKit.SKStoreReviewController
 import Accelerate.vImage
 import Defaults
 
+typealias Defaults = _Defaults
+typealias Default = _Default
+typealias AnyCancellable = Combine.AnyCancellable
+
 
 /**
 Convenience function for initializing an object and modifying its properties
@@ -750,7 +754,7 @@ extension AVAssetTrack {
 		// swiftlint:disable:next force_cast
 		let formatDescription = rawDescription as! CMFormatDescription
 
-		return CMFormatDescriptionGetMediaSubType(formatDescription).fourCharCodeToString()
+		return CMFormatDescriptionGetMediaSubType(formatDescription).fourCharCodeToString().nilIfEmpty
 	}
 
 	// TODO: When I switch to the async `.load()` method to retrieve video properties, this property is moot.
@@ -1265,7 +1269,7 @@ extension AVAsset {
 			Audio codec: \(describing: audioCodec)
 			Duration: \(describing: durationFormatter.stringSafe(from: duration.seconds))
 			Dimension: \(describing: dimensions?.formatted)
-			Frame rate: \(describing: frameRate?.rounded(toDecimalPlaces: 2).formatted)
+			Frame rate: \(describing: frameRate?.rounded(toDecimalPlaces: 2).formatted())
 			File size: \(fileSizeFormatted)
 			Is readable: \(isReadable)
 			Is playable: \(isPlayable)
@@ -1284,7 +1288,7 @@ extension AVAsset {
 				Duration: \(describing: durationFormatter.stringSafe(from: track.timeRange.duration.seconds))
 				Dimensions: \(describing: track.dimensions?.formatted)
 				Natural size: \(describing: track.naturalSize)
-				Frame rate: \(describing: track.frameRate?.rounded(toDecimalPlaces: 2).formatted)
+				Frame rate: \(describing: track.frameRate?.rounded(toDecimalPlaces: 2).formatted())
 				Is playable: \(track.isPlayable)
 				Is decodable: \(track.isDecodable)
 				----
@@ -3920,7 +3924,6 @@ extension NSAttributedString {
 	}
 
 	static func += (lhs: inout NSAttributedString, rhs: NSAttributedString) {
-		// swiftlint:disable:next shorthand_operator
 		lhs = lhs + rhs
 	}
 
@@ -4446,7 +4449,6 @@ extension CMTime {
 	}
 
 	static func *= (lhs: inout Self, rhs: Double) {
-		// swiftlint:disable:next shorthand_operator
 		lhs = lhs * rhs
 	}
 
@@ -4455,7 +4457,6 @@ extension CMTime {
 	}
 
 	static func /= (lhs: inout Self, rhs: Double) {
-		// swiftlint:disable:next shorthand_operator
 		lhs = lhs / rhs
 	}
 }
@@ -4686,4 +4687,12 @@ extension ClosedRange {
 	static func fromGraceful(_ bound1: Bound, _ bound2: Bound) -> Self {
 		bound1 <= bound2 ? bound1...bound2 : bound2...bound1
 	}
+}
+
+
+extension Collection {
+	/**
+	Works on strings too, since they're just collections.
+	*/
+	var nilIfEmpty: Self? { isEmpty ? nil : self }
 }
