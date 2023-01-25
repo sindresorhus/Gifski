@@ -1,10 +1,12 @@
-use std::ffi::OsStr;
+use clap::builder::NonEmptyStringValueParser;
 use std::io::Read;
 use gifski::{Settings, Repeat};
+use clap::value_parser;
 
 #[cfg(feature = "video")]
 mod ffmpeg_source;
 mod png;
+mod gif;
 mod source;
 use crate::source::Source;
 
@@ -12,7 +14,7 @@ use gifski::progress::{NoProgress, ProgressBar, ProgressReporter};
 
 pub type BinResult<T, E = Box<dyn std::error::Error + Send + Sync>> = Result<T, E>;
 
-use clap::{Command, AppSettings, Arg};
+use clap::{Command, Arg, ArgAction};
 
 use std::env;
 use std::fmt;
@@ -25,7 +27,7 @@ use std::time::Duration;
 #[cfg(feature = "video")]
 const VIDEO_FRAMES_ARG_HELP: &str = "one video file supported by FFmpeg, or multiple PNG image files";
 #[cfg(not(feature = "video"))]
-const VIDEO_FRAMES_ARG_HELP: &str = "PNG image files";
+const VIDEO_FRAMES_ARG_HELP: &str = "PNG image files for the animation frames";
 
 fn main() {
     if let Err(e) = bin_main() {
@@ -42,17 +44,15 @@ fn bin_main() -> BinResult<()> {
     let matches = Command::new(clap::crate_name!())
                         .version(clap::crate_version!())
                         .about("https://gif.ski by Kornel Lesiński")
-                        .setting(AppSettings::DeriveDisplayOrder)
                         .arg_required_else_help(true)
                         .allow_negative_numbers(true)
                         .arg(Arg::new("output")
                             .long("output")
                             .short('o')
                             .help("Destination file to write to; \"-\" means stdout")
-                            .forbid_empty_values(true)
-                            .takes_value(true)
+                            .num_args(1)
                             .value_name("a.gif")
-                            .allow_invalid_utf8(true)
+                            .value_parser(value_parser!(PathBuf))
                             .required(true))
                         .arg(Arg::new("fps")
                             .long("fps")
@@ -62,102 +62,116 @@ fn bin_main() -> BinResult<()> {
                                    kept. If video is used, it will be resampled to \
                                    this constant rate by dropping and/or duplicating \
                                    frames")
-                            .forbid_empty_values(true)
+                            .value_parser(value_parser!(f32))
                             .value_name("num")
                             .default_value("20"))
                         .arg(Arg::new("fast-forward")
                             .long("fast-forward")
                             .help("Multiply speed of video by a factor\n(no effect when using images as input)")
-                            .forbid_empty_values(true)
+                            .value_parser(value_parser!(f32))
                             .value_name("x")
                             .default_value("1"))
                         .arg(Arg::new("fast")
+                            .num_args(0)
+                            .action(ArgAction::SetTrue)
                             .long("fast")
                             .help("50% faster encoding, but 10% worse quality and larger file size"))
                         .arg(Arg::new("extra")
                             .long("extra")
                             .conflicts_with("fast")
+                            .num_args(0)
+                            .action(ArgAction::SetTrue)
                             .help("50% slower encoding, but 1% better quality"))
                         .arg(Arg::new("quality")
                             .long("quality")
                             .short('Q')
                             .value_name("1-100")
-                            .takes_value(true)
+                            .value_parser(value_parser!(u8).range(1..=100))
+                            .num_args(1)
                             .default_value("90")
                             .help("Lower quality may give smaller file"))
                         .arg(Arg::new("motion-quality")
                             .long("motion-quality")
                             .value_name("1-100")
-                            .takes_value(true)
+                            .value_parser(value_parser!(u8).range(1..=100))
+                            .num_args(1)
                             .help("Lower values reduce motion"))
                         .arg(Arg::new("lossy-quality")
                             .long("lossy-quality")
                             .value_name("1-100")
-                            .takes_value(true)
+                            .value_parser(value_parser!(u8).range(1..=100))
+                            .num_args(1)
                             .help("Lower values introduce noise and streaks"))
                         .arg(Arg::new("width")
                             .long("width")
                             .short('W')
-                            .takes_value(true)
+                            .num_args(1)
+                            .value_parser(value_parser!(u32))
                             .value_name("px")
                             .help("Maximum width.\nBy default anims are limited to about 800x600"))
                         .arg(Arg::new("height")
                             .long("height")
                             .short('H')
-                            .takes_value(true)
+                            .num_args(1)
+                            .value_parser(value_parser!(u32))
                             .value_name("px")
                             .help("Maximum height (stretches if the width is also set)"))
                         .arg(Arg::new("nosort")
                             .alias("nosort")
                             .long("no-sort")
+                            .num_args(0)
+                            .action(ArgAction::SetTrue)
                             .help("Use files exactly in the order given, rather than sorted"))
                         .arg(Arg::new("quiet")
                             .long("quiet")
                             .short('q')
+                            .num_args(0)
+                            .action(ArgAction::SetTrue)
                             .help("Do not display anything on standard output/console"))
-                        .arg(Arg::new("FILE")
+                        .arg(Arg::new("FILES")
                             .help(VIDEO_FRAMES_ARG_HELP)
-                            .min_values(1)
-                            .forbid_empty_values(true)
+                            .num_args(1..)
+                            .value_parser(NonEmptyStringValueParser::new())
                             .use_value_delimiter(false)
                             .required(true))
                         .arg(Arg::new("repeat")
                             .long("repeat")
                             .help("Number of times the animation is repeated (-1 none, 0 forever or <value> repetitions")
-                            .takes_value(true)
+                            .num_args(1)
+                            .value_parser(value_parser!(i16))
                             .value_name("num"))
                         .get_matches_from(wild::args_os());
 
-    let mut frames: Vec<_> = matches.values_of("FILE").ok_or("Missing files")?.collect();
-    if !matches.is_present("nosort") {
+    let mut frames: Vec<_> = matches.get_many::<String>("FILES").ok_or("?")?.collect();
+    if !matches.get_flag("nosort") {
         frames.sort_by(|a, b| natord::compare(a, b));
     }
     let frames: Vec<_> = frames.into_iter().map(PathBuf::from).collect();
 
-    let output_path = DestPath::new(matches.value_of_os("output").ok_or("Missing output")?);
-    let width = parse_opt(matches.value_of("width")).map_err(|_| "Invalid width")?;
-    let height = parse_opt(matches.value_of("height")).map_err(|_| "Invalid height")?;
-    let repeat_int = parse_opt(matches.value_of("repeat")).map_err(|_| "Invalid repeat count")?.unwrap_or(0) as i16;
+    let output_path = DestPath::new(matches.get_one::<PathBuf>("output").ok_or("?")?);
+    let width = matches.get_one::<u32>("width").copied();
+    let height = matches.get_one::<u32>("height").copied();
+    let repeat_int = matches.get_one::<i16>("repeat").copied().unwrap_or(0);
     let repeat = match repeat_int {
         -1 => Repeat::Finite(0),
         0 => Repeat::Infinite,
         _ => Repeat::Finite(repeat_int as u16),
     };
 
-    let extra = matches.is_present("extra");
-    let motion_quality = parse_opt(matches.value_of("motion-quality")).map_err(|_| "Invalid motion quality")?;
-    let lossy_quality = parse_opt(matches.value_of("lossy-quality")).map_err(|_| "Invalid lossy quality")?;
-    let fast = matches.is_present("fast");
+    let extra = matches.get_flag("extra");
+    let motion_quality = matches.get_one::<u8>("motion-quality").copied();
+    let lossy_quality = matches.get_one::<u8>("lossy-quality").copied();
+    let fast = matches.get_flag("fast");
     let settings = Settings {
         width,
         height,
-        quality: parse_opt(matches.value_of("quality")).map_err(|_| "Invalid quality")?.unwrap_or(100),
+        quality: matches.get_one::<u8>("quality").copied().unwrap_or(100),
         fast,
         repeat,
     };
-    let quiet = matches.is_present("quiet") || output_path == DestPath::Stdout;
-    let fps: f32 = matches.value_of("fps").ok_or("Missing fps")?.parse().map_err(|_| "FPS must be a number")?;
-    let speed: f32 = matches.value_of("fast-forward").ok_or("Missing speed")?.parse().map_err(|_| "Speed must be a number")?;
+    let quiet = matches.get_flag("quiet") || output_path == DestPath::Stdout;
+    let fps: f32 = matches.get_one::<f32>("fps").copied().ok_or("?")?;
+    let speed: f32 = matches.get_one::<f32>("fast-forward").copied().ok_or("?")?;
 
     let rate = source::Fps { fps, speed };
 
@@ -171,7 +185,11 @@ fn bin_main() -> BinResult<()> {
         return Err("Quality 100 is maximum".into());
     }
 
-    if fps > 100.0 {
+    if speed > 1000.0 || speed <= 0.0 {
+        return Err("Fast-forward must be 0..1000".into());
+    }
+
+    if fps > 100.0 || fps <= 0.0 {
         return Err("100 fps is maximum".into());
     }
     else if !quiet && fps > 50.0 {
@@ -180,12 +198,19 @@ fn bin_main() -> BinResult<()> {
 
     check_if_paths_exist(&frames)?;
 
-    let mut decoder = if frames.is_empty() {
-        return Err("Please specify input files".into())
-    } else if frames.len() == 1 {
-        match file_type(&frames[0]).unwrap_or(FileType::Other) {
+    let mut decoder = if let [path] = &frames[..] {
+        match file_type(path).unwrap_or(FileType::Other) {
             FileType::PNG | FileType::JPEG => return Err("Only a single image file was given as an input. This is not enough to make an animation.".into()),
-            _ => get_video_decoder(&frames[0], rate, settings)?,
+            FileType::GIF => {
+                if !quiet && (width.is_none() && settings.quality > 50) {
+                    eprintln!("warning: reading an existing GIF as an input. This can only worsen the quality. Use PNG frames instead.");
+                }
+                Box::new(gif::GifDecoder::new(path, rate)?)
+            },
+            _ if path.is_dir() => {
+                return Err(format!("{} is a directory, not a PNG file", path.display()).into());
+            },
+            _ => get_video_decoder(path, rate, settings)?,
         }
     } else {
         if let Ok(FileType::JPEG) = file_type(&frames[0]) {
@@ -197,7 +222,7 @@ fn bin_main() -> BinResult<()> {
         if speed != 1.0 {
             return Err("Speed is for videos. It doesn't make sense for images. Use fps only".into());
         }
-        Box::new(png::Lodecoder::new(frames, rate, if fast { 7 } else { 4 }))
+        Box::new(png::Lodecoder::new(frames, rate))
     };
 
     let mut pb;
@@ -205,7 +230,7 @@ fn bin_main() -> BinResult<()> {
     let progress: &mut dyn ProgressReporter = if quiet {
         &mut nopb
     } else {
-        pb = ProgressBar::new(decoder.total_frames());
+        pb = ProgressBar::new(decoder.total_frames().unwrap_or(100));
         pb.show_speed = false;
         pb.show_percent = false;
         pb.format(" #_. ");
@@ -231,24 +256,29 @@ fn bin_main() -> BinResult<()> {
         decoder.collect(&mut collector)
     })?;
 
-    match output_path {
+    let mut file_tmp;
+    let mut stdio_tmp;
+    let out: &mut dyn io::Write = match output_path {
         DestPath::Path(p) => {
-            let file = File::create(p)
+            file_tmp = File::create(p)
                 .map_err(|e| format!("Can't write to {}: {e}", p.display()))?;
-            writer.write(file, progress)?;
+            &mut file_tmp
         },
         DestPath::Stdout => {
-            writer.write(io::stdout().lock(), progress)?;
+            stdio_tmp = io::stdout().lock();
+            &mut stdio_tmp
         },
     };
+    writer.write(io::BufWriter::new(out), progress)?;
     decode_thread.join().map_err(|_| "thread died?")??;
     progress.done(&format!("gifski created {output_path}"));
 
     Ok(())
 }
 
+#[allow(clippy::upper_case_acronyms)]
 enum FileType {
-    PNG, JPEG, Other,
+    PNG, GIF, JPEG, Other,
 }
 
 fn file_type(path: &Path) -> BinResult<FileType> {
@@ -259,7 +289,10 @@ fn file_type(path: &Path) -> BinResult<FileType> {
     if &buf == b"\x89PNG" {
         return Ok(FileType::PNG);
     }
-    if &buf[..2] == [0xFF, 0xD8] {
+    if &buf == b"GIF8" {
+        return Ok(FileType::GIF);
+    }
+    if buf[..2] == [0xFF, 0xD8] {
         return Ok(FileType::JPEG);
     }
     Ok(FileType::Other)
@@ -270,7 +303,9 @@ fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
         if !path.exists() {
             let mut msg = format!("Unable to find the input file: \"{}\"", path.display());
             if path.to_str().map_or(false, |p| p.contains('*')) {
-                msg += "\nThe path contains a literal \"*\" character. If you want to select multiple files, don't put the special wildcard characters in quotes.";
+                msg += "\nThe path contains a literal \"*\" character. Either no files matched the pattern, or the pattern was in quotes.";
+            } else if path.extension() == Some("gif".as_ref()) {
+                msg = format!("Did you mean to use -o \"{}\" to specify it as the output file instead?", path.display());
             } else if path.is_relative() {
                 msg += &format!(" (searched in \"{}\")", env::current_dir()?.display());
             }
@@ -280,13 +315,6 @@ fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
     Ok(())
 }
 
-fn parse_opt<T: ::std::str::FromStr<Err = ::std::num::ParseIntError>>(s: Option<&str>) -> BinResult<Option<T>> {
-    match s {
-        Some(s) => Ok(Some(s.parse()?)),
-        None => Ok(None),
-    }
-}
-
 #[derive(PartialEq)]
 enum DestPath<'a> {
     Path(&'a Path),
@@ -294,8 +322,8 @@ enum DestPath<'a> {
 }
 
 impl<'a> DestPath<'a> {
-    pub fn new(path: &'a OsStr) -> Self {
-        if path == "-" {
+    pub fn new(path: &'a Path) -> Self {
+        if path.as_os_str() == "-" {
             Self::Stdout
         } else {
             Self::Path(Path::new(path))

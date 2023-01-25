@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use crate::PushInCapacity;
 pub use imgref::ImgRef;
 use imgref::ImgVec;
@@ -72,8 +73,8 @@ pub struct Denoiser<T> {
     frames: usize,
     threshold: u32,
     splat: ImgVec<Acc>,
-    processed: Vec<(ImgVec<RGBA8>, ImgVec<u8>)>,
-    metadatas: Vec<T>,
+    processed: VecDeque<(ImgVec<RGBA8>, ImgVec<u8>)>,
+    metadatas: VecDeque<T>,
 }
 
 #[derive(Debug)]
@@ -95,8 +96,8 @@ impl<T> Denoiser<T> {
         };
         Self {
             frames: 0,
-            processed: Vec::with_capacity(LOOKAHEAD),
-            metadatas: Vec::with_capacity(LOOKAHEAD),
+            processed: VecDeque::with_capacity(LOOKAHEAD),
+            metadatas: VecDeque::with_capacity(LOOKAHEAD),
             threshold: (55 - u32::from(quality) / 2).pow(2),
             splat: ImgVec::new(vec![clear; area], width, height),
         }
@@ -126,7 +127,7 @@ impl<T> Denoiser<T> {
             if self.frames >= LOOKAHEAD {
                 let median1 = ImgVec::new(median1, self.splat.width(), self.splat.height());
                 let imp_map1 = ImgVec::new(imp_map1, self.splat.width(), self.splat.height());
-                self.processed.insert(0, (median1, imp_map1));
+                self.processed.push_front((median1, imp_map1));
             }
         }
     }
@@ -142,7 +143,7 @@ impl<T> Denoiser<T> {
             return Err(WrongSizeError);
         }
 
-        self.metadatas.insert(0, frame_metadata);
+        self.metadatas.push_front(frame_metadata);
 
         self.frames += 1;
         // Can't output anything yet
@@ -163,13 +164,13 @@ impl<T> Denoiser<T> {
 
         let median = ImgVec::new(median, frame.width(), frame.height());
         let imp_map = ImgVec::new(imp_map, frame.width(), frame.height());
-        self.processed.insert(0, (median, imp_map));
+        self.processed.push_front((median, imp_map));
         Ok(())
     }
 
     pub fn pop(&mut self) -> Denoised<T> {
-        if let Some((frame, importance_map)) = self.processed.pop() {
-            let meta = self.metadatas.pop().expect("meta");
+        if let Some((frame, importance_map)) = self.processed.pop_back() {
+            let meta = self.metadatas.pop_back().expect("meta");
             Denoised::Frame { frame, importance_map, meta }
         } else if !self.metadatas.is_empty() {
             Denoised::NotYet
@@ -270,13 +271,29 @@ macro_rules! median_channel {
             if $top.next.a > 0 { $top.next.$chan } else { $mid.curr.$chan },
             if $mid.prev.a > 0 { $mid.prev.$chan } else { $mid.curr.$chan },
             $mid.curr.$chan, // if the center pixel is transparent, the result won't be used
-            $mid.curr.$chan, // more weight on the center
             if $mid.next.a > 0 { $mid.next.$chan } else { $mid.curr.$chan },
             if $bot.prev.a > 0 { $bot.prev.$chan } else { $mid.curr.$chan },
             if $bot.curr.a > 0 { $bot.curr.$chan } else { $mid.curr.$chan },
             if $bot.next.a > 0 { $bot.next.$chan } else { $mid.curr.$chan },
-        ].select_nth_unstable(5).1
+        ].select_nth_unstable(4).1
     }
+}
+
+/// Average of 9 neighboring pixels
+macro_rules! blur_channel {
+    ($top:expr, $mid:expr, $bot:expr, $chan:ident) => {{
+        let mut tmp = 0u16;
+        tmp += u16::from(if $top.prev.a > 0 { $top.prev.$chan } else { $mid.curr.$chan });
+        tmp += u16::from(if $top.curr.a > 0 { $top.curr.$chan } else { $mid.curr.$chan });
+        tmp += u16::from(if $top.next.a > 0 { $top.next.$chan } else { $mid.curr.$chan });
+        tmp += u16::from(if $mid.prev.a > 0 { $mid.prev.$chan } else { $mid.curr.$chan });
+        tmp += u16::from($mid.curr.$chan); // if the center pixel is transparent, the result won't be used
+        tmp += u16::from(if $mid.next.a > 0 { $mid.next.$chan } else { $mid.curr.$chan });
+        tmp += u16::from(if $bot.prev.a > 0 { $bot.prev.$chan } else { $mid.curr.$chan });
+        tmp += u16::from(if $bot.curr.a > 0 { $bot.curr.$chan } else { $mid.curr.$chan });
+        tmp += u16::from(if $bot.next.a > 0 { $bot.next.$chan } else { $mid.curr.$chan });
+        (tmp / 9) as u8
+    }}
 }
 
 pub(crate) fn smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
@@ -288,7 +305,25 @@ pub(crate) fn smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
             let median_b = median_channel!(top, mid, bot, b);
 
             let blurred = RGB8::new(median_r, median_g, median_b);
-            // diff limit, because median removes thin lines too
+            if color_diff(mid.curr.rgb(), blurred) < 16*16*6 {
+                blurred
+            } else {
+                mid.curr.rgb()
+            }
+        } else { RGB8::new(255,0,255) });
+    });
+    ImgVec::new(out, frame.width(), frame.height())
+}
+
+pub(crate) fn less_smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
+    let mut out = Vec::with_capacity(frame.width() * frame.height());
+    loop9_img(frame, |_,_, top, mid, bot| {
+        out.push_in_cap(if mid.curr.a > 0 {
+            let median_r = blur_channel!(top, mid, bot, r);
+            let median_g = blur_channel!(top, mid, bot, g);
+            let median_b = blur_channel!(top, mid, bot, b);
+
+            let blurred = RGB8::new(median_r, median_g, median_b);
             if color_diff(mid.curr.rgb(), blurred) < 16*16*6 {
                 blurred
             } else {

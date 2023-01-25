@@ -1,3 +1,4 @@
+use std::num::TryFromIntError;
 use std::io;
 use quick_error::quick_error;
 
@@ -28,6 +29,7 @@ quick_error! {
         }
         WrongSize(msg: String) {
             display("{}", msg)
+            from(e: TryFromIntError) -> (e.to_string())
             from(e: resize::Error) -> (e.to_string())
         }
         Quant(liq: imagequant::liq_error) {
