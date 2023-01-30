@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		FirebaseApp.configure()
 		NSApp.servicesProvider = self
 
-		// We have to include `.badge` otherwise system preferences does not show the checkbox to turn off sounds. (macOS 12.4)
+		// We have to include `.badge` otherwise system settings does not show the checkbox to turn off sounds. (macOS 12.4)
 		notificationCenter.requestAuthorization(options: [.sound, .badge]) { _, _ in }
 
 		mainWindowController.showWindow(self)
