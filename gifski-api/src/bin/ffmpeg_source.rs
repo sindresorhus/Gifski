@@ -14,8 +14,8 @@ pub struct FfmpegDecoder {
 }
 
 impl Source for FfmpegDecoder {
-    fn total_frames(&self) -> u64 {
-        self.frames
+    fn total_frames(&self) -> Option<u64> {
+        Some(self.frames)
     }
     fn collect(&mut self, dest: &mut Collector) -> BinResult<()> {
         self.collect_frames(dest)
@@ -70,7 +70,7 @@ impl FfmpegDecoder {
         };
 
 
-        let mut add_frame = |rgba_frame: &ffmpeg::util::frame::Video, pts: f64, pos: i64| -> BinResult<()> {
+        let add_frame = |rgba_frame: &ffmpeg::util::frame::Video, pts: f64, pos: i64| -> BinResult<()> {
             let stride = rgba_frame.stride(0) as usize;
             if stride % 4 != 0 {
                 Err("incompatible video")?;

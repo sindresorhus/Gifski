@@ -6,6 +6,7 @@ use std::os::raw::c_int;
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[allow(non_camel_case_types)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum GifskiError {
     OK = 0,
     NULL_ARG,
@@ -25,12 +26,12 @@ pub enum GifskiError {
     OTHER,
 }
 
-impl Into<io::Error> for GifskiError {
+impl From<GifskiError> for io::Error {
     #[cold]
-    fn into(self) -> io::Error {
+    fn from(g: GifskiError) -> Self {
         use std::io::ErrorKind as EK;
         use GifskiError::*;
-        match self {
+        match g {
             OK => panic!("wrong err code"),
             NOT_FOUND => EK::NotFound,
             PERMISSION_DENIED => EK::PermissionDenied,
@@ -40,7 +41,7 @@ impl Into<io::Error> for GifskiError {
             WRITE_ZERO => EK::WriteZero,
             INTERRUPTED => EK::Interrupted,
             UNEXPECTED_EOF => EK::UnexpectedEof,
-            _ => return io::Error::new(EK::Other, self),
+            _ => return io::Error::new(EK::Other, g),
         }.into()
     }
 }

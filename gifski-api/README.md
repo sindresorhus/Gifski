@@ -14,7 +14,7 @@ See [releases](https://github.com/ImageOptim/gifski/releases) page for executabl
 
 If you have [Homebrew](https://brew.sh/), you can also get it with `brew install gifski`.
 
-If you have [Rust](https://www.rust-lang.org/install.html) 1.60+, you can also build it from source with [`cargo install gifski`](https://lib.rs/crates/gifski).
+If you have [Rust from rustup](https://www.rust-lang.org/install.html) (1.63+), you can also build it from source with [`cargo install gifski`](https://lib.rs/crates/gifski).
 
 ## Usage
 
