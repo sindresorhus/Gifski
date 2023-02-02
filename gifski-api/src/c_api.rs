@@ -340,13 +340,17 @@ pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandl
         Some(g) => g,
         None => return GifskiError::NULL_ARG,
     };
-    let t = g.write_thread.lock().unwrap();
-    if t.0 {
+    if g.write_thread.lock().map_or(true, |t| t.0) {
         eprintln!("tried to set progress callback after writing has already started");
         return GifskiError::INVALID_STATE;
     }
-    *g.progress.lock().unwrap() = Some(ProgressCallback::new(cb, user_data));
-    GifskiError::OK
+    match g.progress.lock() {
+        Ok(mut progress) => {
+            *progress = Some(ProgressCallback::new(cb, user_data));
+            GifskiError::OK
+        },
+        Err(_) => GifskiError::THREAD_LOST,
+    }
 }
 
 /// Start writing to the `destination`. This has to be called before any frames are added.
@@ -364,7 +368,7 @@ pub unsafe extern "C" fn gifski_set_file_output(handle: *const GifskiHandle, des
         Ok(res) => res,
         Err(err) => return err,
     };
-    gifski_write_thread_start(g, file, Some(path))
+    gifski_write_thread_start(g, file, Some(path)).err().unwrap_or(GifskiError::OK)
 }
 
 
@@ -377,7 +381,7 @@ fn prepare_for_file_writing(g: &GifskiHandleInternal, destination: *const c_char
     } else {
         return Err(GifskiError::INVALID_INPUT);
     };
-    let t = g.write_thread.lock().unwrap();
+    let t = g.write_thread.lock().map_err(|_| GifskiError::THREAD_LOST)?;
     if t.0 {
         eprintln!("tried to start writing for the second time, after it has already started");
         return Err(GifskiError::INVALID_STATE);
@@ -435,24 +439,21 @@ pub unsafe extern "C" fn gifski_set_write_callback(handle: *const GifskiHandle, 
         None => return GifskiError::NULL_ARG,
     };
     let writer = CallbackWriter { cb, user_data };
-    gifski_write_thread_start(g, writer, None)
+    gifski_write_thread_start(g, writer, None).err().unwrap_or(GifskiError::OK)
 }
 
-fn gifski_write_thread_start<W: 'static +  Write + Send>(g: &GifskiHandleInternal, file: W, path: Option<PathBuf>) -> GifskiError {
-    let mut t = g.write_thread.lock().unwrap();
+fn gifski_write_thread_start<W: 'static +  Write + Send>(g: &GifskiHandleInternal, file: W, path: Option<PathBuf>) -> Result<(), GifskiError> {
+    let mut t = g.write_thread.lock().map_err(|_| GifskiError::THREAD_LOST)?;
     if t.0 {
         eprintln!("gifski_set_file_output/gifski_set_write_callback has been called already");
-        return GifskiError::INVALID_STATE;
+        return Err(GifskiError::INVALID_STATE);
     }
-    let writer = g.writer.lock().unwrap().take();
-    let mut user_progress = g.progress.lock().unwrap().take();
+    let writer = g.writer.lock().map_err(|_| GifskiError::THREAD_LOST)?.take();
+    let mut user_progress = g.progress.lock().map_err(|_| GifskiError::THREAD_LOST)?.take();
     let handle = thread::Builder::new().name("c-write".into()).spawn(move || {
         if let Some(writer) = writer {
-            let mut progress: &mut dyn ProgressReporter = &mut NoProgress {};
-            if let Some(cb) = &mut user_progress {
-                progress = &mut *cb;
-            }
-            match writer.write(file, progress).into() {
+            let progress = user_progress.as_mut().map(|m| m as &mut dyn ProgressReporter);
+            match writer.write(file, progress.unwrap_or(&mut NoProgress {})).into() {
                 res @ (GifskiError::OK | GifskiError::ALREADY_EXISTS) => res,
                 err => {
                     if let Some(path) = path {
@@ -469,9 +470,9 @@ fn gifski_write_thread_start<W: 'static +  Write + Send>(g: &GifskiHandleInterna
     match handle {
         Ok(handle) => {
             *t = (true, Some(handle));
-            GifskiError::OK
+            Ok(())
         },
-        Err(_) => GifskiError::THREAD_LOST,
+        Err(_) => Err(GifskiError::THREAD_LOST),
     }
 }
 
@@ -497,14 +498,27 @@ pub unsafe extern "C" fn gifski_finish(g: *const GifskiHandle) -> GifskiError {
     }
     let g = Arc::from_raw(g.cast::<GifskiHandleInternal>());
 
-    // dropping of the collector (if any) completes writing
-    *g.collector.lock().unwrap() = None;
+    match g.collector.lock() {
+        // dropping of the collector (if any) completes writing
+        Ok(mut lock) => *lock = None,
+        Err(_) => {
+            eprintln!("warning: collector thread crashed");
+        },
+    };
 
-    let thread = g.write_thread.lock().unwrap().1.take();
+    let thread = match g.write_thread.lock() {
+        Ok(mut writer) => writer.1.take(),
+        Err(_) => return GifskiError::THREAD_LOST,
+    };
+
     if let Some(thread) = thread {
-        thread.join().unwrap_or(GifskiError::THREAD_LOST)
+        thread.join().map_err(|e| {
+            let msg = e.downcast_ref::<String>().map(|s| s.as_str())
+            .or_else(|| e.downcast_ref::<&str>().copied()).unwrap_or("unknown panic");
+            eprintln!("writer crashed (this is a bug): {msg}");
+        }).unwrap_or(GifskiError::THREAD_LOST)
     } else {
-        eprintln!("gifski_finish called before any output has been set");
+        eprintln!("warning: gifski_finish called before any output has been set");
         GifskiError::OK // this will become INVALID_STATE once sync write support is dropped
     }
 }

@@ -10,7 +10,7 @@ license = "AGPL-3.0-or-later"
 name = "gifski"
 readme = "README.md"
 repository = "https://github.com/ImageOptim/gifski"
-version = "1.10.0"
+version = "1.10.1"
 autobins = false
 edition = "2021"
 rust-version = "1.63"
@@ -87,5 +87,5 @@ strip = true
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
-# [patch.crates-io]
-# ffmpeg-sys-next = { rev = "78458039d5fac99354f9cb078869f3be3f3af5fb", git = "https://github.com/kornelski/rust-ffmpeg-sys-1"}
+[patch.crates-io]
+ffmpeg-sys-next = { rev = "78458039d5fac99354f9cb078869f3be3f3af5fb", git = "https://github.com/kornelski/rust-ffmpeg-sys-1"}
