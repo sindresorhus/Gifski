@@ -429,7 +429,7 @@ impl Writer {
         }
 
         let mut res = liq.quantize(&mut img)?;
-        res.set_dithering_level((f32::from(settings.s.quality) / 50.0 - 1.).max(0.))?;
+        res.set_dithering_level((f32::from(settings.s.quality) / 50.0 - 1.).max(0.2))?;
 
         let mut out = Vec::new();
         out.try_reserve_exact(width*height).map_err(imagequant::liq_error::from)?;
@@ -528,10 +528,10 @@ impl Writer {
             Self::remap_frames(remap_queue_recv, write_queue)
         })?;
         let res0 = Self::write_frames(write_queue_recv, writer, &settings_ext, reporter);
-        let res1 = resize_thread.join().map_err(|_| Error::ThreadSend)?;
-        let res2 = diff_thread.join().map_err(|_| Error::ThreadSend)?;
-        let res3 = quant_thread.join().map_err(|_| Error::ThreadSend)?;
-        let res4 = remap_thread.join().map_err(|_| Error::ThreadSend)?;
+        let res1 = resize_thread.join().map_err(handle_join_error)?;
+        let res2 = diff_thread.join().map_err(handle_join_error)?;
+        let res3 = quant_thread.join().map_err(handle_join_error)?;
+        let res4 = remap_thread.join().map_err(handle_join_error)?;
         combine_res(combine_res(combine_res(res0, res1), combine_res(res2, res3)), res4)
     }
 
@@ -673,7 +673,7 @@ impl Writer {
                 gif::DisposalMethod::Keep
             };
 
-            let importance_map = importance_map.take().unwrap(); // always set at the beginning
+            let importance_map = importance_map.take().ok_or(Error::ThreadSend)?; // always set at the beginning
 
             if !prev_frame_keeps || importance_map.iter().any(|&px| px > 0) {
                 if prev_frame_keeps {
@@ -701,7 +701,7 @@ impl Writer {
         Ok(())
         }, move |(end_pts, image, mut importance_map, ordinal_frame_number, frame_index, dispose, first_frame_has_transparency, prev_frame_keeps)| {
             let needs_transparency = frame_index > 0 || (frame_index == 0 && first_frame_has_transparency);
-            let (liq, remap, liq_image, out_buf) = Self::quantize(image, &importance_map, frame_index == 0, needs_transparency, prev_frame_keeps, settings).unwrap();
+            let (liq, remap, liq_image, out_buf) = Self::quantize(image, &importance_map, frame_index == 0, needs_transparency, prev_frame_keeps, settings)?;
             let max_loss = settings.gifsicle_loss();
             for imp in &mut importance_map {
                 // encoding assumes rgba background looks like encoded background, which is not true for lossy
@@ -873,4 +873,11 @@ impl<T> PushInCapacity<T> for Vec<T> {
             self.push(val);
         }
     }
+}
+
+fn handle_join_error(err: Box<dyn std::any::Any + Send>) -> Error {
+    let msg = err.downcast_ref::<String>().map(|s| s.as_str())
+    .or_else(|| err.downcast_ref::<&str>().copied()).unwrap_or("unknown panic");
+    eprintln!("thread crashed (this is a bug): {msg}");
+    Error::ThreadSend
 }
