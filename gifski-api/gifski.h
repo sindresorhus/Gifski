@@ -182,6 +182,8 @@ GifskiError gifski_add_frame_png_file(gifski *handle,
  * For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
  * Frames with duplicate or out-of-order PTS will be skipped.
  *
+ * The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
+ *
  * Colors are in sRGB, uncorrelated RGBA, with alpha byte last.
  *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
@@ -252,6 +254,23 @@ GifskiError gifski_add_frame_rgb(gifski *handle,
  * This function must be called before `gifski_set_file_output()` to take effect.
  */
 void gifski_set_progress_callback(gifski *handle, int (*progress_callback)(void *user_data), void *user_data);
+
+/**
+ * Get a callback when an error occurs.
+ * This is intended mostly for logging and debugging, not for user interface.
+ *
+ * The callback function has the following arguments:
+ *  * A `\0`-terminated C string in UTF-8 encoding. The string is only valid for the duration of the call. Make a copy if you need to keep it.
+ *  * An arbitrary pointer (`user_data`). `user_data` can be `NULL`.
+ *
+ * The callback must be thread-safe (it will be called from another thread).
+ * It must remain valid at all times, until `gifski_finish` completes.
+ *
+ * If the callback is not set, errors will be printed to stderr.
+ *
+ * This function must be called before `gifski_set_file_output()` to take effect.
+ */
+GifskiError gifski_set_error_message_callback(gifski *handle, void (*error_message_callback)(const char*, void*), void *user_data);
 
 /**
  * Start writing to the file at `destination_path` (overwrites if needed).
