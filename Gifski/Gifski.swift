@@ -1,4 +1,5 @@
 import Cocoa
+import FirebaseCrashlytics
 
 final class Gifski {
 	enum Loop {
@@ -48,6 +49,10 @@ final class Gifski {
 		}
 
 		self.wrapper = wrapper
+
+		wrapper.setErrorMessageCallback {
+			Crashlytics.crashlytics().log($0)
+		}
 
 		wrapper.setProgressCallback { [weak self] in
 			guard let self else {

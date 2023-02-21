@@ -8,12 +8,14 @@ final class GifskiWrapper {
 		case rgb
 	}
 
+	typealias ErrorMessageCallback = (String) -> Void
 	typealias ProgressCallback = () -> Int
 	typealias WriteCallback = (Int, UnsafePointer<UInt8>) -> Int
 
 	private let pointer: OpaquePointer
 	private var unmanagedSelf: Unmanaged<GifskiWrapper>!
 	private var hasFinished = false
+	private var errorMessageCallback: ErrorMessageCallback!
 	private var progressCallback: ProgressCallback!
 	private var writeCallback: WriteCallback!
 
@@ -36,6 +38,30 @@ final class GifskiWrapper {
 		guard result == GIFSKI_OK else {
 			throw Error(rawValue: result.rawValue) ?? .other
 		}
+	}
+
+	func setErrorMessageCallback(_ callback: @escaping ErrorMessageCallback) {
+		guard !hasFinished else {
+			return
+		}
+
+		errorMessageCallback = callback
+
+		gifski_set_error_message_callback(
+			pointer,
+			{ message, context in // swiftlint:disable:this opening_brace
+				guard
+					let message,
+					let context
+				else {
+					return
+				}
+
+				let this = Unmanaged<GifskiWrapper>.fromOpaque(context).takeUnretainedValue()
+				this.errorMessageCallback(String(cString: message))
+			},
+			unmanagedSelf.toOpaque()
+		)
 	}
 
 	func setProgressCallback(_ callback: @escaping ProgressCallback) {
