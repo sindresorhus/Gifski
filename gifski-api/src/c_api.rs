@@ -44,6 +44,7 @@
 
 use super::*;
 use std::ffi::CStr;
+use std::ffi::CString;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -57,6 +58,7 @@ use std::sync::Mutex;
 use std::thread;
 mod c_api_error;
 use self::c_api_error::GifskiError;
+use std::panic::catch_unwind;
 
 /// Settings for creating a new encoder instance. See `gifski_new`
 #[repr(C)]
@@ -93,6 +95,7 @@ pub struct GifskiHandleInternal {
     writer: Mutex<Option<Writer>>,
     collector: Mutex<Option<Collector>>,
     progress: Mutex<Option<ProgressCallback>>,
+    error_callback: Mutex<Option<Box<dyn Fn(String) + 'static + Sync + Send>>>,
     /// Bool set to true when the thread has been set up,
     /// prevents re-setting of the thread after finish()
     write_thread: Mutex<(bool, Option<thread::JoinHandle<GifskiError>>)>,
@@ -122,6 +125,7 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
             write_thread: Mutex::new((false, None)),
             collector: Mutex::new(Some(collector)),
             progress: Mutex::new(None),
+            error_callback: Mutex::new(None),
         })).cast::<GifskiHandle>()
     } else {
         ptr::null_mut()
@@ -214,7 +218,7 @@ pub unsafe extern "C" fn gifski_add_frame_png_file(handle: *const GifskiHandle, 
     if let Ok(Some(c)) = g.collector.lock().as_deref_mut() {
         c.add_frame_png_file(frame_number as usize, path, presentation_timestamp).into()
     } else {
-        eprintln!("frames can't be added any more, because gifski_end_adding_frames has been called already");
+        g.print_error(format!("frame {frame_number} can't be added any more, because gifski_end_adding_frames has been called already"));
         GifskiError::INVALID_STATE
     }
 }
@@ -235,28 +239,38 @@ pub unsafe extern "C" fn gifski_add_frame_rgba(handle: *const GifskiHandle, fram
     if pixels.is_null() {
         return GifskiError::NULL_ARG;
     }
-    if width < 1 || height < 1 || width > 0xFFFF || height > 0xFFFF {
+    if width == 0 || height == 0 || width > 0xFFFF || height > 0xFFFF {
         return GifskiError::INVALID_INPUT;
     }
-    let pixels = slice::from_raw_parts(pixels, width as usize * height as usize);
-    add_frame_rgba(handle, frame_number, Img::new(pixels.into(), width as usize, height as usize), presentation_timestamp)
+    let width = width as usize;
+    let height = height as usize;
+    let pixels = slice::from_raw_parts(pixels, width * height);
+    add_frame_rgba(handle, frame_number, Img::new(pixels.into(), width, height), presentation_timestamp)
 }
 
 /// Same as `gifski_add_frame_rgba`, but with bytes per row arg.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_add_frame_rgba_stride(handle: *const GifskiHandle, frame_number: u32, width: u32, height: u32, bytes_per_row: u32, pixels: *const RGBA8, presentation_timestamp: f64) -> GifskiError {
+    let (pixels, stride) = match pixels_slice(pixels, width, height, bytes_per_row) {
+        Ok(v) => v,
+        Err(err) => return err,
+    };
+    let img = ImgVec::new_stride(pixels.into(), width as _, height as _, stride);
+    add_frame_rgba(handle, frame_number, img, presentation_timestamp)
+}
+
+unsafe fn pixels_slice<'a, T>(pixels: *const T, width: u32, height: u32, bytes_per_row: u32) -> Result<(&'a [T], usize), GifskiError> {
     if pixels.is_null() {
-        return GifskiError::NULL_ARG;
+        return Err(GifskiError::NULL_ARG);
     }
-    let stride = bytes_per_row as usize / mem::size_of_val(&*pixels);
+    let stride = bytes_per_row as usize / mem::size_of::<T>();
     let width = width as usize;
     let height = height as usize;
-    if stride < width || height < 1 {
-        return GifskiError::INVALID_INPUT;
+    if stride < width || width == 0 || height == 0 || width > 0xFFFF || height > 0xFFFF {
+        return Err(GifskiError::INVALID_INPUT);
     }
     let pixels = slice::from_raw_parts(pixels, stride * height + width - stride);
-    let img = ImgVec::new_stride(pixels.into(), width, height, stride);
-    add_frame_rgba(handle, frame_number, img, presentation_timestamp)
+    Ok((pixels, stride))
 }
 
 fn add_frame_rgba(handle: *const GifskiHandle, frame_number: u32, frame: ImgVec<RGBA8>, presentation_timestamp: f64) -> GifskiError {
@@ -267,7 +281,7 @@ fn add_frame_rgba(handle: *const GifskiHandle, frame_number: u32, frame: ImgVec<
     if let Ok(Some(c)) = g.collector.lock().as_deref_mut() {
         c.add_frame_rgba(frame_number as usize, frame, presentation_timestamp).into()
     } else {
-        eprintln!("frames can't be added any more, because gifski_end_adding_frames has been called already");
+        g.print_error(format!("frame {frame_number} can't be added any more, because gifski_end_adding_frames has been called already"));
         GifskiError::INVALID_STATE
     }
 }
@@ -281,15 +295,12 @@ fn add_frame_rgba(handle: *const GifskiHandle, frame_number: u32, frame: ImgVec<
 /// `gifski_add_frame_rgba` is preferred over this function.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_add_frame_argb(handle: *const GifskiHandle, frame_number: u32, width: u32, bytes_per_row: u32, height: u32, pixels: *const ARGB8, presentation_timestamp: f64) -> GifskiError {
-    if pixels.is_null() {
-        return GifskiError::NULL_ARG;
-    }
+    let (pixels, stride) = match pixels_slice(pixels, width, height, bytes_per_row) {
+        Ok(v) => v,
+        Err(err) => return err,
+    };
     let width = width as usize;
-    let stride = bytes_per_row as usize / mem::size_of_val(&*pixels);
-    if stride < width {
-        return GifskiError::INVALID_INPUT;
-    }
-    let pixels = slice::from_raw_parts(pixels, stride * height as usize);
+    let height = height as usize;
     let img = ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|p| RGBA8 {
         r: p.r,
         g: p.g,
@@ -308,16 +319,13 @@ pub unsafe extern "C" fn gifski_add_frame_argb(handle: *const GifskiHandle, fram
 /// `gifski_add_frame_rgba` is preferred over this function.
 #[no_mangle]
 pub unsafe extern "C" fn gifski_add_frame_rgb(handle: *const GifskiHandle, frame_number: u32, width: u32, bytes_per_row: u32, height: u32, pixels: *const RGB8, presentation_timestamp: f64) -> GifskiError {
-    if pixels.is_null() {
-        return GifskiError::NULL_ARG;
-    }
+    let (pixels, stride) = match pixels_slice(pixels, width, height, bytes_per_row) {
+        Ok(v) => v,
+        Err(err) => return err,
+    };
     let width = width as usize;
-    let stride = bytes_per_row as usize / mem::size_of_val(&*pixels);
-    if stride < width {
-        return GifskiError::INVALID_INPUT;
-    }
-    let pixels = slice::from_raw_parts(pixels, stride * height as usize);
-    let img = ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|&p| p.alpha(255))).collect(), width, height as usize);
+    let height = height as usize;
+    let img = ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|&p| p.alpha(255))).collect(), width, height);
     add_frame_rgba(handle, frame_number, img, presentation_timestamp)
 }
 
@@ -341,7 +349,7 @@ pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandl
         None => return GifskiError::NULL_ARG,
     };
     if g.write_thread.lock().map_or(true, |t| t.0) {
-        eprintln!("tried to set progress callback after writing has already started");
+        g.print_error("tried to set progress callback after writing has already started".into());
         return GifskiError::INVALID_STATE;
     }
     match g.progress.lock() {
@@ -352,6 +360,46 @@ pub unsafe extern "C" fn gifski_set_progress_callback(handle: *const GifskiHandl
         Err(_) => GifskiError::THREAD_LOST,
     }
 }
+
+/// Get a callback when an error occurs.
+/// This is intended mostly for logging and debugging, not for user interface.
+///
+/// The callback function has the following arguments:
+/// * A `\0`-terminated C string in UTF-8 encoding. The string is only valid for the duration of the call. Make a copy if you need to keep it.
+/// * An arbitrary pointer (`user_data`). `user_data` can be `NULL`.
+///
+/// The callback must be thread-safe (it will be called from another thread).
+/// It must remain valid at all times, until `gifski_finish` completes.
+///
+/// If the callback is not set, errors will be printed to stderr.
+///
+/// This function must be called before `gifski_set_file_output()` to take effect.
+#[no_mangle]
+pub unsafe extern "C" fn gifski_set_error_message_callback(handle: *const GifskiHandle, cb: unsafe extern fn(*const c_char, *mut c_void), user_data: *mut c_void) -> GifskiError {
+    let g = match borrow(handle) {
+        Some(g) => g,
+        None => return GifskiError::NULL_ARG,
+    };
+
+    let user_data = SendableUserData(user_data);
+    match g.error_callback.lock() {
+        Ok(mut error_callback) => {
+            *error_callback = Some(Box::new(move |mut s: String| {
+                s.reserve_exact(1);
+                s.push('\0');
+                let cstring = CString::from_vec_with_nul(s.into_bytes()).unwrap();
+                unsafe { cb(cstring.as_ptr(), user_data.clone().0) } // the clone is a no-op, only to force closure to own it
+            }));
+            GifskiError::OK
+        },
+        Err(_) => GifskiError::THREAD_LOST,
+    }
+}
+
+#[derive(Clone)]
+struct SendableUserData(*mut c_void);
+unsafe impl Send for SendableUserData {}
+unsafe impl Sync for SendableUserData {}
 
 /// Start writing to the `destination`. This has to be called before any frames are added.
 ///
@@ -364,11 +412,14 @@ pub unsafe extern "C" fn gifski_set_file_output(handle: *const GifskiHandle, des
         Some(g) => g,
         None => return GifskiError::NULL_ARG,
     };
-    let (file, path) = match prepare_for_file_writing(g, destination) {
-        Ok(res) => res,
-        Err(err) => return err,
-    };
-    gifski_write_thread_start(g, file, Some(path)).err().unwrap_or(GifskiError::OK)
+    catch_unwind(move || {
+        let (file, path) = match prepare_for_file_writing(g, destination) {
+            Ok(res) => res,
+            Err(err) => return err,
+        };
+        gifski_write_thread_start(g, file, Some(path)).err().unwrap_or(GifskiError::OK)
+    })
+    .map_err(move |e| g.print_panic(e)).unwrap_or(GifskiError::THREAD_LOST)
 }
 
 
@@ -383,7 +434,7 @@ fn prepare_for_file_writing(g: &GifskiHandleInternal, destination: *const c_char
     };
     let t = g.write_thread.lock().map_err(|_| GifskiError::THREAD_LOST)?;
     if t.0 {
-        eprintln!("tried to start writing for the second time, after it has already started");
+        g.print_error("tried to start writing for the second time, after it has already started".into());
         return Err(GifskiError::INVALID_STATE);
     }
     match File::create(path) {
@@ -434,18 +485,21 @@ pub unsafe extern "C" fn gifski_set_write_callback(handle: *const GifskiHandle, 
         Some(g) => g,
         None => return GifskiError::NULL_ARG,
     };
-    let cb = match cb {
-        Some(cb) => cb,
-        None => return GifskiError::NULL_ARG,
-    };
-    let writer = CallbackWriter { cb, user_data };
-    gifski_write_thread_start(g, writer, None).err().unwrap_or(GifskiError::OK)
+    catch_unwind(move || {
+        let cb = match cb {
+            Some(cb) => cb,
+            None => return GifskiError::NULL_ARG,
+        };
+        let writer = CallbackWriter { cb, user_data };
+        gifski_write_thread_start(g, writer, None).err().unwrap_or(GifskiError::OK)
+    })
+    .map_err(move |e| g.print_panic(e)).unwrap_or(GifskiError::THREAD_LOST)
 }
 
 fn gifski_write_thread_start<W: 'static +  Write + Send>(g: &GifskiHandleInternal, file: W, path: Option<PathBuf>) -> Result<(), GifskiError> {
     let mut t = g.write_thread.lock().map_err(|_| GifskiError::THREAD_LOST)?;
     if t.0 {
-        eprintln!("gifski_set_file_output/gifski_set_write_callback has been called already");
+        g.print_error("gifski_set_file_output/gifski_set_write_callback has been called already".into());
         return Err(GifskiError::INVALID_STATE);
     }
     let writer = g.writer.lock().map_err(|_| GifskiError::THREAD_LOST)?.take();
@@ -463,7 +517,7 @@ fn gifski_write_thread_start<W: 'static +  Write + Send>(g: &GifskiHandleInterna
                 },
             }
         } else {
-            eprintln!("gifski_set_file_output or gifski_write_* has been called once already");
+            eprintln!("gifski_set_file_output/gifski_set_write_callback has been called already");
             GifskiError::INVALID_STATE
         }
     });
@@ -497,29 +551,45 @@ pub unsafe extern "C" fn gifski_finish(g: *const GifskiHandle) -> GifskiError {
         return GifskiError::NULL_ARG;
     }
     let g = Arc::from_raw(g.cast::<GifskiHandleInternal>());
+    catch_unwind(|| {
+        match g.collector.lock() {
+            // dropping of the collector (if any) completes writing
+            Ok(mut lock) => *lock = None,
+            Err(_) => {
+                g.print_error("warning: collector thread crashed".into());
+            },
+        };
 
-    match g.collector.lock() {
-        // dropping of the collector (if any) completes writing
-        Ok(mut lock) => *lock = None,
-        Err(_) => {
-            eprintln!("warning: collector thread crashed");
-        },
-    };
+        let thread = match g.write_thread.lock() {
+            Ok(mut writer) => writer.1.take(),
+            Err(_) => return GifskiError::THREAD_LOST,
+        };
 
-    let thread = match g.write_thread.lock() {
-        Ok(mut writer) => writer.1.take(),
-        Err(_) => return GifskiError::THREAD_LOST,
-    };
+        if let Some(thread) = thread {
+            thread.join().map_err(|e| g.print_panic(e)).unwrap_or(GifskiError::THREAD_LOST)
+        } else {
+            g.print_error("warning: gifski_finish called before any output has been set".into());
+            GifskiError::OK // this will become INVALID_STATE once sync write support is dropped
+        }
+    })
+    .map_err(move |e| g.print_panic(e)).unwrap_or(GifskiError::THREAD_LOST)
+}
 
-    if let Some(thread) = thread {
-        thread.join().map_err(|e| {
-            let msg = e.downcast_ref::<String>().map(|s| s.as_str())
+impl GifskiHandleInternal {
+    fn print_error(&self, mut err: String) {
+        if let Ok(Some(cb)) = self.error_callback.lock().as_deref() {
+            cb(err)
+        } else {
+            err.reserve_exact(1);
+            err.push('\n');
+            let _ = std::io::stderr().write_all(err.as_bytes());
+        }
+    }
+
+    fn print_panic(&self, e: Box<dyn std::any::Any + Send>) {
+        let msg = e.downcast_ref::<String>().map(|s| s.as_str())
             .or_else(|| e.downcast_ref::<&str>().copied()).unwrap_or("unknown panic");
-            eprintln!("writer crashed (this is a bug): {msg}");
-        }).unwrap_or(GifskiError::THREAD_LOST)
-    } else {
-        eprintln!("warning: gifski_finish called before any output has been set");
-        GifskiError::OK // this will become INVALID_STATE once sync write support is dropped
+        self.print_error(format!("writer crashed (this is a bug): {msg}"));
     }
 }
 

@@ -134,6 +134,7 @@ impl<W: Write> RustEncoder<W> {
                 let w = writer.take().ok_or(crate::Error::ThreadSend)?;
                 let mut enc = gif::Encoder::new(w, screen_width, screen_height, &[])?;
                 enc.write_extension(gif::ExtensionData::Repetitions(settings.repeat))?;
+                enc.write_raw_extension(gif::Extension::Comment.into(), &[b"gif.ski"])?;
                 self.gif_enc.get_or_insert(enc)
             },
             Some(ref mut enc) => enc,
