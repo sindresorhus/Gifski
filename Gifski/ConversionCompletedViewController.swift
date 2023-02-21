@@ -178,7 +178,7 @@ final class ConversionCompletedViewController: NSViewController {
 		// Prevent the default directory to be a temporary directory or read-only volume, for example, when directly dragging a screen recording into Gifski. Setting it to the downloads directory is required as otherwise it will automatically use the same directory as used in the open panel, which could be a read-only volume.
 		panel.directoryURL = inputUrl.directoryURL.canBeDefaultSavePanelDirectory
 			? inputUrl.directoryURL
-			: URL.downloadsDirectory
+			: (Defaults[.previousSaveDirectory] ?? URL.downloadsDirectory)
 
 		panel.beginSheetModal(for: view.window!) { [weak self] response in
 			guard
@@ -193,6 +193,7 @@ final class ConversionCompletedViewController: NSViewController {
 			DispatchQueue.main.async {
 				do {
 					try FileManager.default.copyItem(at: self.gifUrl, to: outputUrl, overwrite: true)
+					Defaults[.previousSaveDirectory] = outputUrl.directoryURL
 				} catch {
 					error.presentAsModalSheet(for: self.view.window)
 					self.saveGif()

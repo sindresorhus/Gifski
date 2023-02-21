@@ -1,5 +1,6 @@
 import Foundation
 
+// TODO: Make it an actor.
 final class GifskiWrapper {
 	enum PixelFormat {
 		case rgba

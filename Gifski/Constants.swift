@@ -24,4 +24,5 @@ extension Defaults.Keys {
 	static let loopGif = Key<Bool>("loopGif", default: true)
 	static let bounceGif = Key<Bool>("bounceGif", default: false)
 	static let suppressKeyframeWarning = Key<Bool>("suppressKeyframeWarning", default: false)
+	static let previousSaveDirectory = Key<URL?>("previousSaveDirectory")
 }
