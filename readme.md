@@ -147,7 +147,6 @@ No, but there's a [cross-platform command-line tool](https://github.com/ImageOpt
 
 ## Related
 
-- [Announcement blog post](https://medium.com/sindre-sorhus/gifski-972692460aa5)
 - [Sindre's apps](https://sindresorhus.com/apps)
 
 ## License
