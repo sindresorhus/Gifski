@@ -37,7 +37,7 @@ final class ShareViewController: NSViewController {
 			}
 
 			guard let url else {
-				self.presentError(message: error?.localizedDescription ?? "Unknown error")
+				presentError(message: error?.localizedDescription ?? "Unknown error")
 				return
 			}
 
@@ -46,7 +46,7 @@ final class ShareViewController: NSViewController {
 			guard
 				let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.videoShareGroupIdentifier)?.appendingPathComponent(shareUrl, isDirectory: false)
 			else {
-				self.presentError(message: "Could not share the video with the main app.")
+				presentError(message: "Could not share the video with the main app.")
 				return
 			}
 
@@ -55,18 +55,18 @@ final class ShareViewController: NSViewController {
 			do {
 				try FileManager.default.copyItem(at: url, to: appGroupShareVideoUrl)
 			} catch {
-				self.presentError(message: error.localizedDescription)
+				presentError(message: error.localizedDescription)
 				return
 			}
 
 			guard
-				let gifski = self.createMainAppUrl(
+				let gifski = createMainAppUrl(
 					queryItems: [
 						URLQueryItem(name: "path", value: shareUrl)
 					]
 				)
 			else {
-				self.presentError(message: "Could not share the video with the main app.")
+				presentError(message: "Could not share the video with the main app.")
 				return
 			}
 

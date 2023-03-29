@@ -98,10 +98,10 @@ final class TrimmingAVPlayerViewController: NSViewController {
 					return
 				}
 
-				self.playerView.setupTrimmingObserver()
+				playerView.setupTrimmingObserver()
 
 				// This is here as it needs to be refreshed when the current item changes.
-				self.playerView.observeTrimmedTimeRange { [weak self] timeRange in
+				playerView.observeTrimmedTimeRange { [weak self] timeRange in
 					self?.timeRange = timeRange
 					self?.timeRangeDidChange?(timeRange)
 				}
@@ -127,7 +127,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 			.sink { [weak self] _ in
 				guard
 					let self,
-					let item = self.player?.currentItem,
+					let item = player?.currentItem,
 					let fullRange = item.durationRange,
 					let playbackRange = item.playbackRange
 				else {
@@ -137,13 +137,13 @@ final class TrimmingAVPlayerView: AVPlayerView {
 				// Prevent infinite recursion.
 				guard !skipNextUpdate else {
 					skipNextUpdate = false
-					updateClosure(playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange))
+					updateClosure(playbackRange.minimumRangeLength(of: minimumTrimDuration, in: fullRange))
 					return
 				}
 
-				guard playbackRange.length > self.minimumTrimDuration else {
+				guard playbackRange.length > minimumTrimDuration else {
 					skipNextUpdate = true
-					item.playbackRange = playbackRange.minimumRangeLength(of: self.minimumTrimDuration, in: fullRange)
+					item.playbackRange = playbackRange.minimumRangeLength(of: minimumTrimDuration, in: fullRange)
 					return
 				}
 
@@ -161,10 +161,10 @@ final class TrimmingAVPlayerView: AVPlayerView {
 					return
 				}
 
-				self.beginTrimming(completionHandler: nil)
-				self.hideTrimButtons()
-				self.window?.makeFirstResponder(self)
-				self.trimmingCancellable = nil
+				beginTrimming(completionHandler: nil)
+				hideTrimButtons()
+				window?.makeFirstResponder(self)
+				trimmingCancellable = nil
 			}
 	}
 

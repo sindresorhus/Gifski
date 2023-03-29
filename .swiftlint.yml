@@ -1,6 +1,7 @@
 only_rules:
   - accessibility_trait_for_button
   - array_init
+  - blanket_disable_command
   - block_based_kvo
   - class_delegate_protocol
   - closing_brace
@@ -21,6 +22,7 @@ only_rules:
   - control_statement
   - custom_rules
   - deployment_target
+  - direct_return
   - discarded_notification_center_observer
   - discouraged_assert
   - discouraged_direct_init
@@ -28,6 +30,7 @@ only_rules:
   - discouraged_object_literal
   - discouraged_optional_boolean
   - discouraged_optional_collection
+  - duplicate_conditions
   - duplicate_enum_cases
   - duplicate_imports
   - duplicated_key_in_dictionary_literal
@@ -53,7 +56,7 @@ only_rules:
   - implicit_getter
   - implicit_return
   - inclusive_language
-  - inert_defer
+  - invalid_swiftlint_command
   - is_disjoint
   - joined_default_parameter
   - last_where
@@ -132,7 +135,6 @@ only_rules:
   - unneeded_parentheses_in_closure_argument
   - unowned_variable_capture
   - untyped_error_in_catch
-  - unused_capture_list
   - unused_closure_parameter
   - unused_control_flow_label
   - unused_enumerated
@@ -178,7 +180,7 @@ identifier_name:
     - 'y2'
     - 'z2'
 deployment_target:
-  macOS_deployment_target: '11'
+  macOS_deployment_target: '12'
 custom_rules:
   no_nsrect:
     regex: '\bNSRect\b'

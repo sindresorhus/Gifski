@@ -59,7 +59,7 @@ final class Gifski {
 				return 0
 			}
 
-			self.onProgress?()
+			onProgress?()
 
 			return self.wrapper == nil ? 0 : 1
 		}
@@ -69,7 +69,7 @@ final class Gifski {
 				return 0
 			}
 
-			self.data.append(bufferPointer, count: bufferLength)
+			data.append(bufferPointer, count: bufferLength)
 
 			return 0
 		}

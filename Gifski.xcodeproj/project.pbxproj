@@ -326,8 +326,9 @@
 		E3AE627B1E5CD2F300035A2F /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1100;
-				LastUpgradeCheck = 1400;
+				LastUpgradeCheck = 1430;
 				ORGANIZATIONNAME = "Sindre Sorhus";
 				TargetAttributes = {
 					0E79251A2329BDBE00058B94 = {
@@ -808,7 +809,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 7.1.0;
+				minimumVersion = 7.2.0;
 			};
 		};
 		E3339E982395768F00303839 /* XCRemoteSwiftPackageReference "CircularProgress" */ = {
@@ -824,7 +825,7 @@
 			repositoryURL = "https://github.com/sindresorhus/DockProgress";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 4.0.1;
+				minimumVersion = 4.1.0;
 			};
 		};
 		E3C874A8252CFE5B00AB1099 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
@@ -832,7 +833,7 @@
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 10.5.0;
+				minimumVersion = 10.9.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

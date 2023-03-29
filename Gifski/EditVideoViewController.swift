@@ -262,24 +262,24 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			let oldOrNewSelectedIndex = selectedIndex ?? self.predefinedSizesDropdown.indexOfSelectedItem
+			let oldOrNewSelectedIndex = selectedIndex ?? predefinedSizesDropdown.indexOfSelectedItem
 
 			if
-				let size = self.predefinedSizes?[safe: oldOrNewSelectedIndex],
+				let size = predefinedSizes?[safe: oldOrNewSelectedIndex],
 				case .custom = size
 			{
 				// We don't care if it's newly selected index or not, if it's custom, set its size
-				self.updateSelectedItemAsCustomWithSize()
+				updateSelectedItemAsCustomWithSize()
 			} else if
 				let selectedIndex,
-				let size = self.predefinedSizes?[safe: selectedIndex],
+				let size = predefinedSizes?[safe: selectedIndex],
 				case .dimensions(let dimensions) = size
 			{
 				// But we care if it's newly selected index for dimensions, we don't want to recalculate
 				// if we don't have to
-				self.resizableDimensions.change(dimensionsType: dimensions.currentDimensions.type)
-				self.resizableDimensions.resize(to: dimensions.currentDimensions.value)
-				self.dimensionsUpdated()
+				resizableDimensions.change(dimensionsType: dimensions.currentDimensions.type)
+				resizableDimensions.resize(to: dimensions.currentDimensions.value)
+				dimensionsUpdated()
 			}
 		}
 
@@ -290,15 +290,15 @@ final class EditVideoViewController: NSViewController {
 			guard
 				let self,
 				let selectedIndex,
-				let item = self.dimensionsTypeDropdown.item(at: selectedIndex),
+				let item = dimensionsTypeDropdown.item(at: selectedIndex),
 				let dimensionsType = DimensionsType(rawValue: item.title)
 			else {
 				return
 			}
 
-			self.resizableDimensions.change(dimensionsType: dimensionsType)
-			self.dimensionsUpdated()
-			self.updateTextFieldsMinMax()
+			resizableDimensions.change(dimensionsType: dimensionsType)
+			dimensionsUpdated()
+			updateTextFieldsMinMax()
 		}
 
 		if resizableDimensions.currentDimensions.value.width > 640 {
@@ -316,10 +316,10 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			let frameRate = self.frameRateSlider.integerValue
+			let frameRate = frameRateSlider.integerValue
 			Defaults[.outputFPS] = frameRate
-			self.frameRateLabel.stringValue = "\(frameRate)"
-			self.estimatedFileSizeModel.updateEstimate()
+			frameRateLabel.stringValue = "\(frameRate)"
+			estimatedFileSizeModel.updateEstimate()
 		}
 
 		qualitySlider.onAction = { [weak self] _ in
@@ -327,8 +327,8 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			Defaults[.outputQuality] = self.qualitySlider.doubleValue
-			self.estimatedFileSizeModel.updateEstimate()
+			Defaults[.outputQuality] = qualitySlider.doubleValue
+			estimatedFileSizeModel.updateEstimate()
 		}
 
 		// We round it so that `29.970` becomes `30` for practical reasons.
@@ -416,7 +416,7 @@ final class EditVideoViewController: NSViewController {
 				)
 
 				alert.showsSuppressionButton = true
-				alert.runModal(for: self.view.window)
+				alert.runModal(for: view.window)
 
 				if alert.suppressionButton?.state == .on {
 					Defaults[.suppressKeyframeWarning] = true
@@ -436,8 +436,8 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			self.resizableDimensions.resize(usingWidth: Double(width))
-			self.dimensionsUpdated()
+			resizableDimensions.resize(usingWidth: Double(width))
+			dimensionsUpdated()
 		}
 
 		heightTextField.onBlur = { [weak self] height in
@@ -450,8 +450,8 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			self.resizableDimensions.resize(usingHeight: Double(height))
-			self.dimensionsUpdated()
+			resizableDimensions.resize(usingHeight: Double(height))
+			dimensionsUpdated()
 		}
 
 		updateTextFieldsMinMax()
@@ -463,11 +463,11 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			self.loopCountTextField.stringValue = "\(loopCount)"
-			self.loopCountStepper.intValue = Int32(loopCount)
+			loopCountTextField.stringValue = "\(loopCount)"
+			loopCountStepper.intValue = Int32(loopCount)
 
 			if loopCount > 0 {
-				self.loopCheckbox.state = .off
+				loopCheckbox.state = .off
 			}
 		}
 
@@ -477,11 +477,11 @@ final class EditVideoViewController: NSViewController {
 			}
 
 			let validLoopCount = loopCount.clamped(to: Constants.loopCountRange)
-			self.loopCountTextField.stringValue = "\(validLoopCount)"
-			self.loopCountStepper.intValue = Int32(validLoopCount)
+			loopCountTextField.stringValue = "\(validLoopCount)"
+			loopCountStepper.intValue = Int32(validLoopCount)
 
 			if validLoopCount > 0 {
-				self.loopCheckbox.state = .off
+				loopCheckbox.state = .off
 			}
 		}
 
@@ -490,11 +490,11 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			if self.loopCheckbox.state == .on {
-				self.loopCountTextField.stringValue = "0"
-				self.loopCountStepper.intValue = 0
+			if loopCheckbox.state == .on {
+				loopCountTextField.stringValue = "0"
+				loopCountStepper.intValue = 0
 			} else {
-				self.showConversionCompletedAnimationWarningIfNeeded()
+				showConversionCompletedAnimationWarningIfNeeded()
 			}
 		}
 
@@ -514,10 +514,10 @@ final class EditVideoViewController: NSViewController {
 					return
 				}
 
-				self.modifiedAsset = self.asset?.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: $0.newValue)
-				self.playerViewController.currentItem = AVPlayerItem(asset: self.modifiedAsset)
-				self.estimatedFileSizeModel.updateEstimate()
-				self.updateFrameRateSlider(isInit: false)
+				modifiedAsset = asset?.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: $0.newValue)
+				playerViewController.currentItem = AVPlayerItem(asset: modifiedAsset)
+				estimatedFileSizeModel.updateEstimate()
+				updateFrameRateSlider(isInit: false)
 			}
 			.store(in: &cancellables)
 
@@ -527,7 +527,7 @@ final class EditVideoViewController: NSViewController {
 				return
 			}
 
-			self.loopCountTextField.stringValue = "\(self.loopCountStepper.intValue)"
+			loopCountTextField.stringValue = "\(loopCountStepper.intValue)"
 		}
 	}
 

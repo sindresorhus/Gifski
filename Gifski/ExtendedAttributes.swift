@@ -110,7 +110,7 @@ final class ExtendedAttributes {
 	func all() throws -> [String] {
 		try checkIfFileURL()
 
-		let list: [String] = try url.withUnsafeFileSystemRepresentation { fileSystemPath in
+		return try url.withUnsafeFileSystemRepresentation { fileSystemPath in
 			let length = listxattr(fileSystemPath, nil, 0, 0)
 
 			guard length >= 0 else {
@@ -127,14 +127,10 @@ final class ExtendedAttributes {
 				throw System.Errno.fromErrno
 			}
 
-			let list = data.split(separator: 0).compactMap {
+			return data.split(separator: 0).compactMap {
 				String(data: Data($0), encoding: .utf8)
 			}
-
-			return list
 		}
-
-		return list
 	}
 
 	func debug() {

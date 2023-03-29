@@ -102,12 +102,10 @@ struct VideoValidator {
 				let codec = firstVideoTrack.codec,
 				codec.isSupported
 			{
-				NSAlert.showModalAndReportToCrashlytics(
+				NSAlert.showModal(
 					for: window,
 					title: "The video could not be decoded even though its codec “\(codec)” is supported.",
-					message: cannotReadVideoExplanation,
-					showDebugInfo: false,
-					debugInfo: asset.debugInfo
+					message: cannotReadVideoExplanation
 				)
 
 				return .failure

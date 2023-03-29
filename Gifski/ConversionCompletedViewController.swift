@@ -38,6 +38,8 @@ final class ConversionCompletedViewController: NSViewController {
 		setUpDropView()
 		setUp()
 
+		NSApp.requestUserAttention(.informationalRequest)
+
 		if !NSApp.isActive || view.window?.isVisible == false {
 			let notification = UNMutableNotificationContent()
 			notification.title = "Conversion Completed"
@@ -71,7 +73,7 @@ final class ConversionCompletedViewController: NSViewController {
 				return
 			}
 
-			self.tooltip.show(from: self.draggableFile, preferredEdge: .maxY)
+			tooltip.show(from: draggableFile, preferredEdge: .maxY)
 		}
 
 		SSApp.requestReviewAfterBeingCalledThisManyTimes([5, 100, 1000])
@@ -156,8 +158,8 @@ final class ConversionCompletedViewController: NSViewController {
 				return
 			}
 
-			self.copyButton.title = "Copy"
-			self.copyButton.isEnabled = true
+			copyButton.title = "Copy"
+			copyButton.isEnabled = true
 		}
 	}
 

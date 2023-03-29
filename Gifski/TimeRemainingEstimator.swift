@@ -27,7 +27,7 @@ final class TimeRemainingEstimator {
 						return
 					}
 
-					self.percentComplete = $0
+					percentComplete = $0
 				}
 
 			isCancelledCancellable = progress?.publisher(for: \.isCancelled)
@@ -37,7 +37,7 @@ final class TimeRemainingEstimator {
 					}
 
 					if $0 {
-						self.state = .done
+						state = .done
 					}
 				}
 		}

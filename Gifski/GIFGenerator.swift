@@ -46,13 +46,13 @@ final class GIFGenerator {
 			}
 		}
 
-		self.gifski = Gifski(
+		gifski = Gifski(
 			dimensions: conversion.dimensions,
 			quality: conversion.quality,
 			loop: conversion.loop
 		)
 
-		self.gifski?.onProgress = { [weak self] in
+		gifski?.onProgress = { [weak self] in
 			self?.progress.completedUnitCount += 1
 		}
 
@@ -123,7 +123,7 @@ final class GIFGenerator {
 				return
 			}
 
-			let frameResult = self.processFrame(
+			let frameResult = processFrame(
 				for: imageResult,
 				at: startTime,
 				frameRate: fps,
@@ -135,7 +135,7 @@ final class GIFGenerator {
 			switch frameResult {
 			case .success(let finished):
 				if finished {
-					guard let gifski = self.gifski else {
+					guard let gifski else {
 						completionHandler(.failure(.cancelled))
 						return
 					}

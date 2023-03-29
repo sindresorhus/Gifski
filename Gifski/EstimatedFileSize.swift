@@ -50,13 +50,13 @@ final class EstimatedFileSizeModel: ObservableObject {
 				// We add 10% extra because it's better to estimate slightly too much than too little.
 				let fileSize = (Double(data.count) * gifski.sizeMultiplierForEstimation) * 1.1
 
-				self.estimatedFileSize = Int(fileSize).formatted(.byteCount(style: .file))
+				estimatedFileSize = Int(fileSize).formatted(.byteCount(style: .file))
 			case .failure(let error):
 				switch error {
 				case .cancelled:
 					break
 				case .notEnoughFrames:
-					self.estimatedFileSize = self.estimatedFileSizeNaive
+					estimatedFileSize = estimatedFileSizeNaive
 				default:
 					Crashlytics.recordNonFatalError(error: error)
 					self.error = error
