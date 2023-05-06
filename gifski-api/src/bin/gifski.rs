@@ -1,5 +1,6 @@
 use clap::builder::NonEmptyStringValueParser;
 use std::io::Read;
+use std::io::Stdout;
 use gifski::{Settings, Repeat};
 use clap::value_parser;
 
@@ -10,7 +11,7 @@ mod gif;
 mod source;
 use crate::source::Source;
 
-use gifski::progress::{NoProgress, ProgressBar, ProgressReporter};
+use gifski::progress::{NoProgress, ProgressReporter};
 
 pub type BinResult<T, E = Box<dyn std::error::Error + Send + Sync>> = Result<T, E>;
 
@@ -230,12 +231,7 @@ fn bin_main() -> BinResult<()> {
     let progress: &mut dyn ProgressReporter = if quiet {
         &mut nopb
     } else {
-        pb = ProgressBar::new(decoder.total_frames().unwrap_or(100));
-        pb.show_speed = false;
-        pb.show_percent = false;
-        pb.format(" #_. ");
-        pb.message("Frame ");
-        pb.set_max_refresh_rate(Some(Duration::from_millis(250)));
+        pb = ProgressBar::new(decoder.total_frames());
         &mut pb
     };
 
@@ -252,6 +248,7 @@ fn bin_main() -> BinResult<()> {
         #[allow(deprecated)]
         writer.set_lossy_quality(lossy_quality);
     }
+
     let decode_thread = thread::Builder::new().name("decode".into()).spawn(move || {
         decoder.collect(&mut collector)
     })?;
@@ -303,11 +300,12 @@ fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
         if !path.exists() {
             let mut msg = format!("Unable to find the input file: \"{}\"", path.display());
             if path.to_str().map_or(false, |p| p.contains('*')) {
-                msg += "\nThe path contains a literal \"*\" character. Either no files matched the pattern, or the pattern was in quotes.";
+                msg += "\nThe \"*\" character was in quotes, which disabled pattern matching. The file with an actual literal asterisk in its name obviously doesn't exist.\nTo search for all files matching a pattern, use * without quotes.";
             } else if path.extension() == Some("gif".as_ref()) {
                 msg = format!("Did you mean to use -o \"{}\" to specify it as the output file instead?", path.display());
             } else if path.is_relative() {
-                msg += &format!(" (searched in \"{}\")", env::current_dir()?.display());
+                use std::fmt::Write;
+                write!(&mut msg, " (searched in \"{}\")", env::current_dir()?.display())?;
             }
             return Err(msg.into())
         }
@@ -361,4 +359,58 @@ cargo install gifski --features=video
 Alternatively, use ffmpeg command to export PNG frames, and then specify
 the PNG files as input for this executable. Instructions on https://gif.ski
 ".into())
+}
+
+struct ProgressBar {
+    pb: pbr::ProgressBar<Stdout>,
+    frames: u64,
+    total: Option<u64>,
+    previous_estimate: u64,
+    displayed_estimate: u64,
+}
+impl ProgressBar {
+    fn new(total: Option<u64>) -> Self {
+        let mut pb = pbr::ProgressBar::new(total.unwrap_or(100));
+        pb.show_speed = false;
+        pb.show_percent = false;
+        pb.format(" #_. ");
+        pb.message("Frame ");
+        pb.set_max_refresh_rate(Some(Duration::from_millis(250)));
+        Self {
+            pb, frames: 0, total, previous_estimate: 0, displayed_estimate: 0,
+        }
+    }
+}
+
+impl ProgressReporter for ProgressBar {
+    fn increase(&mut self) -> bool {
+        self.frames += 1;
+        if self.total.is_none() {
+            self.pb.total = (self.frames + 50).max(100);
+        }
+        self.pb.inc();
+        true
+    }
+
+    fn written_bytes(&mut self, bytes: u64) {
+        let min_frames = self.total.map(|t| (t / 16).clamp(5, 50)).unwrap_or(10);
+        if self.frames > min_frames {
+            let total_size = bytes * self.pb.total / self.frames;
+            let new_estimate = if total_size >= self.previous_estimate { total_size } else { (self.previous_estimate + total_size) / 2 };
+            self.previous_estimate = new_estimate;
+            if self.displayed_estimate.abs_diff(new_estimate) > new_estimate/10 {
+                self.displayed_estimate = new_estimate;
+                let (num, unit, x) = if new_estimate > 1_000_000 {
+                    (new_estimate as f64/1_000_000., "MB", if new_estimate > 10_000_000 {0} else {1})
+                } else {
+                    (new_estimate as f64/1_000., "KB", 0)
+                };
+                self.pb.message(&format!("{num:.x$}{unit} GIF; Frame "));
+            }
+        }
+    }
+
+    fn done(&mut self, msg: &str) {
+        self.pb.finish_print(msg);
+    }
 }
