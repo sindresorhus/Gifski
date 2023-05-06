@@ -1,18 +1,41 @@
+use std::rc::Rc;
 use crate::SettingsExt;
 use crate::error::CatResult;
 use crate::GIFFrame;
 use crate::Settings;
 use rgb::ComponentBytes;
+use std::cell::Cell;
 use std::io::Write;
+
+struct CountingWriter<W> {
+    writer: W,
+    written: Rc<Cell<u64>>,
+}
+
+impl<W: Write> Write for CountingWriter<W> {
+    #[inline(always)]
+    fn write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
+        let len = self.writer.write(buf)?;
+        self.written.set(self.written.get() + len as u64);
+        Ok(len)
+    }
+
+    #[inline(always)]
+    fn flush(&mut self) -> Result<(), std::io::Error> {
+        self.writer.flush()
+    }
+}
 
 pub(crate) struct RustEncoder<W: Write> {
     writer: Option<W>,
-    gif_enc: Option<gif::Encoder<W>>,
+    written: Rc<Cell<u64>>,
+    gif_enc: Option<gif::Encoder<CountingWriter<W>>>,
 }
 
 impl<W: Write> RustEncoder<W> {
-    pub fn new(writer: W) -> Self {
+    pub fn new(writer: W, written: Rc<Cell<u64>>) -> Self {
         Self {
+            written,
             writer: Some(writer),
             gif_enc: None,
         }
@@ -65,7 +88,7 @@ impl<W: Write> RustEncoder<W> {
 
         let pal = frame.palette.as_ref().ok_or(Error::Gifsicle)?;
 
-        let min_code_size = (pal.len() as u32 / 3).max(2).next_power_of_two().trailing_zeros();
+        let min_code_size = (pal.len() as u32 / 3).max(3).next_power_of_two().trailing_zeros();
 
         unsafe {
             let g = Gif_NewImage().as_mut().ok_or(crate::Error::Gifsicle)?;
@@ -131,7 +154,10 @@ impl<W: Write> RustEncoder<W> {
         let writer = &mut self.writer;
         let enc = match self.gif_enc {
             None => {
-                let w = writer.take().ok_or(crate::Error::ThreadSend)?;
+                let w = CountingWriter {
+                    writer: writer.take().ok_or(crate::Error::ThreadSend)?,
+                    written: self.written.clone(),
+                };
                 let mut enc = gif::Encoder::new(w, screen_width, screen_height, &[])?;
                 enc.write_extension(gif::ExtensionData::Repetitions(settings.repeat))?;
                 enc.write_raw_extension(gif::Extension::Comment.into(), &[b"gif.ski"])?;

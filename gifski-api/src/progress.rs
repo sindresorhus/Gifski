@@ -1,5 +1,8 @@
 #[cfg(feature = "pbr")]
+#[doc(hidden)]
+#[deprecated(note = "The pbr dependency is no longer exposed. Please use a newtype pattern and write your own trait impl for it")]
 pub use pbr::ProgressBar;
+
 use std::os::raw::{c_int, c_void};
 
 /// A trait that is used to report progress to some consumer.
@@ -8,6 +11,9 @@ pub trait ProgressReporter: Send {
     ///
     /// This method may return `false` to abort processing.
     fn increase(&mut self) -> bool;
+
+    /// File size so far
+    fn written_bytes(&mut self, _current_file_size_in_bytes: u64) {}
 
     /// Not used :(
     /// Writing is done when `Writer::write()` call returns

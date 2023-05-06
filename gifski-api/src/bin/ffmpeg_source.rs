@@ -45,7 +45,9 @@ impl FfmpegDecoder {
             let filter_fps = self.rate.fps / self.rate.speed;
             let stream = self.input_context.streams().best(ffmpeg::media::Type::Video).ok_or("The file has no video tracks")?;
 
-            let decoder = stream.codec().decoder().video().map_err(|e| format!("Unable to decode the codec used in the video: {}", e))?;
+            let mut codec_context = ffmpeg::codec::context::Context::new();
+            codec_context.set_parameters(stream.parameters())?;
+            let decoder = codec_context.decoder().video().map_err(|e| format!("Unable to decode the codec used in the video: {}", e))?;
 
             let (dest_width, dest_height) = self.settings.dimensions_for_image(decoder.width() as _, decoder.height() as _);
 
@@ -103,8 +105,13 @@ impl FfmpegDecoder {
         .chain(std::iter::once(ffmpeg::Packet::empty()));
 
         for packet in packets {
-            let decoded = decoder.decode(&packet, &mut vid_frame)?;
-            if decoded {
+            decoder.send_packet(&packet)?;
+            loop {
+                match decoder.receive_frame(&mut vid_frame) {
+                    Ok(()) => (),
+                    Err(ffmpeg::Error::Other { errno: ffmpeg::error::EAGAIN }) | Err(ffmpeg::Error::Eof) => break,
+                    Err(e) => return Err(Box::new(e)),
+                }
                 filter.get("in").ok_or("ffmpeg format error")?.source().add(&vid_frame)?;
                 let mut out = filter.get("out").ok_or("ffmpeg format error")?;
                 let mut out = out.sink();

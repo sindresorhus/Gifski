@@ -18,6 +18,7 @@
 #![doc(html_logo_url = "https://gif.ski/icon.png")]
 
 use encoderust::RustEncoder;
+use gif::DisposalMethod;
 use imagequant::{Image, QuantizationResult, Attributes};
 use imgref::*;
 use rgb::*;
@@ -39,9 +40,11 @@ mod encoderust;
 mod minipool;
 
 use crossbeam_channel::{Receiver, Sender};
+use std::cell::Cell;
 use std::io::prelude::*;
 use std::num::NonZeroU8;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::thread;
 use std::sync::atomic::Ordering::Relaxed;
 
@@ -142,6 +145,8 @@ pub struct Writer {
     /// Input frame decoder results
     queue_iter: Option<Receiver<InputFrameUnresized>>,
     settings: SettingsExt,
+    /// Colors the caller has specified as fixed (i.e. key colours)
+    fixed_colors: Vec<RGB8>,
 }
 
 struct GIFFrame {
@@ -149,7 +154,7 @@ struct GIFFrame {
     top: u16,
     image: ImgVec<u8>,
     pal: Vec<RGBA8>,
-    dispose: gif::DisposalMethod,
+    dispose: DisposalMethod,
     transparent_index: Option<u8>,
 }
 
@@ -167,7 +172,7 @@ struct RemapMessage {
     /// 1..
     ordinal_frame_number: usize,
     end_pts: f64,
-    dispose: gif::DisposalMethod,
+    dispose: DisposalMethod,
     liq: Attributes,
     remap: QuantizationResult,
     liq_image: Image<'static>,
@@ -216,7 +221,8 @@ pub fn new(settings: Settings) -> CatResult<(Collector, Writer)> {
                 giflossy_quality: settings.quality,
                 extra_effort: false,
                 s: settings,
-            }
+            },
+            fixed_colors: Vec::new(),
         },
     ))
 }
@@ -393,12 +399,20 @@ impl Writer {
         self.settings.giflossy_quality = q;
     }
 
+    /// Adds a fixed color that will be kept in the palette at all times.
+    /// Useful to avoid glitches in mixed photographic/pixel art.
+    /// This can't be in settings because that would cause it to lose Copy.
+    /// Additionally to avoid breaking C API compatibility this has to be mutable there too.
+    pub fn add_fixed_color(&mut self, col: RGB8) {
+        self.fixed_colors.push(col);
+    }
+
     /// `importance_map` is computed from previous and next frame.
     /// Improves quality of pixels visible for longer.
     /// Avoids wasting palette on pixels identical to the background.
     ///
     /// `background` is the previous frame.
-    fn quantize(image: ImgVec<RGBA8>, importance_map: &[u8], first_frame: bool, needs_transparency: bool, prev_frame_keeps: bool, settings: &SettingsExt) -> CatResult<(Attributes, QuantizationResult, Image<'static>, Vec<u8>)> {
+    fn quantize(image: ImgVec<RGBA8>, importance_map: &[u8], first_frame: bool, needs_transparency: bool, prev_frame_keeps: bool, settings: &SettingsExt, fixed_colors: &[RGB8]) -> CatResult<(Attributes, QuantizationResult, Image<'static>, Vec<u8>)> {
         let mut liq = Attributes::new();
         if settings.s.fast {
             liq.set_speed(10)?;
@@ -427,6 +441,10 @@ impl Writer {
         if needs_transparency {
             img.add_fixed_color(RGBA8::new(0, 0, 0, 0))?;
         }
+        // user may have colors which need to be preserved and left undithered
+        for color in fixed_colors {
+            img.add_fixed_color(RGBA8::new(color.r, color.g, color.b, 255))?;
+        }
 
         let mut res = liq.quantize(&mut img)?;
         res.set_dithering_level((f32::from(settings.s.quality) / 50.0 - 1.).max(0.2))?;
@@ -454,7 +472,8 @@ impl Writer {
         minipool::new_scope((if settings.s.fast || settings.gifsicle_loss() > 0 { 3 } else { 1 }).try_into().unwrap(), "lzw", move || {
             let mut pts_in_delay_units = 0_u64;
 
-            let mut enc = RustEncoder::new(writer);
+            let written = Rc::new(Cell::new(0));
+            let mut enc = RustEncoder::new(writer, written.clone());
 
             let mut n_done = 0;
             for tmp in recv {
@@ -478,6 +497,7 @@ impl Writer {
                         return Err(Error::Aborted);
                     }
                 }
+                reporter.written_bytes(written.get());
             }
             if n_done == 0 {
                 Err(Error::NoFrames)
@@ -521,7 +541,7 @@ impl Writer {
         })?;
         let (remap_queue, remap_queue_recv) = ordqueue::new(0);
         let quant_thread = thread::Builder::new().name("quant".into()).spawn(move || {
-            Self::quantize_frames(quant_queue_recv, remap_queue, &settings_ext)
+            Self::quantize_frames(quant_queue_recv, remap_queue, &settings_ext, &self.fixed_colors)
         })?;
         let (write_queue, write_queue_recv) = crossbeam_channel::bounded(0);
         let remap_thread = thread::Builder::new().name("remap".into()).spawn(move || {
@@ -635,7 +655,7 @@ impl Writer {
         Ok(())
     }
 
-    fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: OrdQueue<RemapMessage>, settings: &SettingsExt) -> CatResult<()> {
+    fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: OrdQueue<RemapMessage>, settings: &SettingsExt, fixed_colors: &Vec<RGB8>) -> CatResult<()> {
         minipool::new_channel(settings.max_threads.min(4.try_into()?), "quant", move |to_remap| {
         let mut inputs = inputs.into_iter().peekable();
 
@@ -645,7 +665,7 @@ impl Writer {
         let mut prev_frame_keeps = false;
         let mut frame_index = 0;
         let mut importance_map = None;
-        while let Some(DiffMessage { mut image, pts, frame_duration, ordinal_frame_number, importance_map: new_importance_map }) = inputs.next() {
+        while let Some(DiffMessage { image, pts, frame_duration, ordinal_frame_number, importance_map: new_importance_map }) = inputs.next() {
 
             if importance_map.is_none() {
                 importance_map = Some(new_importance_map);
@@ -661,30 +681,21 @@ impl Writer {
 
                 // If the next frame becomes transparent, this frame has to clear to bg for it
                 if next_image.pixels().zip(image.pixels()).any(|(next, curr)| next.a < curr.a) {
-                    gif::DisposalMethod::Background
+                    DisposalMethod::Background
                 } else {
-                    gif::DisposalMethod::Keep
+                    DisposalMethod::Keep
                 }
             } else if first_frame_has_transparency {
                 // Last frame should reset to background to avoid breaking transparent looped anims
-                gif::DisposalMethod::Background
+                DisposalMethod::Background
             } else {
                 // macOS preview gets Background wrong
-                gif::DisposalMethod::Keep
+                DisposalMethod::Keep
             };
 
             let importance_map = importance_map.take().ok_or(Error::ThreadSend)?; // always set at the beginning
 
             if !prev_frame_keeps || importance_map.iter().any(|&px| px > 0) {
-                if prev_frame_keeps {
-                    // if denoiser says the background didn't change, then believe it
-                    // (except higher quality settings, which try to improve it every time)
-                    let bg_keep_likelihood = u32::from(settings.s.quality.saturating_sub(80) / 4);
-                    if settings.s.fast || (settings.s.quality < 100 && (frame_index % 5) >= bg_keep_likelihood) {
-                        image.pixels_mut().zip(&importance_map).filter(|&(_, &m)| m == 0).for_each(|(px, _)| *px = RGBA8::new(0,0,0,0));
-                    }
-                }
-
                 let end_pts = if let Some(&DiffMessage { pts: next_pts, .. }) = inputs.peek() {
                     next_pts
                 } else {
@@ -695,18 +706,22 @@ impl Writer {
                 to_remap.send((end_pts, image, importance_map, ordinal_frame_number, frame_index, dispose, first_frame_has_transparency, prev_frame_keeps))?;
 
                 frame_index += 1;
-                prev_frame_keeps = dispose == gif::DisposalMethod::Keep;
+                prev_frame_keeps = dispose == DisposalMethod::Keep;
             }
         }
         Ok(())
-        }, move |(end_pts, image, mut importance_map, ordinal_frame_number, frame_index, dispose, first_frame_has_transparency, prev_frame_keeps)| {
-            let needs_transparency = frame_index > 0 || (frame_index == 0 && first_frame_has_transparency);
-            let (liq, remap, liq_image, out_buf) = Self::quantize(image, &importance_map, frame_index == 0, needs_transparency, prev_frame_keeps, settings)?;
-            let max_loss = settings.gifsicle_loss();
-            for imp in &mut importance_map {
-                // encoding assumes rgba background looks like encoded background, which is not true for lossy
-                *imp = ((256 - u32::from(*imp)) * max_loss / 256).min(255) as u8;
+        }, move |(end_pts, mut image, importance_map, ordinal_frame_number, frame_index, dispose, first_frame_has_transparency, prev_frame_keeps)| {
+            if prev_frame_keeps {
+                // if denoiser says the background didn't change, then believe it
+                // (except higher quality settings, which try to improve it every time)
+                let bg_keep_likelihood = u32::from(settings.s.quality.saturating_sub(80) / 4);
+                if settings.s.fast || (settings.s.quality < 100 && (frame_index % 5) >= bg_keep_likelihood) {
+                    image.pixels_mut().zip(&importance_map).filter(|&(_, &m)| m == 0).for_each(|(px, _)| *px = RGBA8::new(0,0,0,0));
+                }
             }
+
+            let needs_transparency = frame_index > 0 || (frame_index == 0 && first_frame_has_transparency);
+            let (liq, remap, liq_image, out_buf) = Self::quantize(image, &importance_map, frame_index == 0, needs_transparency, prev_frame_keeps, settings, fixed_colors)?;
 
             remap_queue.push(frame_index as usize, RemapMessage {
                 ordinal_frame_number,
@@ -739,7 +754,7 @@ impl Writer {
 
             let next_frame = inputs.peek();
             let (left, top, image8) = if frame_index != 0 && next_frame.is_some() {
-                match trim_image(image8, &image8_pal, transparent_index, screen_after_dispose.pixels()) {
+                match trim_image(image8, &image8_pal, transparent_index, dispose, screen_after_dispose.pixels()) {
                     Some(trimmed) => trimmed,
                     None => continue, // no pixels need to be changed after dispose
                 }
@@ -807,15 +822,27 @@ fn combine_res(res1: Result<(), Error>, res2: Result<(), Error>) -> Result<(), E
     }
 }
 
-fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: Option<u8>, mut screen: ImgRef<RGBA8>) -> Option<(u16, u16, ImgVec<u8>)> {
+fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: Option<u8>, dispose: DisposalMethod, mut screen: ImgRef<RGBA8>) -> Option<(u16, u16, ImgVec<u8>)> {
     let mut image_trimmed = image8.as_ref();
+
+    let is_matching_pixel = move |px: u8, bg: RGBA8| -> bool {
+        if Some(px) == transparent_index {
+            if dispose == DisposalMethod::Keep {
+                // if dispose == keep, then transparent pixels do nothing, so they can be cropped out
+                true
+            } else {
+                // if disposing to background, then transparent pixels paint transparency, so bg has to actually be transparent to match
+                bg.a == 0
+            }
+        } else {
+            image8_pal.get(px as usize).copied().unwrap_or_default() == bg
+        }
+    };
 
     let bottom = image_trimmed.rows().zip(screen.rows()).rev()
         .take_while(|(img_row, screen_row)| {
             img_row.iter().copied().zip(screen_row.iter().copied())
-                .all(|(px, bg)| {
-                    Some(px) == transparent_index || image8_pal.get(px as usize) == Some(&bg)
-                })
+                .all(|(px, bg)| is_matching_pixel(px, bg))
         })
         .count();
 
@@ -830,9 +857,7 @@ fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: O
     let top = image_trimmed.rows().zip(screen.rows())
         .take_while(|(img_row, screen_row)| {
             img_row.iter().copied().zip(screen_row.iter().copied())
-                .all(|(px, bg)| {
-                    Some(px) == transparent_index || image8_pal.get(px as usize) == Some(&bg)
-                })
+                .all(|(px, bg)| is_matching_pixel(px, bg))
         })
         .count();
 
@@ -845,7 +870,7 @@ fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: O
         .take_while(|&x| {
             (0..image_trimmed.height()).all(|y| {
                 let px = image_trimmed[(x, y)];
-                Some(px) == transparent_index || image8_pal.get(px as usize) == Some(&screen[(x, y)])
+                is_matching_pixel(px, screen[(x, y)])
             })
         }).count();
     if left > 0 {
