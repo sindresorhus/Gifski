@@ -125,7 +125,7 @@ final class GIFGenerator {
 
 			let frameResult = processFrame(
 				for: imageResult,
-				at: startTime,
+				at: .seconds(startTime),
 				frameRate: fps,
 				conversion: conversion,
 				isEstimation: isEstimation,
@@ -292,7 +292,7 @@ final class GIFGenerator {
 	*/
 	private func processFrame(
 		for result: Result<AVAssetImageGenerator.CompletionHandlerResult, Swift.Error>,
-		at startTime: TimeInterval,
+		at startTime: Duration,
 		frameRate: Int,
 		conversion: Conversion,
 		isEstimation: Bool,
@@ -319,7 +319,7 @@ final class GIFGenerator {
 			// TODO: This is just a workaround. Look into the cause of this.
 			// https://github.com/sindresorhus/Gifski/pull/262
 			// Skip incorrect out-of-range frames.
-			if result.actualTime.seconds < startTime {
+			if result.actualTime.seconds < startTime.toTimeInterval {
 				return .success(true)
 			}
 
@@ -329,7 +329,7 @@ final class GIFGenerator {
 
 				try gifski?.addFrame(
 					result.image,
-					presentationTimestamp: max(0, result.actualTime.seconds - startTime)
+					presentationTimestamp: max(0, result.actualTime.seconds - startTime.toTimeInterval)
 				)
 
 				if conversion.bounce, !result.isFinished {
@@ -411,12 +411,12 @@ extension GIFGenerator {
 		var loop: Gifski.Loop
 		var bounce: Bool
 
-		var gifDuration: TimeInterval {
+		var gifDuration: Duration {
 			guard let duration = (timeRange ?? asset.firstVideoTrack?.timeRange.range)?.length else {
-				return 0
+				return .zero
 			}
 
-			return bounce ? (duration * 2) : duration
+			return .seconds(bounce ? (duration * 2) : duration)
 		}
 	}
 }

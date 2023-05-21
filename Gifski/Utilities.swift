@@ -30,17 +30,28 @@ func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
 }
 
 
-func delay(seconds: TimeInterval, closure: @escaping () -> Void) {
-	DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: closure)
+func delay(@_implicitSelfCapture _ duration: Duration, closure: @escaping () -> Void) {
+	DispatchQueue.main.asyncAfter(duration, execute: closure)
+}
+
+
+extension DispatchQueue {
+	func asyncAfter(_ duration: Duration, execute: @escaping () -> Void) {
+		asyncAfter(deadline: .now() + duration.toTimeInterval, execute: execute)
+	}
+
+	func asyncAfter(_ duration: Duration, execute: DispatchWorkItem) {
+		asyncAfter(deadline: .now() + duration.toTimeInterval, execute: execute)
+	}
 }
 
 
 extension NSView {
-	func shake(duration: TimeInterval = 0.3, direction: NSUserInterfaceLayoutOrientation) {
+	func shake(duration: Duration = .seconds(0.3), direction: NSUserInterfaceLayoutOrientation) {
 		let translation = direction == .horizontal ? "x" : "y"
 		let animation = CAKeyframeAnimation(keyPath: "transform.translation.\(translation)")
 		animation.timingFunction = .linear
-		animation.duration = duration
+		animation.duration = duration.toTimeInterval
 		animation.values = [-5, 5, -2.5, 2.5, 0]
 		layer?.add(animation, forKey: nil)
 	}
@@ -569,21 +580,30 @@ extension CGImage {
 }
 
 
-// TODO: Remove this when targeting macOS 13 and use https://developer.apple.com/documentation/avfoundation/avassetimagegenerator/3930658-image?changes=latest_minor instead.
 extension AVAssetImageGenerator {
-	func image(at time: CMTime) -> NSImage? {
-		(try? copyCGImage(at: time, actualTime: nil))?.nsImage
+	func imageSync(at time: CMTime) -> CGImage? {
+		(try? copyCGImage(at: time, actualTime: nil))
 	}
 }
 
-
+// TODO: Remove this when I converted everything to async.
 extension AVAsset {
-	func image(at time: CMTime) -> NSImage? {
+	func imageSync(at time: CMTime) -> CGImage? {
 		let imageGenerator = AVAssetImageGenerator(asset: self)
 		imageGenerator.appliesPreferredTrackTransform = true
 		imageGenerator.requestedTimeToleranceAfter = .zero
 		imageGenerator.requestedTimeToleranceBefore = .zero
-		return imageGenerator.image(at: time)
+		return imageGenerator.imageSync(at: time)
+	}
+}
+
+extension AVAsset {
+	func image(at time: CMTime) async throws -> CGImage? {
+		let imageGenerator = AVAssetImageGenerator(asset: self)
+		imageGenerator.appliesPreferredTrackTransform = true
+		imageGenerator.requestedTimeToleranceAfter = .zero
+		imageGenerator.requestedTimeToleranceBefore = .zero
+		return try await imageGenerator.image(at: time).image
 	}
 }
 
@@ -716,7 +736,8 @@ extension AVAssetTrack {
 
 		// Workaround for https://github.com/sindresorhus/Gifski/issues/76
 		guard preferredSize != .zero else {
-			return asset?.image(at: CMTime(seconds: 0, preferredTimescale: .video))?.size
+			// TODO: Use async version.
+			return asset?.imageSync(at: CMTime(seconds: 0, preferredTimescale: .video))?.size
 		}
 
 		return preferredSize
@@ -1469,20 +1490,6 @@ extension NSControl {
 }
 
 
-extension DispatchQueue {
-	/**
-	```
-	DispatchQueue.main.asyncAfter(duration: 100.milliseconds) {
-		print("100 ms later")
-	}
-	```
-	*/
-	func asyncAfter(duration: TimeInterval, execute: @escaping () -> Void) {
-		asyncAfter(deadline: .now() + duration, execute: execute)
-	}
-}
-
-
 extension NSFont {
 	/**
 	The point size of the font.
@@ -1827,16 +1834,16 @@ extension CAMediaTimingFunction {
 
 extension NSView {
 	static func animate(
-		duration: TimeInterval = 1,
-		delay: TimeInterval = 0,
+		duration: Duration = .seconds(1),
+		delay: Duration = .zero,
 		timingFunction: CAMediaTimingFunction = .default,
 		animations: @escaping (() -> Void),
 		completion: (() -> Void)? = nil
 	) {
-		DispatchQueue.main.asyncAfter(duration: delay) {
+		DispatchQueue.main.asyncAfter(delay) {
 			NSAnimationContext.runAnimationGroup({ context in
 				context.allowsImplicitAnimation = true
-				context.duration = duration
+				context.duration = duration.toTimeInterval
 				context.timingFunction = timingFunction
 				animations()
 			}, completionHandler: completion)
@@ -1844,8 +1851,8 @@ extension NSView {
 	}
 
 	func fadeIn(
-		duration: TimeInterval = 1,
-		delay: TimeInterval = 0,
+		duration: Duration = .seconds(1),
+		delay: Duration = .zero,
 		completion: (() -> Void)? = nil
 	) {
 		isHidden = true
@@ -1861,8 +1868,8 @@ extension NSView {
 	}
 
 	func fadeOut(
-		duration: TimeInterval = 1,
-		delay: TimeInterval = 0,
+		duration: Duration = .seconds(1),
+		delay: Duration = .zero,
 		completion: (() -> Void)? = nil
 	) {
 		isHidden = false
@@ -1908,10 +1915,10 @@ enum SSApp {
 
 		if UserDefaults.standard.bool(forKey: key) {
 			return false
-		} else {
-			UserDefaults.standard.set(true, forKey: key)
-			return true
 		}
+
+		UserDefaults.standard.set(true, forKey: key)
+		return true
 	}()
 
 	static var isDarkMode: Bool { NSApp.effectiveAppearance.isDarkMode }
@@ -3154,7 +3161,7 @@ extension NSViewController {
 			window.makeFirstResponder(viewController)
 
 			// The delay is needed to prevent weird UI race issues on macOS 12. For example, it caused the video in the editor to not show up.
-			delay(seconds: 0.2) {
+			delay(.seconds(0.2)) {
 				window.contentViewController = nil
 				window.setFrame(newWindowFrame, display: true)
 				window.contentViewController = viewController
@@ -3841,17 +3848,17 @@ final class Foo {
 ```
 */
 final class Debouncer {
-	private let delay: TimeInterval
+	private let delay: Duration
 	private var workItem: DispatchWorkItem?
 
-	init(delay: TimeInterval) {
+	init(delay: Duration) {
 		self.delay = delay
 	}
 
 	func callAsFunction(_ action: @escaping () -> Void) {
 		workItem?.cancel()
 		let newWorkItem = DispatchWorkItem(block: action)
-		DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: newWorkItem)
+		DispatchQueue.main.asyncAfter(delay, execute: newWorkItem)
 		workItem = newWorkItem
 	}
 }
@@ -3861,7 +3868,7 @@ extension Debouncer {
 
 	private static func debounce(
 		identifier: String,
-		delay: TimeInterval,
+		delay: Duration,
 		action: @escaping () -> Void
 	) {
 		let debouncer = { () -> Debouncer in
@@ -3891,7 +3898,7 @@ extension Debouncer {
 		file: String = #fileID,
 		function: StaticString = #function,
 		line: Int = #line,
-		delay: TimeInterval,
+		delay: Duration,
 		action: @escaping () -> Void
 	) {
 		let identifier = "\(file)-\(function)-\(line)"
@@ -3994,11 +4001,13 @@ extension String {
 	func truncating(to number: Int, truncationIndicator: Self = "…") -> Self {
 		if number <= 0 {
 			return ""
-		} else if count > number {
-			return String(prefix(number - truncationIndicator.count)).trimmedTrailing + truncationIndicator
-		} else {
-			return self
 		}
+
+		if count > number {
+			return String(prefix(number - truncationIndicator.count)).trimmedTrailing + truncationIndicator
+		}
+
+		return self
 	}
 }
 
@@ -4340,9 +4349,9 @@ extension CGBitmapInfo {
 
 		if isLittleEndian {
 			return isAlphaFirst ? .bgra : .abgr
-		} else {
-			return isAlphaFirst ? .argb : .rgba
 		}
+
+		return isAlphaFirst ? .argb : .rgba
 	}
 
 	/**
@@ -4580,13 +4589,13 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS14OrLater: Bool = {
+	static let isMacOS15OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 14, *) {
+		if #available(macOS 15, *) {
 			return true
-		} else {
-			return false
 		}
+
+		return false
 		#else
 		return false
 		#endif
@@ -4595,13 +4604,13 @@ extension OperatingSystem {
 	/**
 	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
 	*/
-	static let isMacOS13OrLater: Bool = {
+	static let isMacOS14OrLater: Bool = {
 		#if os(macOS)
-		if #available(macOS 13, *) {
+		if #available(macOS 14, *) {
 			return true
-		} else {
-			return false
 		}
+
+		return false
 		#else
 		return false
 		#endif
@@ -4695,4 +4704,17 @@ extension Collection {
 	Works on strings too, since they're just collections.
 	*/
 	var nilIfEmpty: Self? { isEmpty ? nil : self }
+}
+
+
+extension Duration {
+	var nanoseconds: Int64 {
+		let (seconds, attoseconds) = components
+		let secondsNanos = seconds * 1_000_000_000
+		let attosecondsNanons = attoseconds / 1_000_000_000
+		let (totalNanos, isOverflow) = secondsNanos.addingReportingOverflow(attosecondsNanons)
+		return isOverflow ? .max : totalNanos
+	}
+
+	var toTimeInterval: TimeInterval { Double(nanoseconds) / 1_000_000_000 }
 }

@@ -119,6 +119,7 @@ only_rules:
   - static_operator
   - strong_iboutlet
   - superfluous_disable_command
+  - superfluous_else
   - switch_case_alignment
   - switch_case_on_newline
   - syntactic_sugar
@@ -165,7 +166,6 @@ identifier_name:
   min_length:
     warning: 2
     error: 2
-  validates_start_with_lowercase: false
   allowed_symbols:
     - '_'
   excluded:
@@ -180,7 +180,7 @@ identifier_name:
     - 'y2'
     - 'z2'
 deployment_target:
-  macOS_deployment_target: '12'
+  macOS_deployment_target: '13'
 custom_rules:
   no_nsrect:
     regex: '\bNSRect\b'

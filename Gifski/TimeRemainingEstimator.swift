@@ -7,17 +7,17 @@ final class TimeRemainingEstimator {
 	/**
 	The delay before revealing the estimated time remaining, allowing the estimation to stabilize.
 	*/
-	let bufferDuration: TimeInterval = 3
+	let bufferDuration = Duration.seconds(3)
 
 	/**
 	Don't show the estimate at all if the total time estimate (after it stabilizes) is less than this amount.
 	*/
-	let skipThreshold: TimeInterval = 10
+	let skipThreshold = Duration.seconds(10)
 
 	/**
 	Begin fade out when remaining time reaches this amount.
 	*/
-	let fadeOutThreshold: TimeInterval = 1
+	let fadeOutThreshold = Duration.seconds(1)
 
 	weak var progress: Progress? {
 		didSet {
@@ -82,22 +82,22 @@ final class TimeRemainingEstimator {
 		case .buffering:
 			if finishedBuffering {
 				return shouldShowEstimation ? .running : .done
-			} else {
-				return .buffering
 			}
+
+			return .buffering
 		case .running:
-			return secondsRemaining < fadeOutThreshold ? .done : .running
+			return remaining < fadeOutThreshold ? .done : .running
 		case .done:
 			return .done
 		}
 	}
 
-	private var finishedBuffering: Bool { secondsElapsed > bufferDuration }
-	private var shouldShowEstimation: Bool { secondsRemaining > skipThreshold }
-	private var secondsElapsed: TimeInterval { Date().timeIntervalSince(startTime) }
+	private var finishedBuffering: Bool { elapsed > bufferDuration }
+	private var shouldShowEstimation: Bool { remaining > skipThreshold }
+	private var elapsed: Duration { .seconds(Date.now.timeIntervalSince(startTime)) }
 
-	private var secondsRemaining: TimeInterval {
-		(secondsElapsed / percentComplete) * (1 - percentComplete)
+	private var remaining: Duration {
+		(elapsed / percentComplete) * (1 - percentComplete)
 	}
 
 	private let label: Label
@@ -110,7 +110,7 @@ final class TimeRemainingEstimator {
 	}
 
 	private var formattedTimeRemaining: String? {
-		let seconds = secondsRemaining.clamped(to: 1...)
+		let seconds = remaining.toTimeInterval.clamped(to: 1...)
 		elapsedTimeFormatter.allowedUnits = seconds < 60 ? .second : [.hour, .minute]
 		return elapsedTimeFormatter.string(from: seconds)
 	}

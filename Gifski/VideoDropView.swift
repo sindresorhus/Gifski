@@ -54,7 +54,7 @@ class DropView<CompletionType>: SSView {
 
 		// We only draw it when the drop view controller is the main view controller.
 		if window?.contentViewController is VideoDropViewController {
-			Constants.backgroundImage.draw(in: dirtyRect)
+			Constants.backgroundImage.draw(in: bounds)
 		}
 
 		if isDraggingHighlighted {
@@ -96,7 +96,7 @@ class DropView<CompletionType>: SSView {
 }
 
 final class VideoDropView: DropView<URL> {
-	override var highlightColor: NSColor { .themeColor }
+	override var highlightColor: NSColor { .controlAccentColor }
 
 	override var acceptedTypes: [NSPasteboard.PasteboardType] { [.fileURL] }
 

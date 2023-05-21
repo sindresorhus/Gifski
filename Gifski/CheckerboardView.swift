@@ -20,7 +20,7 @@ final class CheckerboardView: NSView {
 		super.draw(dirtyRect)
 
 		NSColor.Checkerboard.first.setFill()
-		dirtyRect.fill()
+		bounds.fill()
 
 		NSColor.Checkerboard.second.setFill()
 

@@ -65,10 +65,10 @@ final class ConversionCompletedViewController: NSViewController {
 				)
 			}
 
-			wrapperView.fadeIn(duration: 0.5, delay: 0.15, completion: nil)
+			wrapperView.fadeIn(duration: .seconds(0.5), delay: .seconds(0.15), completion: nil)
 		}
 
-		delay(seconds: 1) { [weak self] in
+		delay(.seconds(1)) { [weak self] in
 			guard let self else {
 				return
 			}
@@ -153,7 +153,7 @@ final class ConversionCompletedViewController: NSViewController {
 			)
 		}
 
-		delay(seconds: 1) { [weak self] in
+		delay(.seconds(1)) { [weak self] in
 			guard let self else {
 				return
 			}

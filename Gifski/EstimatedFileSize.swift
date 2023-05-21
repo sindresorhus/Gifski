@@ -6,7 +6,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 	@Published var error: Error?
 
 	// This is outside the scope of "file estimate", but it was easier to add this here than doing a separate SwiftUI view. This should be refactored out into a separate view when all of Gifski is SwiftUI.
-	@Published var duration: TimeInterval = 0
+	@Published var duration = Duration.zero
 
 	var estimatedFileSizeNaive: String {
 		Int(getNaiveEstimate()).formatted(.byteCount(style: .file))
@@ -72,7 +72,7 @@ final class EstimatedFileSizeModel: ObservableObject {
 	}
 
 	func updateEstimate() {
-		Debouncer.debounce(delay: 0.5, action: _estimateFileSize)
+		Debouncer.debounce(delay: .seconds(0.5), action: _estimateFileSize)
 		duration = getConversionSettings().gifDuration
 	}
 }
@@ -112,15 +112,8 @@ struct EstimatedFileSizeView: View {
 			.overlay {
 				if model.error == nil {
 					HStack {
-						// TODO: Use the below instead when targeting macOS 13.
-						/*
-						Duration.seconds(duration)
-							.formatted(
-								.time(pattern: .minuteSecond(padMinuteToLength: 2, fractionalSecondsLength: 2))
-								.locale(locale)
-							)
-						*/
-						Text(DateComponentsFormatter.localizedStringPositionalWithFractionalSeconds(model.duration))
+						let formattedDuration = model.duration.formatted(.time(pattern: .minuteSecond(padMinuteToLength: 2, fractionalSecondsLength: 2)))
+						Text(formattedDuration)
 							.monospacedDigit()
 							.padding(.horizontal, 6)
 							.padding(.vertical, 3)

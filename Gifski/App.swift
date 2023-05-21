@@ -5,11 +5,12 @@ import FirebaseCrashlytics
 import DockProgress
 
 /**
-TODO when targeting macOS 13:
+TODO when targeting macOS 14:
 - Rewrite everything to use async/await, AsyncSequence, and actors.
 - Rewrite `CheckerboardView` to use `SwiftUI.Canvas`.
 - Make `final class Gifski` an actor.
 - Use `@MainActor`
+- Add  button in the editor to preview the final GIF.
 */
 
 @main
@@ -111,6 +112,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 		}
 
 		return .terminateNow
+	}
+
+	func applicationWillTerminate(_ notification: Notification) {
+		UNUserNotificationCenter.current().removeAllDeliveredNotifications()
 	}
 
 	func application(_ application: NSApplication, willPresentError error: Error) -> Error {

@@ -331,6 +331,13 @@ final class EditVideoViewController: NSViewController {
 			estimatedFileSizeModel.updateEstimate()
 		}
 
+		Defaults.publisher(.outputSpeed)
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] _ in
+				self?.estimatedFileSizeModel.updateEstimate()
+			}
+			.store(in: &cancellables)
+
 		// We round it so that `29.970` becomes `30` for practical reasons.
 		let frameRate = videoMetadata.frameRate.rounded()
 
