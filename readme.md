@@ -25,6 +25,7 @@ Requires macOS 13 or later.
 
 **Older versions**
 
+- [2.22.3](https://github.com/sindresorhus/Gifski/releases/download/v2.22.3/Gifski.2.22.3.-.macOS.12.zip) for macOS 12+
 - [2.21.2](https://github.com/sindresorhus/Gifski/releases/download/v2.21.2/Gifski.2.21.2.-.macOS.11.zip) for macOS 11+
 - [2.20.2](https://github.com/sindresorhus/Gifski/releases/download/v2.20.2/Gifski.2.20.2.-.macOS.10.15.zip) for macOS 10.15+
 - [2.16.0](https://github.com/sindresorhus/Gifski/releases/download/v2.16.0/Gifski.2.16.0.-.macOS.10.14.zip) for macOS 10.14+
@@ -34,7 +35,7 @@ Requires macOS 13 or later.
 
 A special version for users that cannot access the App Store. It won't receive automatic updates. I will update it here once a year.
 
-[Download](https://dsc.cloud/sindresorhus/Gifski-2.21.2-1670550897) *(2.21.2 · macOS 12+)*
+[Download](https://dsc.cloud/sindresorhus/Gifski-2.23.0-1692807940.zip) *(2.23.0 · macOS 13+)*
 
 ## Features
 
