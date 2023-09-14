@@ -434,19 +434,19 @@ extension GIFGenerator {
 		var errorDescription: String? {
 			switch self {
 			case .invalidSettings:
-				return "Invalid settings."
+				"Invalid settings."
 			case .unreadableFile:
-				return "The selected file is no longer readable."
+				"The selected file is no longer readable."
 			case .notEnoughFrames(let frameCount):
-				return "An animated GIF requires a minimum of 2 frames. Your video contains \(frameCount) frame\(frameCount == 1 ? "" : "s")."
+				"An animated GIF requires a minimum of 2 frames. Your video contains \(frameCount) frame\(frameCount == 1 ? "" : "s")."
 			case .generateFrameFailed(let error):
-				return "Failed to generate frame: \(error.localizedDescription)"
+				"Failed to generate frame: \(error.localizedDescription)"
 			case .addFrameFailed(let error):
-				return "Failed to add frame, with underlying error: \(error.localizedDescription)"
+				"Failed to add frame, with underlying error: \(error.localizedDescription)"
 			case .writeFailed(let error):
-				return "Failed to write, with underlying error: \(error.localizedDescription)"
+				"Failed to write, with underlying error: \(error.localizedDescription)"
 			case .cancelled:
-				return "The conversion was cancelled."
+				"The conversion was cancelled."
 			}
 		}
 	}

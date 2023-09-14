@@ -103,9 +103,9 @@ extension MainWindowController: NSMenuItemValidation {
 	func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
 		switch menuItem.action {
 		case #selector(open)?:
-			return !isConverting
+			!isConverting
 		default:
-			return true
+			true
 		}
 	}
 }

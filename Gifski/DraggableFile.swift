@@ -39,7 +39,7 @@ final class DraggableFile: NSImageView {
 
 		shadow = with(NSShadow()) {
 			$0.shadowBlurRadius = 5
-			$0.shadowColor = NSColor(named: "ShadowColor")
+			$0.shadowColor = .shadow
 			$0.shadowOffset = .zero
 		}
 	}

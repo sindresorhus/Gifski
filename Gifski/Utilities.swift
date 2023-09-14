@@ -683,15 +683,15 @@ extension AVAssetTrack.VideoTrimmingError: LocalizedError {
 	public var errorDescription: String? {
 		switch self {
 		case .unknownAssetReaderFailure:
-			return "Asset could not be read."
+			"Asset could not be read."
 		case .videoTrackIsEmpty:
-			return "Video track is empty."
+			"Video track is empty."
 		case .assetIsMissingVideoTrack:
-			return "Asset is missing video track."
+			"Asset is missing video track."
 		case .compositionCouldNotBeCreated:
-			return "Composition could not be created."
+			"Composition could not be created."
 		case .codecNotSupported:
-			return "Video codec is not supported."
+			"Video codec is not supported."
 		}
 	}
 }
@@ -1036,49 +1036,49 @@ enum AVFormat: String {
 	var fourCC: String {
 		switch self {
 		case .hevc:
-			return "hvc1"
+			"hvc1"
 		case .h264:
-			return "avc1"
+			"avc1"
 		case .av1:
-			return "av01"
+			"av01"
 		case .vp9:
-			return "vp09"
+			"vp09"
 		case .appleProResRAWHQ:
-			return "aprh"
+			"aprh"
 		case .appleProResRAW:
-			return "aprn"
+			"aprn"
 		case .appleProRes4444XQ:
-			return "ap4x"
+			"ap4x"
 		case .appleProRes4444:
-			return "ap4h"
+			"ap4h"
 		case .appleProRes422HQ:
-			return "apcn"
+			"apcn"
 		case .appleProRes422:
-			return "apch"
+			"apch"
 		case .appleProRes422LT:
-			return "apcs"
+			"apcs"
 		case .appleProRes422Proxy:
-			return "apco"
+			"apco"
 		case .appleAnimation:
-			return "rle "
+			"rle "
 		case .hap1:
-			return "Hap1"
+			"Hap1"
 		case .hap5:
-			return "Hap5"
+			"Hap5"
 		case .hapY:
-			return "HapY"
+			"HapY"
 		case .hapM:
-			return "HapM"
+			"HapM"
 		case .hapA:
-			return "HapA"
+			"HapA"
 		case .hap7:
-			return "Hap7"
+			"Hap7"
 		case .cineFormHD:
-			return "CFHD"
+			"CFHD"
 		case .quickTimeGraphics:
-			return "smc"
+			"smc"
 		case .avidDNxHD:
-			return "AVdh"
+			"AVdh"
 		}
 	}
 
@@ -1107,50 +1107,50 @@ extension AVFormat: CustomStringConvertible {
 	var description: String {
 		switch self {
 		case .hevc:
-			return "HEVC"
+			"HEVC"
 		case .h264:
-			return "H264"
+			"H264"
 		case .av1:
-			return "AV1"
+			"AV1"
 		case .vp9:
-			return "VP9"
+			"VP9"
 		case .appleProResRAWHQ:
-			return "Apple ProRes RAW HQ"
+			"Apple ProRes RAW HQ"
 		case .appleProResRAW:
-			return "Apple ProRes RAW"
+			"Apple ProRes RAW"
 		case .appleProRes4444XQ:
-			return "Apple ProRes 4444 XQ"
+			"Apple ProRes 4444 XQ"
 		case .appleProRes4444:
-			return "Apple ProRes 4444"
+			"Apple ProRes 4444"
 		case .appleProRes422HQ:
-			return "Apple ProRes 422 HQ"
+			"Apple ProRes 422 HQ"
 		case .appleProRes422:
-			return "Apple ProRes 422"
+			"Apple ProRes 422"
 		case .appleProRes422LT:
-			return "Apple ProRes 422 LT"
+			"Apple ProRes 422 LT"
 		case .appleProRes422Proxy:
-			return "Apple ProRes 422 Proxy"
+			"Apple ProRes 422 Proxy"
 		case .appleAnimation:
-			return "Apple Animation"
+			"Apple Animation"
 		case .hap1:
-			return "Vidvox Hap"
+			"Vidvox Hap"
 		case .hap5:
-			return "Vidvox Hap Alpha"
+			"Vidvox Hap Alpha"
 		case .hapY:
-			return "Vidvox Hap Q"
+			"Vidvox Hap Q"
 		case .hapM:
-			return "Vidvox Hap Q Alpha"
+			"Vidvox Hap Q Alpha"
 		case .hapA:
-			return "Vidvox Hap Alpha-Only"
+			"Vidvox Hap Alpha-Only"
 		case .hap7:
 			// No official name for this.
-			return "Vidvox Hap"
+			"Vidvox Hap"
 		case .cineFormHD:
-			return "CineForm HD"
+			"CineForm HD"
 		case .quickTimeGraphics:
-			return "QuickTime Graphics"
+			"QuickTime Graphics"
 		case .avidDNxHD:
-			return "Avid DNxHD"
+			"Avid DNxHD"
 		}
 	}
 }
@@ -1424,9 +1424,9 @@ extension NSView {
 			fileprivate var constraintKeyPath: KeyPath<NSView, NSLayoutYAxisAnchor> {
 				switch self {
 				case .top:
-					return \.topAnchor
+					\.topAnchor
 				case .bottom:
-					return \.bottomAnchor
+					\.bottomAnchor
 				}
 			}
 		}
@@ -1438,9 +1438,9 @@ extension NSView {
 			fileprivate var constraintKeyPath: KeyPath<NSView, NSLayoutXAxisAnchor> {
 				switch self {
 				case .left:
-					return \.leftAnchor
+					\.leftAnchor
 				case .right:
-					return \.rightAnchor
+					\.rightAnchor
 				}
 			}
 		}
@@ -1715,15 +1715,15 @@ enum AssociationPolicy {
 	var rawValue: objc_AssociationPolicy {
 		switch self {
 		case .assign:
-			return .OBJC_ASSOCIATION_ASSIGN
+			.OBJC_ASSOCIATION_ASSIGN
 		case .retainNonatomic:
-			return .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+			.OBJC_ASSOCIATION_RETAIN_NONATOMIC
 		case .copyNonatomic:
-			return .OBJC_ASSOCIATION_COPY_NONATOMIC
+			.OBJC_ASSOCIATION_COPY_NONATOMIC
 		case .retain:
-			return .OBJC_ASSOCIATION_RETAIN
+			.OBJC_ASSOCIATION_RETAIN
 		case .copy:
-			return .OBJC_ASSOCIATION_COPY
+			.OBJC_ASSOCIATION_COPY
 		}
 	}
 }
@@ -2819,15 +2819,15 @@ enum FileType {
 	static func from(fileExtension: String) -> Self {
 		switch fileExtension {
 		case "png":
-			return .png
+			.png
 		case "jpg", "jpeg":
-			return .jpeg
+			.jpeg
 		case "heic":
-			return .heic
+			.heic
 		case "tif", "tiff":
-			return .tiff
+			.tiff
 		case "gif":
-			return .gif
+			.gif
 		default:
 			fatalError("Unsupported file type")
 		}
@@ -2840,45 +2840,45 @@ enum FileType {
 	var name: String {
 		switch self {
 		case .png:
-			return "PNG"
+			"PNG"
 		case .jpeg:
-			return "JPEG"
+			"JPEG"
 		case .heic:
-			return "HEIC"
+			"HEIC"
 		case .tiff:
-			return "TIFF"
+			"TIFF"
 		case .gif:
-			return "GIF"
+			"GIF"
 		}
 	}
 
 	var identifier: String {
 		switch self {
 		case .png:
-			return "public.png"
+			"public.png"
 		case .jpeg:
-			return "public.jpeg"
+			"public.jpeg"
 		case .heic:
-			return "public.heic"
+			"public.heic"
 		case .tiff:
-			return "public.tiff"
+			"public.tiff"
 		case .gif:
-			return "com.compuserve.gif"
+			"com.compuserve.gif"
 		}
 	}
 
 	var fileExtension: String {
 		switch self {
 		case .png:
-			return "png"
+			"png"
 		case .jpeg:
-			return "jpg"
+			"jpg"
 		case .heic:
-			return "heic"
+			"heic"
 		case .tiff:
-			return "tiff"
+			"tiff"
 		case .gif:
-			return "gif"
+			"gif"
 		}
 	}
 }
@@ -3050,7 +3050,7 @@ extension FloatingPoint {
 	}
 
 	@usableFromInline
-	internal func rescaledAlmostEqual(to other: Self, tolerance: Self) -> Bool {
+	func rescaledAlmostEqual(to other: Self, tolerance: Self) -> Bool {
 		if isNaN || other.isNaN {
 			return false
 		}
@@ -3128,7 +3128,7 @@ extension URL {
 		var attributeKey: String {
 			switch self {
 			case .itemCreator:
-				return kMDItemCreator as String
+				kMDItemCreator as String
 			}
 		}
 	}
@@ -3678,18 +3678,18 @@ final class LoopingPlayer: AVPlayer {
 					return
 				}
 
-				self.pause()
+				pause()
 
 				if
-					self.bouncePlayback,
-					self.currentItem?.canPlayReverse == true,
-					self.currentTime().seconds > self.currentItem?.playbackRange?.lowerBound ?? 0
+					bouncePlayback,
+					currentItem?.canPlayReverse == true,
+					currentTime().seconds > currentItem?.playbackRange?.lowerBound ?? 0
 				{
-					self.seekToEnd()
-					self.rate = -1
-				} else if self.loopPlayback {
-					self.seekToStart()
-					self.rate = 1
+					seekToEnd()
+					rate = -1
+				} else if loopPlayback {
+					seekToStart()
+					rate = 1
 				}
 			}
 	}
@@ -4047,9 +4047,9 @@ extension CGImage {
 	var hasAlphaChannel: Bool {
 		switch alphaInfo {
 		case .first, .last, .premultipliedFirst, .premultipliedLast:
-			return true
+			true
 		default:
-			return false
+			false
 		}
 	}
 }
@@ -4262,13 +4262,13 @@ extension CGImage {
 		var title: String {
 			switch self {
 			case .argb:
-				return "ARGB"
+				"ARGB"
 			case .rgba:
-				return "RGBA"
+				"RGBA"
 			case .bgra:
-				return "BGRA"
+				"BGRA"
 			case .abgr:
-				return "ABGR"
+				"ABGR"
 			}
 		}
 	}

@@ -54,7 +54,7 @@ class DropView<CompletionType>: SSView {
 
 		// We only draw it when the drop view controller is the main view controller.
 		if window?.contentViewController is VideoDropViewController {
-			Constants.backgroundImage.draw(in: bounds)
+			NSImage.landingScreenBackground.draw(in: bounds)
 		}
 
 		if isDraggingHighlighted {

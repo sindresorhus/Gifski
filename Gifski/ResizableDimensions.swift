@@ -16,9 +16,9 @@ struct Dimensions: Equatable, CustomStringConvertible {
 	var description: String {
 		switch type {
 		case .pixels:
-			return String(format: "%.0f × %.0f", value.width, value.height)
+			String(format: "%.0f × %.0f", value.width, value.height)
 		case .percent:
-			return String(format: "%.0f%%", value.width)
+			String(format: "%.0f%%", value.width)
 		}
 	}
 }
@@ -145,9 +145,9 @@ final class ResizableDimensions: Copyable {
 	private func multiplier(for type: DimensionsType) -> CGSize {
 		switch type {
 		case .percent:
-			return CGSize(width: 100, height: 100)
+			CGSize(width: 100, height: 100)
 		case .pixels:
-			return originalDimensions.value
+			originalDimensions.value
 		}
 	}
 }

@@ -19,10 +19,10 @@ final class CheckerboardView: NSView {
 	override func draw(_ dirtyRect: CGRect) {
 		super.draw(dirtyRect)
 
-		NSColor.Checkerboard.first.setFill()
+		NSColor.checkerboardFirst.setFill()
 		bounds.fill()
 
-		NSColor.Checkerboard.second.setFill()
+		NSColor.checkerboardSecond.setFill()
 
 		for y in 0...Int(bounds.size.height / gridSize.height) {
 			for x in 0...Int(bounds.size.width / gridSize.width) where x.isEven == y.isEven {

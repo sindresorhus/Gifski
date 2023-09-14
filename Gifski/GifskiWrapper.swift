@@ -200,29 +200,29 @@ extension GifskiWrapper {
 		var errorDescription: String? {
 			switch self {
 			case .nullArg:
-				return "One of input arguments was NULL"
+				"One of input arguments was NULL"
 			case .invalidState:
-				return "A one-time function was called twice, or functions were called in wrong order"
+				"A one-time function was called twice, or functions were called in wrong order"
 			case .quant:
-				return "Internal error related to palette quantization"
+				"Internal error related to palette quantization"
 			case .gif:
-				return "Internal error related to GIF composing"
+				"Internal error related to GIF composing"
 			case .threadLost:
-				return "Internal error related (panic)"
+				"Internal error related (panic)"
 			case .notFound:
-				return "I/O error: File or directory not found"
+				"I/O error: File or directory not found"
 			case .permissionDenied:
-				return "I/O error: Permission denied"
+				"I/O error: Permission denied"
 			case .alreadyExists:
-				return "I/O error: File already exists"
+				"I/O error: File already exists"
 			case .invalidInput:
-				return "Invalid arguments passed to function"
+				"Invalid arguments passed to function"
 			case .timedOut, .writeZero, .interrupted, .unexpectedEof:
-				return "Misc I/O error"
+				"Misc I/O error"
 			case .aborted:
-				return "Progress callback returned 0, writing aborted"
+				"Progress callback returned 0, writing aborted"
 			case .other:
-				return "Should not happen, file a bug: https://github.com/ImageOptim/gifski"
+				"Should not happen, file a bug: https://github.com/ImageOptim/gifski"
 			}
 		}
 	}

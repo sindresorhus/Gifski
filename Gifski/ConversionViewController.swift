@@ -7,7 +7,7 @@ final class ConversionViewController: NSViewController {
 
 	private lazy var circularProgress = with(CircularProgress(size: Self.circularProgressSize)) {
 		$0.translatesAutoresizingMaskIntoConstraints = false
-		$0.color = .progressCircleColor
+		$0.color = .progressCircle
 		$0.lineWidth = 3
 		$0.constrain(to: CGSize(widthHeight: Self.circularProgressSize))
 	}
@@ -75,7 +75,7 @@ final class ConversionViewController: NSViewController {
 		progress?.publish()
 
 		circularProgress.progressInstance = progress
-		DockProgress.style = .squircle(color: SSApp.isDarkMode ? .white.withAlphaComponent(0.7) : .progressCircleColor)
+		DockProgress.style = .squircle(color: SSApp.isDarkMode ? .white.withAlphaComponent(0.7) : .progressCircle)
 		DockProgress.progressInstance = progress
 		timeRemainingEstimator.progress = progress
 		timeRemainingEstimator.start()

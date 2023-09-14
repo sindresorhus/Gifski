@@ -28,9 +28,9 @@ final class EditVideoViewController: NSViewController {
 		var resizableDimensions: ResizableDimensions? {
 			switch self {
 			case .dimensions(let resizableDimensions):
-				return resizableDimensions
+				resizableDimensions
 			default:
-				return nil
+				nil
 			}
 		}
 	}
