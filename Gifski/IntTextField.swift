@@ -1,6 +1,42 @@
-import AppKit
+import SwiftUI
 
-final class IntTextField: NSTextField, NSTextFieldDelegate {
+// TODO: This does not correctly prevent larger numbers than `minMax`.
+
+struct IntTextField: NSViewRepresentable {
+	typealias NSViewType = IntTextFieldCocoa
+
+	@Binding var value: Int
+	var minMax: ClosedRange<Int>?
+	var delta = 1
+	var alternativeDelta = 10
+	var onValueChange: ((Int) -> Void)?
+	var onBlur: ((Int) -> Void)?
+
+	func makeNSView(context: Context) -> IntTextFieldCocoa {
+		let nsView = IntTextFieldCocoa()
+
+		nsView.onValueChange = {
+			value = $0
+			onValueChange?($0)
+		}
+
+		nsView.onBlur = {
+			value = $0
+			onBlur?($0)
+		}
+
+		return nsView
+	}
+
+	func updateNSView(_ nsView: IntTextFieldCocoa, context: Context) {
+		nsView.stringValue = "\(value)" // We intentionally do not use `nsView.intValue` as it formats the number.
+		nsView.minMax = minMax
+		nsView.delta = delta
+		nsView.alternativeDelta = alternativeDelta
+	}
+}
+
+final class IntTextFieldCocoa: NSTextField, NSTextFieldDelegate, NSControlTextEditingDelegate {
 	override var canBecomeKeyView: Bool { true }
 
 	/**
@@ -16,6 +52,7 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 	var onValueChange: ((Int) -> Void)?
 	var onBlur: ((Int) -> Void)?
 	var minMax: ClosedRange<Int>?
+
 	var isEmpty: Bool { stringValue.trimmingCharacters(in: .whitespaces).isEmpty }
 
 	required init?(coder: NSCoder) {
@@ -52,14 +89,36 @@ final class IntTextField: NSTextField, NSTextFieldDelegate {
 		}
 
 		let currentValue = Int(stringValue) ?? 0
-		let newValue = currentValue + delta
-		stringValue = "\(newValue)"
-		handleValueChange()
+		let tentativeNewValue = currentValue + delta
+
+		func setValue() {
+			stringValue = "\(tentativeNewValue)"
+			handleValueChange()
+		}
+
+		if let minMax {
+			if minMax.contains(tentativeNewValue) {
+				setValue()
+			} else {
+				indicateValidationFailure()
+			}
+		} else {
+			setValue()
+		}
 
 		return true
 	}
 
 	func controlTextDidChange(_ object: Notification) {
+		stringValue = stringValue
+			.replacing(/\D+/, with: "") // Make sure only digits can be entered.
+			.replacing(/^0/, with: "") // Don't allow leading zero.
+
+		if let minMax {
+			// Ensure the user cannot input more digits than the max.
+			stringValue = String(stringValue.prefix("\(minMax.upperBound)".count))
+		}
+
 		let isInvalidButInBounds = !isValid(integerValue) && integerValue > 0 && integerValue <= (minMax?.upperBound ?? Int.max)
 
 		// For entered text we want to give a little bit more room to breathe

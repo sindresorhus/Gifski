@@ -1,139 +1,50 @@
-import Cocoa
-import UserNotifications
-import FirebaseCore
-import FirebaseCrashlytics
-import DockProgress
-
-/**
-TODO when targeting macOS 14:
-- Rewrite everything to use async/await, AsyncSequence, and actors.
-- Rewrite `CheckerboardView` to use `SwiftUI.Canvas`.
-- Make `final class Gifski` an actor.
-- Use `@MainActor`
-- Add  button in the editor to preview the final GIF.
-*/
+import SwiftUI
 
 @main
-final class AppDelegate: NSObject, NSApplicationDelegate {
-	private(set) lazy var mainWindowController = MainWindowController()
+struct AppMain: App {
+	private let appState = AppState.shared
+	@NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
-	var previousEditViewController: EditVideoViewController?
-
-	// Possible workaround for crashing bug because of Crashlytics swizzling.
-	let notificationCenter = UNUserNotificationCenter.current()
-
-	func applicationWillFinishLaunching(_ notification: Notification) {
-		UserDefaults.standard.register(
-			defaults: [
-				"NSApplicationCrashOnExceptions": true,
-				"NSFullScreenMenuItemEverywhere": false
-			]
-		)
+	init() {
+		setUpConfig()
 	}
 
-	func applicationDidFinishLaunching(_ notification: Notification) {
-		FirebaseApp.configure()
-		NSApp.servicesProvider = self
-
-		// We have to include `.badge` otherwise system settings does not show the checkbox to turn off sounds. (macOS 12.4)
-		notificationCenter.requestAuthorization(options: [.sound, .badge]) { _, _ in }
-
-		mainWindowController.showWindow(self)
-
-		// Set launch completions option if the notification center could not be set up already.
-		LaunchCompletions.applicationDidLaunch()
-
-//		#if DEBUG
-//		mainWindowController.convert(URL(fileURLWithPath: "/Users/sindresorhus/Library/Containers/com.sindresorhus.Gifski/Data/Library/Application Support/com.sindresorhus.Gifski/Fixture.mp4"))
-//		#endif
-	}
-
-	/**
-	Returns `nil` if it should not continue.
-	*/
-	func extractSharedVideoUrlIfAny(from url: URL) -> URL? {
-		guard url.host == "shareExtension" else {
-			return url
+	var body: some Scene {
+		Window(SSApp.name, id: "main") {
+			MainScreen()
+				.environment(appState)
 		}
-
-		guard
-			let path = url.queryDictionary["path"],
-			let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.videoShareGroupIdentifier)?.appendingPathComponent(path, isDirectory: false)
-		else {
-			NSAlert.showModal(
-				for: mainWindowController.window,
-				title: "Could not retrieve the shared video."
-			)
-			return nil
-		}
-
-		return appGroupShareVideoUrl
-	}
-
-	func application(_ application: NSApplication, open urls: [URL]) {
-		guard
-			urls.count == 1,
-			let videoUrl = urls.first
-		else {
-			NSAlert.showModal(
-				for: mainWindowController.window,
-				title: "Gifski can only convert a single file at the time."
-			)
-			return
-		}
-
-		guard let videoUrl2 = extractSharedVideoUrlIfAny(from: videoUrl) else {
-			return
-		}
-
-		// Start video conversion on launch
-		LaunchCompletions.add { [weak self] in
-			self?.mainWindowController.convert(videoUrl2)
-		}
-	}
-
-	func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
-
-	func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-		if mainWindowController.isConverting {
-			let response = NSAlert.showModal(
-				for: mainWindowController.window,
-				title: "Do you want to continue converting?",
-				message: "Gifski is currently converting a video. If you quit, the conversion will be cancelled.",
-				buttonTitles: [
-					"Continue",
-					"Quit"
-				]
-			)
-
-			if response == .alertFirstButtonReturn {
-				return .terminateCancel
+			.windowResizability(.contentSize)
+			.windowToolbarStyle(.unifiedCompact)
+			.defaultPosition(.center)
+			.handlesExternalEvents(matching: []) // Makes sure it does not open a new window when dragging files onto the Dock icon.
+			.commands {
+				CommandGroup(replacing: .newItem) {
+					Button("Open…") {
+						appState.isFileImporterPresented = true
+					}
+						.keyboardShortcut("o")
+						.disabled(appState.isConverting)
+				}
+				CommandGroup(replacing: .help) {
+					Link("Website", destination: "https://sindresorhus.com/Gifski")
+					Link("Source Code", destination: "https://github.com/sindresorhus/Gifski")
+					Link("Gifski Library", destination: "https://github.com/ImageOptim/gifski")
+					Divider()
+					RateOnAppStoreButton(appStoreID: "1351639930")
+					// TODO: Doesn't work. (macOS 14.3)
+//					ShareAppButton(appStoreID: "1351639930")
+					Divider()
+					SendFeedbackButton()
+				}
 			}
-		}
-
-		return .terminateNow
 	}
 
-	func applicationWillTerminate(_ notification: Notification) {
-		UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-	}
+	private func setUpConfig() {
+		UserDefaults.standard.register(defaults: [
+			"NSApplicationCrashOnExceptions": true
+		])
 
-	func application(_ application: NSApplication, willPresentError error: Error) -> Error {
-		Crashlytics.recordNonFatalError(error: error)
-		return error
-	}
-}
-
-extension AppDelegate {
-	/**
-	This is called from NSApp as a service resolver.
-	*/
-	@objc
-	func convertToGif(_ pasteboard: NSPasteboard, userData: String, error: NSErrorPointer) {
-		guard let url = pasteboard.fileURLs().first else {
-			return
-		}
-
-		mainWindowController.convert(url)
+		SSApp.initSentry("https://0ab0665326c54956f3caa10fc2f525d1@o844094.ingest.sentry.io/4505991507738624")
 	}
 }

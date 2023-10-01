@@ -80,6 +80,7 @@ only_rules:
   - no_extension_access_modifier
   - no_fallthrough_only
   - no_space_in_method_call
+  - non_overridable_class_declaration
   - notification_center_detachment
   - ns_number_init_as_function_reference
   - nsobject_prefer_isequal
@@ -94,6 +95,7 @@ only_rules:
   - private_action
   - private_outlet
   - private_subject
+  - private_swiftui_state
   - private_unit_test
   - prohibited_super_call
   - protocol_property_accessors_order
@@ -133,6 +135,7 @@ only_rules:
   - unavailable_condition
   - unavailable_function
   - unneeded_break_in_switch
+  - unneeded_override
   - unneeded_parentheses_in_closure_argument
   - unowned_variable_capture
   - untyped_error_in_catch
@@ -143,6 +146,7 @@ only_rules:
   - unused_setter_value
   - valid_ibinspectable
   - vertical_parameter_alignment
+  - vertical_parameter_alignment_on_call
   - vertical_whitespace_closing_braces
   - vertical_whitespace_opening_braces
   - void_function_in_ternary
@@ -152,9 +156,10 @@ only_rules:
   - yoda_condition
 analyzer_rules:
   - capture_variable
+  - typesafe_array_init
+  - unneeded_synthesized_initializer
   - unused_declaration
   - unused_import
-  - typesafe_array_init
 for_where:
   allow_for_as_filter: true
 number_separator:
@@ -180,7 +185,7 @@ identifier_name:
     - 'y2'
     - 'z2'
 deployment_target:
-  macOS_deployment_target: '13'
+  macOS_deployment_target: '14'
 custom_rules:
   no_nsrect:
     regex: '\bNSRect\b'
@@ -202,8 +207,8 @@ custom_rules:
     regex: '\bCGFloat\('
     message: 'Use Double instead of CGFloat'
   swiftui_state_private:
-    regex: '@(State|StateObject|ObservedObject|EnvironmentObject)\s+var'
-    message: 'SwiftUI @State/@StateObject/@ObservedObject/@EnvironmentObject properties should be private'
+    regex: '@(ObservedObject|EnvironmentObject)\s+var'
+    message: 'SwiftUI @ObservedObject and @EnvironmentObject properties should be private'
   swiftui_environment_private:
     regex: '@Environment\(\\\.\w+\)\s+var'
     message: 'SwiftUI @Environment properties should be private'

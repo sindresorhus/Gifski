@@ -1,5 +1,34 @@
 import AVKit
+import SwiftUI
 
+struct TrimmingAVPlayer: NSViewControllerRepresentable {
+	typealias NSViewControllerType = TrimmingAVPlayerViewController
+
+	let asset: AVAsset
+	var controlsStyle: AVPlayerViewControlsStyle = .inline
+	var loopPlayback = false
+	var bouncePlayback = false
+	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
+
+	func makeNSViewController(context: Context) -> NSViewControllerType {
+		.init(
+			playerItem: .init(asset: asset),
+			controlsStyle: controlsStyle,
+			timeRangeDidChange: timeRangeDidChange
+		)
+	}
+
+	func updateNSViewController(_ nsViewController: NSViewControllerType, context: Context) {
+		if asset != nsViewController.currentItem.asset {
+			nsViewController.currentItem = .init(asset: asset)
+		}
+
+		nsViewController.loopPlayback = loopPlayback
+		nsViewController.bouncePlayback = bouncePlayback
+	}
+}
+
+// TODO: Move more of the logic here over to the SwiftUI view.
 /**
 A view controller containing AVPlayerView and also extending possibilities for trimming (view) customization.
 */
@@ -70,6 +99,10 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		super.init(nibName: nil, bundle: nil)
 	}
 
+	deinit {
+		print("TrimmingAVPlayerViewController - DEINIT")
+	}
+
 	@available(*, unavailable)
 	required init?(coder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
@@ -77,28 +110,35 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 	override func loadView() {
 		let playerView = TrimmingAVPlayerView()
+		playerView.allowsVideoFrameAnalysis = false
 		playerView.controlsStyle = controlsStyle
-		playerView.setupTrimmingObserver()
 		playerView.player = player
 		view = playerView
 	}
 
-	override func viewDidAppear() {
-		super.viewDidAppear()
-
-		playerView.addCheckerboardView()
-
-		// This needs to be both here and in the can trim listener.
-		playerView.hideTrimButtons()
+	override func viewDidLoad() {
+		super.viewDidLoad()
 
 		// Support replacing the item.
 		player.publisher(for: \.currentItem)
-			.sink { [weak self] _ in
+			.compactMap { $0 }
+			.flatMap { currentItem in
+				// TODO: Make a `AVPlayerItem#waitForReady` async property when using Swift 6.
+				currentItem.publisher(for: \.status)
+					.first { $0 == .readyToPlay }
+					.map { _ in currentItem }
+			}
+			.receive(on: DispatchQueue.main)
+			.sink { [weak self] in
 				guard let self else {
 					return
 				}
 
 				playerView.setupTrimmingObserver()
+
+				if let durationRange = $0.durationRange {
+					timeRangeDidChange?(durationRange)
+				}
 
 				// This is here as it needs to be refreshed when the current item changes.
 				playerView.observeTrimmedTimeRange { [weak self] timeRange in
@@ -118,6 +158,10 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	The minimum duration the trimmer can be set to.
 	*/
 	var minimumTrimDuration = 0.1
+
+	deinit {
+		print("TrimmingAVPlayerView - DEINIT")
+	}
 
 	// TODO: This should be an AsyncSequence.
 	fileprivate func observeTrimmedTimeRange(_ updateClosure: @escaping (ClosedRange<Double>) -> Void) {
@@ -152,20 +196,15 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	}
 
 	fileprivate func setupTrimmingObserver() {
-		trimmingCancellable = publisher(for: \.canBeginTrimming, options: .new)
-			.sink { [weak self] canBeginTrimming in
-				guard
-					let self,
-					canBeginTrimming
-				else {
-					return
-				}
-
-				beginTrimming(completionHandler: nil)
+		trimmingCancellable = Task {
+			do {
+				try await activateTrimming()
+				addCheckerboardView()
 				hideTrimButtons()
 				window?.makeFirstResponder(self)
-				trimmingCancellable = nil
-			}
+			} catch {}
+		}
+		.toCancellable
 	}
 
 	fileprivate func hideTrimButtons() {
@@ -204,8 +243,9 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	}
 
 	fileprivate func addCheckerboardView() {
-		let overlayView = CheckerboardView(frame: frame, clearRect: videoBounds)
+		let overlayView = NSHostingView(rootView: CheckerboardView(clearRect: videoBounds))
 		contentOverlayView?.addSubview(overlayView)
+		overlayView.constrainEdgesToSuperview()
 	}
 
 	/**

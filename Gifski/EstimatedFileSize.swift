@@ -1,64 +1,58 @@
 import SwiftUI
-import FirebaseCrashlytics
 
-final class EstimatedFileSizeModel: ObservableObject {
-	@Published var estimatedFileSize: String?
-	@Published var error: Error?
+// TODO: Rewrite the whole estimation thing.
 
-	// This is outside the scope of "file estimate", but it was easier to add this here than doing a separate SwiftUI view. This should be refactored out into a separate view when all of Gifski is SwiftUI.
-	@Published var duration = Duration.zero
+@MainActor
+@Observable
+final class EstimatedFileSizeModel {
+	var estimatedFileSize: String?
+	var error: Error?
+
+	// TODO: This is outside the scope of "file estimate", but it was easier to add this here than doing a separate SwiftUI view. This should be refactored out into a separate view when all of Gifski is SwiftUI.
+	var duration = Duration.zero
 
 	var estimatedFileSizeNaive: String {
-		Int(getNaiveEstimate()).formatted(.byteCount(style: .file))
+		get async {
+			await Int(getNaiveEstimate()).formatted(.byteCount(style: .file))
+		}
 	}
 
-	private let getConversionSettings: () -> GIFGenerator.Conversion
-	private let getNaiveEstimate: () -> Double
-	private let getIsConverting: () -> Bool
+	var getConversionSettings: (() -> GIFGenerator.Conversion)?
 	private var gifski: GIFGenerator?
-
-	init(
-		getConversionSettings: @escaping () -> GIFGenerator.Conversion,
-		getNaiveEstimate: @escaping () -> Double,
-		getIsConverting: @escaping () -> Bool
-	) {
-		self.getConversionSettings = getConversionSettings
-		self.getNaiveEstimate = getNaiveEstimate
-		self.getIsConverting = getIsConverting
-	}
 
 	private func _estimateFileSize() {
 		cancel()
-
-		guard !getIsConverting() else {
-			return
-		}
-
 		let gifski = GIFGenerator()
 		self.gifski = gifski
-
-		estimatedFileSize = nil
 		error = nil
 
-		gifski.run(getConversionSettings(), isEstimation: true) { [weak self] result in
-			guard let self else {
+		Task {
+			// TODO: Improve.
+			duration = (try? await getConversionSettings?().gifDuration) ?? .zero
+		}
+
+		Task {
+			estimatedFileSize = await estimatedFileSizeNaive
+
+			guard let settings = getConversionSettings?() else {
 				return
 			}
 
-			switch result {
-			case .success(let data):
+			do {
+				let data = try await gifski.run(settings, isEstimation: true) { _ in }
+
 				// We add 10% extra because it's better to estimate slightly too much than too little.
-				let fileSize = (Double(data.count) * gifski.sizeMultiplierForEstimation) * 1.1
+				let fileSize = await (Double(data.count) * gifski.sizeMultiplierForEstimation) * 1.1
 
 				estimatedFileSize = Int(fileSize).formatted(.byteCount(style: .file))
-			case .failure(let error):
-				switch error {
-				case .cancelled:
-					break
-				case .notEnoughFrames:
-					estimatedFileSize = estimatedFileSizeNaive
-				default:
-					Crashlytics.recordNonFatalError(error: error)
+			} catch {
+				guard !(error is CancellationError) else {
+					return
+				}
+
+				if case .notEnoughFrames = error as? GIFGenerator.Error {
+					estimatedFileSize = await estimatedFileSizeNaive
+				} else {
 					self.error = error
 				}
 			}
@@ -67,18 +61,33 @@ final class EstimatedFileSizeModel: ObservableObject {
 
 	func cancel() {
 		// It's important to call the cancel method as nil'ing out gifski doesn't properly cancel it.
-		gifski?.cancel()
+//		gifski?.cancel()
 		gifski = nil
 	}
 
 	func updateEstimate() {
 		Debouncer.debounce(delay: .seconds(0.5), action: _estimateFileSize)
-		duration = getConversionSettings().gifDuration
+	}
+
+	private func getNaiveEstimate() async -> Double {
+		guard
+			let conversionSettings = getConversionSettings?(),
+			let duration = try? await conversionSettings.gifDuration
+		else {
+			return 0
+		}
+
+		let frameCount = duration.toTimeInterval * Defaults[.outputFPS].toDouble // TODO: Needs to be live.
+		let dimensions = conversionSettings.dimensions ?? (0, 0) // TODO: Get asset dimensions.
+		var fileSize = (dimensions.width.toDouble * dimensions.height.toDouble * frameCount) / 3
+		fileSize = fileSize * (Defaults[.outputQuality] + 1.5) / 2.5
+
+		return fileSize
 	}
 }
 
 struct EstimatedFileSizeView: View {
-	@StateObject private var model: EstimatedFileSizeModel
+	@State private var model: EstimatedFileSizeModel
 
 	init(model: EstimatedFileSizeModel) {
 		_model = .init(wrappedValue: model)
@@ -92,7 +101,7 @@ struct EstimatedFileSizeView: View {
 			} else {
 				HStack(spacing: 0) {
 					Text("Estimated size: ")
-					Text(model.estimatedFileSize ?? model.estimatedFileSizeNaive)
+					Text(model.estimatedFileSize ?? "…")
 						.monospacedDigit()
 						.foregroundStyle(model.estimatedFileSize == nil ? .secondary : .primary)
 				}
@@ -103,30 +112,26 @@ struct EstimatedFileSizeView: View {
 						.padding(.leading, -4)
 						.help("Calculating file size estimate")
 				}
-					// This causes SwiftUI to crash internally on macOS 12.0 when changing the trim size many times so the estimation indicator keeps changing.
-//					.animation(.easeInOut, value: model.estimatedFileSize)
 			}
 		}
-			// It's important to set a width here as otherwise it can cause internal SwiftUI crashes on macOS 11 and 12.
-			.frame(width: 500, height: 22, alignment: .leading)
-			.overlay {
-				if model.error == nil {
-					HStack {
-						let formattedDuration = model.duration.formatted(.time(pattern: .minuteSecond(padMinuteToLength: 2, fractionalSecondsLength: 2)))
-						Text(formattedDuration)
-							.monospacedDigit()
-							.padding(.horizontal, 6)
-							.padding(.vertical, 3)
-							.background(Color.primary.opacity(0.04))
-							.clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-					}
-						.padding(.leading, 220)
+		.fillFrame(.horizontal, alignment: .leading)
+		.overlay {
+			if model.error == nil {
+				HStack {
+					let formattedDuration = model.duration.formatted(.time(pattern: .minuteSecond(padMinuteToLength: 2, fractionalSecondsLength: 2)))
+					Text(formattedDuration)
+						.monospacedDigit()
+						.padding(.horizontal, 6)
+						.padding(.vertical, 3)
+						.background(Color.primary.opacity(0.04))
+						.clipShape(.rect(cornerRadius: 4))
 				}
 			}
-			.task {
-				if model.estimatedFileSize == nil {
-					model.updateEstimate()
-				}
+		}
+		.task {
+			if model.estimatedFileSize == nil {
+				model.updateEstimate()
 			}
+		}
 	}
 }

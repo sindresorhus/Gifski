@@ -19,12 +19,13 @@ Gifski has a bunch of settings like changing dimensions, speed, frame rate, qual
 
 ## Download
 
-[![](https://tools.applemediaservices.com/api/badges/download-on-the-mac-app-store/black/en-us?size=250x83&releaseDate=1615852800)](https://apps.apple.com/app/id1351639930)
+[![](https://sindresorhus.com/assets/download-on-app-store-badge.svg)](https://apps.apple.com/app/id1351639930)
 
-Requires macOS 13 or later.
+Requires macOS 14 or later.
 
 **Older versions**
 
+- [2.23.0](https://github.com/sindresorhus/Gifski/releases/download/v2.23.0/Gifski.2.23.0.-.macOS.13.zip) for macOS 13+
 - [2.22.3](https://github.com/sindresorhus/Gifski/releases/download/v2.22.3/Gifski.2.22.3.-.macOS.12.zip) for macOS 12+
 - [2.21.2](https://github.com/sindresorhus/Gifski/releases/download/v2.21.2/Gifski.2.21.2.-.macOS.11.zip) for macOS 11+
 - [2.20.2](https://github.com/sindresorhus/Gifski/releases/download/v2.20.2/Gifski.2.20.2.-.macOS.10.15.zip) for macOS 10.15+
@@ -118,11 +119,13 @@ You can convert your video to MP4 first with [this app](https://apps.apple.com/a
 
 #### Can I contribute localizations?
 
-We don't have any immediate plans to localize the app.
+We don't plan to localize the app.
 
 #### Can you support Windows/Linux?
 
 No, but there's a [cross-platform command-line tool](https://github.com/ImageOptim/gifski) available.
+
+#### [More FAQs…](https://sindresorhus.com/apps/faq)
 
 ## Press
 
@@ -139,12 +142,6 @@ No, but there's a [cross-platform command-line tool](https://github.com/ImageOpt
 
 - [Sindre Sorhus](https://github.com/sindresorhus)
 - [Kornel Lesiński](https://github.com/kornelski)
-
-**Former**
-
-- [Lars-Jørgen Kristiansen](https://github.com/LarsJK)
-- [Boy van Amstel](https://github.com/boyvanamstel)
-- [Łukasz Mróz](https://github.com/sunshinejr)
 
 ## Related
 

@@ -1,6 +1,6 @@
-import Cocoa
-import FirebaseCrashlytics
+import SwiftUI
 
+// TODO: Actor
 final class Gifski {
 	enum Loop {
 		case forever
@@ -18,12 +18,12 @@ final class Gifski {
 	// TODO: Make this when the rest of the app uses more async
 //	var progress: AsyncStream<Data> {}
 
-	init?(
+	init(
 		dimensions: (width: Int, height: Int)? = nil,
 		quality: Double,
 		loop: Loop,
 		fast: Bool = false
-	) {
+	) throws {
 		let loopCount = {
 			switch loop {
 			case .forever:
@@ -36,22 +36,25 @@ final class Gifski {
 			}
 		}()
 
+		assert(quality >= 0.1)
+		assert(quality <= 1)
+
 		let settings = GifskiSettings(
 			width: UInt32(clamping: dimensions?.width ?? 0),
 			height: UInt32(clamping: dimensions?.height ?? 0),
-			quality: UInt8(clamping: Int((quality * 100).rounded())),
+			quality: UInt8(clamping: Int((quality * 100).rounded()).clamped(to: 1...100)),
 			fast: fast,
 			repeat: Int16(clamping: loopCount)
 		)
 
 		guard let wrapper = GifskiWrapper(settings) else {
-			return nil
+			throw GifskiWrapper.Error.invalidInput
 		}
 
 		self.wrapper = wrapper
 
 		wrapper.setErrorMessageCallback {
-			Crashlytics.crashlytics().log($0)
+			SSApp.reportError($0)
 		}
 
 		wrapper.setProgressCallback { [weak self] in

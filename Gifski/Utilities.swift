@@ -1,27 +1,21 @@
 import SwiftUI
+import AVKit
 import Combine
 import AVFoundation
-import class Quartz.QLPreviewPanel
-import StoreKit.SKStoreReviewController
 import Accelerate.vImage
+import AppIntents
 import Defaults
+import Sentry
 
 typealias Defaults = _Defaults
 typealias Default = _Default
 typealias AnyCancellable = Combine.AnyCancellable
 
 
-/**
-Convenience function for initializing an object and modifying its properties
+// TODO: Check if any of these can be removed when targeting macOS 15.
+extension NSItemProvider: @unchecked Sendable {}
 
-```
-let label = with(NSTextField()) {
-	$0.stringValue = "Foo"
-	$0.textColor = .systemBlue
-	view.addSubview($0)
-}
-```
-*/
+
 @discardableResult
 func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
 	var this = item
@@ -46,6 +40,76 @@ extension DispatchQueue {
 }
 
 
+extension CGSize: Hashable {
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(width)
+		hasher.combine(height)
+	}
+}
+
+extension CGPoint: Hashable {
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(x)
+		hasher.combine(y)
+	}
+}
+
+extension CGRect: Hashable {
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(origin)
+		hasher.combine(size)
+	}
+}
+
+
+
+func asyncNilCoalescing<T>(
+	_ optional: T?,
+	default defaultValue: @escaping @autoclosure () async throws -> T
+) async rethrows -> T {
+	guard let optional else {
+		return try await defaultValue()
+	}
+
+	return optional
+}
+
+func asyncNilCoalescing<T>(
+	_ optional: T?,
+	default defaultValue: @escaping @autoclosure () async throws -> T?
+) async rethrows -> T? {
+	guard let optional else {
+		return try await defaultValue()
+	}
+
+	return optional
+}
+
+
+extension BinaryInteger {
+	var toDouble: Double { Double(Int(self)) }
+}
+
+extension BinaryFloatingPoint {
+	var toInt: Int? { self >= Self(Int.min) && self <= Self(Int.max) ? Int(self) : nil }
+
+	var toIntAndClampingIfNeeded: Int { Int(clamped(to: Self(Int.min)...Self(Int.max))) }
+}
+
+
+extension Link<Label<Text, Image>> {
+	init(
+		_ title: String,
+		systemImage: String,
+		destination: URL
+	) {
+		self.init(destination: destination) {
+			Label(title, systemImage: systemImage)
+		}
+	}
+}
+
+
 extension NSView {
 	func shake(duration: Duration = .seconds(0.3), direction: NSUserInterfaceLayoutOrientation) {
 		let translation = direction == .horizontal ? "x" : "y"
@@ -58,79 +122,82 @@ extension NSView {
 }
 
 
-/**
-This is useful as `awakeFromNib` is not called for programatically created views.
-*/
-class SSView: NSView { // swiftlint:disable:this final_class
-	var didAppearWasCalled = false
-
-	/**
-	Should be overridden in subclasses.
-	*/
-	func didAppear() {}
-
-	override func viewDidMoveToSuperview() {
-		super.viewDidMoveToSuperview()
-
-		if !didAppearWasCalled {
-			didAppearWasCalled = true
-			didAppear()
-		}
-	}
-}
-
-
-extension NSWindow {
-	// Helper.
-	private static func centeredOnScreen(rect: CGRect) -> CGRect {
-		guard let screen = NSScreen.main else {
-			return rect
-		}
-
-		// Looks better than perfectly centered.
-		let yOffset = 0.12
-
-		return rect.centered(in: screen.visibleFrame, xOffsetPercent: 0, yOffsetPercent: yOffset)
-	}
-
-	static let defaultContentSize = CGSize(width: 480, height: 300)
-
-	static var defaultContentRect: CGRect {
-		centeredOnScreen(rect: defaultContentSize.cgRect)
-	}
-
-	static let defaultStyleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
-
-	static func centeredWindow(size: CGSize = defaultContentSize) -> Self {
-		let window = self.init(
-			contentRect: NSWindow.defaultContentRect,
-			styleMask: NSWindow.defaultStyleMask,
-			backing: .buffered,
-			defer: true
+struct SendFeedbackButton: View {
+	var body: some View {
+		Link(
+			"Feedback & Support",
+			systemImage: "exclamationmark.bubble",
+			destination: SSApp.appFeedbackUrl()
 		)
-		window.setContentSize(size)
-		window.centerNatural()
-		return window
-	}
-
-	convenience init(contentRect: CGRect) {
-		self.init(contentRect: contentRect, styleMask: NSWindow.defaultStyleMask, backing: .buffered, defer: true)
-	}
-
-	/**
-	Moves the window to the center of the screen, slightly more in the center than `window#center()`.
-	*/
-	func centerNatural() {
-		setFrame(NSWindow.centeredOnScreen(rect: frame), display: true)
 	}
 }
 
 
-extension NSWindowController {
+struct ShareAppButton: View {
+	let appStoreID: String
+
+	var body: some View {
+		ShareLink("Share App", item: "https://apps.apple.com/app/id\(appStoreID)")
+	}
+}
+
+
+struct RateOnAppStoreButton: View {
+	let appStoreID: String
+
+	var body: some View {
+		Link(
+			"Rate App",
+			systemImage: "star",
+			destination: URL(string: "itms-apps://apps.apple.com/app/id\(appStoreID)?action=write-review")!
+		)
+	}
+}
+
+
+// NOTE: This is moot with macOS 12, but `.values` property provided is super buggy and crashes a lot.
+extension Publisher where Failure == Never {
+	var toAsyncStream: AsyncStream<Output> {
+		AsyncStream(Output.self) { continuation in
+			let cancellable = sink { completion in
+				switch completion {
+				case .finished:
+					continuation.finish()
+				}
+			} receiveValue: { output in
+				continuation.yield(output)
+			}
+
+			continuation.onTermination = { [cancellable] _ in
+				cancellable.cancel()
+			}
+		}
+	}
+}
+
+
+extension Task {
 	/**
-	Expose the `view` like in NSViewController.
+	Make a task cancellable.
+
+	- Important: You need to assign it to a cancellable property for it to be cancelled. It's not weak by default like Combine.
 	*/
-	var view: NSView? { window?.contentView }
+	var toCancellable: AnyCancellable { .init(cancel) }
+}
+
+
+extension Sequence {
+	func asyncMap<T>(
+		_ transform: (Element) async throws -> T
+	) async rethrows -> [T] {
+		var values = [T]()
+
+		for element in self {
+			try await values.append(transform(element))
+		}
+
+		return values
+	}
 }
 
 
@@ -183,28 +250,21 @@ extension NSWindow {
 }
 
 
-extension NSWindow {
-	var toolbarView: NSView? { standardWindowButton(.closeButton)?.superview }
-	var titlebarView: NSView? { toolbarView?.superview }
-	var titlebarHeight: Double { titlebarView?.bounds.height ?? 0 }
-}
-
-
-private func __windowSheetPosition(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
-	// Adjust sheet position so it goes below the traffic lights.
-	if window.styleMask.contains(.fullSizeContentView) {
-		return rect.offsetBy(dx: 0, dy: -window.titlebarHeight)
+extension Binding<Double> {
+	var doubleToInt: Binding<Int> {
+		map(
+			get: { Int($0) },
+			set: { Double($0) }
+		)
 	}
-
-	return rect
 }
 
-/**
-- Note: Ensure you set `window.delegate = self` in the NSWindowController subclass.
-*/
-extension NSWindowController: NSWindowDelegate {
-	public func window(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: CGRect) -> CGRect {
-		__windowSheetPosition(window, willPositionSheet: sheet, using: rect)
+extension Binding<Int> {
+	var intToDouble: Binding<Double> {
+		map(
+			get: { Double($0) },
+			set: { Int($0) }
+		)
 	}
 }
 
@@ -364,102 +424,6 @@ extension NSAlert {
 }
 
 
-extension AVAssetImageGenerator {
-	struct CompletionHandlerResult {
-		let image: CGImage
-		let requestedTime: CMTime
-		let actualTime: CMTime
-		let completedCount: Int
-		let totalCount: Int
-		let isFinished: Bool
-		let isFinishedIgnoreImage: Bool
-	}
-
-	/**
-	- Note: If you use `result.completedCount`, don't forget to update its usage in each `completionHandler` call as it can change if frames are skipped, for example, blank frames.
-	*/
-	func generateCGImagesAsynchronously(
-		forTimePoints timePoints: [CMTime],
-		completionHandler: @escaping (Swift.Result<CompletionHandlerResult, Error>) -> Void
-	) {
-		let times = timePoints.map { NSValue(time: $0) }
-		var totalCount = times.count
-		var completedCount = 0
-		var decodeFailureFrameCount = 0
-
-		generateCGImagesAsynchronously(forTimes: times) { requestedTime, image, actualTime, result, error in
-			switch result {
-			case .succeeded:
-				completedCount += 1
-
-				completionHandler(
-					.success(
-						CompletionHandlerResult(
-							image: image!,
-							requestedTime: requestedTime,
-							actualTime: actualTime,
-							completedCount: completedCount,
-							totalCount: totalCount,
-							isFinished: completedCount == totalCount,
-							isFinishedIgnoreImage: false
-						)
-					)
-				)
-			case .failed:
-				// Handles blank frames in the middle of the video.
-				// TODO: Report the `xcrun` bug to Apple if it's still an issue in macOS 11.
-				if let error = error as? AVError {
-					// Ugly workaround for when the last frame is a failure.
-					func finishWithoutImageIfNeeded() {
-						guard completedCount == totalCount else {
-							return
-						}
-
-						completionHandler(
-							.success(
-								CompletionHandlerResult(
-									image: .empty,
-									requestedTime: requestedTime,
-									actualTime: actualTime,
-									completedCount: completedCount,
-									totalCount: totalCount,
-									isFinished: true,
-									isFinishedIgnoreImage: true
-								)
-							)
-						)
-					}
-
-					// We ignore blank frames.
-					if error.code == .noImageAtTime {
-						totalCount -= 1
-						print("No image at time. Completed: \(completedCount) Total: \(totalCount)")
-						finishWithoutImageIfNeeded()
-						break
-					}
-
-					// macOS 11 (still an issue in macOS 11.2) started throwing “decode failed” error for some frames in screen recordings. As a workaround, we ignore these as the GIF seems fine still.
-					if error.code == .decodeFailed {
-						decodeFailureFrameCount += 1
-						totalCount -= 1
-						print("Decode failure. Completed: \(completedCount) Total: \(totalCount)")
-						Crashlytics.recordNonFatalError(error: error, userInfo: ["requestedTime": requestedTime.seconds])
-						finishWithoutImageIfNeeded()
-						break
-					}
-				}
-
-				completionHandler(.failure(error!))
-			case .cancelled:
-				completionHandler(.failure(CancellationError()))
-			@unknown default:
-				assertionFailure("AVAssetImageGenerator.generateCGImagesAsynchronously() received a new enum case. Please handle it.")
-			}
-		}
-	}
-}
-
-
 extension CMTimeScale {
 	/**
 	Apple-recommended scale for video.
@@ -501,18 +465,6 @@ extension Strideable where Stride: SignedInteger {
 
 	func clamped(to range: PartialRangeUpTo<Self>) -> Self {
 		min(self, range.upperBound.advanced(by: -1))
-	}
-}
-
-
-extension FixedWidthInteger {
-	/**
-	Returns the integer formatted as a human readble file size.
-
-	Example: `2.3 GB`
-	*/
-	var bytesFormattedAsFileSize: String {
-		ByteCountFormatter.string(fromByteCount: Int64(self), countStyle: .file)
 	}
 }
 
@@ -561,7 +513,7 @@ extension CGSize {
 	/**
 	Example: `140×100`
 	*/
-	var formatted: String { "\(width.formatted())×\(height.formatted())" }
+	var formatted: String { "\(Double(width).formatted(.number.grouping(.never)))\u{2009}×\u{2009}\(Double(height).formatted(.number.grouping(.never)))" }
 }
 
 
@@ -576,26 +528,9 @@ extension NSImage {
 
 
 extension CGImage {
-	var nsImage: NSImage { NSImage(cgImage: self) }
+	var toNSImage: NSImage { NSImage(cgImage: self) }
 }
 
-
-extension AVAssetImageGenerator {
-	func imageSync(at time: CMTime) -> CGImage? {
-		(try? copyCGImage(at: time, actualTime: nil))
-	}
-}
-
-// TODO: Remove this when I converted everything to async.
-extension AVAsset {
-	func imageSync(at time: CMTime) -> CGImage? {
-		let imageGenerator = AVAssetImageGenerator(asset: self)
-		imageGenerator.appliesPreferredTrackTransform = true
-		imageGenerator.requestedTimeToleranceAfter = .zero
-		imageGenerator.requestedTimeToleranceBefore = .zero
-		return imageGenerator.imageSync(at: time)
-	}
-}
 
 extension AVAsset {
 	func image(at time: CMTime) async throws -> CGImage? {
@@ -622,12 +557,12 @@ extension AVAssetTrack {
 
 	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
 	*/
-	func trimmingBlankFrames() throws -> AVAssetTrack {
+	func trimmingBlankFrames() async throws -> AVAssetTrack {
 		// See https://github.com/sindresorhus/Gifski/issues/254 for context.
 		// In short: Some codecs seem to always report a sample buffer size of 0 when reading, breaking this function. (macOS 11.6)
 		let buggyCodecs = ["v210", "BGRA"]
 		if
-			let codecIdentifier,
+			let codecIdentifier = try await codecIdentifier,
 			buggyCodecs.contains(codecIdentifier)
 		{
 			throw VideoTrimmingError.codecNotSupported
@@ -640,6 +575,8 @@ extension AVAssetTrack {
 		else {
 			throw VideoTrimmingError.compositionCouldNotBeCreated
 		}
+
+		let (preferredTransform, timeRange) = try await load(.preferredTransform, .timeRange)
 
 		wrappedTrack.preferredTransform = preferredTransform
 
@@ -705,12 +642,12 @@ extension AVAsset {
 
 	This can be useful to trim blank frames from files produced by tools like the iOS simulator screen recorder.
 	*/
-	func trimmingBlankFramesFromFirstVideoTrack() throws -> AVAsset {
-		guard let firstVideoTrack else {
+	func trimmingBlankFramesFromFirstVideoTrack() async throws -> AVAsset {
+		guard let firstVideoTrack = try await firstVideoTrack else {
 			throw VideoTrimmingError.assetIsMissingVideoTrack
 		}
 
-		let trimmedTrack = try firstVideoTrack.trimmingBlankFrames()
+		let trimmedTrack = try await firstVideoTrack.trimmingBlankFrames()
 
 		guard let trimmedAsset = trimmedTrack.asset else {
 			assertionFailure("Track is somehow missing asset")
@@ -727,70 +664,82 @@ extension AVAssetTrack {
 	Returns the dimensions of the track if it's a video.
 	*/
 	var dimensions: CGSize? {
-		guard naturalSize != .zero else {
-			return nil
+		get async throws {
+			let (naturalSize, preferredTransform) = try await load(.naturalSize, .preferredTransform)
+
+			guard naturalSize != .zero else {
+				return nil
+			}
+
+			let size = naturalSize.applying(preferredTransform)
+			let preferredSize = CGSize(width: abs(size.width), height: abs(size.height))
+
+			// Workaround for https://github.com/sindresorhus/gifski-app/issues/76
+			guard preferredSize != .zero else {
+				// SInce this is just a fallback, we don't want to throw the error here.
+				return try? await asset?.image(at: CMTime(seconds: 0, preferredTimescale: .video))?.size
+			}
+
+			return preferredSize
 		}
-
-		let size = naturalSize.applying(preferredTransform)
-		let preferredSize = CGSize(width: abs(size.width), height: abs(size.height))
-
-		// Workaround for https://github.com/sindresorhus/Gifski/issues/76
-		guard preferredSize != .zero else {
-			// TODO: Use async version.
-			return asset?.imageSync(at: CMTime(seconds: 0, preferredTimescale: .video))?.size
-		}
-
-		return preferredSize
 	}
 
 	/**
 	Returns the frame rate of the track if it's a video.
 	*/
-	var frameRate: Double? { Double(nominalFrameRate) }
+	var frameRate: Double? {
+		get async throws {
+			Double(try await load(.nominalFrameRate))
+		}
+	}
 
 	/**
 	Returns the aspect ratio of the track if it's a video.
 	*/
 	var aspectRatio: Double? {
-		guard let dimensions else {
-			return nil
+		get async throws {
+			try await dimensions?.aspectRatio
 		}
-
-		return dimensions.height / dimensions.width
 	}
 
+	// TODO: Deprecate this. The system now provides strongly-typed identifiers.
 	/**
 	Example:
 	`avc1` (video)
 	`aac` (audio)
 	*/
 	var codecIdentifier: String? {
-		guard
-			let rawDescription = formatDescriptions.first
-		else {
-			return nil
+		get async throws {
+			try await load(.formatDescriptions).first?.mediaSubType.rawValue.fourCharCodeToString().nilIfEmpty
 		}
-
-		// This is the only way to do it. It's guaranteed to be this type.
-		// swiftlint:disable:next force_cast
-		let formatDescription = rawDescription as! CMFormatDescription
-
-		return CMFormatDescriptionGetMediaSubType(formatDescription).fourCharCodeToString().nilIfEmpty
 	}
 
-	// TODO: When I switch to the async `.load()` method to retrieve video properties, this property is moot.
+	// TODO: Rename to `format`?
 	var codec: AVFormat? {
-		guard let codecIdentifier else {
-			return nil
-		}
+		get async throws {
+			guard let codecString = try await codecIdentifier else {
+				return nil
+			}
 
-		return AVFormat(fourCC: codecIdentifier)
+			return AVFormat(fourCC: codecString)
+		}
 	}
 
 	/**
 	Use this for presenting the codec to the user. This is either the codec name, if known, or the codec identifier. You can just default to `"Unknown"` if this is `nil`.
 	*/
-	var codecTitle: String? { codec?.description ?? codecIdentifier }
+	var codecTitle: String? {
+		get async throws {
+			// TODO: Doesn't work because of missing `reasync`.
+			// try await codec?.description ?? codecIdentifier
+
+			guard let codec = try await codec else {
+				return try await codecIdentifier
+			}
+
+			return codec.description
+		}
+	}
 
 	/**
 	Returns a debug string with the media format.
@@ -798,30 +747,30 @@ extension AVAssetTrack {
 	Example: `vide/avc1`
 	*/
 	var mediaFormat: String {
-		// This is the only way to do it. It's guaranteed to be this type.
-		// swiftlint:disable:next force_cast
-		let descriptions = formatDescriptions as! [CMFormatDescription]
+		get async throws {
+			try await load(.formatDescriptions).map {
+				// Get string representation of media type (vide, soun, sbtl, etc.)
+				let type = $0.mediaType.description
 
-		var format = [String]()
-		for description in descriptions {
-			// Get string representation of media type (vide, soun, sbtl, etc.)
-			let type = CMFormatDescriptionGetMediaType(description).fourCharCodeToString()
+				// Get string representation media subtype (avc1, aac, tx3g, etc.)
+				let subType = $0.mediaSubType.description
 
-			// Get string representation media subtype (avc1, aac, tx3g, etc.)
-			let subType = CMFormatDescriptionGetMediaSubType(description).fourCharCodeToString()
-
-			format.append("\(type)/\(subType)")
+				return "\(type)/\(subType)"
+			}
+				.joined(separator: ",")
 		}
-
-		return format.joined(separator: ",")
 	}
 
 	/**
-	Estimated file size of the track in bytes.
+	Estimated file size of the track, in bytes
 	*/
 	var estimatedFileSize: Int {
-		let dataRateInBytes = Double(estimatedDataRate / 8)
-		return Int(timeRange.duration.seconds * dataRateInBytes)
+		get async throws {
+			let (estimatedDataRate, timeRange) = try await load(.estimatedDataRate, .timeRange)
+			let dataRateInBytes = Double(estimatedDataRate / 8)
+			let bytes = timeRange.duration.seconds * dataRateInBytes
+			return Int(bytes)
+		}
 	}
 }
 
@@ -830,7 +779,18 @@ extension AVAssetTrack {
 	/**
 	Whether the track's duration is the same as the total asset duration.
 	*/
-	var isFullDuration: Bool { timeRange.duration == asset?.duration }
+	var isFullDuration: Bool {
+		get async throws {
+			guard let asset else {
+				return false
+			}
+
+			async let timeRange = load(.timeRange)
+			async let assetDuration = asset.load(.duration)
+
+			return try await (timeRange.duration == assetDuration)
+		}
+	}
 
 	/**
 	Extract the track into a new AVAsset.
@@ -841,8 +801,9 @@ extension AVAssetTrack {
 	*/
 	func extractToNewAsset(
 		_ modify: ((AVMutableCompositionTrack) -> Void)? = nil
-	) -> AVAsset? {
+	) async throws -> AVAsset? {
 		let composition = AVMutableComposition()
+		let (timeRange, preferredTransform) = try await load(.timeRange, .preferredTransform)
 
 		guard
 			let track = composition.addMutableTrack(withMediaType: mediaType, preferredTrackID: kCMPersistentTrackID_Invalid),
@@ -1199,192 +1160,245 @@ extension AVAsset {
 	Whether the first video track is decodable.
 	*/
 	var isVideoDecodable: Bool {
-		guard
-			isReadable,
-			let firstVideoTrack = tracks(withMediaType: .video).first
-		else {
-			return false
-		}
+		get async throws {
+			guard
+				try await load(.isReadable),
+				let firstVideoTrack = try await firstVideoTrack
+			else {
+				return false
+			}
 
-		return firstVideoTrack.isDecodable
+			return try await firstVideoTrack.load(.isDecodable)
+		}
 	}
 
 	/**
 	Returns a boolean of whether there are any video tracks.
 	*/
-	var hasVideo: Bool { !tracks(withMediaType: .video).isEmpty }
+	var hasVideo: Bool {
+		get async throws {
+			try await !loadTracks(withMediaType: .video).isEmpty
+		}
+	}
 
 	/**
 	Returns a boolean of whether there are any audio tracks.
 	*/
-	var hasAudio: Bool { !tracks(withMediaType: .audio).isEmpty }
+	var hasAudio: Bool {
+		get async throws {
+			try await !loadTracks(withMediaType: .audio).isEmpty
+		}
+	}
 
 	/**
 	Returns the first video track if any.
 	*/
-	var firstVideoTrack: AVAssetTrack? { tracks(withMediaType: .video).first }
+	var firstVideoTrack: AVAssetTrack? {
+		get async throws {
+			try await loadTracks(withMediaType: .video).first
+		}
+	}
 
 	/**
 	Returns the first audio track if any.
 	*/
-	var firstAudioTrack: AVAssetTrack? { tracks(withMediaType: .audio).first }
+	var firstAudioTrack: AVAssetTrack? {
+		get async throws {
+			try await loadTracks(withMediaType: .audio).first
+		}
+	}
 
 	/**
 	Returns the dimensions of the first video track if any.
 	*/
-	var dimensions: CGSize? { firstVideoTrack?.dimensions }
+	var dimensions: CGSize? {
+		get async throws {
+			try await firstVideoTrack?.dimensions
+		}
+	}
 
 	/**
 	Returns the frame rate of the first video track if any.
 	*/
-	var frameRate: Double? { firstVideoTrack?.frameRate }
+	var frameRate: Double? {
+		get async throws {
+			try await firstVideoTrack?.frameRate
+		}
+	}
 
 	/**
 	Returns the aspect ratio of the first video track if any.
 	*/
-	var aspectRatio: Double? { firstVideoTrack?.aspectRatio }
+	var aspectRatio: Double? {
+		get async throws {
+			try await firstVideoTrack?.aspectRatio
+		}
+	}
 
 	/**
 	Returns the video codec of the first video track if any.
 	*/
-	var videoCodec: AVFormat? { firstVideoTrack?.codec }
+	var videoCodec: AVFormat? {
+		get async throws {
+			try await firstVideoTrack?.codec
+		}
+	}
 
 	/**
 	Returns the audio codec of the first audio track if any.
 
 	Example: `aac`
 	*/
-	var audioCodec: String? { firstAudioTrack?.codecIdentifier }
+	var audioCodec: String? {
+		get async throws {
+			try await firstAudioTrack?.codecIdentifier
+		}
+	}
 
 	/**
-	The file size of the asset in bytes.
+	The file size of the asset, in bytes.
 
 	- Note: If self is an `AVAsset` and not an `AVURLAsset`, the file size will just be an estimate.
 	*/
 	var fileSize: Int {
-		guard let urlAsset = self as? AVURLAsset else {
-			return tracks.sum(\.estimatedFileSize)
-		}
+		get async throws {
+			guard let urlAsset = self as? AVURLAsset else {
+				// TODO: Use `concurrentMap` when targeting macOS 15.
+				return try await load(.tracks)
+					.asyncMap { try await $0.estimatedFileSize }
+					.sum()
+			}
 
-		return urlAsset.url.fileSize
+			return urlAsset.url.fileSize
+		}
 	}
 
-	var fileSizeFormatted: String { fileSize.bytesFormattedAsFileSize }
+	var fileSizeFormatted: String {
+		get async throws {
+			try await fileSize.formatted(.byteCount(style: .file))
+		}
+	}
 }
+
 
 extension AVAsset {
 	/**
 	Returns debug info for the asset to use in logging and error messages.
 	*/
 	var debugInfo: String {
-		var output = [String]()
+		get async throws {
+			var output = [String]()
 
-		let durationFormatter = DateComponentsFormatter()
-		durationFormatter.unitsStyle = .abbreviated
+			let durationFormatter = DateComponentsFormatter()
+			durationFormatter.unitsStyle = .abbreviated
 
-		output.append(
-			"""
-			## AVAsset debug info ##
-			Extension: \(describing: (self as? AVURLAsset)?.url.fileExtension)
-			Video codec: \(videoCodec?.debugDescription ?? firstVideoTrack?.codecIdentifier ?? "nil")
-			Audio codec: \(describing: audioCodec)
-			Duration: \(describing: durationFormatter.stringSafe(from: duration.seconds))
-			Dimension: \(describing: dimensions?.formatted)
-			Frame rate: \(describing: frameRate?.rounded(toDecimalPlaces: 2).formatted())
-			File size: \(fileSizeFormatted)
-			Is readable: \(isReadable)
-			Is playable: \(isPlayable)
-			Is exportable: \(isExportable)
-			Has protected content: \(hasProtectedContent)
-			"""
-		)
+			let fileExtension = (self as? AVURLAsset)?.url.fileExtension
+			async let codec = asyncNilCoalescing(videoCodec?.debugDescription, default: await self.firstVideoTrack?.codecIdentifier) ?? ""
+			async let audioCodec = audioCodec
+			async let duration = Duration.seconds(load(.duration).seconds).formatted()
+			async let dimensions = dimensions?.formatted
+			async let frameRate = frameRate?.rounded(toDecimalPlaces: 2).formatted()
+			async let fileSizeFormatted = fileSizeFormatted
+			async let (isReadable, isPlayable, isExportable, hasProtectedContent) = load(.isReadable, .isPlayable, .isExportable, .hasProtectedContent)
 
-		for track in tracks {
 			output.append(
 				"""
-				Track #\(track.trackID)
-				----
-				Type: \(track.mediaType.debugDescription)
-				Codec: \(describing: track.mediaType == .video ? (track.codec?.debugDescription ?? track.codecIdentifier) : track.codecIdentifier)
-				Duration: \(describing: durationFormatter.stringSafe(from: track.timeRange.duration.seconds))
-				Dimensions: \(describing: track.dimensions?.formatted)
-				Natural size: \(describing: track.naturalSize)
-				Frame rate: \(describing: track.frameRate?.rounded(toDecimalPlaces: 2).formatted())
-				Is playable: \(track.isPlayable)
-				Is decodable: \(track.isDecodable)
-				----
+				## AVAsset debug info ##
+				Extension: \(describing: fileExtension)
+				Video codec: \(try await codec)
+				Audio codec: \(describing: try await audioCodec)
+				Duration: \(describing: try await duration)
+				Dimension: \(describing: try await dimensions)
+				Frame rate: \(describing: try await frameRate)
+				File size: \(try await fileSizeFormatted)
+				Is readable: \(try await isReadable)
+				Is playable: \(try await isPlayable)
+				Is exportable: \(try await isExportable)
+				Has protected content: \(try await hasProtectedContent)
 				"""
 			)
-		}
 
-		return output.joined(separator: "\n\n")
+			for track in try await load(.tracks) {
+				async let codec = track.mediaType == .video ? asyncNilCoalescing(track.codec?.debugDescription, default: try await track.codecIdentifier) : track.codecIdentifier
+				async let duration = Duration.seconds(track.load(.timeRange).duration.seconds).formatted()
+				async let dimensions = track.dimensions?.formatted
+				async let frameRate = track.frameRate?.rounded(toDecimalPlaces: 2).formatted()
+				async let (naturalSize, isPlayable, isDecodable) = track.load(.naturalSize, .isPlayable, .isDecodable)
+
+				output.append(
+					"""
+					Track #\(track.trackID)
+					----
+					Type: \(track.mediaType.debugDescription)
+					Codec: \(describing: try await codec)
+					Duration: \(describing: try await duration)
+					Dimensions: \(describing: try await dimensions)
+					Natural size: \(describing: try await naturalSize)
+					Frame rate: \(describing: try await frameRate)
+					Is playable: \(try await isPlayable)
+					Is decodable: \(try await isDecodable)
+					----
+					"""
+				)
+			}
+
+			return output.joined(separator: "\n\n")
+		}
 	}
 }
 
 
 extension AVAsset {
-	struct VideoMetadata {
+	struct VideoMetadata: Hashable {
 		let dimensions: CGSize
-		let duration: Double
+		let duration: Duration
 		let frameRate: Double
 		let fileSize: Int
 	}
 
 	var videoMetadata: VideoMetadata? {
-		guard
-			let dimensions,
-			let frameRate
-		else {
-			return nil
-		}
+		get async throws {
+			async let dimensionsResult = dimensions
+			async let frameRateResult = frameRate
+			async let fileSizeResult = fileSize
+			async let durationResult = load(.duration)
 
-		return VideoMetadata(
-			dimensions: dimensions,
-			duration: duration.seconds,
-			frameRate: frameRate,
-			fileSize: fileSize
-		)
+			guard
+				let dimensions = try await dimensionsResult,
+				let frameRate = try await frameRateResult
+			else {
+				return nil
+			}
+
+			let fileSize = try await fileSizeResult
+			let duration = try await durationResult
+
+			return .init(
+				dimensions: dimensions,
+				duration: .seconds(duration.seconds),
+				frameRate: frameRate,
+				fileSize: fileSize
+			)
+		}
 	}
 }
 
 extension URL {
-	var videoMetadata: AVAsset.VideoMetadata? { AVURLAsset(url: self).videoMetadata }
+	var videoMetadata: AVAsset.VideoMetadata? {
+		get async throws {
+			try await AVURLAsset(url: self).videoMetadata
+		}
+	}
 
-	var isVideoDecodable: Bool { AVAsset(url: self).isVideoDecodable }
+	var isVideoDecodable: Bool {
+		get async throws {
+			try await AVAsset(url: self).isVideoDecodable
+		}
+	}
 }
 
 
 extension NSView {
-	func center(inView view: NSView) {
-		translatesAutoresizingMaskIntoConstraints = false
-
-		NSLayoutConstraint.activate([
-			centerXAnchor.constraint(equalTo: view.centerXAnchor),
-			centerYAnchor.constraint(equalTo: view.centerYAnchor)
-		])
-	}
-
-	func centerX(inView view: NSView) {
-		translatesAutoresizingMaskIntoConstraints = false
-
-		NSLayoutConstraint.activate([
-			centerXAnchor.constraint(equalTo: view.centerXAnchor)
-		])
-	}
-
-	func centerY(inView view: NSView) {
-		translatesAutoresizingMaskIntoConstraints = false
-
-		NSLayoutConstraint.activate([
-			centerYAnchor.constraint(equalTo: view.centerYAnchor)
-		])
-	}
-
-	func addSubviewToCenter(_ view: NSView) {
-		addSubview(view)
-		view.center(inView: superview!)
-	}
-
 	func constrainEdgesToSuperview(with insets: NSEdgeInsets = .zero) {
 		guard let superview else {
 			assertionFailure("There is no superview for this view")
@@ -1401,196 +1415,6 @@ extension NSView {
 			bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -insets.bottom)
 		])
 	}
-
-	func constrain(to size: CGSize) {
-		NSLayoutConstraint.activate([
-			widthAnchor.constraint(equalToConstant: size.width),
-			heightAnchor.constraint(equalToConstant: size.height)
-		])
-	}
-}
-
-
-extension NSView {
-	/**
-	Used to map logical edges to its representing `NSView` layout anchors.
-	This type can be used for all auto-layout functions.
-	*/
-	enum ConstraintEdge {
-		enum Vertical {
-			case top
-			case bottom
-
-			fileprivate var constraintKeyPath: KeyPath<NSView, NSLayoutYAxisAnchor> {
-				switch self {
-				case .top:
-					\.topAnchor
-				case .bottom:
-					\.bottomAnchor
-				}
-			}
-		}
-
-		enum Horizontal {
-			case left
-			case right
-
-			fileprivate var constraintKeyPath: KeyPath<NSView, NSLayoutXAxisAnchor> {
-				switch self {
-				case .left:
-					\.leftAnchor
-				case .right:
-					\.rightAnchor
-				}
-			}
-		}
-	}
-
-	/**
-	Sets constraints to match the given edges of this view and the given view.
-
-	- parameter verticalEdge: The vertical edge to match with the given view.
-	- parameter horizontalEdge: The horizontal edge to match with the given view.
-	- parameter padding: The constant for the constraint.
-	*/
-	func constrainToEdges(
-		verticalEdge: ConstraintEdge.Vertical? = nil,
-		horizontalEdge: ConstraintEdge.Horizontal? = nil,
-		view: NSView,
-		padding: Double = 0
-	) {
-		translatesAutoresizingMaskIntoConstraints = false
-
-		var constraints = [NSLayoutConstraint]()
-
-		if let verticalEdge {
-			constraints.append(
-				self[keyPath: verticalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: verticalEdge.constraintKeyPath], constant: padding)
-			)
-		}
-
-		if let horizontalEdge {
-			constraints.append(
-				self[keyPath: horizontalEdge.constraintKeyPath].constraint(equalTo: view[keyPath: horizontalEdge.constraintKeyPath], constant: padding)
-			)
-		}
-
-		NSLayoutConstraint.activate(constraints)
-	}
-}
-
-
-extension NSControl {
-	/**
-	Trigger the `.action` selector on the control.
-	*/
-	func triggerAction() {
-		sendAction(action, to: target)
-	}
-}
-
-
-extension NSFont {
-	/**
-	The point size of the font.
-	*/
-	var size: Double { pointSize }
-
-	var traits: [NSFontDescriptor.TraitKey: AnyObject] {
-		fontDescriptor.object(forKey: .traits) as! [NSFontDescriptor.TraitKey: AnyObject]
-	}
-
-	var weight: Weight { .init(traits[.weight] as! Double) }
-}
-
-
-/**
-```
-let foo = Label(text: "Foo")
-```
-*/
-class Label: NSTextField { // swiftlint:disable:this final_class
-	var text: String {
-		get { stringValue }
-		set {
-			stringValue = newValue
-		}
-	}
-
-	/**
-	Allow the it to be disabled like other `NSControl`'s.
-	*/
-	override var isEnabled: Bool {
-		didSet {
-			textColor = isEnabled ? .controlTextColor : .disabledControlTextColor
-		}
-	}
-
-	/**
-	Support setting the text later with the `.text` property.
-	*/
-	convenience init() {
-		self.init(labelWithString: "")
-	}
-
-	convenience init(text: String) {
-		self.init(labelWithString: text)
-	}
-
-	convenience init(attributedText: NSAttributedString) {
-		self.init(labelWithAttributedString: attributedText)
-	}
-
-	override func viewDidMoveToSuperview() {
-		guard superview != nil else {
-			return
-		}
-
-		sizeToFit()
-	}
-}
-
-
-/**
-Use it in Interface Builder as a class or programmatically.
-*/
-final class MonospacedLabel: Label {
-	override init(frame: CGRect) {
-		super.init(frame: frame)
-		setup()
-	}
-
-	required init?(coder: NSCoder) {
-		super.init(coder: coder)
-		setup()
-	}
-
-	private func setup() {
-		if let font {
-			self.font = .monospacedDigitSystemFont(ofSize: font.size, weight: font.weight)
-		}
-	}
-}
-
-
-/**
-Mark unimplemented functions and have them fail with a useful message.
-
-```
-func foo() {
-	unimplemented()
-}
-
-foo()
-//=> "foo() in main.swift:1 has not been implemented"
-```
-*/
-func unimplemented(
-	function: StaticString = #function,
-	file: String = #fileID,
-	line: Int = #line
-) -> Never {
-	fatalError("\(function) in \(file.nsString.lastPathComponent):\(line) has not been implemented")
 }
 
 
@@ -1671,40 +1495,6 @@ extension NSPasteboard {
 }
 
 
-/**
-Subclass this in Interface Builder with the title "Send Feedback…".
-*/
-final class FeedbackMenuItem: NSMenuItem {
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { _ in
-			SSApp.openSendFeedbackPage()
-		}
-	}
-}
-
-
-/**
-Subclass this in Interface Builder and set the `Url` field there.
-*/
-final class UrlMenuItem: NSMenuItem {
-	@IBInspectable var url: String?
-
-	required init(coder decoder: NSCoder) {
-		super.init(coder: decoder)
-
-		onAction = { [weak self] _ in
-			guard let url = self?.url else {
-				return
-			}
-
-			NSWorkspace.shared.open(URL(string: url)!)
-		}
-	}
-}
-
-
 enum AssociationPolicy {
 	case assign
 	case retainNonatomic
@@ -1754,75 +1544,6 @@ extension ObjectAssociation {
 }
 
 
-// Identical to above, but for NSMenuItem.
-extension NSMenuItem {
-	typealias ActionClosure = (NSMenuItem) -> Void
-
-	private enum AssociatedKeys {
-		static let onActionClosure = ObjectAssociation<ActionClosure?>()
-	}
-
-	@objc
-	private func callClosureGifski(_ sender: NSMenuItem) {
-		onAction?(sender)
-	}
-
-	/**
-	Closure version of `.action`.
-
-	```
-	let menuItem = NSMenuItem(title: "Unicorn")
-
-	menuItem.onAction = { sender in
-		print("NSMenuItem action: \(sender)")
-	}
-	```
-	*/
-	var onAction: ActionClosure? {
-		get { AssociatedKeys.onActionClosure[self] }
-		set {
-			AssociatedKeys.onActionClosure[self] = newValue
-			action = #selector(callClosureGifski)
-			target = self
-		}
-	}
-}
-
-
-extension NSControl {
-	typealias ActionClosure = (NSControl) -> Void
-
-	private enum AssociatedKeys {
-		static let onActionClosure = ObjectAssociation<ActionClosure?>()
-	}
-
-	@objc
-	private func callClosureGifski(_ sender: NSControl) {
-		onAction?(sender)
-	}
-
-	/**
-	Closure version of `.action`.
-
-	```
-	let button = NSButton(title: "Unicorn", target: nil, action: nil)
-
-	button.onAction = { sender in
-		print("Button action: \(sender)")
-	}
-	```
-	*/
-	var onAction: ActionClosure? {
-		get { AssociatedKeys.onActionClosure[self] }
-		set {
-			AssociatedKeys.onActionClosure[self] = newValue
-			action = #selector(callClosureGifski)
-			target = self
-		}
-	}
-}
-
-
 extension CAMediaTimingFunction {
 	static let `default` = CAMediaTimingFunction(name: .default)
 	static let linear = CAMediaTimingFunction(name: .linear)
@@ -1832,74 +1553,11 @@ extension CAMediaTimingFunction {
 }
 
 
-extension NSView {
-	static func animate(
-		duration: Duration = .seconds(1),
-		delay: Duration = .zero,
-		timingFunction: CAMediaTimingFunction = .default,
-		animations: @escaping (() -> Void),
-		completion: (() -> Void)? = nil
-	) {
-		DispatchQueue.main.asyncAfter(delay) {
-			NSAnimationContext.runAnimationGroup({ context in
-				context.allowsImplicitAnimation = true
-				context.duration = duration.toTimeInterval
-				context.timingFunction = timingFunction
-				animations()
-			}, completionHandler: completion)
-		}
-	}
-
-	func fadeIn(
-		duration: Duration = .seconds(1),
-		delay: Duration = .zero,
-		completion: (() -> Void)? = nil
-	) {
-		isHidden = true
-
-		NSView.animate(
-			duration: duration,
-			delay: delay,
-			animations: { [self] in
-				isHidden = false
-			},
-			completion: completion
-		)
-	}
-
-	func fadeOut(
-		duration: Duration = .seconds(1),
-		delay: Duration = .zero,
-		completion: (() -> Void)? = nil
-	) {
-		isHidden = false
-
-		NSView.animate(
-			duration: duration,
-			delay: delay,
-			animations: { [self] in
-				alphaValue = 0
-			},
-			completion: { [self] in
-				isHidden = true
-				alphaValue = 1
-				completion?()
-			}
-		)
-	}
-}
-
-
 extension String {
 	/**
 	`NSString` has some useful properties that `String` does not.
 	*/
-	var nsString: NSString { self as NSString } // swiftlint:disable:this legacy_objc_type
-}
-
-
-extension NSAppearance {
-	var isDarkMode: Bool { bestMatch(from: [.darkAqua, .aqua]) == .darkAqua }
+	var toNS: NSString { self as NSString } // swiftlint:disable:this legacy_objc_type
 }
 
 
@@ -1909,7 +1567,9 @@ enum SSApp {
 	static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
 	static let build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
 	static let versionWithBuild = "\(version) (\(build))"
+}
 
+extension SSApp {
 	static let isFirstLaunch: Bool = {
 		let key = "SS_hasLaunched"
 
@@ -1920,10 +1580,13 @@ enum SSApp {
 		UserDefaults.standard.set(true, forKey: key)
 		return true
 	}()
+}
 
-	static var isDarkMode: Bool { NSApp.effectiveAppearance.isDarkMode }
-
-	static func openSendFeedbackPage() {
+extension SSApp {
+	/**
+	- Note: Call this lazily only when actually needed as otherwise it won't get the live info.
+	*/
+	static func appFeedbackUrl() -> URL {
 		let metadata =
 			"""
 			\(name) \(versionWithBuild) - \(idString)
@@ -1932,12 +1595,20 @@ enum SSApp {
 			\(Device.architecture)
 			"""
 
-		let query: [String: String] = [
+		let info: [String: String] = [
 			"product": name,
 			"metadata": metadata
 		]
 
-		URL("https://sindresorhus.com/feedback").settingQueryItems(from: query).open()
+		return URL("https://sindresorhus.com/feedback").settingQueryItems(from: info)
+	}
+}
+
+extension SSApp {
+	@MainActor
+	static var swiftUIMainWindow: NSWindow? {
+		// It seems like the main window is always the first one.
+		NSApp.windows.first { $0.simpleClassName == "AppKitWindow" }
 	}
 }
 
@@ -1950,6 +1621,123 @@ extension SSApp {
 			execute()
 		}
 	}
+}
+
+extension SSApp {
+	/**
+	Initialize Sentry.
+	*/
+	static func initSentry(_ dsn: String) {
+		#if !DEBUG && canImport(Sentry)
+		SentrySDK.start {
+			$0.dsn = dsn
+			$0.enableSwizzling = false
+			$0.enableAppHangTracking = false // https://github.com/getsentry/sentry-cocoa/issues/2643
+		}
+		#endif
+	}
+}
+
+extension SSApp {
+	/**
+	Report an error to the chosen crash reporting solution.
+	*/
+	@inlinable
+	static func reportError(
+		_ error: Error,
+		userInfo: [String: Any] = [:],
+		file: String = #fileID,
+		line: Int = #line
+	) {
+		guard !(error is CancellationError) else {
+			#if DEBUG
+			print("[\(file):\(line)] CancellationError:", error)
+			#endif
+			return
+		}
+
+		let userInfo = userInfo
+			.appending([
+				"file": file,
+				"line": line
+			])
+
+		let error = NSError.from(
+			error: error,
+			userInfo: userInfo
+		)
+
+		#if DEBUG
+		print("[\(file):\(line)] Reporting error:", error)
+		#endif
+
+		#if canImport(Sentry)
+		SentrySDK.capture(error: error)
+		#endif
+	}
+
+	/**
+	Report an error message to the chosen crash reporting solution.
+	*/
+	@inlinable
+	static func reportError(
+		_ message: String,
+		userInfo: [String: Any] = [:],
+		file: String = #fileID,
+		line: Int = #line
+	) {
+		reportError(
+			message.toError,
+			file: file,
+			line: line
+		)
+	}
+}
+
+
+struct GeneralError: LocalizedError, CustomNSError {
+	// LocalizedError
+	let errorDescription: String?
+	let recoverySuggestion: String?
+	let helpAnchor: String?
+
+	// CustomNSError
+	let errorUserInfo: [String: Any]
+	// We don't define `errorDomain` as it will generate something like `AppName.GeneralError` by default.
+
+	init(
+		_ description: String,
+		recoverySuggestion: String? = nil,
+		userInfo: [String: Any] = [:],
+		url: URL? = nil,
+		underlyingErrors: [Error] = [],
+		helpAnchor: String? = nil
+	) {
+		self.errorDescription = description
+		self.recoverySuggestion = recoverySuggestion
+		self.helpAnchor = helpAnchor
+
+		self.errorUserInfo = {
+			var userInfo = userInfo
+
+			if !underlyingErrors.isEmpty {
+				userInfo[NSMultipleUnderlyingErrorsKey] = underlyingErrors
+			}
+
+			if let url {
+				userInfo[NSURLErrorKey] = url
+			}
+
+			return userInfo
+		}()
+	}
+}
+
+extension String {
+	/**
+	Convert a string into an error.
+	*/
+	var toError: some LocalizedError { GeneralError(self) }
 }
 
 
@@ -2042,9 +1830,9 @@ enum Device {
 
 	static let isRunningNativelyOnMacWithAppleSilicon: Bool = {
 		#if os(macOS) && arch(arm64)
-		return true
+		true
 		#else
-		return false
+		false
 		#endif
 	}()
 
@@ -2272,22 +2060,6 @@ extension URL {
 }
 
 
-extension URL {
-	/**
-	Get various common system directories.
-	*/
-	static func systemDirectory(_ directory: FileManager.SearchPathDirectory) -> Self {
-		// I don't think this can fail, but just in case, we have a sensible fallback.
-		(try? FileManager.default.url(for: directory, in: .userDomainMask, appropriateFor: nil, create: false)) ?? FileManager.default.homeDirectoryForCurrentUser
-	}
-
-	/**
-	- Note: When sandboxed, this returns the directory inside the sandbox container, not in the user's home directory. However, NSSavePanel/NSOpenPanel handles it correctly.
-	*/
-	static let downloadsDirectory = systemDirectory(.downloadsDirectory)
-}
-
-
 extension CGSize {
 	static func * (lhs: Self, rhs: Double) -> Self {
 		.init(width: lhs.width * rhs, height: lhs.height * rhs)
@@ -2300,6 +2072,8 @@ extension CGSize {
 	var cgRect: CGRect { .init(origin: .zero, size: self) }
 
 	var longestSide: Double { max(width, height) }
+
+	var aspectRatio: Double { width / height }
 
 	func aspectFit(to boundingSize: CGSize) -> Self {
 		let ratio = min(boundingSize.width / width, boundingSize.height / height)
@@ -2455,144 +2229,6 @@ extension Error {
 	}
 }
 
-extension Result {
-	/**
-	```
-	switch result {
-	case .success(let value):
-		print(value)
-	case .failure where result.isCancelled:
-		print("Cancelled")
-	case .failure(let error):
-		print(error)
-	}
-	```
-	*/
-	public var isCancelled: Bool {
-		do {
-			_ = try get()
-			return false
-		} catch {
-			return error.isCancelled
-		}
-	}
-}
-
-
-final class Once {
-	private var lock = os_unfair_lock()
-	private var hasRun = false
-	private var value: Any?
-
-	/**
-	Executes the given closure only once. (Thread-safe)
-
-	Returns the value that the called closure returns the first (and only) time it's called.
-
-	```
-	final class Foo {
-		private let once = Once()
-
-		func bar() {
-			once.run {
-				print("Called only once")
-			}
-		}
-	}
-
-	let foo = Foo()
-	foo.bar()
-	foo.bar()
-	```
-
-	```
-	func process(_ text: String) -> String {
-		return text
-	}
-
-	let a = once.run {
-		process("a")
-	}
-
-	let b = once.run {
-		process("b")
-	}
-
-	print(a, b)
-	//=> "a a"
-	```
-	*/
-	func run<T>(_ closure: () throws -> T) rethrows -> T {
-		os_unfair_lock_lock(&lock)
-		defer {
-			os_unfair_lock_unlock(&lock)
-		}
-
-		guard !hasRun else {
-			return value as! T
-		}
-
-		hasRun = true
-
-		let returnValue = try closure()
-		value = returnValue
-		return returnValue
-	}
-
-	// TODO: Support any number of arguments when Swift supports variadics.
-	/**
-	Wraps a single-argument function.
-	*/
-	func wrap<T, U>(_ function: @escaping ((T) -> U)) -> ((T) -> U) {
-		{ [self] parameter in
-			run {
-				function(parameter)
-			}
-		}
-	}
-
-	/**
-	Wraps an optional single-argument function.
-	*/
-	func wrap<T, U>(_ function: ((T) -> U)?) -> ((T) -> U)? {
-		guard let function else {
-			return nil
-		}
-
-		return { [self] parameter in
-			run {
-				function(parameter)
-			}
-		}
-	}
-
-	/**
-	Wraps a single-argument throwing function.
-	*/
-	func wrap<T, U>(_ function: @escaping ((T) throws -> U)) -> ((T) throws -> U) {
-		{ [self] parameter in
-			try run {
-				try function(parameter)
-			}
-		}
-	}
-
-	/**
-	Wraps an optional single-argument throwing function.
-	*/
-	func wrap<T, U>(_ function: ((T) throws -> U)?) -> ((T) throws -> U)? {
-		guard let function else {
-			return nil
-		}
-
-		return { [self] parameter in
-			try run {
-				try function(parameter)
-			}
-		}
-	}
-}
-
 
 extension NSResponder {
 	/**
@@ -2605,45 +2241,6 @@ extension NSResponder {
 		}
 
 		presentError(error, modalFor: window, delegate: nil, didPresent: nil, contextInfo: nil)
-	}
-}
-
-
-extension NSSharingService {
-	static func share(items: [Any], from button: NSButton, preferredEdge: NSRectEdge = .maxX) {
-		let sharingServicePicker = NSSharingServicePicker(items: items)
-		sharingServicePicker.show(relativeTo: button.bounds, of: button, preferredEdge: preferredEdge)
-	}
-}
-
-
-// swiftlint:disable:next no_cgfloat
-extension CGFloat {
-	var double: Double { Double(self) }
-}
-
-
-extension CALayer {
-	func animateScaleMove(fromScale: Double, fromX: Double? = nil, fromY: Double? = nil) {
-		let fromX = fromX ?? bounds.size.width / 2
-		let fromY = fromY ?? bounds.size.height / 2
-
-		let springAnimation = CASpringAnimation(keyPath: #keyPath(CALayer.transform))
-
-		var tr = CATransform3DIdentity
-		tr = CATransform3DTranslate(tr, fromX, fromY, 0)
-		tr = CATransform3DScale(tr, fromScale, fromScale, 1)
-		tr = CATransform3DTranslate(tr, -bounds.size.width / 2, -bounds.size.height / 2, 0)
-
-		springAnimation.damping = 15
-		springAnimation.mass = 0.9
-		springAnimation.initialVelocity = 1
-		springAnimation.duration = springAnimation.settlingDuration
-
-		springAnimation.fromValue = NSValue(caTransform3D: tr)
-		springAnimation.toValue = NSValue(caTransform3D: CATransform3DIdentity)
-
-		add(springAnimation, forKey: "")
 	}
 }
 
@@ -2747,142 +2344,11 @@ extension Dictionary {
 }
 
 
-#if canImport(FirebaseCrashlytics)
-import FirebaseCrashlytics
-
-extension Crashlytics {
-	/**
-	A better error recording method. Captures more debug info.
-	*/
-	static func recordNonFatalError(error: Error, userInfo: [String: Any] = [:]) {
-		#if !DEBUG
-		// This forces Crashlytics to actually provide some useful info for Swift errors.
-		let nsError = NSError.from(error: error, userInfo: userInfo)
-
-		crashlytics().record(error: nsError)
-		#endif
-	}
-
-	static func recordNonFatalError(title: String? = nil, message: String) {
-		#if !DEBUG
-		crashlytics().record(error: NSError.appError(message, domainPostfix: title))
-		#endif
-	}
-
-	/**
-	Set a value for a for a key to be associated with your crash data which will be visible in Crashlytics.
-	*/
-	static func record(key: String, value: Any?) {
-		#if !DEBUG
-		crashlytics().setCustomValue(value as Any, forKey: key)
-		#endif
+extension Sequence where Element: AdditiveArithmetic {
+	func sum() -> Element {
+		reduce(into: .zero, +=)
 	}
 }
-
-extension NSAlert {
-	/**
-	Show a modal alert sheet on a window, or as an app-model alert if the given window is nil, and also report it as a non-fatal error to Crashlytics.
-	*/
-	@discardableResult
-	static func showModalAndReportToCrashlytics(
-		for window: NSWindow? = nil,
-		title: String,
-		message: String? = nil,
-		style: Style = .warning,
-		showDebugInfo: Bool = true,
-		debugInfo: String
-	) -> NSApplication.ModalResponse {
-		Crashlytics.recordNonFatalError(
-			title: title,
-			message: debugInfo
-		)
-
-		return showModal(
-			for: window,
-			title: title,
-			message: message,
-			detailText: showDebugInfo ? debugInfo : nil,
-			style: style
-		)
-	}
-}
-#endif
-
-
-enum FileType {
-	case png
-	case jpeg
-	case heic
-	case tiff
-	case gif
-
-	static func from(fileExtension: String) -> Self {
-		switch fileExtension {
-		case "png":
-			.png
-		case "jpg", "jpeg":
-			.jpeg
-		case "heic":
-			.heic
-		case "tif", "tiff":
-			.tiff
-		case "gif":
-			.gif
-		default:
-			fatalError("Unsupported file type")
-		}
-	}
-
-	static func from(url: URL) -> Self {
-		from(fileExtension: url.pathExtension)
-	}
-
-	var name: String {
-		switch self {
-		case .png:
-			"PNG"
-		case .jpeg:
-			"JPEG"
-		case .heic:
-			"HEIC"
-		case .tiff:
-			"TIFF"
-		case .gif:
-			"GIF"
-		}
-	}
-
-	var identifier: String {
-		switch self {
-		case .png:
-			"public.png"
-		case .jpeg:
-			"public.jpeg"
-		case .heic:
-			"public.heic"
-		case .tiff:
-			"public.tiff"
-		case .gif:
-			"com.compuserve.gif"
-		}
-	}
-
-	var fileExtension: String {
-		switch self {
-		case .png:
-			"png"
-		case .jpeg:
-			"jpg"
-		case .heic:
-			"heic"
-		case .tiff:
-			"tiff"
-		case .gif:
-			"gif"
-		}
-	}
-}
-
 
 extension Sequence {
 	/**
@@ -2968,7 +2434,9 @@ extension BinaryFloatingPoint {
 		}
 
 		var divisor: Self = 1
-		for _ in 0..<decimalPlaces { divisor *= 10 }
+		for _ in 0..<decimalPlaces {
+			divisor *= 10
+		}
 
 		return (self * divisor).rounded(rule) / divisor
 	}
@@ -2977,27 +2445,6 @@ extension BinaryFloatingPoint {
 extension CGSize {
 	func rounded(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> Self {
 		Self(width: width.rounded(rule), height: height.rounded(rule))
-	}
-}
-
-
-extension QLPreviewPanel {
-	func toggle() {
-		if isVisible {
-			orderOut(nil)
-		} else {
-			makeKeyAndOrderFront(nil)
-		}
-	}
-}
-
-
-extension NSView {
-	/**
-	Get the view frame in screen coordinates.
-	*/
-	var boundsInScreenCoordinates: CGRect? {
-		window?.convertToScreen(convert(bounds, to: nil))
 	}
 }
 
@@ -3023,7 +2470,6 @@ extension Copyable {
 }
 
 
-// Source: https://github.com/apple/swift-evolution/blob/9940e45977e2006a29eccccddf6b62305758c5c3/proposals/0259-approximately-equal.md
 // swiftlint:disable all
 extension FloatingPoint {
 	@inlinable
@@ -3111,13 +2557,6 @@ extension NSEdgeInsets {
 }
 
 
-extension NSControl {
-	func focus() {
-		window?.makeFirstResponder(self)
-	}
-}
-
-
 extension URL {
 	enum MetadataKey {
 		/**
@@ -3145,58 +2584,6 @@ extension URL {
 	}
 
 	var queryDictionary: [String: String] { components?.queryDictionary ?? [:] }
-}
-
-
-extension NSViewController {
-	func push(viewController: NSViewController, completion: (() -> Void)? = nil) {
-		guard let window = view.window else {
-			return
-		}
-
-		let newOrigin = CGPoint(x: window.frame.midX - viewController.view.frame.width / 2.0, y: window.frame.midY - viewController.view.frame.height / 2.0)
-		let newWindowFrame = CGRect(origin: newOrigin, size: viewController.view.frame.size)
-
-		guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
-			window.makeFirstResponder(viewController)
-
-			// The delay is needed to prevent weird UI race issues on macOS 12. For example, it caused the video in the editor to not show up.
-			delay(.seconds(0.2)) {
-				window.contentViewController = nil
-				window.setFrame(newWindowFrame, display: true)
-				window.contentViewController = viewController
-				completion?()
-			}
-
-			return
-		}
-
-		viewController.view.alphaValue = 0.0
-
-		// Workaround for macOS first responder quirk. Still in macOS 10.15.3.
-		// Reproduce: Without the below, if you click convert, hide the window, show the window when the conversion is done, and then drag and drop a new file, the width/height text fields are now not editable.
-		window.makeFirstResponder(viewController)
-
-		NSAnimationContext.runAnimationGroup({ _ in
-			window.contentViewController?.view.animator().alphaValue = 0.0
-			window.contentViewController = nil
-			window.animator().setFrame(newWindowFrame, display: true)
-		}, completionHandler: {
-			window.contentViewController = viewController
-			viewController.view.animator().alphaValue = 1.0
-			completion?()
-		})
-	}
-
-	func add(childController: NSViewController) {
-		add(childController: childController, to: view)
-	}
-
-	func add(childController: NSViewController, to view: NSView) {
-		addChild(childController)
-		view.addSubview(childController.view)
-		childController.view.constrainEdgesToSuperview()
-	}
 }
 
 
@@ -3461,11 +2848,6 @@ extension BinaryInteger {
 }
 
 
-extension AppDelegate {
-	static let shared = NSApp.delegate as! AppDelegate
-}
-
-
 final class LaunchCompletions {
 	private static var shouldAddObserver = true
 	private static var shouldRunInstantly = false
@@ -3502,25 +2884,6 @@ final class LaunchCompletions {
 		}
 
 		finishedLaunchingCompletions = []
-	}
-}
-
-
-@IBDesignable
-final class BackButton: NSButton {
-	convenience init() {
-		self.init()
-		commonInit()
-	}
-
-	override func awakeFromNib() {
-		super.awakeFromNib()
-		commonInit()
-	}
-
-	private func commonInit() {
-		image = NSImage(named: NSImage.goBackTemplateName)
-		setAccessibilityLabel("Back")
 	}
 }
 
@@ -3696,26 +3059,6 @@ final class LoopingPlayer: AVPlayer {
 }
 
 
-extension DateComponentsFormatter {
-	/**
-	Like `string(from: TimeInterval)` but does not cause an `NSInternalInconsistencyException` exception for `NaN` and `Infinity`.
-
-	This is especially useful when formatting `CMTime#seconds` which can often be `NaN`.
-	*/
-	func stringSafe(from timeInterval: TimeInterval) -> String? {
-		guard !timeInterval.isNaN else {
-			return "NaN"
-		}
-
-		guard timeInterval.isFinite else {
-			return "Infinity"
-		}
-
-		return string(from: timeInterval)
-	}
-}
-
-
 extension Numeric {
 	mutating func increment(by value: Self = 1) -> Self {
 		self += value
@@ -3725,22 +3068,6 @@ extension Numeric {
 	mutating func decrement(by value: Self = 1) -> Self {
 		self -= value
 		return self
-	}
-}
-
-
-extension SSApp {
-	private static let key = Defaults.Key("SSApp_requestReview", default: 0)
-
-	/**
-	Requests a review only after this method has been called the given amount of times.
-	*/
-	static func requestReviewAfterBeingCalledThisManyTimes(_ counts: [Int]) {
-		guard counts.contains(Defaults[key].increment()) else {
-			return
-		}
-
-		SKStoreReviewController.requestReview()
 	}
 }
 
@@ -3915,79 +3242,6 @@ extension Sequence where Element: Sequence {
 
 
 extension String {
-	var attributedString: NSAttributedString { NSAttributedString(string: self) }
-}
-
-
-extension NSAttributedString {
-	static func + (lhs: NSAttributedString, rhs: NSAttributedString) -> NSAttributedString {
-		let string = NSMutableAttributedString(attributedString: lhs)
-		string.append(rhs)
-		return string
-	}
-
-	static func + (lhs: NSAttributedString, rhs: String) -> NSAttributedString {
-		lhs + NSAttributedString(string: rhs)
-	}
-
-	static func += (lhs: inout NSAttributedString, rhs: NSAttributedString) {
-		lhs = lhs + rhs
-	}
-
-	static func += (lhs: inout NSAttributedString, rhs: String) {
-		lhs += NSAttributedString(string: rhs)
-	}
-
-	var nsRange: NSRange { NSRange(0..<length) }
-
-	var font: NSFont {
-		attributeForWholeString(.font) as? NSFont ?? .systemFont(ofSize: NSFont.systemFontSize)
-	}
-
-	/**
-	Get an attribute if it applies to the whole string.
-	*/
-	func attributeForWholeString(_ key: Key) -> Any? {
-		guard length > 0 else {
-			return nil
-		}
-
-		var foundRange = NSRange()
-		let result = attribute(key, at: 0, longestEffectiveRange: &foundRange, in: nsRange)
-
-		guard foundRange.length == length else {
-			return nil
-		}
-
-		return result
-	}
-
-	/**
-	Returns a `NSMutableAttributedString` version.
-	*/
-	func mutable() -> NSMutableAttributedString {
-		// Force-casting here is safe as it can only be nil if there's no `mutableCopy` implementation, but we know there is for `NSMutableAttributedString`.
-		// swiftlint:disable:next force_cast
-		mutableCopy() as! NSMutableAttributedString
-	}
-
-	func addingAttributes(_ attributes: [Key: Any]) -> NSAttributedString {
-		let new = mutable()
-		new.addAttributes(attributes, range: nsRange)
-		return new
-	}
-
-	func withColor(_ color: NSColor) -> NSAttributedString {
-		addingAttributes([.foregroundColor: color])
-	}
-
-	func withFontSize(_ fontSize: Double) -> NSAttributedString {
-		addingAttributes([.font: font.withSize(fontSize)])
-	}
-}
-
-
-extension String {
 	var trimmedTrailing: Self {
 		replacingOccurrences(of: #"\s+$"#, with: "", options: .regularExpression)
 	}
@@ -4012,29 +3266,6 @@ extension String {
 }
 
 
-extension UnsafeMutableRawPointer {
-	/**
-	Convert an unsafe mutable raw pointer to an array.
-
-	```
-	let bytes = sourceBuffer.data?.toArray(to: UInt8.self, capacity: Int(sourceBuffer.height) * sourceBuffer.rowBytes)
-	```
-	*/
-	func toArray<T>(to type: T.Type, capacity count: Int) -> [T] {
-		let pointer = bindMemory(to: type, capacity: count)
-		return Array(UnsafeBufferPointer(start: pointer, count: count))
-	}
-}
-
-
-extension Data {
-	/**
-	The bytes of the data.
-	*/
-	var bytes: [UInt8] { [UInt8](self) }
-}
-
-
 extension CGImage {
 	static let empty = NSImage(size: CGSize(widthHeight: 1), flipped: false) { _ in true }
 		.cgImage(forProposedRect: nil, context: nil, hints: nil)!
@@ -4043,100 +3274,9 @@ extension CGImage {
 
 extension CGImage {
 	var size: CGSize { CGSize(width: width, height: height) }
-
-	var hasAlphaChannel: Bool {
-		switch alphaInfo {
-		case .first, .last, .premultipliedFirst, .premultipliedLast:
-			true
-		default:
-			false
-		}
-	}
 }
 
 
-extension CGImage {
-	/**
-	A read-only pointer to the bytes of the image.
-
-	- Important: Don't assume the format of the underlaying storage. It could be `ARGB`, but it could also be `RGBA`. Draw the image into a `CGContext` first to be safe. See `CGImage#converting`.
-	*/
-	var bytePointer: UnsafePointer<UInt8>? {
-		guard let data = dataProvider?.data else {
-			return nil
-		}
-
-		return CFDataGetBytePtr(data)
-	}
-
-	/**
-	The bytes of the image.
-
-	- Important: Don't assume the format of the underlaying storage. It could be `ARGB`, but it could also be `RGBA`. Draw the image into a `CGContext` first to be safe. See `CGImage#converting`.
-	*/
-	var bytes: [UInt8]? { // swiftlint:disable:this discouraged_optional_collection
-		guard let data = dataProvider?.data else {
-			return nil
-		}
-
-		return (data as Data).bytes
-	}
-}
-
-
-extension CGContext {
-	/**
-	Create a premultiplied RGB bitmap context.
-
-	- Note: `CGContext` does not support non-premultiplied RGB.
-	*/
-	static func rgbBitmapContext(
-		pixelFormat: CGImage.PixelFormat,
-		width: Int,
-		height: Int,
-		withAlpha: Bool
-	) -> CGContext? {
-		let byteOrder: CGBitmapInfo
-		let alphaInfo: CGImageAlphaInfo
-		switch pixelFormat {
-		case .argb:
-			byteOrder = .byteOrder32Big
-			alphaInfo = withAlpha ? .premultipliedFirst : .noneSkipFirst
-		case .rgba:
-			byteOrder = .byteOrder32Big
-			alphaInfo = withAlpha ? .premultipliedLast : .noneSkipLast
-		case .bgra:
-			byteOrder = .byteOrder32Little
-			alphaInfo = withAlpha ? .premultipliedFirst : .noneSkipFirst // This might look wrong, but the order is inverse because of little endian.
-		case .abgr:
-			byteOrder = .byteOrder32Little
-			alphaInfo = withAlpha ? .premultipliedLast : .noneSkipLast
-		}
-
-		return CGContext(
-			data: nil,
-			width: width,
-			height: height,
-			bitsPerComponent: 8,
-			bytesPerRow: width * 4,
-			space: CGColorSpaceCreateDeviceRGB(),
-			bitmapInfo: byteOrder.rawValue | alphaInfo.rawValue
-		)
-	}
-}
-
-
-extension vImage_Buffer {
-	/**
-	The bytes of the image.
-	*/
-	var bytes: [UInt8] {
-		data?.toArray(to: UInt8.self, capacity: rowBytes * Int(height)) ?? []
-	}
-}
-
-
-// TODO: Use `vImage.PixelBuffer` for all pixel buffer stuff when targeting macOS 13: https://developer.apple.com/documentation/accelerate/vimage/pixelbuffer?changes=latest_minor
 extension CGImage {
 	/**
 	Convert an image to a `vImage` buffer of the given pixel format.
@@ -4146,93 +3286,24 @@ extension CGImage {
 	func toVImageBuffer(
 		pixelFormat: PixelFormat,
 		premultiplyAlpha: Bool
-	) throws -> vImage_Buffer {
-		guard let sourceFormat = vImage_CGImageFormat(cgImage: self) else {
-			throw NSError.appError("Could not initialize vImage_CGImageFormat")
-		}
-
-		let alphaFirst = premultiplyAlpha ? CGImageAlphaInfo.premultipliedFirst : .first
-		let alphaLast = premultiplyAlpha ? CGImageAlphaInfo.premultipliedLast : .last
-
-		let byteOrder: CGBitmapInfo
-		let alphaInfo: CGImageAlphaInfo
-		switch pixelFormat {
-		case .argb:
-			byteOrder = .byteOrder32Big
-			alphaInfo = alphaFirst
-		case .rgba:
-			byteOrder = .byteOrder32Big
-			alphaInfo = alphaLast
-		case .bgra:
-			byteOrder = .byteOrder32Little
-			alphaInfo = alphaFirst // This might look wrong, but the order is inverse because of little endian.
-		case .abgr:
-			byteOrder = .byteOrder32Little
-			alphaInfo = alphaLast
-		}
-
+	) throws -> vImage.PixelBuffer<vImage.Interleaved8x4> {
 		guard
-			let destinationFormat = vImage_CGImageFormat(
-				bitsPerComponent: 8,
-				bitsPerPixel: 8 * 4,
+			var imageFormat = vImage_CGImageFormat(
+				bitsPerComponent: vImage.Interleaved8x4.bitCountPerComponent,
+				bitsPerPixel: vImage.Interleaved8x4.bitCountPerPixel,
 				colorSpace: CGColorSpaceCreateDeviceRGB(),
-				bitmapInfo: CGBitmapInfo(rawValue: byteOrder.rawValue | alphaInfo.rawValue),
-				renderingIntent: .defaultIntent
+				bitmapInfo: pixelFormat.toBitmapInfo(premultiplyAlpha: premultiplyAlpha),
+				renderingIntent: .perceptual
 			)
 		else {
-			// TODO: Use a proper error.
 			throw NSError.appError("Could not initialize vImage_CGImageFormat")
 		}
 
-		let converter = try vImageConverter.make(
-			sourceFormat: sourceFormat,
-			destinationFormat: destinationFormat
+		return try vImage.PixelBuffer(
+			cgImage: self,
+			cgImageFormat: &imageFormat,
+			pixelFormat: vImage.Interleaved8x4.self
 		)
-
-		let sourceBuffer = try vImage_Buffer(cgImage: self, format: sourceFormat)
-
-		defer {
-			sourceBuffer.free()
-		}
-
-		var destinationBuffer = try vImage_Buffer(size: sourceBuffer.size, bitsPerPixel: destinationFormat.bitsPerPixel)
-
-		try converter.convert(source: sourceBuffer, destination: &destinationBuffer)
-
-		return destinationBuffer
-	}
-}
-
-
-extension CGImage {
-	/**
-	Convert the image to use the given underlying pixel format.
-
-	Prefer `CGImage#pixels(…)` if you need to read the pixels of an image. It's faster and also suppot non-premultiplied alpha.
-
-	- Note: The byte pointer uses premultiplied alpha.
-
-	```
-	let image = result.image.converting(to: .argb)
-	let bytePointer = image.bytePointer
-	let bytesPerRow = image.bytesPerRow
-	```
-	*/
-	func converting(to pixelFormat: PixelFormat) -> CGImage? {
-		guard
-			let context = CGContext.rgbBitmapContext(
-				pixelFormat: pixelFormat,
-				width: width,
-				height: height,
-				withAlpha: hasAlphaChannel
-			)
-		else {
-			return nil
-		}
-
-		context.draw(self, in: CGRect(origin: .zero, size: size))
-
-		return context.makeImage()
 	}
 }
 
@@ -4278,6 +3349,32 @@ extension CGImage.PixelFormat: CustomDebugStringConvertible {
 	var debugDescription: String { "CGImage.PixelFormat(\(title)" }
 }
 
+extension CGImage.PixelFormat {
+	func toBitmapInfo(premultiplyAlpha: Bool) -> CGBitmapInfo {
+		let alphaFirst = premultiplyAlpha ? CGImageAlphaInfo.premultipliedFirst : .first
+		let alphaLast = premultiplyAlpha ? CGImageAlphaInfo.premultipliedLast : .last
+
+		let byteOrder: CGBitmapInfo
+		let alphaInfo: CGImageAlphaInfo
+		switch self {
+		case .argb:
+			byteOrder = .byteOrder32Big
+			alphaInfo = alphaFirst
+		case .rgba:
+			byteOrder = .byteOrder32Big
+			alphaInfo = alphaLast
+		case .bgra:
+			byteOrder = .byteOrder32Little
+			alphaInfo = alphaFirst // This might look wrong, but the order is inverse because of little endian.
+		case .abgr:
+			byteOrder = .byteOrder32Little
+			alphaInfo = alphaLast
+		}
+
+		return CGBitmapInfo(rawValue: byteOrder.rawValue | alphaInfo.rawValue)
+	}
+}
+
 
 extension CGImage {
 	struct Pixels {
@@ -4300,17 +3397,18 @@ extension CGImage {
 	) throws -> Pixels {
 		let buffer = try toVImageBuffer(pixelFormat: pixelFormat, premultiplyAlpha: premultiplyAlpha)
 
-		defer {
-			buffer.free()
-		}
-
 		return Pixels(
-			bytes: buffer.bytes,
-			width: Int(buffer.width),
-			height: Int(buffer.height),
-			bytesPerRow: buffer.rowBytes
+			bytes: buffer.array,
+			width: buffer.width,
+			height: buffer.height,
+			bytesPerRow: buffer.byteCountPerRow
 		)
 	}
+}
+
+
+extension vImage.PixelBuffer where Format: StaticPixelFormat {
+	var byteCountPerRow: Int { width * byteCountPerPixel }
 }
 
 
@@ -4398,25 +3496,6 @@ extension CGImage {
 }
 
 
-@propertyWrapper
-struct Clamping<Value: Comparable> {
-	private var value: Value
-	private let range: ClosedRange<Value>
-
-	init(wrappedValue: Value, _ range: ClosedRange<Value>) {
-		self.value = wrappedValue.clamped(to: range)
-		self.range = range
-	}
-
-	var wrappedValue: Value {
-		get { value }
-		set {
-			value = newValue.clamped(to: range)
-		}
-	}
-}
-
-
 extension Font {
 	/**
 	The default system font size.
@@ -4489,8 +3568,8 @@ extension AVAssetTrack {
 
 	1 is the current speed. 2 means doubled speed. Etc.
 	*/
-	func extractToNewAssetAndChangeSpeed(to speedMultiplier: Double) -> AVAsset? {
-		extractToNewAsset {
+	func extractToNewAssetAndChangeSpeed(to speedMultiplier: Double) async throws -> AVAsset? {
+		try await extractToNewAsset {
 			$0.changeSpeed(by: speedMultiplier)
 		}
 	}
@@ -4571,6 +3650,7 @@ enum OperatingSystem {
 	case iOS
 	case tvOS
 	case watchOS
+	case visionOS
 
 	#if os(macOS)
 	static let current = macOS
@@ -4580,15 +3660,32 @@ enum OperatingSystem {
 	static let current = tvOS
 	#elseif os(watchOS)
 	static let current = watchOS
+	#elseif os(visionOS)
+	static let current = visionOS
 	#else
 	#error("Unsupported platform")
 	#endif
 }
 
 extension OperatingSystem {
-	/**
-	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
-	*/
+	static let isMacOS = current == .macOS
+	static let isIOS = current == .iOS
+	static let isVisionOS = current == .visionOS
+	static let isMacOrVision = isMacOS || isVisionOS
+	static let isIOSOrVision = isIOS || isVisionOS
+
+	static let isMacOS16OrLater: Bool = {
+		#if os(macOS)
+		if #available(macOS 16, *) {
+			return true
+		}
+
+		return false
+		#else
+		false
+		#endif
+	}()
+
 	static let isMacOS15OrLater: Bool = {
 		#if os(macOS)
 		if #available(macOS 15, *) {
@@ -4597,94 +3694,12 @@ extension OperatingSystem {
 
 		return false
 		#else
-		return false
-		#endif
-	}()
-
-	/**
-	- Note: Only use this when you cannot use an `if #available` check. For example, inline in function calls.
-	*/
-	static let isMacOS14OrLater: Bool = {
-		#if os(macOS)
-		if #available(macOS 14, *) {
-			return true
-		}
-
-		return false
-		#else
-		return false
+		false
 		#endif
 	}()
 }
 
 typealias OS = OperatingSystem
-
-
-extension NumberFormatter {
-	func string(from number: some Numeric) -> String? {
-		// swiftlint:disable:next legacy_objc_type
-		guard let nsNumber = number as? NSNumber else {
-			return nil
-		}
-
-		return string(from: nsNumber)
-	}
-}
-
-
-extension FloatingPoint {
-	/**
-	Get the fraction component of a floating point number.
-
-	```
-	let number = 1.22
-
-	print(number.fractionComponent)
-	//=> 0.22
-	```
-	*/
-	var fractionComponent: Self { truncatingRemainder(dividingBy: 1) }
-}
-
-
-extension DateComponentsFormatter {
-	/**
-	Format a duration using a positional style and with fractional seconds.
-
-	```
-	"00:12,45"
-	```
-
-	This utiliity is needed since `formatter.allowsFractionalUnits = true` doesn't work. (macOS 11.6)
-	https://openradar.appspot.com/32024200
-	*/
-	static func localizedStringPositionalWithFractionalSeconds(
-		_ duration: Double,
-		minimumFractionDigits: Int = 2,
-		maximumFractionDigits: Int = 2,
-		includeHours: Bool = false,
-		locale: Locale = .current
-	) -> String {
-		var calendar = Calendar.current
-		calendar.locale = locale
-
-		let durationFormatter = self.init()
-		durationFormatter.calendar = calendar
-		durationFormatter.formattingContext = .standalone
-		durationFormatter.unitsStyle = .positional
-		durationFormatter.allowedUnits = includeHours ? [.hour, .minute, .second] : [.minute, .second]
-		durationFormatter.zeroFormattingBehavior = .pad
-
-		let fractionFormatter = NumberFormatter()
-		fractionFormatter.locale = locale
-		fractionFormatter.maximumIntegerDigits = 0
-		fractionFormatter.minimumFractionDigits = minimumFractionDigits
-		fractionFormatter.maximumFractionDigits = maximumFractionDigits
-		fractionFormatter.alwaysShowsDecimalSeparator = false
-
-		return durationFormatter.string(from: duration)! + fractionFormatter.string(from: duration.fractionComponent)!
-	}
-}
 
 
 extension ClosedRange {
@@ -4699,14 +3714,6 @@ extension ClosedRange {
 }
 
 
-extension Collection {
-	/**
-	Works on strings too, since they're just collections.
-	*/
-	var nilIfEmpty: Self? { isEmpty ? nil : self }
-}
-
-
 extension Duration {
 	var nanoseconds: Int64 {
 		let (seconds, attoseconds) = components
@@ -4717,4 +3724,1823 @@ extension Duration {
 	}
 
 	var toTimeInterval: TimeInterval { Double(nanoseconds) / 1_000_000_000 }
+}
+
+
+struct ImportedVideoFile: Transferable {
+	let url: URL
+
+	static var transferRepresentation: some TransferRepresentation {
+		FileRepresentation.importedURL(
+			.mpeg4Movie,
+			.quickTimeMovie
+		) {
+			Self(url: $0)
+		}
+	}
+}
+
+
+extension FileRepresentation {
+	/**
+	An importing-only file representation that copies the URL to a temporary directory and returns that.
+
+	```
+	struct VideoFile: Transferable {
+		let url: URL
+
+		static var transferRepresentation: some TransferRepresentation {
+			FileRepresentation.importedURL(contentType: .mpeg4Movie) { Self(url: $0) }
+		}
+	}
+	```
+	*/
+	static func importedURL(
+		_ contentType: UTType,
+		createItem: @escaping (URL) async throws -> Item
+	) -> Self {
+		.init(importedContentType: contentType) {
+			try await createItem(try $0.file.copyToUniqueTemporaryDirectory())
+		}
+	}
+
+	// TODO: Use variadic generics here when targeting macOS 15.
+	@TransferRepresentationBuilder<Item>
+	static func importedURL(
+		_ contentType1: UTType,
+		_ contentType2: UTType,
+		createItem: @escaping (URL) async throws -> Item
+	) -> some TransferRepresentation<Item> {
+		importedURL(contentType1, createItem: createItem)
+		importedURL(contentType2, createItem: createItem)
+	}
+
+	@TransferRepresentationBuilder<Item>
+	static func importedURL(
+		_ contentType1: UTType,
+		_ contentType2: UTType,
+		_ contentType3: UTType,
+		createItem: @escaping (URL) async throws -> Item
+	) -> some TransferRepresentation<Item> {
+		importedURL(contentType1, createItem: createItem)
+		importedURL(contentType2, createItem: createItem)
+		importedURL(contentType3, createItem: createItem)
+	}
+
+	@TransferRepresentationBuilder<Item>
+	static func importedURL(
+		_ contentType1: UTType,
+		_ contentType2: UTType,
+		_ contentType3: UTType,
+		_ contentType4: UTType,
+		createItem: @escaping (URL) async throws -> Item
+	) -> some TransferRepresentation<Item> {
+		importedURL(contentType1, createItem: createItem)
+		importedURL(contentType2, createItem: createItem)
+		importedURL(contentType3, createItem: createItem)
+		importedURL(contentType4, createItem: createItem)
+	}
+}
+
+
+extension View {
+	/**
+	Fills the frame.
+	*/
+	func fillFrame(
+		_ axis: Axis.Set = [.horizontal, .vertical],
+		alignment: Alignment = .center
+	) -> some View {
+		frame(
+			maxWidth: axis.contains(.horizontal) ? .infinity : nil,
+			maxHeight: axis.contains(.vertical) ? .infinity : nil,
+			alignment: alignment
+		)
+	}
+}
+
+
+// TODO: Try to use `ContainerRelativeShape` when it's supported outside of widgets. (as of macOS 11.2.3, it's only supported in widgets)
+// Note: I have extensively tested and researched the current code. Don't change it lightly.
+extension View {
+	/**
+	Corner radius with a custom corner style.
+	*/
+	func cornerRadius(_ radius: Double, style: RoundedCornerStyle = .continuous) -> some View {
+		clipShape(.rect(cornerRadius: radius, style: style))
+	}
+
+	/**
+	Draws a border inside the view.
+	*/
+	@_disfavoredOverload
+	func border(
+		_ content: some ShapeStyle,
+		width lineWidth: Double = 1,
+		cornerRadius: Double,
+		cornerStyle: RoundedCornerStyle = .circular
+	) -> some View {
+		self.cornerRadius(cornerRadius, style: cornerStyle)
+			.overlay {
+				RoundedRectangle(cornerRadius: cornerRadius, style: cornerStyle)
+					.strokeBorder(content, lineWidth: lineWidth)
+			}
+	}
+
+	// I considered supporting an `inside`/`center` position option, but there's really no benefit to drawing the border at center as we need to pad the view anyway because of the clipping.
+	/**
+	Draws a border inside the view.
+	*/
+	func border(
+		_ color: Color,
+		width lineWidth: Double = 1,
+		cornerRadius: Double,
+		cornerStyle: RoundedCornerStyle = .circular
+	) -> some View {
+		self.cornerRadius(cornerRadius, style: cornerStyle)
+			.overlay {
+				RoundedRectangle(cornerRadius: cornerRadius, style: cornerStyle)
+					.strokeBorder(color, lineWidth: lineWidth)
+			}
+	}
+}
+
+
+// TODO: Remove these when targeting macOS 15.
+extension NSItemProvider {
+	func loadObject<T>(ofClass: T.Type) async throws -> T? where T: NSItemProviderReading {
+		try await withCheckedThrowingContinuation { continuation in
+			_ = loadObject(ofClass: ofClass) { data, error in
+				if let error {
+					continuation.resume(throwing: error)
+					return
+				}
+
+				guard let object = data as? T else {
+					continuation.resume(returning: nil)
+					return
+				}
+
+				continuation.resume(returning: object)
+			}
+		}
+	}
+
+	func loadObject<T>(ofClass: T.Type) async throws -> T? where T: _ObjectiveCBridgeable, T._ObjectiveCType: NSItemProviderReading {
+		try await withCheckedThrowingContinuation { continuation in
+			_ = loadObject(ofClass: ofClass) { data, error in
+				if let error {
+					continuation.resume(throwing: error)
+					return
+				}
+
+				guard let data else {
+					continuation.resume(returning: nil)
+					return
+				}
+
+				continuation.resume(returning: data)
+			}
+		}
+	}
+}
+
+extension NSItemProvider {
+	/**
+	Get a URL from the item provider, if any.
+	*/
+	func getURL() async -> URL? {
+		try? await loadObject(ofClass: URL.self)
+	}
+}
+
+
+extension Sequence {
+	func asyncFlatMap<T: Sequence>(
+		_ transform: (Element) async throws -> T
+	) async rethrows -> [T.Element] {
+		var values = [T.Element]()
+
+		for element in self {
+			try await values.append(contentsOf: transform(element))
+		}
+
+		return values
+	}
+}
+
+
+extension Sequence where Element: Sendable {
+	func concurrentCompactMap<T: Sendable>(
+		withPriority priority: TaskPriority? = nil,
+		concurrencyLimit: Int? = nil,
+		_ transform: @Sendable (Element) async -> T?
+	) async -> [T] {
+		await chunked(by: concurrencyLimit ?? .max).asyncFlatMap { chunk in
+			await withoutActuallyEscaping(transform) { escapingTransform in
+				await withTaskGroup(of: (offset: Int, value: T?).self) { group -> [T] in
+					for (offset, element) in chunk.enumerated() {
+						group.addTask(priority: priority) {
+							await (offset, escapingTransform(element))
+						}
+					}
+
+					var result = [(offset: Int, value: T)]()
+					result.reserveCapacity(chunk.count)
+
+					while let next = await group.next() {
+						if let value = next.value {
+							result.append((offset: next.offset, value: value))
+						}
+					}
+
+					return result
+						.sorted { $0.offset < $1.offset }
+						.map(\.value)
+				}
+			}
+		}
+	}
+}
+
+
+struct NativeVisualEffectsView: NSViewRepresentable {
+	typealias NSViewType = NSVisualEffectView
+
+	var material: NSVisualEffectView.Material
+	var blendingMode = NSVisualEffectView.BlendingMode.withinWindow
+	var state = NSVisualEffectView.State.followsWindowActiveState
+	var isEmphasized = false
+	var cornerRadius = 0.0
+
+	func makeNSView(context: Context) -> NSViewType {
+		let nsView = NSVisualEffectView()
+		nsView.wantsLayer = true
+		nsView.translatesAutoresizingMaskIntoConstraints = false
+		nsView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+		nsView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+		nsView.setAccessibilityHidden(true)
+		nsView.layer?.masksToBounds = true
+		return nsView
+	}
+
+	func updateNSView(_ nsView: NSViewType, context: Context) {
+		nsView.material = material
+		nsView.blendingMode = blendingMode
+		nsView.state = state
+		nsView.isEmphasized = isEmphasized
+		nsView.layer?.cornerRadius = cornerRadius
+	}
+}
+
+extension View {
+	/**
+	Add a material as a background.
+
+	Only use this over the native materials when either:
+	- You need to blend with what's behind the window.
+	- You need the material to be visible even when the window is inactive.
+	*/
+	func backgroundWithMaterial(
+		_ material: NSVisualEffectView.Material,
+		blendingMode: NSVisualEffectView.BlendingMode = .withinWindow,
+		state: NSVisualEffectView.State = .followsWindowActiveState,
+		isEmphasized: Bool = false,
+		cornerRadius: Double = 0,
+		ignoresSafeAreaEdges edges: Edge.Set = .all
+	) -> some View {
+		background {
+			NativeVisualEffectsView(
+				material: material,
+				blendingMode: blendingMode,
+				state: state,
+				isEmphasized: isEmphasized,
+				cornerRadius: cornerRadius
+			)
+				.ignoresSafeArea(edges: edges)
+		}
+	}
+}
+
+extension View {
+	/**
+	https://twitter.com/oskargroth/status/1323013160333381641
+	*/
+	func visualEffectsViewVibrancy(_ level: Double) -> some View {
+		blendMode(.overlay)
+			.overlay {
+				opacity(1 - level)
+			}
+	}
+}
+
+
+extension Binding {
+	/**
+	Converts the binding of an optional value to a binding to a boolean for whether the value is non-nil.
+
+	You could use this in a `isPresent` parameter for a sheet, alert, etc, to have it show when the value is non-nil.
+	*/
+	func isPresent<Wrapped>() -> Binding<Bool> where Value == Wrapped? {
+		.init(
+			get: { wrappedValue != nil },
+			set: { isPresented in
+				if !isPresented {
+					wrappedValue = nil
+				}
+			}
+		)
+	}
+}
+
+
+extension Binding {
+	func map<Result>(
+		get: @escaping (Value) -> Result,
+		set: @escaping (Result) -> Value
+	) -> Binding<Result> {
+		.init(
+			get: { get(wrappedValue) },
+			set: { newValue in
+				wrappedValue = set(newValue)
+			}
+		)
+	}
+}
+
+
+extension View {
+	func alert(error: Binding<Error?>) -> some View {
+		alert2(
+			title: { ($0 as NSError).localizedDescription },
+			message: { ($0 as NSError).localizedRecoverySuggestion },
+			presenting: error
+		) {
+			let nsError = $0 as NSError
+			if
+				let options = nsError.localizedRecoveryOptions,
+				let recoveryAttempter = nsError.recoveryAttempter
+			{
+				// Alert only supports 3 buttons, so we limit it to 2 attempters, otherwise it would take over the cancel button.
+				ForEach(Array(options.prefix(2).enumerated()), id: \.0) { index, option in
+					Button(option) {
+						// We use the old NSError mechanism for recovery attempt as recoverable NSError's are not bridged to RecoverableError.
+						_ = (recoveryAttempter as AnyObject).attemptRecovery(fromError: nsError, optionIndex: index)
+					}
+				}
+				Button("Cancel", role: .cancel) {}
+			}
+		}
+	}
+}
+
+
+extension View {
+	/**
+	This allows multiple sheets on a single view, which `.sheet()` doesn't.
+	*/
+	func sheet2(
+		isPresented: Binding<Bool>,
+		onDismiss: (() -> Void)? = nil,
+		@ViewBuilder content: @escaping () -> some View
+	) -> some View {
+		background(
+			EmptyView().sheet(
+				isPresented: isPresented,
+				onDismiss: onDismiss,
+				content: content
+			)
+		)
+	}
+
+	/**
+	This allows multiple sheets on a single view, which `.sheet()` doesn't.
+	*/
+	func sheet2<Item: Identifiable>(
+		item: Binding<Item?>,
+		onDismiss: (() -> Void)? = nil,
+		@ViewBuilder content: @escaping (Item) -> some View
+	) -> some View {
+		background(
+			EmptyView().sheet(
+				item: item,
+				onDismiss: onDismiss,
+				content: content
+			)
+		)
+	}
+}
+
+
+extension View {
+	/**
+	This allows multiple popovers on a single view, which `.popover()` doesn't.
+	*/
+	func popover2(
+		isPresented: Binding<Bool>,
+		attachmentAnchor: PopoverAttachmentAnchor = .rect(.bounds),
+		arrowEdge: Edge = .top,
+		@ViewBuilder content: @escaping () -> some View
+	) -> some View {
+		background(
+			EmptyView()
+				.popover(
+					isPresented: isPresented,
+					attachmentAnchor: attachmentAnchor,
+					arrowEdge: arrowEdge,
+					content: content
+				)
+		)
+	}
+}
+
+
+
+// Multiple `.alert` are stil broken in iOS 15.0
+extension View {
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2(
+		_ title: Text,
+		isPresented: Binding<Bool>,
+		@ViewBuilder actions: () -> some View,
+		@ViewBuilder message: () -> some View
+	) -> some View {
+		background(
+			EmptyView()
+				.alert(
+					title,
+					isPresented: isPresented,
+					actions: actions,
+					message: message
+				)
+		)
+	}
+
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2(
+		_ title: String,
+		isPresented: Binding<Bool>,
+		@ViewBuilder actions: () -> some View,
+		@ViewBuilder message: () -> some View
+	) -> some View {
+		alert2(
+			Text(title),
+			isPresented: isPresented,
+			actions: actions,
+			message: message
+		)
+	}
+
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2(
+		_ title: Text,
+		message: String? = nil,
+		isPresented: Binding<Bool>,
+		@ViewBuilder actions: () -> some View
+	) -> some View {
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title,
+			isPresented: isPresented,
+			actions: actions,
+			message: {
+				if let message {
+					Text(message)
+				}
+			}
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2(
+		_ title: String,
+		message: String? = nil,
+		isPresented: Binding<Bool>,
+		@ViewBuilder actions: () -> some View
+	) -> some View {
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title,
+			isPresented: isPresented,
+			actions: actions,
+			message: {
+				if let message {
+					Text(message)
+				}
+			}
+		)
+	}
+
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2(
+		_ title: Text,
+		message: String? = nil,
+		isPresented: Binding<Bool>
+	) -> some View {
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title,
+			message: message,
+			isPresented: isPresented,
+			actions: {}
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2(
+		_ title: String,
+		message: String? = nil,
+		isPresented: Binding<Bool>
+	) -> some View {
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title,
+			message: message,
+			isPresented: isPresented,
+			actions: {}
+		)
+	}
+}
+
+
+extension View {
+	// This exist as the new `item`-type alert APIs in iOS 15 are shit.
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<T>(
+		title: (T) -> Text,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View,
+		@ViewBuilder message: (T) -> some View
+	) -> some View {
+		background(
+			EmptyView()
+				.alert(
+					data.wrappedValue.map(title) ?? Text(""),
+					isPresented: data.isPresent(),
+					presenting: data.wrappedValue,
+					actions: actions,
+					message: message
+				)
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<T>(
+		title: (T) -> Text,
+		message: ((T) -> String?)? = nil,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View
+	) -> some View {
+		alert2(
+			title: { title($0) },
+			presenting: data,
+			actions: actions,
+			message: {
+				if let message = message?($0) {
+					Text(message)
+				}
+			}
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<T>(
+		title: (T) -> String,
+		message: ((T) -> String?)? = nil,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View
+	) -> some View {
+		alert2(
+			title: { Text(title($0)) },
+			message: message,
+			presenting: data,
+			actions: actions
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<T>(
+		title: (T) -> Text,
+		message: ((T) -> String?)? = nil,
+		presenting data: Binding<T?>
+	) -> some View {
+		// swiftlint:disable:next trailing_closure
+		alert2(
+			title: title,
+			message: message,
+			presenting: data,
+			actions: { _ in }
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple alerts on a single view, which `.alert()` doesn't.
+	*/
+	func alert2<T>(
+		title: (T) -> String,
+		message: ((T) -> String?)? = nil,
+		presenting data: Binding<T?>
+	) -> some View {
+		alert2(
+			title: { Text(title($0)) },
+			message: message,
+			presenting: data
+		)
+	}
+}
+
+
+// Multiple `.confirmationDialog` are broken in iOS 15.0
+extension View {
+	/**
+	This allows multiple confirmation dialogs on a single view, which `.confirmationDialog()` doesn't.
+	*/
+	func confirmationDialog2(
+		_ title: Text,
+		isPresented: Binding<Bool>,
+		titleVisibility: Visibility = .automatic,
+		@ViewBuilder actions: () -> some View,
+		@ViewBuilder message: () -> some View
+	) -> some View {
+		background(
+			EmptyView()
+				.confirmationDialog(
+					title,
+					isPresented: isPresented,
+					titleVisibility: titleVisibility,
+					actions: actions,
+					message: message
+				)
+		)
+	}
+
+	/**
+	This allows multiple confirmation dialogs on a single view, which `.confirmationDialog()` doesn't.
+	*/
+	func confirmationDialog2(
+		_ title: Text,
+		message: String? = nil,
+		isPresented: Binding<Bool>,
+		titleVisibility: Visibility = .automatic,
+		@ViewBuilder actions: () -> some View
+	) -> some View {
+		// swiftlint:disable:next trailing_closure
+		confirmationDialog2(
+			title,
+			isPresented: isPresented,
+			titleVisibility: titleVisibility,
+			actions: actions,
+			message: {
+				if let message {
+					Text(message)
+				}
+			}
+		)
+	}
+
+	/**
+	This allows multiple confirmation dialogs on a single view, which `.confirmationDialog()` doesn't.
+	*/
+	func confirmationDialog2(
+		_ title: String,
+		message: String? = nil,
+		isPresented: Binding<Bool>,
+		titleVisibility: Visibility = .automatic,
+		@ViewBuilder actions: () -> some View
+	) -> some View {
+		confirmationDialog2(
+			Text(title),
+			message: message,
+			isPresented: isPresented,
+			titleVisibility: titleVisibility,
+			actions: actions
+		)
+	}
+}
+
+
+// This exist as the new `item`-type alert APIs in iOS 15 are shit.
+extension View {
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple confirmation dialogs on a single view, which `.confirmationDialog()` doesn't.
+	*/
+	func confirmationDialog2<T>(
+		title: (T) -> Text,
+		titleVisibility: Visibility = .automatic,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View,
+		@ViewBuilder message: (T) -> some View
+	) -> some View {
+		background(
+			EmptyView()
+				.confirmationDialog(
+					data.wrappedValue.map(title) ?? Text(""),
+					isPresented: data.isPresent(),
+					titleVisibility: titleVisibility,
+					presenting: data.wrappedValue,
+					actions: actions,
+					message: message
+				)
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple confirmation dialogs on a single view, which `.confirmationDialog()` doesn't.
+	*/
+	func confirmationDialog2<T>(
+		title: (T) -> Text,
+		message: ((T) -> String?)? = nil,
+		titleVisibility: Visibility = .automatic,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View
+	) -> some View {
+		confirmationDialog2(
+			title: { title($0) },
+			titleVisibility: titleVisibility,
+			presenting: data,
+			actions: actions,
+			message: {
+				if let message = message?($0) {
+					Text(message)
+				}
+			}
+		)
+	}
+
+	// This is a convenience method and does not exist natively.
+	/**
+	This allows multiple confirmation dialogs on a single view, which `.confirmationDialog()` doesn't.
+	*/
+	func confirmationDialog2<T>(
+		title: (T) -> String,
+		message: ((T) -> String?)? = nil,
+		titleVisibility: Visibility = .automatic,
+		presenting data: Binding<T?>,
+		@ViewBuilder actions: (T) -> some View
+	) -> some View {
+		confirmationDialog2(
+			title: { Text(title($0)) },
+			message: message,
+			titleVisibility: titleVisibility,
+			presenting: data,
+			actions: actions
+		)
+	}
+}
+
+
+struct ImageView: NSViewRepresentable {
+	typealias NSViewType = NSImageView
+
+	let image: NSImage
+
+	func makeNSView(context: Context) -> NSViewType {
+		let nsView = NSImageView()
+		nsView.wantsLayer = true
+		nsView.translatesAutoresizingMaskIntoConstraints = false
+		nsView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+		nsView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+		return nsView
+	}
+
+	func updateNSView(_ nsView: NSViewType, context: Context) {
+		nsView.image = image
+	}
+
+	func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSImageView, context: Context) -> CGSize? {
+		guard let size = proposal.toCGSize else {
+			return nil
+		}
+
+		return image.size.aspectFitInside(size)
+	}
+}
+
+
+extension ProposedViewSize {
+	var toCGSize: CGSize? {
+		guard
+			let width,
+			let height
+		else {
+			return nil
+		}
+
+		return .init(width: width, height: height)
+	}
+}
+
+
+extension CGSize {
+	/**
+	Returns a new size that fits within a target size while maintaining the aspect ratio and ensuring it does not exceed the original size.
+
+	- Parameter targetSize: The target size within which the original size should fit.
+	- Returns: A new size fitting within `targetSize` and not exceeding the original size.
+
+	Use-cases:
+	- Scaling images without distortion.
+	- Adapting a UI element size to fit within certain bounds without exceeding its original dimensions.
+	*/
+	func aspectFitInside(_ targetSize: Self) -> Self {
+		let originalAspectRatio = width / height
+		let targetAspectRatio = targetSize.width / targetSize.height
+
+
+		var newSize = if targetAspectRatio > originalAspectRatio {
+			CGSize(width: targetSize.height * originalAspectRatio, height: targetSize.height)
+		} else {
+			CGSize(width: targetSize.width, height: targetSize.width / originalAspectRatio)
+		}
+
+		// Ensure the size is not larger than the original.
+		newSize.width = min(newSize.width, width)
+		newSize.height = min(newSize.height, height)
+
+		return newSize
+	}
+}
+
+
+extension SetAlgebra {
+	/**
+	Insert the `value` if it doesn't exist, otherwise remove it.
+	*/
+	mutating func toggleExistence(_ value: Element) {
+		if contains(value) {
+			remove(value)
+		} else {
+			insert(value)
+		}
+	}
+
+	/**
+	Insert the `value` if `shouldExist` is true, otherwise remove it.
+	*/
+	mutating func toggleExistence(_ value: Element, shouldExist: Bool) {
+		if shouldExist {
+			insert(value)
+		} else {
+			remove(value)
+		}
+	}
+}
+
+
+private struct WindowAccessor: NSViewRepresentable {
+	private final class WindowAccessorView: NSView {
+		@Binding var windowBinding: NSWindow?
+
+		init(binding: Binding<NSWindow?>) {
+			self._windowBinding = binding
+			super.init(frame: .zero)
+		}
+
+		override func viewWillMove(toWindow newWindow: NSWindow?) {
+			super.viewWillMove(toWindow: newWindow)
+
+			guard let newWindow else {
+				return
+			}
+
+			windowBinding = newWindow
+		}
+
+		override func viewDidMoveToWindow() {
+			super.viewDidMoveToWindow()
+			windowBinding = window
+		}
+
+		@available(*, unavailable)
+		required init?(coder: NSCoder) {
+			fatalError("") // swiftlint:disable:this fatal_error_message
+		}
+	}
+
+	@Binding var window: NSWindow?
+
+	init(_ window: Binding<NSWindow?>) {
+		self._window = window
+	}
+
+	func makeNSView(context: Context) -> NSView {
+		WindowAccessorView(binding: $window)
+	}
+
+	func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+extension View {
+	/**
+	Bind the native backing-window of a SwiftUI window to a property.
+	*/
+	func bindHostingWindow(_ window: Binding<NSWindow?>) -> some View {
+		background(WindowAccessor(window))
+	}
+}
+
+private struct WindowViewModifier: ViewModifier {
+	@State private var window: NSWindow?
+
+	let onWindow: (NSWindow?) -> Void
+
+	func body(content: Content) -> some View {
+		// We're intentionally not using `.onChange` as we need it to execute for every SwiftUI change as the window properties can be changed at any time by SwiftUI.
+		onWindow(window)
+
+		return content
+			.bindHostingWindow($window)
+	}
+}
+
+extension View {
+	/**
+	Access the native backing-window of a SwiftUI window.
+	*/
+	func accessHostingWindow(_ onWindow: @escaping (NSWindow?) -> Void) -> some View {
+		modifier(WindowViewModifier(onWindow: onWindow))
+	}
+
+	/**
+	Set the window title of a SwiftUI window.
+	*/
+	func windowTitle(_ title: String) -> some View {
+		accessHostingWindow {
+			$0?.title = title
+		}
+	}
+
+	/**
+	Set the window level of a SwiftUI window.
+	*/
+	func windowLevel(_ level: NSWindow.Level) -> some View {
+		accessHostingWindow {
+			$0?.level = level
+		}
+	}
+
+	/**
+	Whether to make the window stay on top of other windows.
+	*/
+	func windowStayOnTop(_ isActive: Bool = true) -> some View {
+		windowLevel(isActive ? .floating : .normal)
+	}
+
+	/**
+	Set the window tabbing mode of a SwiftUI window.
+	*/
+	func windowTabbingMode(_ tabbingMode: NSWindow.TabbingMode) -> some View {
+		accessHostingWindow {
+			$0?.tabbingMode = tabbingMode
+		}
+	}
+
+	/**
+	Set whether the SwiftUI window should be resizable.
+
+	Setting this to false disables the green zoom button on the window.
+	*/
+	func windowIsResizable(_ isResizable: Bool = true) -> some View {
+		accessHostingWindow {
+			$0?.styleMask.toggleExistence(.resizable, shouldExist: isResizable)
+		}
+	}
+
+	/**
+	Set whether the SwiftUI window should be closable.
+
+	Setting this to false disables the red close button on the window.
+	*/
+	func windowIsClosable(_ isActive: Bool = true) -> some View {
+		accessHostingWindow {
+			$0?.styleMask.toggleExistence(.closable, shouldExist: isActive)
+		}
+	}
+
+	/**
+	Set whether the SwiftUI window should be minimizable.
+
+	Setting this to false disables the yellow minimize button on the window.
+	*/
+	func windowIsMinimizable(_ isMinimizable: Bool = true) -> some View {
+		accessHostingWindow {
+			$0?.styleMask.toggleExistence(.miniaturizable, shouldExist: isMinimizable)
+		}
+	}
+
+	/**
+	Set whether the SwiftUI window should be restorable.
+	*/
+	func windowIsRestorable(_ isRestorable: Bool = true) -> some View {
+		accessHostingWindow {
+			$0?.isRestorable = isRestorable
+		}
+	}
+
+	/**
+	Set whether the window can hide when its app becomes hidden.
+	*/
+	func windowCanHide(_ isActive: Bool = true) -> some View {
+		accessHostingWindow {
+			$0?.canHide = isActive
+		}
+	}
+
+	/**
+	Hide a standard window button.
+	*/
+	func windowIsStandardButtonHidden(
+		isHidden: Bool = true,
+		_ buttonTypes: NSWindow.ButtonType...
+	) -> some View {
+		accessHostingWindow {
+			for buttonType in buttonTypes {
+				$0?.standardWindowButton(buttonType)?.isHidden = isHidden
+			}
+		}
+	}
+
+	/**
+	Hide the window traffic light buttons.
+	*/
+	func windowAreTrafficLightButtonsHidden(_ isHidden: Bool = true) -> some View {
+		windowIsStandardButtonHidden(isHidden: isHidden, .closeButton, .miniaturizeButton, .zoomButton)
+	}
+
+	/**
+	Prevent the window from being movable.
+
+	By default the window is movable.
+	*/
+	func windowIsMovable(_ isMovable: Bool = true) -> some View {
+		accessHostingWindow {
+			$0?.isMovable = isMovable
+		}
+	}
+
+	/**
+	Make a SwiftUI window draggable by clicking and dragging anywhere in the window.
+	*/
+	func windowIsMovableByWindowBackground(_ isMovableByWindowBackground: Bool = true) -> some View {
+		accessHostingWindow {
+			$0?.isMovableByWindowBackground = isMovableByWindowBackground
+		}
+	}
+
+	/**
+	Set the background color of a SwiftUI window.
+	*/
+	func windowBackgroundColor(_ backgroundColor: NSColor) -> some View {
+		accessHostingWindow {
+			$0?.backgroundColor = backgroundColor
+		}
+	}
+
+	/**
+	Set whether to show the title bar appears transparent.
+	*/
+	func windowTitlebarAppearsTransparent(_ isActive: Bool = true) -> some View {
+		accessHostingWindow { window in
+			window?.titlebarAppearsTransparent = isActive
+		}
+	}
+
+	/**
+	Set whether to hide the window title and title bar buttons.
+	*/
+	func windowTitleIsHidden(_ isActive: Bool = true) -> some View {
+		accessHostingWindow { window in
+			window?.titleVisibility = isActive ? .hidden : .visible
+		}
+	}
+
+	/**
+	Set the collection behavior of a SwiftUI window.
+	*/
+	func windowCollectionBehavior(_ collectionBehavior: NSWindow.CollectionBehavior) -> some View {
+		accessHostingWindow { window in
+			window?.collectionBehavior = collectionBehavior
+
+			// This is needed on windows with `.windowResizability(.contentSize)`. (macOS 13.4)
+			// If it's not set, the window will not show in fullscreen mode for some reason.
+			DispatchQueue.main.async {
+				window?.collectionBehavior = collectionBehavior
+			}
+		}
+	}
+
+	/**
+	Set the collection behavior of a SwiftUI window.
+	*/
+	func windowOpacity(_ opacity: Double) -> some View {
+		accessHostingWindow { window in
+			window?.isOpaque = false
+			window?.alphaValue = opacity
+		}
+	}
+
+	/**
+	Set whether the window is transparent to mouse events.
+	*/
+	func windowIgnoresMouseEvents(_ ignoresMouseEvents: Bool = true) -> some View {
+		accessHostingWindow { window in
+			window?.ignoresMouseEvents = ignoresMouseEvents
+		}
+	}
+
+	func windowIsVibrant() -> some View {
+		accessHostingWindow {
+			$0?.makeVibrant()
+		}
+	}
+}
+
+
+extension NSColor {
+	convenience init(light: NSColor, dark: NSColor?) {
+		self.init(name: nil) { $0.isDarkMode ? (dark ?? light) : light }
+	}
+}
+
+extension Color {
+	init(dynamicProvider: @escaping (Bool) -> Self) {
+		self.init(
+			NSColor(name: nil) {
+				NSColor(dynamicProvider($0.isDarkMode))
+			}
+		)
+	}
+}
+
+
+extension Color {
+	init(light: Self, dark: Self?) {
+		self.init { $0 ? (dark ?? light) : light }
+	}
+}
+
+
+extension NSAppearance {
+	var isDarkMode: Bool { bestMatch(from: [.darkAqua, .aqua]) == .darkAqua }
+}
+
+
+extension FloatingPointFormatStyle.Percent {
+	/**
+	Do not show fraction.
+	*/
+	var noFraction: Self { precision(.fractionLength(0)) }
+}
+
+
+private struct EqualWidthWithBindingPreferenceKey: PreferenceKey {
+	static let defaultValue = 0.0
+
+	static func reduce(value: inout Double, nextValue: () -> Double) {
+		value = nextValue()
+	}
+}
+
+private struct EqualWidthWithBinding: ViewModifier {
+	@Binding var width: Double?
+	let alignment: Alignment
+
+	func body(content: Content) -> some View {
+		content
+			.frame(width: width?.nilIfZero?.cgFloat, alignment: alignment)
+			.background {
+				GeometryReader {
+					Color.clear
+						.preference(
+							key: EqualWidthWithBindingPreferenceKey.self,
+							value: $0.size.width
+						)
+				}
+			}
+			.onPreferenceChange(EqualWidthWithBindingPreferenceKey.self) {
+				width = max(width ?? 0, $0)
+			}
+	}
+}
+
+extension View {
+	func equalWidthWithBinding(
+		_ width: Binding<Double?>,
+		alignment: Alignment = .center
+	) -> some View {
+		modifier(EqualWidthWithBinding(width: width, alignment: alignment))
+	}
+}
+
+
+extension PrimitiveButtonStyle where Self == WidthButtonStyle {
+	/**
+	Make button have equal width.
+	*/
+	static func equalWidth(
+		_ width: Binding<Double?>,
+		minimumWidth: Double? = nil
+	) -> Self {
+		.init(
+			width: width,
+			minimumWidth: minimumWidth
+		)
+	}
+}
+
+struct WidthButtonStyle: PrimitiveButtonStyle {
+	@Binding var width: Double?
+	var minimumWidth: Double?
+
+	func makeBody(configuration: Configuration) -> some View {
+		Button(role: configuration.role) {
+			configuration.trigger()
+		} label: {
+			configuration.label
+				.frame(minWidth: minimumWidth?.cgFloat)
+				.equalWidthWithBinding($width)
+		}
+	}
+}
+
+
+extension StringProtocol {
+	@inlinable
+	var isWhitespace: Bool {
+		allSatisfy(\.isWhitespace)
+	}
+
+	@inlinable
+	var isEmptyOrWhitespace: Bool { isEmpty || isWhitespace }
+}
+
+
+// swiftlint:disable:next no_cgfloat
+extension CGFloat {
+	/**
+	Get a Double from a CGFloat. This makes it easier to work with optionals.
+	*/
+	var double: Double { Double(self) }
+}
+
+extension Int {
+	/**
+	Get a Double from an Int. This makes it easier to work with optionals.
+	*/
+	var double: Double { Double(self) }
+}
+
+extension Double {
+	/**
+	Discouraged but sometimes needed when implicit coercion doesn't work.
+	*/
+	var cgFloat: CGFloat { CGFloat(self) } // swiftlint:disable:this no_cgfloat no_cgfloat2
+}
+
+
+extension Collection {
+	/**
+	Works on strings too, since they're just collections.
+	*/
+	@inlinable
+	var nilIfEmpty: Self? { isEmpty ? nil : self }
+}
+
+extension StringProtocol {
+	@inlinable
+	var nilIfEmptyOrWhitespace: Self? { isEmptyOrWhitespace ? nil : self }
+}
+
+extension AdditiveArithmetic {
+	/**
+	Returns `nil` if the value is `0`.
+	*/
+	@inlinable
+	var nilIfZero: Self? { self == .zero ? nil : self }
+}
+
+extension CGSize {
+	/**
+	Returns `nil` if the value is `0`.
+	*/
+	@inlinable
+	var nilIfZero: Self? { self == .zero ? nil : self }
+}
+
+extension CGRect {
+	/**
+	Returns `nil` if the value is `0`.
+	*/
+	@inlinable
+	var nilIfZero: Self? { self == .zero ? nil : self }
+}
+
+
+struct CopyButton: View {
+	@State private var isShowingSuccess = false
+	private let action: () -> Void
+
+	init(_ action: @escaping () -> Void) {
+		self.action = action
+	}
+
+	var body: some View {
+		Button {
+			isShowingSuccess = true
+
+			Task {
+				try? await Task.sleep(for: .seconds(1))
+				isShowingSuccess = false
+			}
+
+			action()
+		} label: {
+			Label("Copy", systemImage: "doc.on.doc")
+				.opacity(isShowingSuccess ? 0 : 1)
+				.overlay {
+					if isShowingSuccess {
+						Image(systemName: "checkmark")
+							.bold()
+					}
+				}
+		}
+			.disabled(isShowingSuccess)
+			.animation(.easeInOut(duration: 0.3), value: isShowingSuccess)
+	}
+}
+
+
+extension IntentFile {
+	/**
+	Write the data to a unique temporary path and return the `URL`.
+	*/
+	func writeToUniqueTemporaryFile() throws -> URL {
+		try data.writeToUniqueTemporaryFile(
+			filename: filename,
+			contentType: type ?? .data
+		)
+	}
+}
+
+
+extension Data {
+	/**
+	Create an `IntentFile` from the data.
+	*/
+	func toIntentFile(
+		contentType: UTType,
+		filename: String? = nil
+	) -> IntentFile {
+		.init(
+			data: self,
+			filename: filename ?? "file",
+			type: contentType
+		)
+	}
+}
+
+
+extension Data {
+	/**
+	Write the data to a unique temporary path and return the `URL`.
+
+	By default, the file has no file extension.
+	*/
+	func writeToUniqueTemporaryFile(
+		filename: String? = nil,
+		contentType: UTType = .data
+	) throws -> URL {
+		let destinationUrl = try URL.uniqueTemporaryDirectory()
+			.appendingPathComponent(filename ?? "file", conformingTo: contentType)
+
+		try write(to: destinationUrl)
+
+		return destinationUrl
+	}
+}
+
+
+extension URL {
+	/**
+	Creates a unique temporary directory and returns the URL.
+
+	The URL is unique for each call.
+
+	The system ensures the directory is not cleaned up until after the app quits.
+	*/
+	static func uniqueTemporaryDirectory(
+		appropriateFor: Self? = nil
+	) throws -> Self {
+		try FileManager.default.url(
+			for: .itemReplacementDirectory,
+			in: .userDomainMask,
+			appropriateFor: appropriateFor ?? URL.temporaryDirectory,
+			create: true
+		)
+	}
+
+	/**
+	Copy the file at the current URL to a unique temporary directory and return the new URL.
+	*/
+	func copyToUniqueTemporaryDirectory(filename: String? = nil) throws -> Self {
+		let destinationUrl = try Self.uniqueTemporaryDirectory(appropriateFor: self)
+			.appendingPathComponent(filename ?? lastPathComponent, isDirectory: false)
+
+		try FileManager.default.copyItem(at: self, to: destinationUrl)
+
+		return destinationUrl
+	}
+}
+
+
+extension View {
+	@ViewBuilder
+	func `if`(
+		_ condition: @autoclosure () -> Bool,
+		modify: (Self) -> some View
+	) -> some View {
+		if condition() {
+			modify(self)
+		} else {
+			self
+		}
+	}
+
+	func `if`(
+		_ condition: @autoclosure () -> Bool,
+		modify: (Self) -> Self
+	) -> Self {
+		condition() ? modify(self) : self
+	}
+}
+
+
+extension View {
+	@ViewBuilder
+	func `if`(
+		_ condition: @autoclosure () -> Bool,
+		if modifyIf: (Self) -> some View,
+		else modifyElse: (Self) -> some View
+	) -> some View {
+		if condition() {
+			modifyIf(self)
+		} else {
+			modifyElse(self)
+		}
+	}
+
+	func `if`(
+		_ condition: @autoclosure () -> Bool,
+		if modifyIf: (Self) -> Self,
+		else modifyElse: (Self) -> Self
+	) -> Self {
+		condition() ? modifyIf(self) : modifyElse(self)
+	}
+}
+
+
+extension ProgressViewStyleConfiguration {
+	var isFinished: Bool {
+		(fractionCompleted ?? 0) >= 1
+	}
+}
+
+
+struct CircularProgressViewStyle: ProgressViewStyle {
+	private struct CheckmarkShape: Shape {
+		func path(in rect: CGRect) -> Path {
+			Path {
+				$0.move(to: CGPoint(x: rect.width * 0.3, y: rect.height * 0.52))
+				$0.addLine(to: CGPoint(x: rect.width * 0.48, y: rect.height * 0.68))
+				$0.addLine(to: CGPoint(x: rect.width * 0.7, y: rect.height * 0.34))
+			}
+		}
+	}
+
+	private let fill: LinearGradient
+//	private let fill: AnyShapeStyle // Enable when targeting macOS 12.
+	private let lineWidth: Double
+	private let text: String?
+
+	init(
+		fill: LinearGradient? = nil,
+		lineWidth: Double? = nil,
+		text: String? = nil
+	) {
+		self.fill = fill ?? .init(gradient: .init(colors: [.purple, .blue]), startPoint: .top, endPoint: .bottom)
+//		self.fill = AnyShapeStyle(fill)
+		self.lineWidth = lineWidth ?? 12
+		self.text = text
+	}
+
+	func makeBody(configuration: Configuration) -> some View {
+		let progress = configuration.fractionCompleted ?? 0
+		ZStack {
+			// Background
+			Circle()
+				.stroke(lineWidth: lineWidth)
+				.opacity(0.3)
+				.foregroundStyle(.secondary)
+				.visualEffectsViewVibrancy(0.5)
+			// Progress
+			Circle()
+				.trim(from: 0, to: progress)
+				.stroke(fill, style: .init(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+				.rotationEffect(.init(degrees: 270))
+				.saturation((progress * 2).clamped(to: 0.5...1.2))
+				.animation(.easeInOut, value: progress)
+			if !configuration.isFinished {
+				if let text {
+					Text(text)
+						.fontDesign(.rounded)
+						.minimumScaleFactor(0.4)
+						.foregroundStyle(.secondary)
+				} else {
+					Text(progress.formatted(.percent.precision(.fractionLength(0))))
+						.font(.system(size: 30, weight: .bold, design: .rounded))
+						.monospacedDigit()
+				}
+			}
+			CheckmarkShape()
+				.stroke(style: .init(lineWidth: lineWidth / 1.5, lineCap: .round, lineJoin: .round))
+				.scaleEffect(configuration.isFinished ? 1 : 0.4)
+				.animation(.spring(response: 0.55, dampingFraction: 0.35).speed(1.3), value: configuration.isFinished)
+				.opacity(configuration.isFinished ? 1 : 0)
+				.animation(.easeInOut, value: configuration.isFinished)
+				.aspectRatio(contentMode: .fit)
+		}
+	}
+}
+
+extension ProgressViewStyle where Self == CircularProgressViewStyle {
+	static func ssCircular(
+		fill: LinearGradient? = nil,
+		lineWidth: Double? = nil,
+		text: String? = nil
+	) -> Self {
+		.init(
+			fill: fill,
+			lineWidth: lineWidth,
+			text: text
+		)
+	}
+}
+
+
+extension View {
+	/**
+	Add a keyboard shortcut to a view, not a button.
+	*/
+	func onKeyboardShortcut(
+		_ shortcut: KeyboardShortcut?,
+		perform action: @escaping () -> Void
+	) -> some View {
+		overlay {
+			Button("", action: action)
+				.labelsHidden()
+				.opacity(0)
+				.frame(width: 0, height: 0)
+				.keyboardShortcut(shortcut)
+				.accessibilityHidden(true)
+		}
+	}
+
+	/**
+	Add a keyboard shortcut to a view, not a button.
+	*/
+	func onKeyboardShortcut(
+		_ key: KeyEquivalent,
+		modifiers: SwiftUI.EventModifiers = .command,
+		isEnabled: Bool = true,
+		perform action: @escaping () -> Void
+	) -> some View {
+		onKeyboardShortcut(isEnabled ? .init(key, modifiers: modifiers) : nil, perform: action)
+	}
+}
+
+
+extension Device {
+	static var isReduceMotionEnabled: Bool {
+		#if os(macOS)
+		NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+		#else
+		UIAccessibility.isReduceMotionEnabled
+		#endif
+	}
+}
+
+
+func withAnimationIf<Result>(
+	_ condition: Bool,
+	animation: Animation? = .default,
+	_ body: () throws -> Result
+) rethrows -> Result {
+	condition
+		? try withAnimation(animation, body)
+		: try body()
+}
+
+func withAnimationWhenNotReduced<Result>(
+	_ animation: Animation? = .default,
+	_ body: () throws -> Result
+) rethrows -> Result {
+	try withAnimationIf(
+		!Device.isReduceMotionEnabled,
+		animation: animation,
+		body
+	)
+}
+
+
+struct AnyDropDelegate: DropDelegate {
+	// TODO: `@OptionalBinding`
+	var isTargeted: Binding<Bool>?
+	var onValidate: ((DropInfo) -> Bool)?
+	let onPerform: (DropInfo) -> Bool
+	var onEntered: ((DropInfo) -> Void)?
+	var onExited: ((DropInfo) -> Void)?
+	var onUpdated: ((DropInfo) -> DropProposal?)?
+
+	func performDrop(info: DropInfo) -> Bool {
+		onPerform(info)
+	}
+
+	func validateDrop(info: DropInfo) -> Bool {
+		onValidate?(info) ?? true
+	}
+
+	func dropEntered(info: DropInfo) {
+		isTargeted?.wrappedValue = true
+		onEntered?(info)
+	}
+
+	func dropExited(info: DropInfo) {
+		isTargeted?.wrappedValue = false
+		onExited?(info)
+	}
+
+	func dropUpdated(info: DropInfo) -> DropProposal? {
+		onUpdated?(info)
+	}
+}
+
+
+extension DropInfo {
+	/**
+	This is useful as `DropInfo` usually on has `NSItemProvider` items and they have to be fetched async, while the validation has to happen synchronously.
+	*/
+	func fileURLsConforming(to contentTypes: [UTType]) -> [URL] {
+		NSPasteboard(name: .drag).fileURLs(contentTypes: contentTypes)
+	}
+
+	/**
+	Indicates whether at least one file URL conforms to at least one of the specified uniform type identifiers.
+	*/
+	func hasFileURLsConforming(to contentTypes: [UTType]) -> Bool {
+		!fileURLsConforming(to: contentTypes).isEmpty
+	}
+}
+
+
+extension CGSize {
+	var toInt: (width: Int, height: Int) {
+		(Int(width), Int(height))
+	}
+}
+
+
+extension ClosedRange<Double> {
+	var toInt: ClosedRange<Int> {
+		Int(lowerBound)...Int(upperBound)
+	}
+}
+
+extension Range<Double> {
+	var toInt: Range<Int> {
+		Int(lowerBound)..<Int(upperBound)
+	}
+}
+
+
+extension AVPlayerView {
+	/**
+	Activates trim mode without waiting for trimming to finish.
+	*/
+	func activateTrimming() async throws { // TODO: `throws(CancellationError)`.
+		_ = await updates(for: \.canBeginTrimming).first { $0 }
+
+		try Task.checkCancellation()
+
+		Task {
+			await beginTrimming()
+		}
+
+		await Task.yield()
+	}
+}
+
+
+extension NSObjectProtocol where Self: NSObject {
+	func updates<Value>(
+		for keyPath: KeyPath<Self, Value>,
+		options: NSKeyValueObservingOptions = [.initial, .new]
+	) -> AsyncStream<Value> {
+		publisher(for: keyPath, options: options).toAsyncStream
+	}
+}
+
+
+protocol ReflectiveEquatable: Equatable {}
+
+extension ReflectiveEquatable {
+	var reflectedValue: String { String(reflecting: self) }
+
+	static func == (lhs: Self, rhs: Self) -> Bool {
+		lhs.reflectedValue == rhs.reflectedValue
+	}
+}
+
+protocol ReflectiveHashable: Hashable, ReflectiveEquatable {}
+
+extension ReflectiveHashable {
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(reflectedValue)
+	}
+}
+
+
+extension CGSize {
+	/**
+	Calculates a new size that maintains the aspect ratio, based on given width or height constraints.
+	If only one dimension is provided, calculates the other dimension accordingly to preserve the aspect ratio.
+	If both dimensions are provided, adjusts them to fit within the given dimensions while maintaining the aspect ratio.
+	*/
+	func aspectFittedSize(targetWidth: Double?, targetHeight: Double?) -> Self {
+		let originalAspectRatio = width / height
+
+		switch (targetWidth, targetHeight) {
+		case (let width?, nil):
+			return CGSize(
+				width: width,
+				height: width / originalAspectRatio
+			)
+		case (nil, let height?):
+			return CGSize(
+				width: height * originalAspectRatio,
+				height: height
+			)
+		case (let width?, let height?):
+			let targetAspectRatio = width / height
+
+			if originalAspectRatio > targetAspectRatio {
+				return CGSize(
+					width: width,
+					height: width / originalAspectRatio
+				)
+			}
+
+			return CGSize(
+				width: height * originalAspectRatio,
+				height: height
+			)
+		default:
+			return self
+		}
+	}
+
+	func aspectFittedSize(targetWidth: Int?, targetHeight: Int?) -> Self {
+		aspectFittedSize(
+			targetWidth: targetWidth.flatMap { Double($0) },
+			targetHeight: targetHeight.flatMap { Double($0) }
+		)
+	}
 }
