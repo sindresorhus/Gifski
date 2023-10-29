@@ -1,3 +1,13 @@
+#![allow(clippy::bool_to_int_with_if)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::enum_glob_use)]
+#![allow(clippy::match_same_arms)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::redundant_closure_for_method_calls)]
+#![allow(clippy::wildcard_imports)]
+
 use clap::builder::NonEmptyStringValueParser;
 use std::io::Read;
 use std::io::Stdout;
@@ -122,6 +132,7 @@ fn bin_main() -> BinResult<()> {
                             .long("no-sort")
                             .num_args(0)
                             .action(ArgAction::SetTrue)
+                            .hide_short_help(true)
                             .help("Use files exactly in the order given, rather than sorted"))
                         .arg(Arg::new("quiet")
                             .long("quiet")
@@ -141,9 +152,23 @@ fn bin_main() -> BinResult<()> {
                             .num_args(1)
                             .value_parser(value_parser!(i16))
                             .value_name("num"))
+                        .arg(Arg::new("fixed-color")
+                            .long("fixed-color")
+                            .help("Always include this color in the palette")
+                            .hide_short_help(true)
+                            .num_args(1)
+                            .action(ArgAction::Append)
+                            .value_parser(parse_colors)
+                            .value_name("RGBHEX"))
+                        .arg(Arg::new("matte")
+                            .long("matte")
+                            .help("Background color for semitransparent pixels")
+                            .num_args(1)
+                            .value_parser(parse_color)
+                            .value_name("RGBHEX"))
                         .get_matches_from(wild::args_os());
 
-    let mut frames: Vec<_> = matches.get_many::<String>("FILES").ok_or("?")?.collect();
+    let mut frames: Vec<&str> = matches.get_many::<String>("FILES").ok_or("?")?.map(|s| s.as_str()).collect();
     if !matches.get_flag("nosort") {
         frames.sort_by(|a, b| natord::compare(a, b));
     }
@@ -173,6 +198,8 @@ fn bin_main() -> BinResult<()> {
     let quiet = matches.get_flag("quiet") || output_path == DestPath::Stdout;
     let fps: f32 = matches.get_one::<f32>("fps").copied().ok_or("?")?;
     let speed: f32 = matches.get_one::<f32>("fast-forward").copied().ok_or("?")?;
+    let fixed_colors = matches.get_many::<Vec<rgb::RGB8>>("fixed-color");
+    let matte = matches.get_one::<rgb::RGB8>("matte");
 
     let rate = source::Fps { fps, speed };
 
@@ -211,7 +238,7 @@ fn bin_main() -> BinResult<()> {
             _ if path.is_dir() => {
                 return Err(format!("{} is a directory, not a PNG file", path.display()).into());
             },
-            _ => get_video_decoder(path, rate, settings)?,
+            FileType::Other => get_video_decoder(path, rate, settings)?,
         }
     } else {
         if let Ok(FileType::JPEG) = file_type(&frames[0]) {
@@ -236,6 +263,15 @@ fn bin_main() -> BinResult<()> {
     };
 
     let (mut collector, mut writer) = gifski::new(settings)?;
+    if let Some(fixed_colors) = fixed_colors {
+        for f in fixed_colors.flatten() {
+            writer.add_fixed_color(*f);
+        }
+    }
+    if let Some(matte) = matte {
+        #[allow(deprecated)]
+        writer.set_matte_color(*matte);
+    }
     if extra {
         #[allow(deprecated)]
         writer.set_extra_effort(true);
@@ -273,6 +309,35 @@ fn bin_main() -> BinResult<()> {
     Ok(())
 }
 
+fn parse_color(c: &str) -> Result<rgb::RGB8, String> {
+    let c = c.trim_matches(|c:char| c.is_ascii_whitespace());
+    let c = c.strip_prefix('#').unwrap_or(c);
+
+    if c.len() != 6 {
+        return Err(format!("color must be 6-char hex format, not '{c}'"));
+    }
+    let mut c = c.as_bytes().chunks_exact(2)
+        .map(|c| u8::from_str_radix(std::str::from_utf8(c).unwrap_or_default(), 16).map_err(|e| e.to_string()));
+    Ok(rgb::RGB8::new(
+        c.next().ok_or_else(String::new)??,
+        c.next().ok_or_else(String::new)??,
+        c.next().ok_or_else(String::new)??,
+    ))
+}
+
+fn parse_colors(colors: &str) -> Result<Vec<rgb::RGB8>, String> {
+    colors.split(|c:char| c == ' ' || c == ',')
+        .filter(|c| !c.is_empty())
+        .map(parse_color)
+        .collect()
+}
+
+#[test]
+fn color_parser() {
+    assert_eq!(parse_colors("#123456 78abCD,, ,").unwrap(), vec![rgb::RGB8::new(0x12,0x34,0x56), rgb::RGB8::new(0x78,0xab,0xcd)]);
+    assert!(parse_colors("#12345").is_err());
+}
+
 #[allow(clippy::upper_case_acronyms)]
 enum FileType {
     PNG, GIF, JPEG, Other,
@@ -299,8 +364,8 @@ fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
     for path in paths {
         if !path.exists() {
             let mut msg = format!("Unable to find the input file: \"{}\"", path.display());
-            if path.to_str().map_or(false, |p| p.contains('*')) {
-                msg += "\nThe \"*\" character was in quotes, which disabled pattern matching. The file with an actual literal asterisk in its name obviously doesn't exist.\nTo search for all files matching a pattern, use * without quotes.";
+            if path.to_str().map_or(false, |p| p.contains(['*','?','['])) {
+                msg += "\nThe pattern did not match any files.";
             } else if path.extension() == Some("gif".as_ref()) {
                 msg = format!("Did you mean to use -o \"{}\" to specify it as the output file instead?", path.display());
             } else if path.is_relative() {
@@ -393,7 +458,7 @@ impl ProgressReporter for ProgressBar {
     }
 
     fn written_bytes(&mut self, bytes: u64) {
-        let min_frames = self.total.map(|t| (t / 16).clamp(5, 50)).unwrap_or(10);
+        let min_frames = self.total.map_or(10, |t| (t / 16).clamp(5, 50));
         if self.frames > min_frames {
             let total_size = bytes * self.pb.total / self.frames;
             let new_estimate = if total_size >= self.previous_estimate { total_size } else { (self.previous_estimate + total_size) / 2 };

@@ -4,6 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 use crossbeam_channel::Sender;
 use crate::Error;
 
+#[inline]
 pub fn new_channel<P, C, M, R>(num_threads: NonZeroU8, name: &str, producer: P, mut consumer: C) -> Result<R, Error> where
     M: Send,
     C: Clone + Send + FnMut(M) -> Result<(), Error> + std::panic::UnwindSafe,

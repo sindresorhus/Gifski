@@ -40,6 +40,7 @@ impl FfmpegDecoder {
         })
     }
 
+    #[inline(never)]
     pub fn collect_frames(&mut self, dest: &mut Collector) -> BinResult<()> {
         let (stream_index, mut decoder, mut filter) = {
             let filter_fps = self.rate.fps / self.rate.speed;

@@ -76,7 +76,7 @@ impl From<CatResult<()>> for GifskiError {
     fn from(res: CatResult<()>) -> Self {
         use crate::error::Error::*;
         match res {
-            Ok(_) => GifskiError::OK,
+            Ok(()) => GifskiError::OK,
             Err(err) => match err {
                 Quant(_) => GifskiError::QUANT,
                 Pal(_) => GifskiError::GIF,

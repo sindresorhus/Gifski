@@ -181,9 +181,9 @@ pub unsafe extern "C" fn gifski_set_extra_effort(handle: *mut GifskiHandle, extr
 }
 
 /// Adds a fixed color that will be kept in the palette at all times.
-/// Useful to avoid glitches in mixed photographic/pixel art.
 ///
 /// Only valid immediately after calling `gifski_new`, before any frames are added.
+///
 #[no_mangle]
 pub unsafe extern "C" fn gifski_add_fixed_color(
     handle: *mut GifskiHandle,
@@ -194,7 +194,6 @@ pub unsafe extern "C" fn gifski_add_fixed_color(
     let Some(g) = borrow(handle) else { return GifskiError::NULL_ARG };
 
     if let Ok(Some(w)) = g.writer.lock().as_deref_mut() {
-        #[allow(deprecated)]
         w.add_fixed_color(RGB8::new(col_r, col_g, col_b));
         GifskiError::OK
     } else {
@@ -394,7 +393,7 @@ pub unsafe extern "C" fn gifski_set_error_message_callback(handle: *const Gifski
             *error_callback = Some(Box::new(move |mut s: String| {
                 s.reserve_exact(1);
                 s.push('\0');
-                let cstring = CString::from_vec_with_nul(s.into_bytes()).unwrap();
+                let cstring = CString::from_vec_with_nul(s.into_bytes()).unwrap_or_default();
                 unsafe { cb(cstring.as_ptr(), user_data.clone().0) } // the clone is a no-op, only to force closure to own it
             }));
             GifskiError::OK
@@ -577,7 +576,7 @@ pub unsafe extern "C" fn gifski_finish(g: *const GifskiHandle) -> GifskiError {
 impl GifskiHandleInternal {
     fn print_error(&self, mut err: String) {
         if let Ok(Some(cb)) = self.error_callback.lock().as_deref() {
-            cb(err)
+            cb(err);
         } else {
             err.reserve_exact(1);
             err.push('\n');
