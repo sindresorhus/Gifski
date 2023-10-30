@@ -82,25 +82,25 @@ pub struct WrongSizeError;
 
 impl<T> Denoiser<T> {
     #[inline]
-    pub fn new(width: usize, height: usize, quality: u8) -> Self {
-        let area = width.checked_mul(height).unwrap();
+    pub fn new(width: usize, height: usize, quality: u8) -> Result<Self, WrongSizeError> {
+        let area = width.checked_mul(height).ok_or(WrongSizeError)?;
         let clear = Acc {
             r: Default::default(),
             g: Default::default(),
             b: Default::default(),
             blur: Default::default(),
             alpha_bits: (1 << LOOKAHEAD) - 1,
-            bg_set: Default::default(),
+            bg_set: RGBA8::default(),
             stayed_for: 0,
             can_stay_for: 0,
         };
-        Self {
+        Ok(Self {
             frames: 0,
             processed: VecDeque::with_capacity(LOOKAHEAD),
             metadatas: VecDeque::with_capacity(LOOKAHEAD),
             threshold: (55 - u32::from(quality) / 2).pow(2),
             splat: ImgVec::new(vec![clear; area], width, height),
-        }
+        })
     }
 
     fn quick_append(&mut self, frame: ImgRef<RGBA8>, frame_blurred: ImgRef<RGB8>) {
@@ -110,6 +110,7 @@ impl<T> Denoiser<T> {
     }
 
     /// Generate last few frames
+    #[inline(never)]
     pub fn flush(&mut self) {
         while self.processed.len() < self.metadatas.len() {
             let mut median1 = Vec::with_capacity(self.splat.width() * self.splat.height());
@@ -138,6 +139,7 @@ impl<T> Denoiser<T> {
         self.push_frame(frame, frame_blurred.as_ref(), frame_metadata)
     }
 
+    #[inline(never)]
     pub fn push_frame(&mut self, frame: ImgRef<RGBA8>, frame_blurred: ImgRef<RGB8>, frame_metadata: T) -> Result<(), WrongSizeError> {
         if frame.width() != self.splat.width() || frame.height() != self.splat.height() {
             return Err(WrongSizeError);
@@ -168,6 +170,7 @@ impl<T> Denoiser<T> {
         Ok(())
     }
 
+    #[inline]
     pub fn pop(&mut self) -> Denoised<T> {
         if let Some((frame, importance_map)) = self.processed.pop_back() {
             let meta = self.metadatas.pop_back().expect("meta");
@@ -296,6 +299,7 @@ macro_rules! blur_channel {
     }}
 }
 
+#[inline(never)]
 pub(crate) fn smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
     let mut out = Vec::with_capacity(frame.width() * frame.height());
     loop9_img(frame, |_,_, top, mid, bot| {
@@ -315,6 +319,7 @@ pub(crate) fn smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
     ImgVec::new(out, frame.width(), frame.height())
 }
 
+#[inline(never)]
 pub(crate) fn less_smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
     let mut out = Vec::with_capacity(frame.width() * frame.height());
     loop9_img(frame, |_,_, top, mid, bot| {
@@ -401,7 +406,7 @@ fn px<T>(f: Denoised<T>) -> (RGBA8, T) {
 
 #[test]
 fn one() {
-    let mut d = Denoiser::new(1,1, 100);
+    let mut d = Denoiser::new(1,1, 100).unwrap();
     let w = RGBA8::new(255,255,255,255);
     let frame = ImgVec::new(vec![w], 1, 1);
     let frame_blurred = smart_blur(frame.as_ref());
@@ -415,7 +420,7 @@ fn one() {
 
 #[test]
 fn two() {
-    let mut d = Denoiser::new(1,1, 100);
+    let mut d = Denoiser::new(1,1, 100).unwrap();
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
     d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
@@ -429,7 +434,7 @@ fn two() {
 
 #[test]
 fn three() {
-    let mut d = Denoiser::new(1,1, 100);
+    let mut d = Denoiser::new(1,1, 100).unwrap();
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
     d.push_frame_test(ImgVec::new(vec![w], 1, 1).as_ref(), 0).unwrap();
@@ -446,7 +451,7 @@ fn three() {
 
 #[test]
 fn four() {
-    let mut d = Denoiser::new(1,1, 100);
+    let mut d = Denoiser::new(1,1, 100).unwrap();
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
     let t = RGBA8::new(0,0,0,0);
@@ -465,7 +470,7 @@ fn four() {
 
 #[test]
 fn five() {
-    let mut d = Denoiser::new(1,1, 100);
+    let mut d = Denoiser::new(1,1, 100).unwrap();
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
     let t = RGBA8::new(0,0,0,0);
@@ -486,7 +491,7 @@ fn five() {
 
 #[test]
 fn six() {
-    let mut d = Denoiser::new(1,1, 100);
+    let mut d = Denoiser::new(1,1, 100).unwrap();
     let w = RGBA8::new(254,253,252,255);
     let b = RGBA8::new(8,7,0,255);
     let t = RGBA8::new(0,0,0,0);
@@ -514,7 +519,7 @@ fn six() {
 
 #[test]
 fn many() {
-    let mut d = Denoiser::new(1,1, 100);
+    let mut d = Denoiser::new(1,1, 100).unwrap();
     let w = RGBA8::new(255,254,253,255);
     let b = RGBA8::new(1,2,3,255);
     let t = RGBA8::new(0,0,0,0);

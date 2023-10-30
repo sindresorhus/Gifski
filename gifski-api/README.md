@@ -34,9 +34,19 @@ gifski -o anim.gif frame*.png
 
 You can also resize frames (with `-W <width in pixels>` option). If the input was ever encoded using a lossy video codec it's recommended to at least halve size of the frames to hide compression artefacts and counter chroma subsampling that was done by the video codec.
 
-Adding `--quality=90` may reduce file sizes a bit, but expect to lose a lot of quality for little gain. GIF just isn't that good at compressing, no matter how much you compromise.
 
 See `gifski -h` for more options.
+
+### Tips for smaller GIF files
+
+Expect to lose a lot of quality for little gain. GIF just isn't that good at compressing, no matter how much you compromise.
+
+* Use `--width` and `--height` to make the animation smaller. This makes the biggest difference.
+* Add `--quality=80` (or a lower number) to lower overall quality. You can fine-tune the quality with:
+    * `--lossy-quality=60` lower values make animations noisier/grainy, but reduce file sizes.
+    * `--motion-quality=60` lower values cause smearing or banding in frames with motion, but reduce file sizes.
+
+If you need to make a GIF that fits a predefined file size, you have to experiment with different sizes and quality settings. The command line tool will display estimated total file size during compression, but keep in mind that the estimate is very imprecise.
 
 ## Building
 
@@ -54,6 +64,21 @@ cargo build --release
 ```
 
 and link with `target/release/libgifski.a`. Please observe the [LICENSE](LICENSE).
+
+### C dynamic library for package maintainers
+
+The build process uses [`cargo-c`](https://lib.rs/cargo-c) for building the dynamic library correctly and generating the pkg-config file.
+
+```sh
+rustup update
+cargo install cargo-c
+# build
+cargo cbuild --prefix=/usr --release
+# install
+cargo cinstall --prefix=/usr --release --destdir=pkgroot
+```
+
+The `cbuild` command can be omitted, since `cinstall` will trigger a build if it hasn't been done already.
 
 ## License
 

@@ -21,6 +21,7 @@ impl Source for Lodecoder {
         Some(self.frames.len() as u64)
     }
 
+    #[inline(never)]
     fn collect(&mut self, dest: &mut Collector) -> BinResult<()> {
         let dest = &*dest;
         let fps = f64::from(self.fps);

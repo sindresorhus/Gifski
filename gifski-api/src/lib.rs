@@ -16,6 +16,17 @@
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #![doc(html_logo_url = "https://gif.ski/icon.png")]
+#![allow(clippy::bool_to_int_with_if)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::enum_glob_use)]
+#![allow(clippy::if_not_else)]
+#![allow(clippy::inline_always)]
+#![allow(clippy::match_same_arms)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::redundant_closure_for_method_calls)]
+#![allow(clippy::wildcard_imports)]
 
 use encoderust::RustEncoder;
 use gif::DisposalMethod;
@@ -34,8 +45,8 @@ mod denoise;
 use crate::denoise::*;
 mod encoderust;
 
-// #[cfg(feature = "gifsicle")]
-// mod encodegifsicle;
+#[cfg(feature = "gifsicle")]
+mod gifsicle;
 
 mod minipool;
 
@@ -51,6 +62,7 @@ use std::sync::atomic::Ordering::Relaxed;
 
 enum FrameSource {
     Pixels(ImgVec<RGBA8>),
+    #[cfg(feature = "png")]
     Path(PathBuf),
 }
 struct InputFrameUnresized {
@@ -96,6 +108,7 @@ struct SettingsExt {
     pub extra_effort: bool,
     pub motion_quality: u8,
     pub giflossy_quality: u8,
+    pub matte: Option<RGB8>,
 }
 
 impl Settings {
@@ -106,7 +119,9 @@ impl Settings {
     }
 
     /// `add_frame` is going to resize the images to this size.
-    #[must_use] pub fn dimensions_for_image(&self, width: usize, height: usize) -> (usize, usize) {
+    #[must_use]
+    #[inline]
+    pub fn dimensions_for_image(&self, width: usize, height: usize) -> (usize, usize) {
         dimensions_for_image((width, height), (self.width, self.height))
     }
 }
@@ -114,7 +129,7 @@ impl Settings {
 impl SettingsExt {
     pub(crate) fn gifsicle_loss(&self) -> u32 {
         if cfg!(feature = "gifsicle") && self.giflossy_quality < 100 {
-            (100. / 5. - f32::from(self.giflossy_quality) / 5.).powf(1.8).ceil() as u32 + 10
+            ((100. / 5. - f32::from(self.giflossy_quality) / 5.).powf(1.8).ceil() as u32 + 10) * 10
         } else {
             0
         }
@@ -122,6 +137,7 @@ impl SettingsExt {
 }
 
 impl Default for Settings {
+    #[inline]
     fn default() -> Self {
         Self {
             width: None, height: None,
@@ -146,6 +162,8 @@ pub struct Writer {
     queue_iter: Option<Receiver<InputFrameUnresized>>,
     settings: SettingsExt,
     /// Colors the caller has specified as fixed (i.e. key colours)
+    /// This can't be in settings because that would cause it to lose Copy.
+    /// Additionally to avoid breaking C API compatibility this has to be mutable there too.
     fixed_colors: Vec<RGB8>,
 }
 
@@ -216,11 +234,12 @@ pub fn new(settings: Settings) -> CatResult<(Collector, Writer)> {
         Writer {
             queue_iter: Some(queue_iter),
             settings: SettingsExt {
+                s: settings,
                 max_threads: max_threads.try_into()?,
                 motion_quality: settings.quality,
                 giflossy_quality: settings.quality,
                 extra_effort: false,
-                s: settings,
+                matte: None,
             },
             fixed_colors: Vec::new(),
         },
@@ -263,7 +282,8 @@ impl Collector {
     }
 }
 
-fn resized_binary_alpha(image: ImgVec<RGBA8>, width: Option<u32>, height: Option<u32>) -> CatResult<ImgVec<RGBA8>> {
+#[inline(never)]
+fn resized_binary_alpha(image: ImgVec<RGBA8>, width: Option<u32>, height: Option<u32>, matte: Option<RGB8>) -> CatResult<ImgVec<RGBA8>> {
     let (width, height) = dimensions_for_image((image.width(), image.height()), (width, height));
 
     let mut image = if width != image.width() || height != image.height() {
@@ -279,13 +299,28 @@ fn resized_binary_alpha(image: ImgVec<RGBA8>, width: Option<u32>, height: Option
         image
     };
 
-    dither_image(image.as_mut());
+    if let Some(matte) = matte {
+        image.pixels_mut().filter(|px| px.a < 255 && px.a > 0).for_each(move |px| {
+            let alpha = u16::from(px.a);
+            let inv_alpha = 255 - alpha;
+
+            *px = RGBA8 {
+                r: ((u16::from(px.r) * alpha + u16::from(matte.r) * inv_alpha) / 255) as u8,
+                g: ((u16::from(px.g) * alpha + u16::from(matte.g) * inv_alpha) / 255) as u8,
+                b: ((u16::from(px.b) * alpha + u16::from(matte.b) * inv_alpha) / 255) as u8,
+                a: 255,
+            };
+        });
+    } else {
+        dither_image(image.as_mut());
+    }
 
     Ok(image)
 }
 
 #[allow(clippy::identity_op)]
 #[allow(clippy::erasing_op)]
+#[inline(never)]
 fn dither_image(mut image: ImgRefMut<RGBA8>) {
     let width = image.width();
     let height = image.height();
@@ -334,6 +369,7 @@ fn dither_image(mut image: ImgRefMut<RGBA8>) {
 
 /// `add_frame` is going to resize the image to this size.
 /// The `Option` args are user-specified max width and max height
+#[inline(never)]
 fn dimensions_for_image((img_w, img_h): (usize, usize), resize_to: (Option<u32>, Option<u32>)) -> (usize, usize) {
     match resize_to {
         (None, None) => {
@@ -365,12 +401,14 @@ enum LastFrameDuration {
 }
 
 impl LastFrameDuration {
+    #[inline]
     pub fn value(&self) -> f64 {
         match self {
             Self::FixedOffset(val) | Self::FrameRate(val) => *val,
         }
     }
 
+    #[inline]
     pub fn shift_every_pts_by(&self) -> f64 {
         match self {
             Self::FixedOffset(offset) => *offset,
@@ -400,11 +438,19 @@ impl Writer {
     }
 
     /// Adds a fixed color that will be kept in the palette at all times.
-    /// Useful to avoid glitches in mixed photographic/pixel art.
-    /// This can't be in settings because that would cause it to lose Copy.
-    /// Additionally to avoid breaking C API compatibility this has to be mutable there too.
+    ///
+    /// This may increase file size, because every frame will use a larger palette.
+    /// Max 255 allowed, because one more is reserved for transparency.
     pub fn add_fixed_color(&mut self, col: RGB8) {
-        self.fixed_colors.push(col);
+        if self.fixed_colors.len() < 255 {
+            self.fixed_colors.push(col);
+        }
+    }
+
+    #[deprecated(note = "please don't use, it will be in Settings eventually")]
+    #[doc(hidden)]
+    pub fn set_matte_color(&mut self, col: RGB8) {
+        self.settings.matte = Some(col);
     }
 
     /// `importance_map` is computed from previous and next frame.
@@ -467,6 +513,7 @@ impl Writer {
         Ok((Img::new(pal_img, img.width(), img.height()), pal))
     }
 
+    #[inline(never)]
     fn write_frames(write_queue: Receiver<FrameMessage>, writer: &mut dyn Write, settings: &SettingsExt, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         let (send, recv) = ordqueue::new(2);
         minipool::new_scope((if settings.s.fast || settings.gifsicle_loss() > 0 { 3 } else { 1 }).try_into().unwrap(), "lzw", move || {
@@ -522,11 +569,12 @@ impl Writer {
     /// `outfile` can be any writer, such as `File` or `&mut Vec`.
     ///
     /// `ProgressReporter.increase()` is called each time a new frame is being written.
-    #[allow(unused_mut)]
+    #[inline]
     pub fn write<W: Write>(self, mut writer: W, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         self.write_inner(&mut writer, reporter)
     }
 
+    #[inline(never)]
     fn write_inner(mut self, writer: &mut dyn Write, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
         let decode_queue_recv = self.queue_iter.take().ok_or(Error::Aborted)?;
 
@@ -566,13 +614,14 @@ impl Writer {
                 }
                 let image = match frame.frame {
                     FrameSource::Pixels(image) => image,
+                    #[cfg(feature = "png")]
                     FrameSource::Path(path) => {
                         let image = lodepng::decode32_file(&path)
                             .map_err(|err| Error::PNG(format!("Can't load {}: {err}", path.display())))?;
                         Img::new(image.buffer, image.width, image.height)
                     },
                 };
-                let resized = resized_binary_alpha(image, settings.s.width, settings.s.height)?;
+                let resized = resized_binary_alpha(image, settings.s.width, settings.s.height, settings.matte)?;
                 let frame_blurred = if settings.extra_effort { smart_blur(resized.as_ref()) } else { less_smart_blur(resized.as_ref()) };
                 diff_queue.push(frame.frame_index, InputFrame {
                     frame: resized,
@@ -596,7 +645,7 @@ impl Writer {
             LastFrameDuration::FrameRate(0.)
         };
 
-        let mut denoiser = Denoiser::new(first_frame.frame.width(), first_frame.frame.height(), settings.motion_quality);
+        let mut denoiser = Denoiser::new(first_frame.frame.width(), first_frame.frame.height(), settings.motion_quality)?;
 
         let mut next_frame = Some(first_frame);
         let mut ordinal_frame_number = 0;
@@ -655,7 +704,7 @@ impl Writer {
         Ok(())
     }
 
-    fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: OrdQueue<RemapMessage>, settings: &SettingsExt, fixed_colors: &Vec<RGB8>) -> CatResult<()> {
+    fn quantize_frames(inputs: Receiver<DiffMessage>, remap_queue: OrdQueue<RemapMessage>, settings: &SettingsExt, fixed_colors: &[RGB8]) -> CatResult<()> {
         minipool::new_channel(settings.max_threads.min(4.try_into()?), "quant", move |to_remap| {
         let mut inputs = inputs.into_iter().peekable();
 
@@ -753,17 +802,22 @@ impl Writer {
             let transparent_index = transparent_index_from_palette(&mut image8_pal, image8.as_mut());
 
             let next_frame = inputs.peek();
-            let (left, top, image8) = if frame_index != 0 && next_frame.is_some() {
-                match trim_image(image8, &image8_pal, transparent_index, dispose, screen_after_dispose.pixels()) {
+            let (left, top) = if frame_index != 0 && next_frame.is_some() {
+                let (left, top, new_width, new_height) = match trim_image(image8.as_ref(), &image8_pal, transparent_index, dispose, screen_after_dispose.pixels()) {
                     Some(trimmed) => trimmed,
                     None => continue, // no pixels need to be changed after dispose
+                };
+                if new_width != image8.width() || new_height != image8.height() {
+                    let new_buf = image8.sub_image(left.into(), top.into(), new_width, new_height).to_contiguous_buf().0.into_owned();
+                    image8 = ImgVec::new(new_buf, new_width, new_height);
                 }
+                (left, top)
             } else {
                 // must keep first and last frame
-                (0, 0, image8)
+                (0, 0)
             };
 
-            screen_after_dispose.then_blit(Some(&image8_pal), dispose, left, top as _, image8.as_ref(), transparent_index)?;
+            screen_after_dispose.then_blit(Some(&image8_pal), dispose, left, top, image8.as_ref(), transparent_index)?;
 
             write_queue.send(FrameMessage {
                 frame_index,
@@ -822,9 +876,7 @@ fn combine_res(res1: Result<(), Error>, res2: Result<(), Error>) -> Result<(), E
     }
 }
 
-fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: Option<u8>, dispose: DisposalMethod, mut screen: ImgRef<RGBA8>) -> Option<(u16, u16, ImgVec<u8>)> {
-    let mut image_trimmed = image8.as_ref();
-
+fn trim_image(mut image_trimmed: ImgRef<u8>, image8_pal: &[RGBA8], transparent_index: Option<u8>, dispose: DisposalMethod, mut screen: ImgRef<RGBA8>) -> Option<(u16, u16, usize, usize)> {
     let is_matching_pixel = move |px: u8, bg: RGBA8| -> bool {
         if Some(px) == transparent_index {
             if dispose == DisposalMethod::Keep {
@@ -862,6 +914,7 @@ fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: O
         .count();
 
     if top > 0 {
+        debug_assert_ne!(image_trimmed.height(), top);
         image_trimmed = image_trimmed.sub_image(0, top, image_trimmed.width(), image_trimmed.height() - top);
         screen = screen.sub_image(0, top, screen.width(), screen.height() - top);
     }
@@ -874,15 +927,24 @@ fn trim_image(mut image8: ImgVec<u8>, image8_pal: &[RGBA8], transparent_index: O
             })
         }).count();
     if left > 0 {
+        debug_assert_ne!(image_trimmed.width(), left);
         image_trimmed = image_trimmed.sub_image(left, 0, image_trimmed.width() - left, image_trimmed.height());
     }
 
-    if image_trimmed.height() != image8.height() || image_trimmed.width() != image8.width() {
-        let (buf, width, height) = image_trimmed.to_contiguous_buf();
-        image8 = Img::new(buf.into_owned(), width, height);
+    let right = (1..image_trimmed.width())
+        .take_while(|&x| {
+            let x = image_trimmed.width()-x;
+            (0..image_trimmed.height()).all(|y| {
+                let px = image_trimmed[(x, y)];
+                is_matching_pixel(px, screen[(x, y)])
+            })
+        }).count();
+    if right > 0 {
+        debug_assert_ne!(image_trimmed.width(), right);
+        image_trimmed = image_trimmed.sub_image(0, 0, image_trimmed.width() - right, image_trimmed.height());
     }
 
-    Some((left as _, top as _, image8))
+    Some((left as _, top as _, image_trimmed.width(), image_trimmed.height()))
 }
 
 trait PushInCapacity<T> {

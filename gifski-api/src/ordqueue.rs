@@ -9,6 +9,7 @@ pub struct OrdQueue<T> {
 }
 
 impl<T> Clone for OrdQueue<T> {
+    #[inline]
     fn clone(&self) -> Self {
         Self { sender: self.sender.clone() }
     }
@@ -32,6 +33,7 @@ pub fn new<T>(depth: usize) -> (OrdQueue<T>, OrdQueueIter<T>) {
 }
 
 impl<T: Send + 'static> OrdQueue<T> {
+    #[inline]
     pub fn push(&self, index: usize, item: T) -> CatResult<()> {
         self.sender.send(ReverseTuple(index, item))?;
         Ok(())
@@ -42,6 +44,8 @@ impl<T> FusedIterator for OrdQueueIter<T> {}
 
 impl<T> Iterator for OrdQueueIter<T> {
     type Item = T;
+
+    #[inline(never)]
     fn next(&mut self) -> Option<T> {
         while self.receive_buffer.peek().map(|i| i.0) != Some(self.next_index) {
             match self.receiver.recv() {
@@ -66,12 +70,15 @@ impl<T> Iterator for OrdQueueIter<T> {
 
 struct ReverseTuple<T>(usize, T);
 impl<T> PartialEq for ReverseTuple<T> {
+    #[inline]
     fn eq(&self, o: &Self) -> bool { o.0.eq(&self.0) }
 }
 impl<T> Eq for ReverseTuple<T> {}
 impl<T> PartialOrd for ReverseTuple<T> {
+    #[inline]
     fn partial_cmp(&self, o: &Self) -> Option<Ordering> { o.0.partial_cmp(&self.0) }
 }
 impl<T> Ord for ReverseTuple<T> {
+    #[inline]
     fn cmp(&self, o: &Self) -> Ordering { o.0.cmp(&self.0) }
 }
