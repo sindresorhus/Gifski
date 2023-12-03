@@ -35,7 +35,7 @@ Requires macOS 13 or later.
 
 A special version for users that cannot access the App Store. It won't receive automatic updates. I will update it here once a year.
 
-[Download](https://dsc.cloud/sindresorhus/Gifski-2.23.0-1692807940.zip) *(2.23.0 · macOS 13+)*
+[Download](https://github.com/sindresorhus/meta/files/13539147/Gifski-2.23.0-1692807940.zip) *(2.23.0 · macOS 13+)*
 
 ## Features
 
