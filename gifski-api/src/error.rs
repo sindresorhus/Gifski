@@ -59,16 +59,16 @@ impl From<gif::EncodingError> for Error {
     }
 }
 
-impl<T> From<crossbeam_channel::SendError<T>> for Error {
+impl<T> From<ordered_channel::SendError<T>> for Error {
     #[cold]
-    fn from(_: crossbeam_channel::SendError<T>) -> Self {
+    fn from(_: ordered_channel::SendError<T>) -> Self {
         Self::ThreadSend
     }
 }
 
-impl From<crossbeam_channel::RecvError> for Error {
+impl From<ordered_channel::RecvError> for Error {
     #[cold]
-    fn from(_: crossbeam_channel::RecvError) -> Self {
+    fn from(_: ordered_channel::RecvError) -> Self {
         Self::Aborted
     }
 }

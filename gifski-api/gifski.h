@@ -162,6 +162,8 @@ GifskiError gifski_set_extra_effort(gifski *handle, bool extra);
  *
  * The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
  *
+ * This function may block and wait until the frame is processed. Make sure to call `gifski_set_write_callback` or `gifski_set_file_output` first to avoid a deadlock.
+ *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */
 GifskiError gifski_add_frame_png_file(gifski *handle,
@@ -177,6 +179,8 @@ GifskiError gifski_add_frame_png_file(gifski *handle,
  *
  * `frame_number` orders frames (consecutive numbers starting from 0).
  * You can add frames in any order, and they will be sorted by their `frame_number`.
+ * However, out-of-order frames are buffered in RAM, and will cause high memory usage
+ * if there are gaps in the frame numbers.
  *
  * Presentation timestamp (PTS) is time in seconds, since start of the file, when this frame is to be displayed.
  * For a 20fps video it could be `frame_number/20.0`. First frame must have PTS=0.
@@ -185,6 +189,8 @@ GifskiError gifski_add_frame_png_file(gifski *handle,
  * The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
  *
  * Colors are in sRGB, uncorrelated RGBA, with alpha byte last.
+ *
+ * This function may block and wait until the frame is processed. Make sure to call `gifski_set_write_callback` or `gifski_set_file_output` first to avoid a deadlock.
  *
  * Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
  */

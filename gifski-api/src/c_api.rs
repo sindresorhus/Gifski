@@ -108,7 +108,7 @@ pub struct GifskiHandleInternal {
 /// Returns a handle for the other functions, or `NULL` on error (if the settings are invalid).
 #[no_mangle]
 pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const GifskiHandle {
-    let settings = if let Some(s) = settings.as_ref() {s} else {
+    let Some(settings) = settings.as_ref() else {
         return ptr::null_mut();
     };
     let s = Settings {
@@ -214,6 +214,8 @@ pub unsafe extern "C" fn gifski_add_fixed_color(
 ///
 /// The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
 ///
+/// This function may block and wait until the frame is processed. Make sure to call `gifski_set_write_callback` or `gifski_set_file_output` first to avoid a deadlock.
+///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
 #[cfg(feature = "png")]
@@ -245,6 +247,8 @@ pub unsafe extern "C" fn gifski_add_frame_png_file(handle: *const GifskiHandle, 
 /// The first frame should have PTS=0. If the first frame has PTS > 0, it'll be used as a delay after the last frame.
 ///
 /// Colors are in sRGB, uncorrelated RGBA, with alpha byte last.
+///
+/// This function may block and wait until the frame is processed. Make sure to call `gifski_set_write_callback` or `gifski_set_file_output` first to avoid a deadlock.
 ///
 /// Returns 0 (`GIFSKI_OK`) on success, and non-0 `GIFSKI_*` constant on error.
 #[no_mangle]
@@ -326,6 +330,8 @@ pub unsafe extern "C" fn gifski_add_frame_argb(handle: *const GifskiHandle, fram
 /// Bytes per row must be multiple of 3 and greater or equal width×3.
 ///
 /// Colors are in sRGB, red byte first.
+
+/// This function may block and wait until the frame is processed. Make sure to call `gifski_set_write_callback` first to avoid a deadlock.
 ///
 /// `gifski_add_frame_rgba` is preferred over this function.
 #[no_mangle]
