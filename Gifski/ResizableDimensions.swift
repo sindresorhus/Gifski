@@ -66,11 +66,13 @@ extension Dimensions {
 	}
 
 	var widthMinMax: ClosedRange<Double> {
-		.fromGraceful(10, originalSize.width)
+		let minimumSize = originalSize.aspectFill(to: 5)
+		return minimumSize.width.clamped(to: ...originalSize.width).rounded()...originalSize.width
 	}
 
 	var heightMinMax: ClosedRange<Double> {
-		.fromGraceful(10, originalSize.height)
+		let minimumSize = originalSize.aspectFill(to: 5)
+		return minimumSize.height.clamped(to: ...originalSize.height).rounded()...originalSize.height
 	}
 
 	var percentMinMax: ClosedRange<Double> { 1...100 }
@@ -119,13 +121,15 @@ extension Dimensions {
 	func aspectResized(usingWidth width: Double) -> Self {
 		switch self {
 		case .pixels(let originalValue, let originalSize):
-			guard originalValue.width != .zero else {
+			print("ORIGINAL", originalSize, originalValue)
+			guard originalSize.width != .zero else {
 				return self
 			}
 
-			let newHeight = originalValue.height * (width / originalValue.width)
+			let newHeight = originalSize.height * (width / originalSize.width)
 			return .pixels(CGSize(width: width, height: newHeight).rounded(), originalSize: originalSize)
 		case .percent(_, let originalSize):
+			print("ORIGINAL2", originalSize)
 			let newPercent = width / originalSize.width
 			return .percent(newPercent, originalSize: originalSize)
 		}
@@ -133,12 +137,12 @@ extension Dimensions {
 
 	func aspectResized(usingHeight height: Double) -> Self {
 		switch self {
-		case .pixels(let originalValue, let originalSize):
-			guard originalValue.height != .zero else {
+		case .pixels(_, let originalSize):
+			guard originalSize.height != .zero else {
 				return self
 			}
 
-			let newWidth = originalValue.width * (height / originalValue.height)
+			let newWidth = originalSize.width * (height / originalSize.height)
 			return .pixels(CGSize(width: newWidth, height: height).rounded(), originalSize: originalSize)
 		case .percent(_, let originalSize):
 			let newPercent = height / originalSize.height
@@ -146,148 +150,3 @@ extension Dimensions {
 		}
 	}
 }
-
-
-
-
-//final class ResizableDimensions: Copyable, ReflectiveHashable {
-//	/**
-//	Minimum scaling, 1.0 being the original size.
-//	*/
-//	let minimumScale: Double
-//
-//	/**
-//	Maximum scaling, 1.0 being the original size.
-//	*/
-//	let maximumScale: Double
-//
-//	/**
-//	Width bounds for `currentDimensions`.
-//	*/
-//	var widthMinMax: ClosedRange<Double> {
-//		let multiplier = multiplier(for: currentDimensions.type)
-//		let min = (minimumScale * multiplier.width).rounded()
-//		let max = (maximumScale * multiplier.width).rounded()
-//		return min...max
-//	}
-//
-//	/**
-//	Height bounds for `currentDimensions`.
-//	*/
-//	var heightMinMax: ClosedRange<Double> {
-//		let multiplier = multiplier(for: currentDimensions.type)
-//		let min = (minimumScale * multiplier.height).rounded()
-//		let max = (maximumScale * multiplier.height).rounded()
-//		return min...max
-//	}
-//
-//	private(set) var currentDimensions: Dimensions
-//	private let originalDimensions: Dimensions
-//	private var currentScale: Double
-//
-//	init(
-//		dimensions: Dimensions,
-//		minimumScale: Double? = nil,
-//		maximumScale: Double? = nil
-//	) {
-//		self.originalDimensions = dimensions.rounded()
-//		self.currentDimensions = originalDimensions
-//		self.minimumScale = minimumScale ?? 0.01
-//		self.maximumScale = maximumScale ?? 1
-//		self.currentScale = 1
-//	}
-//
-//	init(instance: ResizableDimensions) {
-//		self.originalDimensions = instance.originalDimensions
-//		self.minimumScale = instance.minimumScale
-//		self.maximumScale = instance.maximumScale
-//		self.currentScale = instance.currentScale
-//		self.currentDimensions = instance.currentDimensions
-//	}
-//
-//	func change(dimensionsType: DimensionsType) {
-//		currentDimensions = calculateDimensions(for: dimensionsType)
-//	}
-//
-//	func changed(dimensionsType: DimensionsType) -> Self {
-//		let resizableDimensions = copy()
-//		resizableDimensions.change(dimensionsType: dimensionsType)
-//		return resizableDimensions
-//	}
-//
-//	func resize(to newDimensions: CGSize) {
-//		let newScale = calculateScale(usingWidth: newDimensions.width)
-//		currentScale = validated(scale: newScale)
-//		currentDimensions = calculateDimensions(for: currentDimensions.type)
-//	}
-//
-//	func resize(usingWidth width: Double) {
-//		let newScale = calculateScale(usingWidth: width)
-//		currentScale = validated(scale: newScale)
-//		currentDimensions = calculateDimensions(for: currentDimensions.type)
-//	}
-//
-//	func resize(usingHeight height: Double) {
-//		let newScale = calculateScale(usingHeight: height)
-//		currentScale = validated(scale: newScale)
-//		currentDimensions = calculateDimensions(for: currentDimensions.type)
-//	}
-//
-//	func resized(to newDimensions: CGSize) -> ResizableDimensions {
-//		let resizableDimensions = copy()
-//		resizableDimensions.resize(to: newDimensions)
-//		return resizableDimensions
-//	}
-//
-//	func validate(newSize: CGSize) -> Bool {
-//		let scale = calculateScale(usingWidth: newSize.width)
-//		return scalesEqual(validated(scale: scale), scale)
-//	}
-//
-//	private func scalesEqual(_ scale1: Double, _ scale2: Double) -> Bool {
-//		scale1.isAlmostEqual(to: scale2, tolerance: 0.001)
-//	}
-//
-//	private func calculateDimensions(for type: DimensionsType) -> Dimensions {
-//		let multiplier = multiplier(for: type)
-//		let width = currentScale * multiplier.width
-//		let height = currentScale * multiplier.height
-//
-//		let dimensions = Dimensions(type: type, value: CGSize(width: width, height: height))
-//		return type == .pixels ? dimensions.rounded() : dimensions.rounded(.down)
-//	}
-//
-//	private func calculateScale(usingWidth width: Double) -> Double {
-//		width / multiplier(for: currentDimensions.type).width
-//	}
-//
-//	private func calculateScale(usingHeight height: Double) -> Double {
-//		height / multiplier(for: currentDimensions.type).height
-//	}
-//
-//	private func validated(scale: Double) -> Double {
-//		scale.clamped(to: minimumScale...maximumScale)
-//	}
-//
-//	private func multiplier(for type: DimensionsType) -> CGSize {
-//		switch type {
-//		case .percent:
-//			CGSize(width: 100, height: 100)
-//		case .pixels:
-//			originalDimensions.value
-//		}
-//	}
-//}
-//
-//extension ResizableDimensions: CustomStringConvertible {
-//	var description: String {
-//		switch currentDimensions.type {
-//		case .percent:
-//			let pixelsDimensions = changed(dimensionsType: .pixels).currentDimensions
-//			return "\(currentDimensions) (\(pixelsDimensions == originalDimensions ? "Original" : "\(pixelsDimensions)"))"
-//		case .pixels:
-//			let percentDimensions = changed(dimensionsType: .percent).currentDimensions
-//			return "\(currentDimensions) (\(currentDimensions == originalDimensions ? "Original" : "~\(percentDimensions)"))"
-//		}
-//	}
-//}

@@ -87,7 +87,8 @@ actor GIFGenerator {
 
 		var completedFrameCount = 0
 		gifski?.onProgress = {
-			onProgress(Double(completedFrameCount.increment()) / Double(totalFrameCount))
+			let progress = Double(completedFrameCount.increment()) / Double(totalFrameCount)
+			onProgress(progress.clamped(to: 0...1)) // TODO: For some reason, when we use `bounce`, `totalFrameCount` can be 1 less than `completedFrameCount` on completion.
 		}
 
 		// TODO: Use `Duration`.
@@ -253,11 +254,11 @@ actor GIFGenerator {
 		let frameCount = Int(duration * frameRate)
 		let timescale = try await firstVideoTrack.load(.naturalTimeScale) // TODO: Move this to the other `load` call.
 
+		print("Video frame count:", frameCount)
+
 		guard frameCount >= 2 else {
 			throw Error.notEnoughFrames(frameCount)
 		}
-
-		print("Video frame count:", frameCount)
 
 		let frameStep = 1 / frameRate
 		var frameForTimes: [CMTime] = (0..<frameCount).map { index in

@@ -6,25 +6,25 @@ import SwiftUI
 @Observable
 final class EstimatedFileSizeModel {
 	var estimatedFileSize: String?
+	var estimatedFileSizeNaive: String?
 	var error: Error?
 
 	// TODO: This is outside the scope of "file estimate", but it was easier to add this here than doing a separate SwiftUI view. This should be refactored out into a separate view when all of Gifski is SwiftUI.
 	var duration = Duration.zero
 
-	var estimatedFileSizeNaive: String {
-		get async {
-			await Int(getNaiveEstimate()).formatted(.byteCount(style: .file))
-		}
-	}
-
 	var getConversionSettings: (() -> GIFGenerator.Conversion)?
 	private var gifski: GIFGenerator?
 
+	private func getEstimatedFileSizeNaive() async -> String {
+		await Int(getNaiveEstimate()).formatted(.byteCount(style: .file))
+	}
+
 	private func _estimateFileSize() {
-		cancel()
+		self.gifski = nil
 		let gifski = GIFGenerator()
 		self.gifski = gifski
 		error = nil
+		estimatedFileSize = nil
 
 		Task {
 			// TODO: Improve.
@@ -32,7 +32,7 @@ final class EstimatedFileSizeModel {
 		}
 
 		Task {
-			estimatedFileSize = await estimatedFileSizeNaive
+			estimatedFileSizeNaive = await getEstimatedFileSizeNaive()
 
 			guard let settings = getConversionSettings?() else {
 				return
@@ -51,18 +51,12 @@ final class EstimatedFileSizeModel {
 				}
 
 				if case .notEnoughFrames = error as? GIFGenerator.Error {
-					estimatedFileSize = await estimatedFileSizeNaive
+					estimatedFileSize = await getEstimatedFileSizeNaive()
 				} else {
 					self.error = error
 				}
 			}
 		}
-	}
-
-	func cancel() {
-		// It's important to call the cancel method as nil'ing out gifski doesn't properly cancel it.
-//		gifski?.cancel()
-		gifski = nil
 	}
 
 	func updateEstimate() {
@@ -101,7 +95,7 @@ struct EstimatedFileSizeView: View {
 			} else {
 				HStack(spacing: 0) {
 					Text("Estimated size: ")
-					Text(model.estimatedFileSize ?? "…")
+					Text(model.estimatedFileSize ?? model.estimatedFileSizeNaive ?? "…")
 						.monospacedDigit()
 						.foregroundStyle(model.estimatedFileSize == nil ? .secondary : .primary)
 				}

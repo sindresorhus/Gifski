@@ -5,7 +5,7 @@ final class Gifski {
 	enum Loop {
 		case forever
 		case never
-		case count(_ count: Int)
+		case count(Int)
 	}
 
 	private var wrapper: GifskiWrapper?

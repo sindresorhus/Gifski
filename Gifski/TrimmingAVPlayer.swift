@@ -8,6 +8,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	var controlsStyle: AVPlayerViewControlsStyle = .inline
 	var loopPlayback = false
 	var bouncePlayback = false
+	var speed = 1.0
 	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
 	func makeNSViewController(context: Context) -> NSViewControllerType {
@@ -25,6 +26,8 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 
 		nsViewController.loopPlayback = loopPlayback
 		nsViewController.bouncePlayback = bouncePlayback
+		nsViewController.player.defaultRate = Float(speed)
+		nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
 	}
 }
 
@@ -35,7 +38,7 @@ A view controller containing AVPlayerView and also extending possibilities for t
 final class TrimmingAVPlayerViewController: NSViewController {
 	private(set) var timeRange: ClosedRange<Double>?
 	private let playerItem: AVPlayerItem
-	private let player: LoopingPlayer
+	fileprivate let player: LoopingPlayer
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 	private var cancellables = Set<AnyCancellable>()

@@ -9,6 +9,32 @@
 	<br>
 </div>
 
+<div align="center">
+	<hr>
+	<p>
+		<p>
+			<sup>
+				<a href="https://github.com/sponsors/sindresorhus">Sindre Sorhus' open source work is supported by the community</a>
+			</sup>
+		</p>
+		<sup>Special thanks to:</sup>
+		<br>
+		<br>
+		<a href="https://supatool.io">
+			<div>
+				<picture>
+					<source width="280" media="(prefers-color-scheme: dark)" srcset="https://sindresorhus.com/assets/thanks/supatool-logo-dark.png">
+					<source width="280" media="(prefers-color-scheme: light)" srcset="https://sindresorhus.com/assets/thanks/supatool-logo-light.png">
+					<img width="280" src="https://sindresorhus.com/assets/thanks/supatool-logo-light.png" alt="Supatool logo">
+				</picture>
+			</div>
+		</a>
+	</p>
+	<hr>
+	<br>
+	<br>
+</div>
+
 This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts videos to GIF animations using [`pngquant`](https://pngquant.org)'s fancy features for efficient cross-frame palettes and temporal dithering. It produces animated GIFs that use thousands of colors per frame and up to 50 FPS (useful for showing off design work on Dribbble).
 
 You can also produce smaller lower quality GIFs when needed with the “Quality” slider, thanks to [`gifsicle`](https://github.com/kohler/gifsicle).
@@ -53,6 +79,10 @@ Gifski includes a [system service](https://www.computerworld.com/article/2476298
 ### Bounce (yo-yo) GIF playback
 
 Gifski includes the option to create GIFs that bounce back and forth between forward and backward playback. This is a similar effect to the bounce effect in [iOS's Live Photo effects](https://support.apple.com/en-us/HT207310). This option doubles the number of frames in the GIF so the file size will double as well.
+
+<!-- ### Batch conversion
+
+You can use the Shortcuts app to do batch conversions or any kind of automated GIF generation. Look for the “Convert Video to Animated GIF” action in the Shortcuts app. -->
 
 ## Tips
 
@@ -109,7 +139,9 @@ Ensure the images are named in the format `image_000001.png` and adjust the `-fr
 
 #### How can I run multiple conversions at the same time?
 
-This is unfortunately not supported. However, if you know how to run a terminal command, you could run `open -na Gifski` multiple times to open multiple instances of Gifski, where each instance can convert a separate video. You should not have the editor view open in multiple instances though, as changing the quality, for example, will change it in all the instances.
+This is unfortunately not supported in the app itself, but you can do it from the Shortcuts app using the shortcut action that comes with the app.
+
+If you know how to run a terminal command, you could also run `open -na Gifski` multiple times to open multiple instances of Gifski, where each instance can convert a separate video. You should not have the editor view open in multiple instances though, as changing the quality, for example, will change it in all the instances.
 
 #### Is it possible to convert from WebM?
 
@@ -121,7 +153,7 @@ You can convert your video to MP4 first with [this app](https://apps.apple.com/a
 
 We don't plan to localize the app.
 
-#### Can you support Windows/Linux?
+#### Can you support Windows and Linux?
 
 No, but there's a [cross-platform command-line tool](https://github.com/ImageOptim/gifski) available.
 
@@ -135,7 +167,6 @@ No, but there's a [cross-platform command-line tool](https://github.com/ImageOpt
 
 - [gifski library](https://github.com/ImageOptim/gifski) - High-quality GIF encoder
 - [Defaults](https://github.com/sindresorhus/Defaults) - Swifty and modern UserDefaults
-- [CircularProgress](https://github.com/sindresorhus/CircularProgress) - Circular progress indicator for your macOS app
 - [DockProgress](https://github.com/sindresorhus/DockProgress) - Show progress in your app's Dock icon
 
 ## Maintainers

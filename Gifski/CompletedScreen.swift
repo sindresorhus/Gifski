@@ -21,6 +21,7 @@ struct CompletedScreen: View {
 			ImageView(image: NSImage(data: data) ?? NSImage())
 				.clipShape(.rect(cornerRadius: 8))
 				.shadow(radius: 8)
+				// TODO: This is probably fixed in macOS 15. Test.
 				// TODO: `.draggable()` does not correctly add a file to the drag pasteboard. (macOS 14.0)
 //				.draggable(ExportableGIF(url: url))
 				.onDrag { .init(object: url as NSURL) }
@@ -47,7 +48,8 @@ struct CompletedScreen: View {
 			defaultFilename: url.filename
 		) {
 			do {
-				_ = try $0.get()
+				let url = try $0.get()
+				try? url.setAppAsItemCreator()
 			} catch {
 				appState.error = error
 			}
@@ -79,7 +81,7 @@ struct CompletedScreen: View {
 					Text("·")
 					Text(url.fileSizeFormatted)
 				}
-				.font(.system(size: 12, design: .rounded))
+				.font(.system(weight: .medium, design: .rounded))
 				.foregroundStyle(.secondary)
 			}
 			ToolbarItem {
