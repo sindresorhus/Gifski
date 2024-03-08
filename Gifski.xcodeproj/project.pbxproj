@@ -11,7 +11,6 @@
 		0E7925282329BDBE00058B94 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5FF0DFFB278BA5DB00A80F09 /* libgifski_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F6ABD84278BA5A20040DDF0 /* libgifski_static.a */; };
 		8548806522B78E8300E97401 /* IntTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8548806422B78E8300E97401 /* IntTextField.swift */; };
-		858380EA22BFD38C0086BC98 /* ExtendedAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
 		85A5C44822CA41B500CAA94D /* VideoValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A5C44722CA41B500CAA94D /* VideoValidator.swift */; };
 		85BF910922F3279300AD3FF6 /* TrimmingAVPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF910822F3279300AD3FF6 /* TrimmingAVPlayer.swift */; };
@@ -25,6 +24,7 @@
 		E33552F12ACAC3280023AAE9 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E33552F02ACAC3280023AAE9 /* AppState.swift */; };
 		E33552F32ACAC5D80023AAE9 /* StartScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E33552F22ACAC5D80023AAE9 /* StartScreen.swift */; };
 		E339F011203820ED003B78FB /* GIFGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E339F010203820ED003B78FB /* GIFGenerator.swift */; };
+		E36BD7A52B9E2C2400B8D86C /* ExtendedAttributes in Frameworks */ = {isa = PBXBuildFile; productRef = E36BD7A42B9E2C2400B8D86C /* ExtendedAttributes */; };
 		E37F68E02ACAD9D1007F1A7F /* CompletedScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E37F68DF2ACAD9D1007F1A7F /* CompletedScreen.swift */; };
 		E37F68E22ACAD9F1007F1A7F /* ConversionScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E37F68E12ACAD9F1007F1A7F /* ConversionScreen.swift */; };
 		E37F68E42ACADA40007F1A7F /* EditScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E37F68E32ACADA40007F1A7F /* EditScreen.swift */; };
@@ -86,7 +86,6 @@
 		0E7925252329BDBE00058B94 /* Share_Extension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Share_Extension.entitlements; sourceTree = "<group>"; };
 		5F6ABD7D278BA5A20040DDF0 /* gifski.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = gifski.xcodeproj; path = "gifski-api/gifski.xcodeproj"; sourceTree = SOURCE_ROOT; };
 		8548806422B78E8300E97401 /* IntTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = IntTextField.swift; sourceTree = "<group>"; usesTabs = 1; };
-		858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ExtendedAttributes.swift; sourceTree = "<group>"; usesTabs = 1; };
 		8588EB0C22A424B800030A59 /* ResizableDimensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ResizableDimensions.swift; sourceTree = "<group>"; usesTabs = 1; };
 		85A5C44722CA41B500CAA94D /* VideoValidator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = VideoValidator.swift; sourceTree = "<group>"; usesTabs = 1; };
 		85BF910822F3279300AD3FF6 /* TrimmingAVPlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = TrimmingAVPlayer.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -131,6 +130,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E3998CF22ACD7148009F8117 /* Sentry in Frameworks */,
+				E36BD7A52B9E2C2400B8D86C /* ExtendedAttributes in Frameworks */,
 				5FF0DFFB278BA5DB00A80F09 /* libgifski_static.a in Frameworks */,
 				E3339E932395766800303839 /* Defaults in Frameworks */,
 				E3339E9D2395789500303839 /* DockProgress in Frameworks */,
@@ -173,6 +173,23 @@
 			name = Other;
 			sourceTree = "<group>";
 		};
+		E36BD79A2B9D953900B8D86C /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				8548806422B78E8300E97401 /* IntTextField.swift */,
+				85BF910822F3279300AD3FF6 /* TrimmingAVPlayer.swift */,
+				D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */,
+			);
+			name = Components;
+			sourceTree = "<group>";
+		};
+		E36BD79F2B9E243800B8D86C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		E3AE627A1E5CD2F300035A2F = {
 			isa = PBXGroup;
 			children = (
@@ -180,6 +197,7 @@
 				E3AE62851E5CD2F300035A2F /* Gifski */,
 				0E79251C2329BDBE00058B94 /* Share Extension */,
 				E3AE62841E5CD2F300035A2F /* Products */,
+				E36BD79F2B9E243800B8D86C /* Frameworks */,
 			);
 			sourceTree = "<group>";
 			usesTabs = 1;
@@ -197,8 +215,8 @@
 			isa = PBXGroup;
 			children = (
 				E3AE62861E5CD2F300035A2F /* App.swift */,
-				E33552F02ACAC3280023AAE9 /* AppState.swift */,
 				E3A6BD102245345C00F62256 /* Constants.swift */,
+				E33552F02ACAC3280023AAE9 /* AppState.swift */,
 				E3FC365B2377FA0000CF7C59 /* Shared.swift */,
 				E33552EE2ACAC3190023AAE9 /* MainScreen.swift */,
 				E33552F22ACAC5D80023AAE9 /* StartScreen.swift */,
@@ -209,12 +227,9 @@
 				E339F010203820ED003B78FB /* GIFGenerator.swift */,
 				E30C8EEE29387E7A002E053F /* Gifski.swift */,
 				C2040B8820435871004EE259 /* GifskiWrapper.swift */,
-				85BF910822F3279300AD3FF6 /* TrimmingAVPlayer.swift */,
-				D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */,
 				8588EB0C22A424B800030A59 /* ResizableDimensions.swift */,
-				8548806422B78E8300E97401 /* IntTextField.swift */,
-				858380E922BFD38B0086BC98 /* ExtendedAttributes.swift */,
 				85A5C44722CA41B500CAA94D /* VideoValidator.swift */,
+				E36BD79A2B9D953900B8D86C /* Components */,
 				E3961F7F2AC9F2A700708EB7 /* Intents.swift */,
 				E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
@@ -264,8 +279,9 @@
 				E3339E922395766800303839 /* Defaults */,
 				E3339E9C2395789500303839 /* DockProgress */,
 				E3998CF12ACD7148009F8117 /* Sentry */,
+				E36BD7A42B9E2C2400B8D86C /* ExtendedAttributes */,
 			);
-			productName = "HEIC Converter";
+			productName = Gifski;
 			productReference = E3AE62831E5CD2F300035A2F /* Gifski.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -310,6 +326,7 @@
 				E3339E912395766800303839 /* XCRemoteSwiftPackageReference "Defaults" */,
 				E3339E9B2395789500303839 /* XCRemoteSwiftPackageReference "DockProgress" */,
 				E3998CF02ACD7148009F8117 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
+				E36BD7A32B9E2C1600B8D86C /* XCRemoteSwiftPackageReference "ExtendedAttributes" */,
 			);
 			productRefGroup = E3AE62841E5CD2F300035A2F /* Products */;
 			projectDirPath = "";
@@ -399,7 +416,6 @@
 				8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */,
 				E3908B7426754568000723A7 /* EstimatedFileSize.swift in Sources */,
 				D957BCDE234941C200A9A9F9 /* CheckerboardView.swift in Sources */,
-				858380EA22BFD38C0086BC98 /* ExtendedAttributes.swift in Sources */,
 				E33552F32ACAC5D80023AAE9 /* StartScreen.swift in Sources */,
 				E37F68E42ACADA40007F1A7F /* EditScreen.swift in Sources */,
 				85BF910922F3279300AD3FF6 /* TrimmingAVPlayer.swift in Sources */,
@@ -551,7 +567,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -610,7 +626,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MACOSX_DEPLOYMENT_TARGET = 14.4;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -737,6 +753,14 @@
 				minimumVersion = 4.3.0;
 			};
 		};
+		E36BD7A32B9E2C1600B8D86C /* XCRemoteSwiftPackageReference "ExtendedAttributes" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/ExtendedAttributes";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 		E3998CF02ACD7148009F8117 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
@@ -757,6 +781,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E3339E9B2395789500303839 /* XCRemoteSwiftPackageReference "DockProgress" */;
 			productName = DockProgress;
+		};
+		E36BD7A42B9E2C2400B8D86C /* ExtendedAttributes */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E36BD7A32B9E2C1600B8D86C /* XCRemoteSwiftPackageReference "ExtendedAttributes" */;
+			productName = ExtendedAttributes;
 		};
 		E3998CF12ACD7148009F8117 /* Sentry */ = {
 			isa = XCSwiftPackageProductDependency;

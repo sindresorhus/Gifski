@@ -87,7 +87,8 @@ actor GIFGenerator {
 
 		var completedFrameCount = 0
 		gifski?.onProgress = {
-			onProgress(Double(completedFrameCount.increment()) / Double(totalFrameCount))
+			let progress = Double(completedFrameCount.increment()) / Double(totalFrameCount)
+			onProgress(progress.clamped(to: 0...1)) // TODO: For some reason, when we use `bounce`, `totalFrameCount` can be 1 less than `completedFrameCount` on completion.
 		}
 
 		// TODO: Use `Duration`.

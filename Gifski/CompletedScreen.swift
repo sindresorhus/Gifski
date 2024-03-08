@@ -47,7 +47,8 @@ struct CompletedScreen: View {
 			defaultFilename: url.filename
 		) {
 			do {
-				_ = try $0.get()
+				let url = try $0.get()
+				try? url.setAppAsItemCreator()
 			} catch {
 				appState.error = error
 			}
@@ -79,7 +80,7 @@ struct CompletedScreen: View {
 					Text("·")
 					Text(url.fileSizeFormatted)
 				}
-				.font(.system(size: 12, design: .rounded))
+				.font(.system(weight: .medium, design: .rounded))
 				.foregroundStyle(.secondary)
 			}
 			ToolbarItem {

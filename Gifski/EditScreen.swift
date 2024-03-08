@@ -17,7 +17,7 @@ struct EditScreen: View {
 	@State private var loopCount = 0
 	@State private var isKeyframeRateChecked = false
 	@State private var isReversePlaybackWarningPresented = false
-	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 1))
+	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
 
 	init(
@@ -46,6 +46,7 @@ struct EditScreen: View {
 			controls
 			bottomBar
 		}
+		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
 		.navigationDocument(url)
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { change in
@@ -58,11 +59,11 @@ struct EditScreen: View {
 				}
 			}
 		}
-		// TODO: Make this a single call when tuples are equatable.
 		.onChange(of: outputQuality, initial: true) {
 			estimatedFileSizeModel.duration = metadata.duration
 			estimatedFileSizeModel.updateEstimate()
 		}
+		// TODO: Make these a single call when tuples are equatable.
 		.onChange(of: resizableDimensions) {
 			estimatedFileSizeModel.updateEstimate()
 		}
@@ -113,19 +114,22 @@ struct EditScreen: View {
 					resizableDimensions: $resizableDimensions
 				)
 				SpeedSetting()
-					.padding(.bottom, 7) // Makes the forms have equal height.
+					.padding(.bottom, 6) // Makes the forms have equal height.
 			}
+			.padding(.horizontal, -8) // Form comes with some default padding, which we don't want.
 			.fillFrame()
 			.containerRelativeFrame(.horizontal, count: 2, span: 1, spacing: 0)
-			.padding(.trailing, -14)
+			.padding(.trailing, -8)
 			Form {
 				FrameRateSetting(videoFrameRate: metadata.frameRate)
 				QualitySetting()
 				LoopSetting(loopCount: $loopCount)
 			}
+			.padding(.horizontal, -8)
 			.fillFrame()
 			.containerRelativeFrame(.horizontal, count: 2, span: 1, spacing: 0)
 		}
+		.padding(-12)
 		.formStyle(.grouped)
 		.scrollContentBackground(.hidden)
 		.scrollDisabled(true)
@@ -146,11 +150,11 @@ struct EditScreen: View {
 			EstimatedFileSizeView(model: estimatedFileSizeModel)
 		}
 		.padding()
-		.background(.fill.quaternary)
+		.padding(.top, -16)
 	}
 
 	private var conversionSettings: GIFGenerator.Conversion {
-		print("DD", resizableDimensions.pixels)
+		print("resizableDimensions:", resizableDimensions.pixels, resizableDimensions.percent)
 		return .init(
 			asset: modifiedAsset,
 			sourceURL: url,
@@ -269,8 +273,10 @@ private struct DimensionsSetting: View {
 								IntTextField(
 									value: $width,
 									minMax: resizableDimensions.widthMinMax.toInt,
-									onBlur: { _ in
-										applyWidth()
+									onBlur: { _ in // swiftlint:disable:this trailing_closure
+										DispatchQueue.main.async {
+											applyWidth()
+										}
 									}
 								)
 								.frame(width: textFieldWidth)
@@ -293,8 +299,10 @@ private struct DimensionsSetting: View {
 								IntTextField(
 									value: $height,
 									minMax: resizableDimensions.heightMinMax.toInt,
-									onBlur: { _ in
-										applyHeight()
+									onBlur: { _ in // swiftlint:disable:this trailing_closure
+										DispatchQueue.main.async {
+											applyHeight()
+										}
 									}
 								)
 								.frame(width: textFieldWidth)
@@ -308,8 +316,10 @@ private struct DimensionsSetting: View {
 							IntTextField(
 								value: $percent,
 								minMax: resizableDimensions.percentMinMax.toInt,
-								onBlur: { _ in
-									applyPercent()
+								onBlur: { _ in // swiftlint:disable:this trailing_closure
+									DispatchQueue.main.async { // Ensures it uses updated values.
+										applyPercent()
+									}
 								}
 							)
 							.frame(width: 32)
@@ -326,7 +336,9 @@ private struct DimensionsSetting: View {
 					}
 				}
 				.onChange(of: dimensionsType) {
-					updateTextFieldsForCurrentDimensions()
+					DispatchQueue.main.async { // Fixes an issue where if you do 100%, then 99%, and then try to switch to "pixel" type, it doesn't switch.
+						updateTextFieldsForCurrentDimensions()
+					}
 				}
 			}
 			.fixedSize()
@@ -334,6 +346,7 @@ private struct DimensionsSetting: View {
 			.labelsHidden()
 		}
 		.onAppear {
+			print("EDIT SCREEN - onappear")
 			setUpDimensions()
 			updateTextFieldsForCurrentDimensions()
 			showArrowKeyTipIfNeeded()
@@ -370,6 +383,7 @@ private struct DimensionsSetting: View {
 			let height = dimensions.pixels.height * ratio
 			return CGSize(width: width, height: height).rounded()
 		}
+		.filter { $0.width <= videoDimensions.width && $0.height <= videoDimensions.height }
 
 		let predefinedPixelDimensions = pixelDimensions
 			// TODO
@@ -416,35 +430,39 @@ private struct DimensionsSetting: View {
 	private func applyWidth() {
 		print("widthMinMax", resizableDimensions.widthMinMax)
 		resizableDimensions = resizableDimensions.aspectResized(usingWidth: width.toDouble)
-		height = resizableDimensions.pixels.height.toIntAndClampingIfNeeded
+		height = resizableDimensions.pixels.height.double.clamped(to: resizableDimensions.heightMinMax).toIntAndClampingIfNeeded
 		print("widthMinMax2", resizableDimensions.widthMinMax)
 	}
 
 	private func applyHeight() {
 		resizableDimensions = resizableDimensions.aspectResized(usingHeight: height.toDouble)
-		width = resizableDimensions.pixels.width.toIntAndClampingIfNeeded
-		selectPredefinedSizeBasedOnCurrentDimensions()
+		width = resizableDimensions.pixels.width.double.clamped(to: resizableDimensions.widthMinMax).toIntAndClampingIfNeeded
+		selectPredefinedSizeBasedOnCurrentDimensions(forceCustom: true)
 	}
 
 	private func applyPercent() {
 		resizableDimensions = .percent(percent.toDouble / 100, originalSize: videoDimensions)
 		print("GGG", resizableDimensions)
-		width = resizableDimensions.pixels.width.toIntAndClampingIfNeeded
-		height = resizableDimensions.pixels.height.toIntAndClampingIfNeeded
+		width = resizableDimensions.pixels.width.double.clamped(to: resizableDimensions.widthMinMax).toIntAndClampingIfNeeded
+		height = resizableDimensions.pixels.height.double.clamped(to: resizableDimensions.heightMinMax).toIntAndClampingIfNeeded
 		print("GGG2", percent, width, height)
-		selectPredefinedSizeBasedOnCurrentDimensions()
+		selectPredefinedSizeBasedOnCurrentDimensions(forceCustom: true)
 	}
 
 	private func updateTextFieldsForCurrentDimensions() {
-		width = resizableDimensions.pixels.width.toIntAndClampingIfNeeded
-		height = resizableDimensions.pixels.height.toIntAndClampingIfNeeded
+		width = resizableDimensions.pixels.width.double.clamped(to: resizableDimensions.widthMinMax).toIntAndClampingIfNeeded
+				height = resizableDimensions.pixels.height.double.clamped(to: resizableDimensions.heightMinMax).toIntAndClampingIfNeeded
 		percent = (resizableDimensions.percent * 100).rounded().toIntAndClampingIfNeeded
-
 		print("FF", resizableDimensions.percent.toIntAndClampingIfNeeded)
 		selectPredefinedSizeBasedOnCurrentDimensions()
 	}
 
-	private func selectPredefinedSizeBasedOnCurrentDimensions() {
+	private func selectPredefinedSizeBasedOnCurrentDimensions(forceCustom: Bool = false) {
+		if forceCustom {
+			selectedPredefinedSize = .custom
+			return
+		}
+
 		guard let index = (predefinedSizes.first { size in
 			guard case .dimensions(let dimensions) = size else {
 				return false
@@ -476,10 +494,10 @@ private struct SpeedSetting: View {
 
 	var body: some View {
 		LabeledContent("Speed") {
-			Slider(value: $outputSpeed, in: 0.5...5, step: 0.5)
-			Text("\(outputSpeed.formatted(.number.precision(.fractionLength(1))))×")
+			Slider(value: $outputSpeed, in: 0.5...5, step: 0.25)
+			Text("\(outputSpeed.formatted(.number.precision(.fractionLength(2))))×")
 				.monospacedDigit()
-				.frame(width: 30, alignment: .leading)
+				.frame(width: 40, alignment: .leading)
 		}
 	}
 }

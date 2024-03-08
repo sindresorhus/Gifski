@@ -6,6 +6,7 @@ import Accelerate.vImage
 import AppIntents
 import Defaults
 import Sentry
+import ExtendedAttributes
 
 typealias Defaults = _Defaults
 typealias Default = _Default
@@ -2083,6 +2084,15 @@ extension CGSize {
 	func aspectFit(to widthHeight: Double) -> Self {
 		aspectFit(to: Self(width: widthHeight, height: widthHeight))
 	}
+
+	func aspectFill(to boundingSize: CGSize) -> Self {
+		let ratio = max(boundingSize.width / width, boundingSize.height / height)
+		return self * ratio
+	}
+
+	func aspectFill(to widthHeight: Double) -> Self {
+		aspectFill(to: Self(width: widthHeight, height: widthHeight))
+	}
 }
 
 
@@ -2558,22 +2568,8 @@ extension NSEdgeInsets {
 
 
 extension URL {
-	enum MetadataKey {
-		/**
-		The app used to create the file, for example, `Gifski 2.0.0`, `QuickTime Player 10.5`, etc.
-		*/
-		case itemCreator
-
-		var attributeKey: String {
-			switch self {
-			case .itemCreator:
-				kMDItemCreator as String
-			}
-		}
-	}
-
-	func setMetadata(key: MetadataKey, value: some Any) throws {
-		try attributes.set("com.apple.metadata:\(key.attributeKey)", value: value)
+	func setAppAsItemCreator() throws {
+		try systemMetadata.set(kMDItemCreator as String, value: "\(SSApp.name) \(SSApp.version)")
 	}
 }
 
@@ -4204,12 +4200,11 @@ extension View {
 		isPresented: Binding<Bool>,
 		@ViewBuilder actions: () -> some View
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title,
 			isPresented: isPresented,
 			actions: actions,
-			message: {
+			message: { // swiftlint:disable:this trailing_closure
 				if let message {
 					Text(message)
 				}
@@ -4227,12 +4222,11 @@ extension View {
 		isPresented: Binding<Bool>,
 		@ViewBuilder actions: () -> some View
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title,
 			isPresented: isPresented,
 			actions: actions,
-			message: {
+			message: { // swiftlint:disable:this trailing_closure
 				if let message {
 					Text(message)
 				}
@@ -4248,12 +4242,11 @@ extension View {
 		message: String? = nil,
 		isPresented: Binding<Bool>
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title,
 			message: message,
 			isPresented: isPresented,
-			actions: {}
+			actions: {} // swiftlint:disable:this trailing_closure
 		)
 	}
 
@@ -4266,12 +4259,11 @@ extension View {
 		message: String? = nil,
 		isPresented: Binding<Bool>
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title,
 			message: message,
 			isPresented: isPresented,
-			actions: {}
+			actions: {} // swiftlint:disable:this trailing_closure
 		)
 	}
 }
@@ -4315,7 +4307,7 @@ extension View {
 			title: { title($0) },
 			presenting: data,
 			actions: actions,
-			message: {
+			message: { // swiftlint:disable:this trailing_closure
 				if let message = message?($0) {
 					Text(message)
 				}
@@ -4350,12 +4342,11 @@ extension View {
 		message: ((T) -> String?)? = nil,
 		presenting data: Binding<T?>
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		alert2(
 			title: title,
 			message: message,
 			presenting: data,
-			actions: { _ in }
+			actions: { _ in } // swiftlint:disable:this trailing_closure
 		)
 	}
 
@@ -4411,13 +4402,12 @@ extension View {
 		titleVisibility: Visibility = .automatic,
 		@ViewBuilder actions: () -> some View
 	) -> some View {
-		// swiftlint:disable:next trailing_closure
 		confirmationDialog2(
 			title,
 			isPresented: isPresented,
 			titleVisibility: titleVisibility,
 			actions: actions,
-			message: {
+			message: { // swiftlint:disable:this trailing_closure
 				if let message {
 					Text(message)
 				}
@@ -4488,7 +4478,7 @@ extension View {
 			titleVisibility: titleVisibility,
 			presenting: data,
 			actions: actions,
-			message: {
+			message: { // swiftlint:disable:this trailing_closure
 				if let message = message?($0) {
 					Text(message)
 				}
@@ -4691,31 +4681,6 @@ extension View {
 	}
 
 	/**
-	Set the window title of a SwiftUI window.
-	*/
-	func windowTitle(_ title: String) -> some View {
-		accessHostingWindow {
-			$0?.title = title
-		}
-	}
-
-	/**
-	Set the window level of a SwiftUI window.
-	*/
-	func windowLevel(_ level: NSWindow.Level) -> some View {
-		accessHostingWindow {
-			$0?.level = level
-		}
-	}
-
-	/**
-	Whether to make the window stay on top of other windows.
-	*/
-	func windowStayOnTop(_ isActive: Bool = true) -> some View {
-		windowLevel(isActive ? .floating : .normal)
-	}
-
-	/**
 	Set the window tabbing mode of a SwiftUI window.
 	*/
 	func windowTabbingMode(_ tabbingMode: NSWindow.TabbingMode) -> some View {
@@ -4736,74 +4701,11 @@ extension View {
 	}
 
 	/**
-	Set whether the SwiftUI window should be closable.
-
-	Setting this to false disables the red close button on the window.
-	*/
-	func windowIsClosable(_ isActive: Bool = true) -> some View {
-		accessHostingWindow {
-			$0?.styleMask.toggleExistence(.closable, shouldExist: isActive)
-		}
-	}
-
-	/**
-	Set whether the SwiftUI window should be minimizable.
-
-	Setting this to false disables the yellow minimize button on the window.
-	*/
-	func windowIsMinimizable(_ isMinimizable: Bool = true) -> some View {
-		accessHostingWindow {
-			$0?.styleMask.toggleExistence(.miniaturizable, shouldExist: isMinimizable)
-		}
-	}
-
-	/**
 	Set whether the SwiftUI window should be restorable.
 	*/
 	func windowIsRestorable(_ isRestorable: Bool = true) -> some View {
 		accessHostingWindow {
 			$0?.isRestorable = isRestorable
-		}
-	}
-
-	/**
-	Set whether the window can hide when its app becomes hidden.
-	*/
-	func windowCanHide(_ isActive: Bool = true) -> some View {
-		accessHostingWindow {
-			$0?.canHide = isActive
-		}
-	}
-
-	/**
-	Hide a standard window button.
-	*/
-	func windowIsStandardButtonHidden(
-		isHidden: Bool = true,
-		_ buttonTypes: NSWindow.ButtonType...
-	) -> some View {
-		accessHostingWindow {
-			for buttonType in buttonTypes {
-				$0?.standardWindowButton(buttonType)?.isHidden = isHidden
-			}
-		}
-	}
-
-	/**
-	Hide the window traffic light buttons.
-	*/
-	func windowAreTrafficLightButtonsHidden(_ isHidden: Bool = true) -> some View {
-		windowIsStandardButtonHidden(isHidden: isHidden, .closeButton, .miniaturizeButton, .zoomButton)
-	}
-
-	/**
-	Prevent the window from being movable.
-
-	By default the window is movable.
-	*/
-	func windowIsMovable(_ isMovable: Bool = true) -> some View {
-		accessHostingWindow {
-			$0?.isMovable = isMovable
 		}
 	}
 
@@ -4817,29 +4719,11 @@ extension View {
 	}
 
 	/**
-	Set the background color of a SwiftUI window.
-	*/
-	func windowBackgroundColor(_ backgroundColor: NSColor) -> some View {
-		accessHostingWindow {
-			$0?.backgroundColor = backgroundColor
-		}
-	}
-
-	/**
 	Set whether to show the title bar appears transparent.
 	*/
 	func windowTitlebarAppearsTransparent(_ isActive: Bool = true) -> some View {
 		accessHostingWindow { window in
 			window?.titlebarAppearsTransparent = isActive
-		}
-	}
-
-	/**
-	Set whether to hide the window title and title bar buttons.
-	*/
-	func windowTitleIsHidden(_ isActive: Bool = true) -> some View {
-		accessHostingWindow { window in
-			window?.titleVisibility = isActive ? .hidden : .visible
 		}
 	}
 
@@ -4855,25 +4739,6 @@ extension View {
 			DispatchQueue.main.async {
 				window?.collectionBehavior = collectionBehavior
 			}
-		}
-	}
-
-	/**
-	Set the collection behavior of a SwiftUI window.
-	*/
-	func windowOpacity(_ opacity: Double) -> some View {
-		accessHostingWindow { window in
-			window?.isOpaque = false
-			window?.alphaValue = opacity
-		}
-	}
-
-	/**
-	Set whether the window is transparent to mouse events.
-	*/
-	func windowIgnoresMouseEvents(_ ignoresMouseEvents: Bool = true) -> some View {
-		accessHostingWindow { window in
-			window?.ignoresMouseEvents = ignoresMouseEvents
 		}
 	}
 
@@ -5246,18 +5111,16 @@ struct CircularProgressViewStyle: ProgressViewStyle {
 		}
 	}
 
-	private let fill: LinearGradient
-//	private let fill: AnyShapeStyle // Enable when targeting macOS 12.
+	private let fill: AnyShapeStyle
 	private let lineWidth: Double
 	private let text: String?
 
-	init(
-		fill: LinearGradient? = nil,
+	init<S: ShapeStyle>(
+		fill: S? = nil,
 		lineWidth: Double? = nil,
 		text: String? = nil
 	) {
-		self.fill = fill ?? .init(gradient: .init(colors: [.purple, .blue]), startPoint: .top, endPoint: .bottom)
-//		self.fill = AnyShapeStyle(fill)
+		self.fill = fill.flatMap(AnyShapeStyle.init) ?? AnyShapeStyle(LinearGradient(gradient: .init(colors: [.purple, .blue]), startPoint: .top, endPoint: .bottom))
 		self.lineWidth = lineWidth ?? 12
 		self.text = text
 	}
@@ -5302,8 +5165,8 @@ struct CircularProgressViewStyle: ProgressViewStyle {
 }
 
 extension ProgressViewStyle where Self == CircularProgressViewStyle {
-	static func ssCircular(
-		fill: LinearGradient? = nil,
+	static func ssCircular<S: ShapeStyle>(
+		fill: S? = nil,
 		lineWidth: Double? = nil,
 		text: String? = nil
 	) -> Self {
@@ -5382,7 +5245,6 @@ func withAnimationWhenNotReduced<Result>(
 
 
 struct AnyDropDelegate: DropDelegate {
-	// TODO: `@OptionalBinding`
 	var isTargeted: Binding<Bool>?
 	var onValidate: ((DropInfo) -> Bool)?
 	let onPerform: (DropInfo) -> Bool

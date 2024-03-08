@@ -16,13 +16,12 @@ struct ConversionScreen: View {
 			ProgressView(value: progress)
 				.progressViewStyle(
 					.ssCircular(
-						fill: .init(
+						fill: LinearGradient(
 							gradient: .init(
 								colors: [
 									.purple,
 									.pink,
-									.yellow,
-									.red
+									.orange
 								]
 							),
 							startPoint: .top,
@@ -79,22 +78,25 @@ struct ConversionScreen: View {
 			DockProgress.resetProgress()
 		}
 
-		let data = try await GIFGenerator.run(conversion) {
-			progress = $0
-			DockProgress.progress = $0
-			updateEstimatedTimeRemaining(for: $0)
+		let data = try await GIFGenerator.run(conversion) { progress in
+			self.progress = progress
+			updateEstimatedTimeRemaining(for: progress)
+
+			// This should not be needed. It silences a thread sanitizer warning.
+			Task { @MainActor in
+				DockProgress.progress = progress
+			}
 		}
 
 		try Task.checkCancellation()
 
 		let filename = conversion.sourceURL.filenameWithoutExtension
 		let url = try data.writeToUniqueTemporaryFile(filename: filename, contentType: .gif)
-
-		try? url.setMetadata(key: .itemCreator, value: "\(SSApp.name) \(SSApp.version)")
+		try? url.setAppAsItemCreator()
 
 		try await Task.sleep(for: .seconds(1)) // Let the progress circle finish.
 
-		// TODO: SUpport task cancellation.
+		// TODO: Support task cancellation.
 		// TODO: Make sure it deinits too.
 
 //		appState.navigationPath.removeLast()

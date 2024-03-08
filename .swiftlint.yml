@@ -46,6 +46,7 @@ only_rules:
   - explicit_init
   - fallthrough
   - fatal_error_message
+  - final_test_case
   - first_where
   - flatmap_over_map_reduce
   - for_where
@@ -72,6 +73,8 @@ only_rules:
   - lower_acl_than_parent
   - mark
   - modifier_order
+  - multiline_arguments
+  - multiline_arguments_brackets
   - multiline_function_chains
   - multiline_literal_brackets
   - multiline_parameters
@@ -80,12 +83,12 @@ only_rules:
   - no_extension_access_modifier
   - no_fallthrough_only
   - no_space_in_method_call
+  - non_optional_string_data_conversion
   - non_overridable_class_declaration
   - notification_center_detachment
   - ns_number_init_as_function_reference
   - nsobject_prefer_isequal
   - number_separator
-  - opening_brace
   - operator_usage_whitespace
   - operator_whitespace
   - overridden_super_call
@@ -119,6 +122,7 @@ only_rules:
   - sorted_first_last
   - statement_position
   - static_operator
+  - static_over_final_class
   - strong_iboutlet
   - superfluous_disable_command
   - superfluous_else
@@ -184,6 +188,10 @@ identifier_name:
     - 'y1'
     - 'y2'
     - 'z2'
+redundant_type_annotation:
+  consider_default_literal_types_redundant: true
+unneeded_override:
+  affect_initializers: true
 deployment_target:
   macOS_deployment_target: '14'
 custom_rules:
