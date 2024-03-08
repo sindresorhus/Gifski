@@ -245,11 +245,11 @@ impl GiflossyWriter {
                     pal,
                     image,
                     max_diff: self.loss,
-                    best_node: px as NodeId,
+                    best_node: u16::from(px),
                     best_pos: pos + 1,
                     best_total_diff: 0,
                 };
-                l.lossy_node(pos + 1, px as NodeId, 0, RgbDiff { r: 0, g: 0, b: 0 }, );
+                l.lossy_node(pos + 1, u16::from(px), 0, RgbDiff { r: 0, g: 0, b: 0 }, );
                 run = l.best_pos - pos;
                 pos = l.best_pos;
                 let selected_node = &code_table.nodes[l.best_node as usize];
@@ -304,6 +304,7 @@ impl GiflossyWriter {
 
 impl<'a> GiflossyImage<'a> {
     #[must_use]
+    #[cfg_attr(debug_assertions, track_caller)]
     pub fn new(
         img: &'a [u8],
         width: u16,

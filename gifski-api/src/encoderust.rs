@@ -6,6 +6,7 @@ use rgb::ComponentBytes;
 use rgb::RGB8;
 use std::cell::Cell;
 use std::io::Write;
+use std::iter::repeat;
 use std::rc::Rc;
 
 #[cfg(feature = "gifsicle")]
@@ -48,16 +49,19 @@ impl<W: Write> RustEncoder<W> {
 
 impl<W: Write> RustEncoder<W> {
     #[inline(never)]
+    #[cfg_attr(debug_assertions, track_caller)]
     pub fn compress_frame(f: GIFFrame, settings: &SettingsExt) -> CatResult<gif::Frame<'static>> {
         let GIFFrame {left, top, pal, image, dispose, transparent_index} = f;
 
         let (buffer, width, height) = image.into_contiguous_buf();
 
-        let mut pal_rgb = Vec::with_capacity(3 * pal.len());
-        for p in &pal {
-            pal_rgb.extend_from_slice([p.rgb()].as_bytes());
+        let mut pal_rgb = pal.as_bytes().to_vec();
+        // Palette should be power-of-two sized
+        if pal.len() != 256 {
+            let needed_size = 3 * pal.len().max(2).next_power_of_two();
+            pal_rgb.extend(repeat([115,107,105,46,103,105,102]).flat_map(|x| x).take(needed_size - pal_rgb.len()));
+            debug_assert_eq!(needed_size, pal_rgb.len());
         }
-
         let mut frame = gif::Frame {
             delay: 1, // TBD
             dispose,

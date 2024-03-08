@@ -10,10 +10,10 @@ license = "AGPL-3.0-or-later"
 name = "gifski"
 readme = "README.md"
 repository = "https://github.com/ImageOptim/gifski"
-version = "1.13.1"
+version = "1.14.4"
 autobins = false
 edition = "2021"
-rust-version = "1.65"
+rust-version = "1.72"
 
 [[bin]]
 doctest = false
@@ -22,23 +22,24 @@ required-features = ["binary"]
 
 [dependencies]
 clap = { version = "4.3.24", features = ["cargo"], optional = true }
-gif = { version = "0.12.0", default-features = false, features = ["std", "raii_no_panic"] }
-gif-dispose = "4.0.1"
-imagequant = "4.2.2"
 imgref = "1.10.0"
-lodepng = { version = "3.9.1", optional = true }
+gif = { version = "0.13.1", default-features = false, features = ["std", "raii_no_panic"] }
+gif-dispose = "5.0.0-beta.2"
+imagequant = "4.3.0"
+lodepng = { version = "3.10.1", optional = true }
 pbr = { version = "1.1.1", optional = true }
-resize = { version = "0.8.2", features = ["rayon"] }
-rgb = "0.8.36"
+resize = { version = "0.8.3", features = ["rayon"] }
+rgb = "0.8.37"
 wild = { version = "2.2.0", optional = true, features = ["glob-quoted-on-windows"] }
 natord = { version = "1.0.9", optional = true }
 quick-error = "2.0.1"
 dunce = { version = "1.0.4", optional = true }
-crossbeam-channel = "0.5.8"
-loop9 = "0.1.4"
+crossbeam-channel = "0.5.11"
+loop9 = "0.1.5"
 # noisy-float 0.2 bug
-num-traits = { version = "0.2.15", features = ["i128", "std"] }
-crossbeam-utils = "0.8.12"
+num-traits = { version = "0.2.17", features = ["i128", "std"] }
+crossbeam-utils = "0.8.19"
+ordered-channel = { version = "1.0.0", features = ["crossbeam-channel"] }
 
 [dependencies.ffmpeg]
 package = "ffmpeg-next"
@@ -48,7 +49,7 @@ default-features = false
 features = ["codec", "format", "filter", "software-resampling", "software-scaling"]
 
 [dev-dependencies]
-lodepng = "3.9.1"
+lodepng = "3.10.1"
 
 [features]
 # `cargo build` will skip the binaries with missing `required-features`
@@ -59,7 +60,7 @@ binary = ["dep:clap", "png", "pbr", "dep:wild", "dep:natord", "dep:dunce"]
 capi = [] # internal for cargo-c only
 png = ["dep:lodepng"]
 # Links dynamically to ffmpeg. Needs ffmpeg devel package installed on the system.
-video = ["ffmpeg"]
+video = ["dep:ffmpeg"]
 # Builds ffmpeg from source. Needs a C compiler, and all of ffmpeg's source dependencies.
 video-static = ["video", "ffmpeg/build"]
 # If you're lucky, this one might work with ffmpeg from vcpkg.
@@ -98,4 +99,4 @@ asset = [{from = "gifski.h"}]
 
 [patch.crates-io]
 # ffmpeg-sys-next does not support cross-compilation, which I use to produce binaries https://github.com/zmwangx/rust-ffmpeg-sys/pull/30
-ffmpeg-sys-next = { rev = "94d5496d88900bdc0cad66733138134d0ea3cf31", git = "https://github.com/kornelski/rust-ffmpeg-sys-1"}
+ffmpeg-sys-next = { rev = "fd5784d645df2ebe022a204ac36582074da1edf7", git = "https://github.com/kornelski/rust-ffmpeg-sys-1"}

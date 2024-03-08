@@ -25,6 +25,10 @@ impl Acc {
     /// Actual pixel + blurred pixel
     #[inline(always)]
     pub fn get(&self, idx: usize) -> Option<(RGB8, RGB8)> {
+        if idx >= LOOKAHEAD {
+            debug_assert!(idx < LOOKAHEAD);
+            return None;
+        }
         if self.alpha_bits & (1 << idx) == 0 {
             Some((
                 RGB8::new(self.r[idx], self.g[idx], self.b[idx]),
@@ -204,6 +208,7 @@ impl Acc {
                 };
                 // min == 0 may wipe pixels totally clear, so give them at least a second chance,
                 // if quality setting allows
+                #[allow(overlapping_range_endpoints)]
                 let min = match threshold {
                     0..=300 if self.stayed_for <= 3 => 1, // q >= 75
                     300..=500 if self.stayed_for <= 2 => 1,
@@ -349,7 +354,7 @@ fn cohort(color: RGB8) -> bool {
 /// importance = how much it exceeds percetible threshold
 #[inline(always)]
 fn pixel_importance(diff_with_bg: u32, threshold: u32, min: u8, max: u8) -> u8 {
-    assert!((u32::from(min) + u32::from(max)) <= 255);
+    debug_assert!((u32::from(min) + u32::from(max)) <= 255);
     let exceeds = diff_with_bg.saturating_sub(threshold);
     min + (exceeds.saturating_mul(u32::from(max)) / (threshold.saturating_mul(48))).min(u32::from(max)) as u8
 }
