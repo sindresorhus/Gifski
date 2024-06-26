@@ -15,6 +15,7 @@
 		85A5C44822CA41B500CAA94D /* VideoValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A5C44722CA41B500CAA94D /* VideoValidator.swift */; };
 		85BF910922F3279300AD3FF6 /* TrimmingAVPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF910822F3279300AD3FF6 /* TrimmingAVPlayer.swift */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
+		D542F3112C2B872700E733FD /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D542F3102C2B872700E733FD /* Localizable.xcstrings */; };
 		D957BCDE234941C200A9A9F9 /* CheckerboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */; };
 		E30C8EEF29387E7A002E053F /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30C8EEE29387E7A002E053F /* Gifski.swift */; };
 		E31A4F3124AD36870097B1A5 /* InternetAccessPolicy.json in Resources */ = {isa = PBXBuildFile; fileRef = E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */; };
@@ -90,6 +91,7 @@
 		85A5C44722CA41B500CAA94D /* VideoValidator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = VideoValidator.swift; sourceTree = "<group>"; usesTabs = 1; };
 		85BF910822F3279300AD3FF6 /* TrimmingAVPlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = TrimmingAVPlayer.swift; sourceTree = "<group>"; usesTabs = 1; };
 		C2040B8820435871004EE259 /* GifskiWrapper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = GifskiWrapper.swift; sourceTree = "<group>"; usesTabs = 1; };
+		D542F3102C2B872700E733FD /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		D957BCDD234941C200A9A9F9 /* CheckerboardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = CheckerboardView.swift; sourceTree = "<group>"; usesTabs = 1; };
 		E304EB8725F3A4D2003BCE1F /* gifski.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gifski.h; path = "gifski-api/gifski.h"; sourceTree = SOURCE_ROOT; };
 		E30C8EEE29387E7A002E053F /* Gifski.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gifski.swift; sourceTree = "<group>"; };
@@ -234,6 +236,7 @@
 				E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
 				E356A15D21028942000148AD /* Other */,
+				D542F3102C2B872700E733FD /* Localizable.xcstrings */,
 			);
 			path = Gifski;
 			sourceTree = "<group>";
@@ -320,6 +323,7 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
 			);
 			mainGroup = E3AE627A1E5CD2F300035A2F;
 			packageReferences = (
@@ -368,6 +372,7 @@
 			files = (
 				E3AE62891E5CD2F300035A2F /* Assets.xcassets in Resources */,
 				E31A4F3124AD36870097B1A5 /* InternetAccessPolicy.json in Resources */,
+				D542F3112C2B872700E733FD /* Localizable.xcstrings in Resources */,
 				E3C3DB4F203F154300CB8BB9 /* Credits.rtf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -456,10 +461,11 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = "Share Extension/Share_Extension.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -489,10 +495,11 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = "Share Extension/Share_Extension.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -642,10 +649,11 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Gifski/Gifski.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -676,10 +684,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Gifski/Gifski.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = YG56YK5RN5;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
