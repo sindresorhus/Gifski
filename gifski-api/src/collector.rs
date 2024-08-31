@@ -6,7 +6,7 @@
 pub use imgref::ImgVec;
 pub use rgb::{RGB8, RGBA8};
 
-use crate::error::CatResult;
+use crate::error::GifResult;
 use crossbeam_channel::Sender;
 
 #[cfg(feature = "png")]
@@ -54,8 +54,10 @@ impl Collector {
     /// Presentation timestamp is time in seconds (since file start at 0) when this frame is to be displayed.
     ///
     /// If the first frame doesn't start at pts=0, the delay will be used for the last frame.
+    ///
+    /// If this function appears to be stuck after a few frames, it's because [`crate::Writer::write()`] is not running.
     #[cfg_attr(debug_assertions, track_caller)]
-    pub fn add_frame_rgba(&self, frame_index: usize, frame: ImgVec<RGBA8>, presentation_timestamp: f64) -> CatResult<()> {
+    pub fn add_frame_rgba(&self, frame_index: usize, frame: ImgVec<RGBA8>, presentation_timestamp: f64) -> GifResult<()> {
         debug_assert!(frame_index == 0 || presentation_timestamp > 0.);
         self.queue.send(InputFrame {
             frame_index,
@@ -74,9 +76,11 @@ impl Collector {
     /// Presentation timestamp is time in seconds (since file start at 0) when this frame is to be displayed.
     ///
     /// If the first frame doesn't start at pts=0, the delay will be used for the last frame.
+    ///
+    /// If this function appears to be stuck after a few frames, it's because [`crate::Writer::write()`] is not running.
     #[cfg(feature = "png")]
     #[inline]
-    pub fn add_frame_png_data(&self, frame_index: usize, png_data: Vec<u8>, presentation_timestamp: f64) -> CatResult<()> {
+    pub fn add_frame_png_data(&self, frame_index: usize, png_data: Vec<u8>, presentation_timestamp: f64) -> GifResult<()> {
         self.queue.send(InputFrame {
             frame: FrameSource::PngData(png_data),
             presentation_timestamp,
@@ -93,8 +97,10 @@ impl Collector {
     /// Presentation timestamp is time in seconds (since file start at 0) when this frame is to be displayed.
     ///
     /// If the first frame doesn't start at pts=0, the delay will be used for the last frame.
+    ///
+    /// If this function appears to be stuck after a few frames, it's because [`crate::Writer::write()`] is not running.
     #[cfg(feature = "png")]
-    pub fn add_frame_png_file(&self, frame_index: usize, path: PathBuf, presentation_timestamp: f64) -> CatResult<()> {
+    pub fn add_frame_png_file(&self, frame_index: usize, path: PathBuf, presentation_timestamp: f64) -> GifResult<()> {
         self.queue.send(InputFrame {
             frame: FrameSource::Path(path),
             presentation_timestamp,

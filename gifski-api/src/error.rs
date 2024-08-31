@@ -47,7 +47,11 @@ quick_error! {
     }
 }
 
+#[doc(hidden)]
 pub type CatResult<T, E = Error> = Result<T, E>;
+
+/// Alias for `Result` with gifski's [`Error`]
+pub type GifResult<T, E = Error> = Result<T, E>;
 
 impl From<gif::EncodingError> for Error {
     #[cold]
@@ -70,5 +74,12 @@ impl From<ordered_channel::RecvError> for Error {
     #[cold]
     fn from(_: ordered_channel::RecvError) -> Self {
         Self::Aborted
+    }
+}
+
+impl From<Box<dyn std::any::Any + Send>> for Error {
+    #[cold]
+    fn from(_panic: Box<dyn std::any::Any + Send>) -> Self {
+        Self::ThreadSend
     }
 }

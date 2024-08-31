@@ -15,6 +15,10 @@
  You should have received a copy of the GNU Affero General Public License
  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+//! gif.ski library allows creation of GIF animations from [arbitrary pixels][ImgVec],
+//! or [PNG files][Collector::add_frame_png_file].
+//!
+//! See the [`new`] function to get started.
 #![doc(html_logo_url = "https://gif.ski/icon.png")]
 #![allow(clippy::bool_to_int_with_if)]
 #![allow(clippy::cast_possible_truncation)]
@@ -116,6 +120,16 @@ impl SettingsExt {
             0
         }
     }
+
+    pub(crate) fn dithering_level(&self) -> f32 {
+        let gifsicle_quality = if cfg!(feature = "gifsicle") { self.giflossy_quality } else { 100 };
+        debug_assert!(gifsicle_quality <= 100);
+        // lossy LZW adds its own dithering, so the input could be less nosiy to compensate
+        // but don't change dithering unless gifsicle quality < 90, and don't completely disable it
+        let gifsicle_factor = 0.25 + f32::from(gifsicle_quality) * (1./100. * 1./0.9 * 0.75);
+
+        (f32::from(self.s.quality) * (1./50. * gifsicle_factor) - 1.).clamp(0.2, 1.)
+    }
 }
 
 impl Default for Settings {
@@ -198,15 +212,37 @@ struct FrameMessage {
     screen_height: u16,
 }
 
-/// Start new encoding
+/// Start new encoding on two threads.
 ///
-/// Encoding is multi-threaded, and the `Collector` and `Writer`
-/// can be used on sepate threads.
+/// Encoding is always multi-threaded, and the `Collector` and `Writer`
+/// must be used on sepate threads.
 ///
 /// You feed input frames to the [`Collector`], and ask the [`Writer`] to
 /// start writing the GIF.
+///
+/// If you don't start writing, then adding frames will block forever.
+///
+///
+/// ```rust,no_run
+/// use gifski::*;
+///
+/// let (collector, writer) = gifski::new(Settings::default())?;
+/// std::thread::scope(|t| -> Result<(), Error> {
+///     let frames_thread = t.spawn(move || {
+///         for i in 0..10 {
+///             collector.add_frame_png_file(i, format!("frame{i:04}.png").into(), i as f64 * 0.1)?;
+///         }
+///         drop(collector);
+///         Ok(())
+///     });
+///
+///     writer.write(std::fs::File::create("demo.gif")?, &mut progress::NoProgress{})?;
+///     frames_thread.join().unwrap()
+/// })?;
+/// Ok::<_, Error>(())
+/// ```
 #[inline]
-pub fn new(settings: Settings) -> CatResult<(Collector, Writer)> {
+pub fn new(settings: Settings) -> GifResult<(Collector, Writer)> {
     if settings.quality == 0 || settings.quality > 100 {
         return Err(Error::WrongSize("quality must be 1-100".into())); // I forgot to add a better error variant
     }
@@ -459,8 +495,7 @@ impl Writer {
                 res = liq.quantize(&mut img)?;
             }
         }
-
-        res.set_dithering_level((f32::from(self.settings.s.quality) / 50.0 - 1.).max(0.2))?;
+        res.set_dithering_level(self.settings.dithering_level())?;
 
         let mut out = Vec::new();
         out.try_reserve_exact(width*height).map_err(imagequant::liq_error::from)?;
@@ -495,7 +530,7 @@ impl Writer {
                 // delay=1 doesn't work, and it's too late to drop frames now
                 let delay = ((end_pts * 100_f64).round() as u64)
                     .saturating_sub(pts_in_delay_units)
-                    .min(30000).max(2) as u16;
+                    .clamp(2, 30000) as u16;
                 pts_in_delay_units += u64::from(delay);
 
                 enc.write_frame(frame, delay, screen_width, screen_height, &self.settings.s)?;
@@ -528,13 +563,13 @@ impl Writer {
         })
     }
 
-    /// Start writing frames. This function will not return until `Collector` is dropped.
+    /// Start writing frames. This function will not return until the [`Collector`] is dropped.
     ///
     /// `outfile` can be any writer, such as `File` or `&mut Vec`.
     ///
     /// `ProgressReporter.increase()` is called each time a new frame is being written.
     #[inline]
-    pub fn write<W: Write>(mut self, mut writer: W, reporter: &mut dyn ProgressReporter) -> CatResult<()> {
+    pub fn write<W: Write>(mut self, mut writer: W, reporter: &mut dyn ProgressReporter) -> GifResult<()> {
         let decode_queue_recv = self.queue_iter.take().ok_or(Error::Aborted)?;
         self.write_inner(decode_queue_recv, &mut writer, reporter)
     }
@@ -879,7 +914,7 @@ fn trim_image(mut image_trimmed: ImgRef<u8>, image8_pal: &[RGB8], transparent_in
                 debug_assert!(false, "{px} > {}", image8_pal.len());
                 return false
             };
-            pal_px.alpha(255) == bg
+            pal_px.with_alpha(255) == bg
         }
     };
 

@@ -1,10 +1,10 @@
-use crate::source::*;
+use crate::source::{Fps, Source};
+use crate::SrcPath;
 use crate::BinResult;
 use gifski::Collector;
 use gifski::Settings;
 use imgref::*;
 use rgb::*;
-use std::path::Path;
 
 pub struct FfmpegDecoder {
     input_context: ffmpeg::format::context::Input,
@@ -23,10 +23,14 @@ impl Source for FfmpegDecoder {
 }
 
 impl FfmpegDecoder {
-    pub fn new(path: &Path, rate: Fps, settings: Settings) -> BinResult<Self> {
+    pub fn new(src: SrcPath, rate: Fps, settings: Settings) -> BinResult<Self> {
         ffmpeg::init().map_err(|e| format!("Unable to initialize ffmpeg: {}", e))?;
-        let input_context = ffmpeg::format::input(&path)
-            .map_err(|e| format!("Unable to open video file {}: {}", path.display(), e))?;
+        let input_context = match src {
+            SrcPath::Path(path) => ffmpeg::format::input(&path)
+                .map_err(|e| format!("Unable to open video file {}: {}", path.display(), e))?,
+            SrcPath::Stdin(_) => return Err("Video files must be specified as a path on disk. Input via stdin is not supported".into()),
+        };
+
         // take fps override into account
         let filter_fps = rate.fps / rate.speed;
         let stream = input_context.streams().best(ffmpeg::media::Type::Video).ok_or("The file has no video tracks")?;
