@@ -1,4 +1,4 @@
-use crate::CatResult;
+use crate::GifResult;
 use std::fmt;
 use std::io;
 use std::os::raw::c_int;
@@ -71,9 +71,9 @@ impl From<c_int> for GifskiError {
     }
 }
 
-impl From<CatResult<()>> for GifskiError {
+impl From<GifResult<()>> for GifskiError {
     #[cold]
-    fn from(res: CatResult<()>) -> Self {
+    fn from(res: GifResult<()>) -> Self {
         use crate::error::Error::*;
         match res {
             Ok(()) => GifskiError::OK,

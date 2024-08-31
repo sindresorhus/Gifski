@@ -18,9 +18,30 @@ If you have [Rust from rustup](https://www.rust-lang.org/install.html) (1.63+), 
 
 ## Usage
 
-gifski is a command-line tool. There is no GUI for Windows or Linux (there is one for [macOS](https://sindresorhus.com/gifski)).
+gifski is a command-line tool. If you're not comfortable with a terminal, try the GUI version for [Windows][winmsi] or for [macOS][macapp].
 
-The recommended way is to first export video as PNG frames. If you have `ffmpeg` installed, you can run in terminal:
+[winmsi]: https://github.com/ImageOptim/gifski/releases/download/1.14.4/gifski_1.14.4_x64_en-US.msi
+[macapp]: https://sindresorhus.com/gifski
+
+### From ffmpeg video
+
+> Tip: Instead of typing file paths, you can drag'n'drop files into the terminal window!
+
+If you have ffmpeg installed, you can use it to stream a video directly to the gifski command by adding `-f yuv4mpegpipe` to `ffmpeg`'s arguments:
+
+```sh
+ffmpeg -i video.mp4 -f yuv4mpegpipe - | gifski -o anim.gif -
+```
+
+Replace "video.mp4" in the above code with actual path to your video.
+
+Note that there's `-` at the end of the command. This tells `gifski` to read from standard input. Reading a `.y4m` file from disk would work too, but these files are huge.
+
+`gifski` may automatically downsize the video if it has resolution too high for a GIF. Use `--width=1280` if you can tolerate getting huge file sizes.
+
+### From PNG frames
+
+A directory full of PNG frames can be used as an input too. You can export them from any animation software. If you have `ffmpeg` installed, you can also export frames with it:
 
 ```sh
 ffmpeg -i video.webm frame%04d.png
@@ -32,10 +53,11 @@ and then make the GIF from the frames:
 gifski -o anim.gif frame*.png
 ```
 
+Note that `*` is a special wildcard character, and it won't work when placed inside quoted string (`"*"`).
+
 You can also resize frames (with `-W <width in pixels>` option). If the input was ever encoded using a lossy video codec it's recommended to at least halve size of the frames to hide compression artefacts and counter chroma subsampling that was done by the video codec.
 
-
-See `gifski -h` for more options.
+See `gifski --help` for more options.
 
 ### Tips for smaller GIF files
 
@@ -50,9 +72,9 @@ If you need to make a GIF that fits a predefined file size, you have to experime
 
 ## Building
 
-1. [Install Rust via rustup](https://www.rust-lang.org/en-US/install.html) or run `rustup update`. This project only supports up-to-date versions of Rust. You may get compile errors, warnings about "unstable edition", etc. if you don't run `rustup update` regularly.
+1. [Install Rust via rustup](https://www.rust-lang.org/en-US/install.html). This project only supports up-to-date versions of Rust. You may get errors about "unstable" features if your compiler version is too old. Run `rustup update`.
 2. Clone the repository: `git clone https://github.com/ImageOptim/gifski`
-3. In the cloned directory, run: `cargo build --release`
+3. In the cloned directory, run: `cargo build --release`. This will build in `./target/release`.
 
 ### Using from C
 
@@ -86,7 +108,7 @@ AGPL 3 or later. I can offer alternative licensing options, including [commercia
 
 ## With built-in video support
 
-The tool optionally supports decoding video directly, but unfortunately it relies on ffmpeg 4.x, which may be *very hard* to get working, so it's not enabled by default.
+The tool optionally supports decoding video directly, but unfortunately it relies on ffmpeg 6.x, which may be *very hard* to get working, so it's not enabled by default.
 
 You must have `ffmpeg` and `libclang` installed, both with their C headers installed in default system include paths. Details depend on the platform and version, but you usually need to install packages such as `libavformat-dev`, `libavfilter-dev`, `libavdevice-dev`, `libclang-dev`, `clang`. Please note that installation of these dependencies may be quite difficult. Especially on macOS and Windows it takes *expert knowledge* to just get them installed without wasting several hours on endless stupid installation and compilation errors, which I can't help with. If you're cross-compiling, try uncommenting `[patch.crates-io]` section at the end of `Cargo.toml`, which includes some experimental fixes for ffmpeg.
 
@@ -117,9 +139,7 @@ rustup update
 cargo build --lib --release --target=aarch64-apple-ios
 ```
 
-The build will print "dropping unsupported crate type `cdylib`" warning. This is normal and expected when building for iOS (the cdylib option exists for other platforms).
+The build may print "dropping unsupported crate type `cdylib`" warning. This is expected when building for iOS.
 
 This will create a static library in `./target/aarch64-apple-ios/release/libgifski.a`. You can add this library to your Xcode project. See [gifski.app](https://github.com/sindresorhus/Gifski) for an example how to use libgifski from Swift.
-
-
 

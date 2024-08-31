@@ -8,8 +8,14 @@
 #![allow(clippy::redundant_closure_for_method_calls)]
 #![allow(clippy::wildcard_imports)]
 
+use clap::error::ErrorKind::MissingRequiredArgument;
 use clap::builder::NonEmptyStringValueParser;
+use std::io::stdin;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::io::IsTerminal;
 use std::io::Read;
+use std::io::StdinLock;
 use std::io::Stdout;
 use gifski::{Settings, Repeat};
 use clap::value_parser;
@@ -17,7 +23,8 @@ use clap::value_parser;
 #[cfg(feature = "video")]
 mod ffmpeg_source;
 mod png;
-mod gif;
+mod gif_source;
+mod y4m_source;
 mod source;
 use crate::source::Source;
 
@@ -38,7 +45,7 @@ use std::time::Duration;
 #[cfg(feature = "video")]
 const VIDEO_FRAMES_ARG_HELP: &str = "one video file supported by FFmpeg, or multiple PNG image files";
 #[cfg(not(feature = "video"))]
-const VIDEO_FRAMES_ARG_HELP: &str = "PNG image files for the animation frames";
+const VIDEO_FRAMES_ARG_HELP: &str = "PNG image files for the animation frames, or a .y4m file";
 
 fn main() {
     if let Err(e) = bin_main() {
@@ -78,7 +85,7 @@ fn bin_main() -> BinResult<()> {
                             .default_value("20"))
                         .arg(Arg::new("fast-forward")
                             .long("fast-forward")
-                            .help("Multiply speed of video by a factor\n(no effect when using images as input)")
+                            .help("Multiply speed of video by a factor")
                             .value_parser(value_parser!(f32))
                             .value_name("x")
                             .default_value("1"))
@@ -92,7 +99,7 @@ fn bin_main() -> BinResult<()> {
                             .conflicts_with("fast")
                             .num_args(0)
                             .action(ArgAction::SetTrue)
-                            .help("50% slower encoding, but 1% better quality"))
+                            .help("50% slower encoding, but 1% better quality and usually larger file size"))
                         .arg(Arg::new("quality")
                             .long("quality")
                             .short('Q')
@@ -152,6 +159,12 @@ fn bin_main() -> BinResult<()> {
                             .num_args(1)
                             .value_parser(value_parser!(i16))
                             .value_name("num"))
+                        .arg(Arg::new("bounce")
+                            .long("bounce")
+                            .num_args(0)
+                            .action(ArgAction::SetTrue)
+                            .hide_short_help(true)
+                            .help("Make animation play forwards then backwards"))
                         .arg(Arg::new("fixed-color")
                             .long("fixed-color")
                             .help("Always include this color in the palette")
@@ -166,13 +179,20 @@ fn bin_main() -> BinResult<()> {
                             .num_args(1)
                             .value_parser(parse_color)
                             .value_name("RGBHEX"))
-                        .get_matches_from(wild::args_os());
+                        .try_get_matches_from(wild::args_os())
+                        .unwrap_or_else(|e| {
+                            if e.kind() == MissingRequiredArgument && !stdin().is_terminal() {
+                                eprintln!("If you're trying to pipe a file, use \"-\" as the input file name");
+                            }
+                            e.exit()
+                        });
 
     let mut frames: Vec<&str> = matches.get_many::<String>("FILES").ok_or("?")?.map(|s| s.as_str()).collect();
-    if !matches.get_flag("nosort") {
+    let bounce = matches.get_flag("bounce");
+    if !matches.get_flag("nosort") && frames.len() > 1 {
         frames.sort_by(|a, b| natord::compare(a, b));
     }
-    let frames: Vec<_> = frames.into_iter().map(PathBuf::from).collect();
+    let mut frames: Vec<_> = frames.into_iter().map(PathBuf::from).collect();
 
     let output_path = DestPath::new(matches.get_one::<PathBuf>("output").ok_or("?")?);
     let width = matches.get_one::<u32>("width").copied();
@@ -226,41 +246,7 @@ fn bin_main() -> BinResult<()> {
 
     check_if_paths_exist(&frames)?;
 
-    let mut decoder = if let [path] = &frames[..] {
-        match file_type(path).unwrap_or(FileType::Other) {
-            FileType::PNG | FileType::JPEG => return Err("Only a single image file was given as an input. This is not enough to make an animation.".into()),
-            FileType::GIF => {
-                if !quiet && (width.is_none() && settings.quality > 50) {
-                    eprintln!("warning: reading an existing GIF as an input. This can only worsen the quality. Use PNG frames instead.");
-                }
-                Box::new(gif::GifDecoder::new(path, rate)?)
-            },
-            _ if path.is_dir() => {
-                return Err(format!("{} is a directory, not a PNG file", path.display()).into());
-            },
-            FileType::Other => get_video_decoder(path, rate, settings)?,
-        }
-    } else {
-        if let Ok(FileType::JPEG) = file_type(&frames[0]) {
-            return Err("JPEG format is unsuitable for conversion to GIF.\n\n\
-                JPEG's compression artifacts and color space are very problematic for palette-based\n\
-                compression. Please don't use JPEG for making GIF animations. Please re-export\n\
-                your animation using the PNG format.".into())
-        }
-        if speed != 1.0 {
-            return Err("Speed is for videos. It doesn't make sense for images. Use fps only".into());
-        }
-        Box::new(png::Lodecoder::new(frames, rate))
-    };
-
-    let mut pb;
-    let mut nopb = NoProgress {};
-    let progress: &mut dyn ProgressReporter = if quiet {
-        &mut nopb
-    } else {
-        pb = ProgressBar::new(decoder.total_frames());
-        &mut pb
-    };
+    std::thread::scope(move |scope| {
 
     let (mut collector, mut writer) = gifski::new(settings)?;
     if let Some(fixed_colors) = fixed_colors {
@@ -285,28 +271,145 @@ fn bin_main() -> BinResult<()> {
         writer.set_lossy_quality(lossy_quality);
     }
 
-    let decode_thread = thread::Builder::new().name("decode".into()).spawn(move || {
+    let (decoder_ready_send, decoder_ready_recv) = crossbeam_channel::bounded(1);
+
+    let decode_thread = thread::Builder::new().name("decode".into()).spawn_scoped(scope, move || {
+        let mut decoder = if let [path] = &frames[..] {
+            if bounce {
+                eprintln!("warning: the bounce flag is supported only for individual files, not pipe or video");
+            }
+            let mut src = if path.as_os_str() == "-" {
+                let fd = stdin().lock();
+                if fd.is_terminal() {
+                    eprintln!("warning: used '-' as the input path, but the stdin is a terminal, not a file.");
+                }
+                SrcPath::Stdin(BufReader::new(fd))
+            } else {
+                SrcPath::Path(path.to_path_buf())
+            };
+            match file_type(&mut src).unwrap_or(FileType::Other) {
+                FileType::PNG | FileType::JPEG => return Err("Only a single image file was given as an input. This is not enough to make an animation.".into()),
+                FileType::GIF => {
+                    if !quiet && (width.is_none() && settings.quality > 50) {
+                        eprintln!("warning: reading an existing GIF as an input. This can only worsen the quality. Use PNG frames instead.");
+                    }
+                    Box::new(gif_source::GifDecoder::new(src, rate)?)
+                },
+                _ if path.is_dir() => {
+                    return Err(format!("{} is a directory, not a PNG file", path.display()).into());
+                },
+                other_type => get_video_decoder(other_type, src, rate, settings)?,
+            }
+        } else {
+            if bounce {
+                let mut extra: Vec<_> = frames.iter().skip(1).rev().cloned().collect();
+                frames.append(&mut extra);
+            }
+            if speed != 1.0 {
+                eprintln!("warning: --fast-forward option is for videos. It doesn't make sense for images. Use --fps only.");
+            }
+            let file_type = file_type(&mut SrcPath::Path(frames[0].clone())).unwrap_or(FileType::Other);
+            match file_type {
+                FileType::JPEG => {
+                    return Err("JPEG format is unsuitable for conversion to GIF.\n\n\
+                        JPEG's compression artifacts and color space are very problematic for palette-based\n\
+                        compression. Please don't use JPEG for making GIF animations. Please re-export\n\
+                        your animation using the PNG format.".into())
+                },
+                FileType::GIF => return unexpected("GIF"),
+                FileType::Y4M => return unexpected("Y4M"),
+                _ => Box::new(png::Lodecoder::new(frames, rate)),
+            }
+        };
+
+        decoder_ready_send.send(decoder.total_frames())?;
+
         decoder.collect(&mut collector)
     })?;
 
     let mut file_tmp;
     let mut stdio_tmp;
+    let mut print_terminal_err = false;
     let out: &mut dyn io::Write = match output_path {
-        DestPath::Path(p) => {
-            file_tmp = File::create(p)
-                .map_err(|e| format!("Can't write to {}: {e}", p.display()))?;
+        DestPath::Path(path) => {
+            file_tmp = File::create(path)
+                .map_err(|err| {
+                    let mut msg = format!("Can't write to \"{}\": {err}", path.display());
+                    let canon = path.canonicalize();
+                    if let Some(parent) = canon.as_deref().unwrap_or(path).parent() {
+                        if parent.as_os_str() != "" {
+                            use std::fmt::Write;
+                            match parent.try_exists() {
+                                Ok(true) => {},
+                                Ok(false) => {
+                                    let _ = write!(&mut msg, " (directory \"{}\" doesn't exist)", parent.display());
+                                },
+                                Err(err) => {
+                                    let _ = write!(&mut msg, " (directory \"{}\" is not accessible: {err})", parent.display());
+                                },
+                            }
+                        }
+                    }
+                    msg
+                })?;
             &mut file_tmp
         },
         DestPath::Stdout => {
             stdio_tmp = io::stdout().lock();
+            print_terminal_err = stdio_tmp.is_terminal();
             &mut stdio_tmp
         },
     };
-    writer.write(io::BufWriter::new(out), progress)?;
-    decode_thread.join().map_err(|_| "thread died?")??;
+
+    let total_frames = match decoder_ready_recv.recv() {
+        Ok(t) => t,
+        Err(_) => {
+            // if the decoder failed to start,
+            // writer won't have any interesting error to report
+            return decode_thread.join().map_err(panic_err)?;
+        }
+    };
+
+    let mut pb;
+    let mut nopb = NoProgress {};
+    let progress: &mut dyn ProgressReporter = if quiet {
+        &mut nopb
+    } else {
+        pb = ProgressBar::new(total_frames);
+        &mut pb
+    };
+
+    if print_terminal_err {
+        eprintln!("warning: used '-' as the output path, but the stdout is a terminal, not a file");
+        std::thread::sleep(Duration::from_secs(3));
+    }
+    let write_result = writer.write(io::BufWriter::new(out), progress);
+    let thread_result = decode_thread.join().map_err(panic_err)?;
+    check_errors(write_result, thread_result)?;
     progress.done(&format!("gifski created {output_path}"));
 
     Ok(())
+    })
+}
+
+fn check_errors(err1: Result<(), gifski::Error>, err2: BinResult<()>) -> BinResult<()> {
+    use gifski::Error::*;
+    match err1 {
+        Ok(()) => err2,
+        Err(ThreadSend | Aborted | NoFrames) if err2.is_err() => err2,
+        Err(err1) => Err(err1.into()),
+    }
+}
+
+#[cold]
+fn unexpected(ftype: &'static str) -> BinResult<()> {
+    Err(format!("Too many arguments. Unexpectedly got a {ftype} as an input frame. Only PNG format is supported for individual frames.").into())
+}
+
+#[cold]
+fn panic_err(err: Box<dyn std::any::Any + Send>) -> String {
+    err.downcast::<String>().map(|s| *s)
+    .unwrap_or_else(|e| e.downcast_ref::<&str>().copied().unwrap_or("panic").to_owned())
 }
 
 fn parse_color(c: &str) -> Result<rgb::RGB8, String> {
@@ -339,20 +442,38 @@ fn color_parser() {
 }
 
 #[allow(clippy::upper_case_acronyms)]
+#[derive(PartialEq)]
 enum FileType {
-    PNG, GIF, JPEG, Other,
+    PNG, GIF, JPEG, Y4M, Other,
 }
 
-fn file_type(path: &Path) -> BinResult<FileType> {
-    let mut file = std::fs::File::open(path)?;
+fn file_type(src: &mut SrcPath) -> BinResult<FileType> {
     let mut buf = [0; 4];
-    file.read_exact(&mut buf)?;
+    match src {
+        SrcPath::Path(path) => match path.extension() {
+            Some(e) if e.eq_ignore_ascii_case("y4m") => return Ok(FileType::Y4M),
+            Some(e) if e.eq_ignore_ascii_case("png") => return Ok(FileType::PNG),
+            _ => {
+                let mut file = std::fs::File::open(path)?;
+                file.read_exact(&mut buf)?;
+            }
+        },
+        SrcPath::Stdin(stdin) => {
+            let buf_in = stdin.fill_buf()?;
+            let max_len = buf_in.len().min(4);
+            buf[..max_len].copy_from_slice(&buf_in[..max_len]);
+            // don't consume
+        },
+    }
 
     if &buf == b"\x89PNG" {
         return Ok(FileType::PNG);
     }
     if &buf == b"GIF8" {
         return Ok(FileType::GIF);
+    }
+    if &buf == b"YUV4" {
+        return Ok(FileType::Y4M);
     }
     if buf[..2] == [0xFF, 0xD8] {
         return Ok(FileType::JPEG);
@@ -362,18 +483,38 @@ fn file_type(path: &Path) -> BinResult<FileType> {
 
 fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
     for path in paths {
-        if !path.exists() {
-            let mut msg = format!("Unable to find the input file: \"{}\"", path.display());
-            if path.to_str().map_or(false, |p| p.contains(['*','?','['])) {
-                msg += "\nThe pattern did not match any files.";
-            } else if path.extension() == Some("gif".as_ref()) {
-                msg = format!("Did you mean to use -o \"{}\" to specify it as the output file instead?", path.display());
-            } else if path.is_relative() {
-                use std::fmt::Write;
-                write!(&mut msg, " (searched in \"{}\")", env::current_dir()?.display())?;
-            }
-            return Err(msg.into())
+        // stdin is ok
+        if path.as_os_str() == "-" && paths.len() == 1 {
+            break;
         }
+        let mut msg = match path.try_exists() {
+            Ok(true) => continue,
+            Ok(false) => format!("Unable to find the input file: \"{}\"", path.display()),
+            Err(err) => format!("Unable to access the input file \"{}\": {err}", path.display()),
+        };
+        let canon = path.canonicalize();
+        if let Some(parent) = canon.as_deref().unwrap_or(path).parent() {
+            if parent.as_os_str() != "" {
+                if let Ok(false) = path.try_exists() {
+                    use std::fmt::Write;
+                    if msg.len() > 80 {
+                        msg.push('\n');
+                    }
+                    write!(&mut msg, " (directory \"{}\" doesn't exist either)", parent.display())?;
+
+                }
+            }
+        }
+        if path.to_str().map_or(false, |p| p.contains(['*','?','['])) {
+            msg += "\nThe wildcard pattern did not match any files.";
+        } else if path.is_relative() {
+            use std::fmt::Write;
+            write!(&mut msg, " (searched in \"{}\")", env::current_dir()?.display())?;
+        }
+        if path.extension() == Some("gif".as_ref()) {
+            msg = format!("\nDid you mean to use -o \"{}\" to specify it as the output file instead?", path.display());
+        }
+        return Err(msg.into())
     }
     Ok(())
 }
@@ -382,6 +523,11 @@ fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
 enum DestPath<'a> {
     Path(&'a Path),
     Stdout,
+}
+
+enum SrcPath {
+    Path(PathBuf),
+    Stdin(BufReader<StdinLock<'static>>),
 }
 
 impl<'a> DestPath<'a> {
@@ -407,23 +553,41 @@ impl fmt::Display for DestPath<'_> {
 }
 
 #[cfg(feature = "video")]
-fn get_video_decoder(path: &Path, fps: source::Fps, settings: Settings) -> BinResult<Box<dyn Source + Send>> {
-    Ok(Box::new(ffmpeg_source::FfmpegDecoder::new(path, fps, settings)?))
+fn get_video_decoder(ftype: FileType, src: SrcPath, fps: source::Fps, settings: Settings) -> BinResult<Box<dyn Source>> {
+    Ok(if ftype == FileType::Y4M {
+        Box::new(y4m_source::Y4MDecoder::new(src, fps)?)
+    } else {
+        Box::new(ffmpeg_source::FfmpegDecoder::new(src, fps, settings)?)
+    })
 }
 
 #[cfg(not(feature = "video"))]
 #[cold]
-fn get_video_decoder(_: &Path, _: source::Fps, _: Settings) -> BinResult<Box<dyn Source + Send>> {
-    Err(r"Video support is permanently disabled in this executable.
+fn get_video_decoder(ftype: FileType, src: SrcPath, fps: source::Fps, _: Settings) -> BinResult<Box<dyn Source>> {
+    if ftype == FileType::Y4M {
+        Ok(Box::new(y4m_source::Y4MDecoder::new(src, fps)?))
+    } else {
+        let path = match &src {
+            SrcPath::Path(path) => path,
+            SrcPath::Stdin(_) => Path::new("video.mp4"),
+        };
+        let rel_path = path.file_name().map(Path::new).unwrap_or(path);
+        Err(format!(r#"Video support is permanently disabled in this distribution of gifski.
 
-To enable video decoding you need to recompile gifski from source with:
-cargo build --release --features=video
-or
-cargo install gifski --features=video
+The only 'video' format supported at this time is YUV4MPEG2, which can be piped from ffmpeg:
 
-Alternatively, use ffmpeg command to export PNG frames, and then specify
+    ffmpeg -i "{src}" -f yuv4mpegpipe - | gifski -o "{gif}" -
+
+To enable full video decoding you need to recompile gifski from source.
+https://github.com/imageoptim/gifski
+
+Alternatively, use ffmpeg or other tool to export PNG frames, and then specify
 the PNG files as input for this executable. Instructions on https://gif.ski
-".into())
+"#,
+src = path.display(),
+gif = rel_path.with_extension("gif").display()
+).into())
+    }
 }
 
 struct ProgressBar {

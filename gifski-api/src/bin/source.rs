@@ -1,7 +1,7 @@
 use crate::BinResult;
 use gifski::Collector;
 
-pub trait Source: Send {
+pub trait Source {
     fn total_frames(&self) -> Option<u64>;
     fn collect(&mut self, dest: &mut Collector) -> BinResult<()>;
 }

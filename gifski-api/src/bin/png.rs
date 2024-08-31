@@ -7,12 +7,12 @@ use std::path::PathBuf;
 
 pub struct Lodecoder {
     frames: Vec<PathBuf>,
-    fps: f32,
+    fps: f64,
 }
 
 impl Lodecoder {
     pub fn new(frames: Vec<PathBuf>, params: Fps) -> Self {
-        Self { frames, fps: params.fps }
+        Self { frames, fps: f64::from(params.fps) * f64::from(params.speed) }
     }
 }
 
@@ -24,10 +24,9 @@ impl Source for Lodecoder {
     #[inline(never)]
     fn collect(&mut self, dest: &mut Collector) -> BinResult<()> {
         let dest = &*dest;
-        let fps = f64::from(self.fps);
         let f = std::mem::take(&mut self.frames);
         for (i, frame) in f.into_iter().enumerate() {
-            dest.add_frame_png_file(i, frame, i as f64 / fps)?;
+            dest.add_frame_png_file(i, frame, i as f64 / self.fps)?;
         }
         Ok(())
     }

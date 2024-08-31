@@ -235,7 +235,7 @@ impl Acc {
 
             // fast path for regular changing pixel
             if stays_frames == 0 {
-                self.bg_set = curr.alpha(255);
+                self.bg_set = curr.with_alpha(255);
                 return (self.bg_set, pixel_importance(diff_with_bg, threshold, 10, 110));
             }
             let smoothed_curr = RGB8::new(
@@ -252,7 +252,7 @@ impl Acc {
                 pixel_importance(diff_with_bg, threshold, 50, 205)
             };
 
-            self.bg_set = smoothed_curr.alpha(255);
+            self.bg_set = smoothed_curr.with_alpha(255);
             // shorten stay-for to use overlapping ranges for smoother transitions
             self.can_stay_for = (stays_frames as u8).min(LOOKAHEAD as u8 - 1);
             self.stayed_for = 0;

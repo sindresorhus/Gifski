@@ -42,7 +42,10 @@
 //!
 //! it will build `target/aarch64-apple-ios/release/libgifski.a` (ignore the warning about cdylib).
 
-use super::*;
+use crate::{Collector, ProgressCallback, NoProgress, ProgressReporter, Repeat, Writer, Settings};
+use imgref::{Img, ImgVec};
+use rgb::{RGB8, RGBA8};
+use std::io::Write;
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::fs;
@@ -119,7 +122,7 @@ pub unsafe extern "C" fn gifski_new(settings: *const GifskiSettings) -> *const G
         repeat: if settings.repeat == -1 { Repeat::Finite(0) } else if settings.repeat == 0 { Repeat::Infinite } else { Repeat::Finite(settings.repeat as u16) },
     };
 
-    if let Ok((collector, writer)) = new(s) {
+    if let Ok((collector, writer)) = crate::new(s) {
         Arc::into_raw(Arc::new(GifskiHandleInternal {
             writer: Mutex::new(Some(writer)),
             write_thread: Mutex::new((false, None)),
@@ -342,7 +345,7 @@ pub unsafe extern "C" fn gifski_add_frame_rgb(handle: *const GifskiHandle, frame
     };
     let width = width as usize;
     let height = height as usize;
-    let img = ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|&p| p.alpha(255))).collect(), width, height);
+    let img = ImgVec::new(pixels.chunks(stride).flat_map(|r| r[0..width].iter().map(|&p| p.with_alpha(255))).collect(), width, height);
     add_frame_rgba(handle, frame_number, img, presentation_timestamp)
 }
 
@@ -599,6 +602,7 @@ impl GifskiHandleInternal {
 
 #[test]
 fn c_cb() {
+    use rgb::RGB;
     let g = unsafe {
         gifski_new(&GifskiSettings {
             width: 1,
@@ -635,6 +639,7 @@ fn c_cb() {
 
 #[test]
 fn progress_abort() {
+    use rgb::RGB;
     let g = unsafe {
         gifski_new(&GifskiSettings {
             width: 1,
@@ -681,6 +686,7 @@ fn cant_write_after_finish() {
 
 #[test]
 fn c_write_failure_propagated() {
+    use rgb::RGB;
     let g = unsafe { gifski_new(&GifskiSettings {
         width: 1, height: 1,
         quality: 100,
@@ -745,6 +751,7 @@ fn cant_write_twice() {
 
 #[test]
 fn c_incomplete() {
+    use rgb::RGB;
     let g = unsafe { gifski_new(&GifskiSettings {
         width: 0, height: 0,
         quality: 100,
