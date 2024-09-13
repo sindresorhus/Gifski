@@ -87,7 +87,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1530;
+				LastUpgradeCheck = 1540;
 				TargetAttributes = {
 					CA007E48158959EA34BF617B = {
 						CreatedOnToolsVersion = 9.2;
@@ -152,6 +152,7 @@
 			baseConfigurationReference = CAFDD702CA57E48B69BA874E /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CARGO_TARGET_DIR = "$(PROJECT_TEMP_DIR)/cargo_target";
 				CARGO_XCODE_BUILD_PROFILE = release;
 				CARGO_XCODE_FEATURES = "";
@@ -199,6 +200,7 @@
 			baseConfigurationReference = CAFDD702CA57E48B69BA874E /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CARGO_TARGET_DIR = "$(PROJECT_TEMP_DIR)/cargo_target";
 				CARGO_XCODE_BUILD_PROFILE = debug;
 				CARGO_XCODE_FEATURES = "";

@@ -67,7 +67,6 @@ struct ConversionScreen: View {
 		}
 	}
 
-	@MainActor
 	func convert() async throws {
 		appState.isConverting = true
 		startTime = .now

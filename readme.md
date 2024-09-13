@@ -9,32 +9,6 @@
 	<br>
 </div>
 
-<div align="center">
-	<hr>
-	<p>
-		<p>
-			<sup>
-				<a href="https://github.com/sponsors/sindresorhus">Sindre Sorhus' open source work is supported by the community</a>
-			</sup>
-		</p>
-		<sup>Special thanks to:</sup>
-		<br>
-		<br>
-		<a href="https://supatool.io">
-			<div>
-				<picture>
-					<source width="280" media="(prefers-color-scheme: dark)" srcset="https://sindresorhus.com/assets/thanks/supatool-logo-dark.png">
-					<source width="280" media="(prefers-color-scheme: light)" srcset="https://sindresorhus.com/assets/thanks/supatool-logo-light.png">
-					<img width="280" src="https://sindresorhus.com/assets/thanks/supatool-logo-light.png" alt="Supatool logo">
-				</picture>
-			</div>
-		</a>
-	</p>
-	<hr>
-	<br>
-	<br>
-</div>
-
 This is a macOS app for the [`gifski` encoder](https://gif.ski), which converts videos to GIF animations using [`pngquant`](https://pngquant.org)'s fancy features for efficient cross-frame palettes and temporal dithering. It produces animated GIFs that use thousands of colors per frame and up to 50 FPS (useful for showing off design work on Dribbble).
 
 You can also produce smaller lower quality GIFs when needed with the “Quality” slider, thanks to [`gifsicle`](https://github.com/kohler/gifsicle).

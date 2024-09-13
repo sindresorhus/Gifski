@@ -2,7 +2,6 @@ import SwiftUI
 import UserNotifications
 import StoreKit
 
-@MainActor
 struct CompletedScreen: View {
 	@Environment(AppState.self) private var appState
 	@Environment(\.requestReview) private var requestReview

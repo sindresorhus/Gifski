@@ -14,11 +14,11 @@ typealias AnyCancellable = Combine.AnyCancellable
 
 
 // TODO: Check if any of these can be removed when targeting macOS 15.
-extension NSItemProvider: @unchecked Sendable {}
+extension NSItemProvider: @retroactive @unchecked Sendable {}
 
 
 @discardableResult
-func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
+func with<T, E>(_ item: T, update: (inout T) throws(E) -> Void) throws(E) -> T {
 	var this = item
 	try update(&this)
 	return this
@@ -41,27 +41,26 @@ extension DispatchQueue {
 }
 
 
-extension CGSize: Hashable {
+extension CGSize: @retroactive Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(width)
 		hasher.combine(height)
 	}
 }
 
-extension CGPoint: Hashable {
+extension CGPoint: @retroactive Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(x)
 		hasher.combine(y)
 	}
 }
 
-extension CGRect: Hashable {
+extension CGRect: @retroactive Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(origin)
 		hasher.combine(size)
 	}
 }
-
 
 
 func asyncNilCoalescing<T>(
@@ -203,9 +202,9 @@ extension Task {
 
 
 extension Sequence {
-	func asyncMap<T>(
-		_ transform: (Element) async throws -> T
-	) async rethrows -> [T] {
+	func asyncMap<T, E>(
+		_ transform: (Element) async throws(E) -> T
+	) async throws(E) -> [T] {
 		var values = [T]()
 
 		for element in self {
@@ -1139,7 +1138,7 @@ extension AVFormat: CustomDebugStringConvertible {
 }
 
 
-extension AVMediaType: CustomDebugStringConvertible {
+extension AVMediaType: @retroactive CustomDebugStringConvertible {
 	public var debugDescription: String {
 		switch self {
 		case .audio:
@@ -1560,6 +1559,15 @@ extension ObjectAssociation {
 }
 
 
+extension AnyCancellable {
+	private static var foreverStore = Set<AnyCancellable>()
+
+	func storeForever() {
+		store(in: &Self.foreverStore)
+	}
+}
+
+
 extension CAMediaTimingFunction {
 	static let `default` = CAMediaTimingFunction(name: .default)
 	static let linear = CAMediaTimingFunction(name: .linear)
@@ -1599,21 +1607,43 @@ extension SSApp {
 }
 
 extension SSApp {
+	static func setUpExternalEventListeners() {
+		DistributedNotificationCenter.default.publisher(for: .init("\(SSApp.idString):openSendFeedback"))
+			.sink { _ in
+				DispatchQueue.main.async {
+					SSApp.appFeedbackUrl().open()
+				}
+			}
+			.storeForever()
+
+		DistributedNotificationCenter.default.publisher(for: .init("\(SSApp.idString):copyDebugInfo"))
+			.sink { _ in
+				DispatchQueue.main.async {
+					NSPasteboard.general.prepareForNewContents()
+					NSPasteboard.general.setString(SSApp.debugInfo, forType: .string)
+				}
+			}
+			.storeForever()
+	}
+}
+
+extension SSApp {
+	static var debugInfo: String {
+		"""
+		\(name) \(versionWithBuild) - \(idString)
+		macOS \(Device.osVersion)
+		\(Device.hardwareModel)
+		\(Device.architecture)
+		"""
+	}
+
 	/**
 	- Note: Call this lazily only when actually needed as otherwise it won't get the live info.
 	*/
 	static func appFeedbackUrl() -> URL {
-		let metadata =
-			"""
-			\(name) \(versionWithBuild) - \(idString)
-			macOS \(Device.osVersion)
-			\(Device.hardwareModel)
-			\(Device.architecture)
-			"""
-
 		let info: [String: String] = [
 			"product": name,
-			"metadata": metadata
+			"metadata": debugInfo
 		]
 
 		return URL("https://sindresorhus.com/feedback").settingQueryItems(from: info)
@@ -1758,7 +1788,7 @@ extension String {
 }
 
 
-extension URL: ExpressibleByStringLiteral {
+extension URL: @retroactive ExpressibleByStringLiteral {
 	/**
 	Example:
 
@@ -2385,7 +2415,7 @@ extension Sequence {
 	//=> 15
 	```
 	*/
-	func sum<T: AdditiveArithmetic>(_ numerator: (Element) throws -> T) rethrows -> T {
+	func sum<T: AdditiveArithmetic, E>(_ numerator: (Element) throws(E) -> T) throws(E) -> T {
 		var result = T.zero
 
 		for element in self {
@@ -3928,9 +3958,9 @@ extension NSItemProvider {
 
 
 extension Sequence {
-	func asyncFlatMap<T: Sequence>(
-		_ transform: (Element) async throws -> T
-	) async rethrows -> [T.Element] {
+	func asyncFlatMap<T: Sequence, E>(
+		_ transform: (Element) async throws(E) -> T
+	) async throws(E) -> [T.Element] {
 		var values = [T.Element]()
 
 		for element in self {
