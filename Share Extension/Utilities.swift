@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 extension Sequence where Element: Sequence {
 	func flatten() -> [Element.Element] {
 		// TODO: Make this `flatMap(\.self)` when https://github.com/apple/swift/issues/55343 is fixed.
-		flatMap { $0 }
+		flatMap(\.self)
 	}
 }
 
@@ -50,9 +50,7 @@ extension NSItemProvider {
 }
 
 
-@MainActor
 class ExtensionController: NSViewController { // swiftlint:disable:this final_class
-	@MainActor
 	init() {
 		super.init(nibName: nil, bundle: nil)
 	}
@@ -80,4 +78,4 @@ class ExtensionController: NSViewController { // swiftlint:disable:this final_cl
 
 
 // TODO: Check if any of these can be removed when targeting macOS 15.
-extension NSItemProvider: @unchecked Sendable {}
+extension NSItemProvider: @retroactive @unchecked Sendable {}

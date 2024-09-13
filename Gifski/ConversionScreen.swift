@@ -65,9 +65,9 @@ struct ConversionScreen: View {
 				}
 			}
 		}
+		.activity(options: .userInitiated, reason: "Converting")
 	}
 
-	@MainActor
 	func convert() async throws {
 		appState.isConverting = true
 		startTime = .now

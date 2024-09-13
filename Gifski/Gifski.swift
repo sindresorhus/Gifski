@@ -11,8 +11,6 @@ final class Gifski {
 	private var wrapper: GifskiWrapper?
 	private var frameNumber = 0
 	private var data = Data()
-	private var hasFinished = false
-
 	var onProgress: (() -> Void)?
 
 	// TODO: Make this when the rest of the app uses more async

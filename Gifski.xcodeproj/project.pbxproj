@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -293,7 +293,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1100;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1600;
 				ORGANIZATIONNAME = "Sindre Sorhus";
 				TargetAttributes = {
 					0E79251A2329BDBE00058B94 = {
@@ -314,7 +314,6 @@
 				};
 			};
 			buildConfigurationList = E3AE627E1E5CD2F300035A2F /* Build configuration list for PBXProject "Gifski" */;
-			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -328,6 +327,7 @@
 				E3998CF02ACD7148009F8117 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				E36BD7A32B9E2C1600B8D86C /* XCRemoteSwiftPackageReference "ExtendedAttributes" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = E3AE62841E5CD2F300035A2F /* Products */;
 			projectDirPath = "";
 			projectReferences = (
@@ -742,7 +742,7 @@
 			repositoryURL = "https://github.com/sindresorhus/Defaults";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 8.2.0;
+				minimumVersion = 9.0.0;
 			};
 		};
 		E3339E9B2395789500303839 /* XCRemoteSwiftPackageReference "DockProgress" */ = {

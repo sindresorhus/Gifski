@@ -46,5 +46,7 @@ struct AppMain: App {
 		])
 
 		SSApp.initSentry("https://0ab0665326c54956f3caa10fc2f525d1@o844094.ingest.sentry.io/4505991507738624")
+
+		SSApp.setUpExternalEventListeners()
 	}
 }

@@ -36,7 +36,7 @@ final class AppState {
 		// We have to nil it out first and dispatch, otherwise it shows the old video. (macOS 14.3)
 		navigationPath = []
 
-		Task { @MainActor [self] in
+		Task { [self] in
 			do {
 				// TODO: Simplify the validator.
 				let (asset, metadata) = try await VideoValidator.validate(url)
@@ -135,7 +135,7 @@ extension AppState {
 			return
 		}
 
-		Task { @MainActor in
+		Task {
 			start(url)
 		}
 	}

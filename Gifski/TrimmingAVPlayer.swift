@@ -5,7 +5,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	typealias NSViewControllerType = TrimmingAVPlayerViewController
 
 	let asset: AVAsset
-	var controlsStyle: AVPlayerViewControlsStyle = .inline
+	var controlsStyle = AVPlayerViewControlsStyle.inline
 	var loopPlayback = false
 	var bouncePlayback = false
 	var speed = 1.0
@@ -124,7 +124,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 		// Support replacing the item.
 		player.publisher(for: \.currentItem)
-			.compactMap { $0 }
+			.compactMap(\.self)
 			.flatMap { currentItem in
 				// TODO: Make a `AVPlayerItem#waitForReady` async property when using Swift 6.
 				currentItem.publisher(for: \.status)

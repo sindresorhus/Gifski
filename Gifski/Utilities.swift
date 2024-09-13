@@ -14,11 +14,11 @@ typealias AnyCancellable = Combine.AnyCancellable
 
 
 // TODO: Check if any of these can be removed when targeting macOS 15.
-extension NSItemProvider: @unchecked Sendable {}
+extension NSItemProvider: @retroactive @unchecked Sendable {}
 
 
 @discardableResult
-func with<T>(_ item: T, update: (inout T) throws -> Void) rethrows -> T {
+func with<T, E>(_ item: T, update: (inout T) throws(E) -> Void) throws(E) -> T {
 	var this = item
 	try update(&this)
 	return this
@@ -41,27 +41,26 @@ extension DispatchQueue {
 }
 
 
-extension CGSize: Hashable {
+extension CGSize: @retroactive Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(width)
 		hasher.combine(height)
 	}
 }
 
-extension CGPoint: Hashable {
+extension CGPoint: @retroactive Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(x)
 		hasher.combine(y)
 	}
 }
 
-extension CGRect: Hashable {
+extension CGRect: @retroactive Hashable {
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(origin)
 		hasher.combine(size)
 	}
 }
-
 
 
 func asyncNilCoalescing<T>(
@@ -203,9 +202,9 @@ extension Task {
 
 
 extension Sequence {
-	func asyncMap<T>(
-		_ transform: (Element) async throws -> T
-	) async rethrows -> [T] {
+	func asyncMap<T, E>(
+		_ transform: (Element) async throws(E) -> T
+	) async throws(E) -> [T] {
 		var values = [T]()
 
 		for element in self {
@@ -1139,7 +1138,7 @@ extension AVFormat: CustomDebugStringConvertible {
 }
 
 
-extension AVMediaType: CustomDebugStringConvertible {
+extension AVMediaType: @retroactive CustomDebugStringConvertible {
 	public var debugDescription: String {
 		switch self {
 		case .audio:
@@ -1560,6 +1559,15 @@ extension ObjectAssociation {
 }
 
 
+extension AnyCancellable {
+	private static var foreverStore = Set<AnyCancellable>()
+
+	func storeForever() {
+		store(in: &Self.foreverStore)
+	}
+}
+
+
 extension CAMediaTimingFunction {
 	static let `default` = CAMediaTimingFunction(name: .default)
 	static let linear = CAMediaTimingFunction(name: .linear)
@@ -1599,21 +1607,43 @@ extension SSApp {
 }
 
 extension SSApp {
+	static func setUpExternalEventListeners() {
+		DistributedNotificationCenter.default.publisher(for: .init("\(SSApp.idString):openSendFeedback"))
+			.sink { _ in
+				DispatchQueue.main.async {
+					SSApp.appFeedbackUrl().open()
+				}
+			}
+			.storeForever()
+
+		DistributedNotificationCenter.default.publisher(for: .init("\(SSApp.idString):copyDebugInfo"))
+			.sink { _ in
+				DispatchQueue.main.async {
+					NSPasteboard.general.prepareForNewContents()
+					NSPasteboard.general.setString(SSApp.debugInfo, forType: .string)
+				}
+			}
+			.storeForever()
+	}
+}
+
+extension SSApp {
+	static var debugInfo: String {
+		"""
+		\(name) \(versionWithBuild) - \(idString)
+		macOS \(Device.osVersion)
+		\(Device.hardwareModel)
+		\(Device.architecture)
+		"""
+	}
+
 	/**
 	- Note: Call this lazily only when actually needed as otherwise it won't get the live info.
 	*/
 	static func appFeedbackUrl() -> URL {
-		let metadata =
-			"""
-			\(name) \(versionWithBuild) - \(idString)
-			macOS \(Device.osVersion)
-			\(Device.hardwareModel)
-			\(Device.architecture)
-			"""
-
 		let info: [String: String] = [
 			"product": name,
-			"metadata": metadata
+			"metadata": debugInfo
 		]
 
 		return URL("https://sindresorhus.com/feedback").settingQueryItems(from: info)
@@ -1758,7 +1788,7 @@ extension String {
 }
 
 
-extension URL: ExpressibleByStringLiteral {
+extension URL: @retroactive ExpressibleByStringLiteral {
 	/**
 	Example:
 
@@ -2039,7 +2069,7 @@ extension URL {
 
 extension URL {
 	func relationship(to url: Self) -> FileManager.URLRelationship {
-		var relationship: FileManager.URLRelationship = .other
+		var relationship = FileManager.URLRelationship.other
 		_ = try? FileManager.default.getRelationship(&relationship, ofDirectoryAt: self, toItemAt: url)
 		return relationship
 	}
@@ -2385,7 +2415,7 @@ extension Sequence {
 	//=> 15
 	```
 	*/
-	func sum<T: AdditiveArithmetic>(_ numerator: (Element) throws -> T) rethrows -> T {
+	func sum<T: AdditiveArithmetic, E>(_ numerator: (Element) throws(E) -> T) throws(E) -> T {
 		var result = T.zero
 
 		for element in self {
@@ -3248,7 +3278,7 @@ extension Debouncer {
 
 extension Sequence where Element: Sequence {
 	func flatten() -> [Element.Element] {
-		flatMap { $0 }
+		flatMap(\.self)
 	}
 }
 
@@ -3928,9 +3958,9 @@ extension NSItemProvider {
 
 
 extension Sequence {
-	func asyncFlatMap<T: Sequence>(
-		_ transform: (Element) async throws -> T
-	) async rethrows -> [T.Element] {
+	func asyncFlatMap<T: Sequence, E>(
+		_ transform: (Element) async throws(E) -> T
+	) async throws(E) -> [T.Element] {
 		var values = [T.Element]()
 
 		for element in self {
@@ -5108,8 +5138,8 @@ struct CircularProgressViewStyle: ProgressViewStyle {
 	private let lineWidth: Double
 	private let text: String?
 
-	init<S: ShapeStyle>(
-		fill: S? = nil,
+	init(
+		fill: (some ShapeStyle)? = nil,
 		lineWidth: Double? = nil,
 		text: String? = nil
 	) {
@@ -5158,8 +5188,8 @@ struct CircularProgressViewStyle: ProgressViewStyle {
 }
 
 extension ProgressViewStyle where Self == CircularProgressViewStyle {
-	static func ssCircular<S: ShapeStyle>(
-		fill: S? = nil,
+	static func ssCircular(
+		fill: (some ShapeStyle)? = nil,
 		lineWidth: Double? = nil,
 		text: String? = nil
 	) -> Self {
@@ -5397,5 +5427,115 @@ extension CGSize {
 			targetWidth: targetWidth.flatMap { Double($0) },
 			targetHeight: targetHeight.flatMap { Double($0) }
 		)
+	}
+}
+
+
+@dynamicMemberLookup
+struct Tuple3<A, B, C> {
+	let (first, second, third): (A, B, C)
+
+	init(_ first: A, _ second: B, _ third: C) {
+		(self.first, self.second, self.third) = (first, second, third)
+	}
+
+	subscript<T>(dynamicMember keyPath: KeyPath<(A, B, C), T>) -> T {
+		(first, second, third)[keyPath: keyPath]
+	}
+}
+
+extension Tuple3: Equatable where A: Equatable, B: Equatable, C: Equatable {}
+extension Tuple3: Hashable where A: Hashable, B: Hashable, C: Hashable {}
+extension Tuple3: Encodable where A: Encodable, B: Encodable, C: Encodable {}
+extension Tuple3: Decodable where A: Decodable, B: Decodable, C: Decodable {}
+extension Tuple3: Sendable where A: Sendable, B: Sendable, C: Sendable {}
+
+
+@propertyWrapper
+struct ViewStorage<Value>: DynamicProperty {
+	private final class ValueBox {
+		var value: Value
+
+		init(_ value: Value) {
+			self.value = value
+		}
+	}
+
+	@State private var valueBox: ValueBox
+
+	var wrappedValue: Value {
+		get { valueBox.value }
+		nonmutating set {
+			valueBox.value = newValue
+		}
+	}
+
+	var projectedValue: Binding<Value> {
+		.init(
+			get: { wrappedValue },
+			set: {
+				wrappedValue = $0
+			}
+		)
+	}
+
+	init(wrappedValue value: @autoclosure @escaping () -> Value) {
+		self._valueBox = .init(wrappedValue: ValueBox(value()))
+	}
+}
+
+
+extension SSApp {
+	final class Activity {
+		private let activity: NSObjectProtocol
+
+		init(
+			_ options: ProcessInfo.ActivityOptions = [],
+			reason: String
+		) {
+			self.activity = ProcessInfo.processInfo.beginActivity(options: options, reason: reason)
+		}
+
+		deinit {
+			ProcessInfo.processInfo.endActivity(activity)
+		}
+	}
+
+	static func beginActivity(
+		_ options: ProcessInfo.ActivityOptions = [],
+		reason: String
+	) -> Activity {
+		.init(options, reason: reason)
+	}
+}
+
+extension View {
+	func activity(
+		_ isActive: Bool = true,
+		options: ProcessInfo.ActivityOptions = [],
+		reason: String
+	) -> some View {
+		modifier(
+			AppActivityModifier(
+				isActive: isActive,
+				options: options,
+				reason: reason
+			)
+		)
+	}
+}
+
+private struct AppActivityModifier: ViewModifier {
+	@ViewStorage private var activity: SSApp.Activity?
+
+	let isActive: Bool
+	let options: ProcessInfo.ActivityOptions
+	let reason: String
+
+	func body(content: Content) -> some View {
+		content
+			.task(id: Tuple3(isActive, options, reason)) { // TODO: Use a tuple here when it can be equatable.
+				activity = isActive ? SSApp.beginActivity(options, reason: reason) : nil
+			}
 	}
 }

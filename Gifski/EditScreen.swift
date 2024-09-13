@@ -145,7 +145,6 @@ struct EditScreen: View {
 		.fixedSize()
 	}
 
-	@MainActor
 	private var bottomBar: some View {
 		HStack {
 			Spacer()

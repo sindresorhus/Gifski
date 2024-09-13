@@ -41,7 +41,7 @@ enum VideoValidator {
 			]
 		)
 
-		let (hasProtectedContent) = try await asset.load(.hasProtectedContent)
+		let hasProtectedContent = try await asset.load(.hasProtectedContent)
 
 //		Crashlytics.record(key: "AVAsset debug info", value: asset.debugInfo)
 
