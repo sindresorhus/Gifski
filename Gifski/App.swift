@@ -14,30 +14,31 @@ struct AppMain: App {
 			MainScreen()
 				.environment(appState)
 		}
-			.windowResizability(.contentSize)
-			.windowToolbarStyle(.unifiedCompact)
-			.defaultPosition(.center)
-			.handlesExternalEvents(matching: []) // Makes sure it does not open a new window when dragging files onto the Dock icon.
-			.commands {
-				CommandGroup(replacing: .newItem) {
-					Button("Open…") {
-						appState.isFileImporterPresented = true
-					}
-						.keyboardShortcut("o")
-						.disabled(appState.isConverting)
+		.windowResizability(.contentSize)
+		.windowToolbarStyle(.unifiedCompact)
+//		.windowBackgroundDragBehavior(.enabled) // Does not work. (macOS 15.2)
+		.defaultPosition(.center)
+		.restorationBehavior(.disabled)
+		.handlesExternalEvents(matching: []) // Makes sure it does not open a new window when dragging files onto the Dock icon.
+		.commands {
+			CommandGroup(replacing: .newItem) {
+				Button("Open…") {
+					appState.isFileImporterPresented = true
 				}
-				CommandGroup(replacing: .help) {
-					Link("Website", destination: "https://sindresorhus.com/Gifski")
-					Link("Source Code", destination: "https://github.com/sindresorhus/Gifski")
-					Link("Gifski Library", destination: "https://github.com/ImageOptim/gifski")
-					Divider()
-					RateOnAppStoreButton(appStoreID: "1351639930")
-					// TODO: Doesn't work. (macOS 14.3)
-//					ShareAppButton(appStoreID: "1351639930")
-					Divider()
-					SendFeedbackButton()
-				}
+				.keyboardShortcut("o")
+				.disabled(appState.isConverting)
 			}
+			CommandGroup(replacing: .help) {
+				Link("Website", destination: "https://sindresorhus.com/Gifski")
+				Link("Source Code", destination: "https://github.com/sindresorhus/Gifski")
+				Link("Gifski Library", destination: "https://github.com/ImageOptim/gifski")
+				Divider()
+				RateOnAppStoreButton(appStoreID: "1351639930")
+				ShareAppButton(appStoreID: "1351639930")
+				Divider()
+				SendFeedbackButton()
+			}
+		}
 	}
 
 	private func setUpConfig() {
