@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C12A7E42D8E4E6000EC7A25 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C12A7E32D8E4E6000EC7A25 /* PreviewView.swift */; };
+		0C12A7EA2D8E8AD300EC7A25 /* PreviewGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C12A7E92D8E8AD300EC7A25 /* PreviewGenerator.swift */; };
 		0E7925202329BDBE00058B94 /* ShareController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareController.swift */; };
 		0E7925282329BDBE00058B94 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5FF0DFFB278BA5DB00A80F09 /* libgifski_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F6ABD84278BA5A20040DDF0 /* libgifski_static.a */; };
@@ -80,6 +82,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0C12A7E32D8E4E6000EC7A25 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
+		0C12A7E92D8E8AD300EC7A25 /* PreviewGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewGenerator.swift; sourceTree = "<group>"; };
 		0E79251B2329BDBE00058B94 /* Share Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E79251F2329BDBE00058B94 /* ShareController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -216,11 +220,13 @@
 			children = (
 				E3AE62861E5CD2F300035A2F /* App.swift */,
 				E3A6BD102245345C00F62256 /* Constants.swift */,
+				0C12A7E32D8E4E6000EC7A25 /* PreviewView.swift */,
 				E33552F02ACAC3280023AAE9 /* AppState.swift */,
 				E3FC365B2377FA0000CF7C59 /* Shared.swift */,
 				E33552EE2ACAC3190023AAE9 /* MainScreen.swift */,
 				E33552F22ACAC5D80023AAE9 /* StartScreen.swift */,
 				E37F68E32ACADA40007F1A7F /* EditScreen.swift */,
+				0C12A7E92D8E8AD300EC7A25 /* PreviewGenerator.swift */,
 				E37F68E12ACAD9F1007F1A7F /* ConversionScreen.swift */,
 				E37F68DF2ACAD9D1007F1A7F /* CompletedScreen.swift */,
 				E3908B7326754568000723A7 /* EstimatedFileSize.swift */,
@@ -410,6 +416,7 @@
 			files = (
 				E3D08F6E1E5D7BFD00F465DF /* Utilities.swift in Sources */,
 				E339F011203820ED003B78FB /* GIFGenerator.swift in Sources */,
+				0C12A7E42D8E4E6000EC7A25 /* PreviewView.swift in Sources */,
 				E33552F12ACAC3280023AAE9 /* AppState.swift in Sources */,
 				E3A6BD112245345C00F62256 /* Constants.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
@@ -421,6 +428,7 @@
 				85BF910922F3279300AD3FF6 /* TrimmingAVPlayer.swift in Sources */,
 				8548806522B78E8300E97401 /* IntTextField.swift in Sources */,
 				E3961F802AC9F2A700708EB7 /* Intents.swift in Sources */,
+				0C12A7EA2D8E8AD300EC7A25 /* PreviewGenerator.swift in Sources */,
 				E30C8EEF29387E7A002E053F /* Gifski.swift in Sources */,
 				E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */,
 				E37F68E02ACAD9D1007F1A7F /* CompletedScreen.swift in Sources */,
