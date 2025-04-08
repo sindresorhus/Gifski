@@ -9,6 +9,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	var loopPlayback = false
 	var bouncePlayback = false
 	var speed = 1.0
+	var showCropRectUnderTrim: CropRect?
 	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
 	func makeNSViewController(context: Context) -> NSViewControllerType {
@@ -28,6 +29,8 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 		nsViewController.bouncePlayback = bouncePlayback
 		nsViewController.player.defaultRate = Float(speed)
 		nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
+
+		nsViewController.cropRect = showCropRectUnderTrim
 	}
 }
 
@@ -43,7 +46,40 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 	private var cancellables = Set<AnyCancellable>()
 
+	private final class CropRectHolder: ObservableObject  {
+	   @Published var cropRect: CropRect = .initialCropRect
+	}
+
+
+	private var underTrimCropRectHolder = CropRectHolder()
+
+	private struct UnderTrimCropOverlay: View {
+		/// Turning  of linter so I can use the default constructor
+		@StateObject var cropRectHolder: CropRectHolder // swiftlint:disable:this private_swiftui_state
+		var body: some View {
+			CropOverlayView(cropRect: $cropRectHolder.cropRect, editable: false)
+		}
+	}
+
+	private var underTrimCropOverlayView: NSHostingView<UnderTrimCropOverlay>!
+
 	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
+
+
+	fileprivate var cropRect: CropRect? = .initialCropRect {
+		didSet {
+			Task {
+				@MainActor in
+				underTrimCropRectHolder.cropRect = cropRect ?? .initialCropRect
+				if cropRect != nil {
+					playerView.contentOverlayView?.addSubview(underTrimCropOverlayView)
+					underTrimCropOverlayView.constrainEdgesToSuperview()
+				} else {
+					underTrimCropOverlayView.removeFromSuperview()
+				}
+			}
+		}
+	}
 
 	/**
 	The minimum duration the trimmer can be set to.
@@ -112,6 +148,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	}
 
 	override func loadView() {
+		underTrimCropOverlayView = NSHostingView(rootView: UnderTrimCropOverlay(cropRectHolder: self.underTrimCropRectHolder))
 		let playerView = TrimmingAVPlayerView()
 		playerView.allowsVideoFrameAnalysis = false
 		playerView.controlsStyle = controlsStyle

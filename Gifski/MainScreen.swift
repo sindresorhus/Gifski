@@ -4,6 +4,8 @@ struct MainScreen: View {
 	@Environment(AppState.self) private var appState
 	@State private var isDropTargeted = false
 	@State private var isWelcomeScreenPresented = false
+	@Default(.outputCrop) private var outputCrop
+	@Default(.outputCropRect) private var outputCropRect
 
 	var body: some View {
 		@Bindable var appState = appState
@@ -17,6 +19,14 @@ struct MainScreen: View {
 						ConversionScreen(conversion: conversion)
 					case .completed(let data, let url):
 						CompletedScreen(data: data, url: url)
+					case .editCrop(let asset, let metadata, let bounceGIF):
+						EditCropScreen(
+							outputCrop: $outputCrop,
+							outputCropRect: $outputCropRect,
+							asset: asset,
+							metadata: metadata,
+							bounceGIF: bounceGIF
+						)
 					}
 				}
 		}

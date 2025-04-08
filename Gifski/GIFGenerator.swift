@@ -32,7 +32,7 @@ actor GIFGenerator {
 		onProgress: @escaping (Double) -> Void
 	) async throws -> Data {
 		gifski = try Gifski(
-			dimensions: conversion.dimensions,
+			dimensions: conversion.croppedOutputDimensions,
 			quality: conversion.quality.clamped(to: 0.1...1),
 			loop: conversion.loop
 		)
@@ -113,7 +113,11 @@ actor GIFGenerator {
 
 			previousTime = requestedTime.seconds
 
-			let image = try imageResult.image
+			guard let image = conversion.croppedImage(image: try imageResult.image) else {
+				/// Is this an appropriate error?
+				throw CancellationError()
+			}
+
 			let actualTime = try imageResult.actualTime
 
 			do {
@@ -330,6 +334,33 @@ extension GIFGenerator {
 		var frameRate: Int?
 		var loop: Gifski.Loop
 		var bounce: Bool
+		var crop: CropRect?
+
+		var croppedOutputDimensions: (width: Int, height: Int)? {
+			guard let crop else {
+				return dimensions
+			}
+			guard let dimensions else {
+				return nil
+			}
+			return (
+				(dimensions.width.toDouble * crop.width).toIntAndClampingIfNeeded,
+				(dimensions.height.toDouble * crop.height).toIntAndClampingIfNeeded
+			)
+		}
+		///Don't use croppedOutputDimensions here because the CGImage
+		///source may have a different size. Use the size directly from the image
+		func croppedImage(image: CGImage) -> CGImage? {
+			guard let crop else {
+				return image
+			}
+			return image.cropping(to: .init(
+				x: image.width.toDouble * crop.x,
+				y: image.height.toDouble * crop.y,
+				width: image.width.toDouble * crop.width,
+				height: image.height.toDouble * crop.height
+			))
+		}
 
 		var gifDuration: Duration {
 			get async throws {

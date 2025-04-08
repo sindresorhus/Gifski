@@ -8,6 +8,8 @@ struct EditScreen: View {
 	@Default(.outputFPS) private var frameRate
 	@Default(.loopGIF) private var loopGIF
 	@Default(.suppressKeyframeWarning) private var suppressKeyframeWarning
+	@Default(.outputCrop) private var outputCrop
+	@Default(.outputCropRect) private var outputCropRect
 	@State private var url: URL
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
@@ -34,15 +36,16 @@ struct EditScreen: View {
 	var body: some View {
 		VStack {
 			// TODO: Move the trimmer outside the video view.
-			TrimmingAVPlayer(
-				asset: modifiedAsset,
-				loopPlayback: loopGIF,
-				bouncePlayback: bounceGIF
-			) { timeRange in
-				DispatchQueue.main.async {
-					self.timeRange = timeRange
+				TrimmingAVPlayer(
+					asset: modifiedAsset,
+					loopPlayback: loopGIF,
+					bouncePlayback: bounceGIF,
+					showCropRectUnderTrim: outputCrop ? outputCropRect : nil
+				) { timeRange in
+					DispatchQueue.main.async {
+						self.timeRange = timeRange
+					}
 				}
-			}
 			controls
 			bottomBar
 		}
@@ -119,8 +122,12 @@ struct EditScreen: View {
 		HStack(spacing: 0) {
 			Form {
 				DimensionsSetting(
+					asset: modifiedAsset,
+					metadata: metadata,
+					bounceGIF: bounceGIF,
 					videoDimensions: metadata.dimensions,
-					resizableDimensions: $resizableDimensions
+					resizableDimensions: $resizableDimensions,
+					outputCrop: $outputCrop
 				)
 				SpeedSetting()
 					.padding(.bottom, 6) // Makes the forms have equal height.
@@ -177,7 +184,8 @@ struct EditScreen: View {
 
 				return .forever
 			}(),
-			bounce: bounceGIF
+			bounce: bounceGIF,
+			crop: outputCrop ? outputCropRect : nil
 		)
 	}
 
@@ -230,6 +238,10 @@ enum PredefinedSizeItem: Hashable {
 }
 
 private struct DimensionsSetting: View {
+	@Environment(AppState.self) private var appState
+	var asset: AVAsset
+	var metadata: AVAsset.VideoMetadata
+	var bounceGIF: Bool
 	@State private var predefinedSizes = [PredefinedSizeItem]()
 	@State private var selectedPredefinedSize: PredefinedSizeItem?
 	@State private var dimensionsType = DimensionsType.pixels
@@ -238,8 +250,12 @@ private struct DimensionsSetting: View {
 	@State private var percent = 0
 	@State private var isArrowKeyTipPresented = false
 
+	@State private var shouldCrop = false
+
 	let videoDimensions: CGSize
 	@Binding var resizableDimensions: Dimensions // TODO: Rename.
+	@Binding var outputCrop: Bool
+
 
 	var body: some View {
 		VStack(spacing: 16) {
@@ -352,6 +368,19 @@ private struct DimensionsSetting: View {
 			.fixedSize()
 			.fillFrame(.horizontal, alignment: .trailing)
 			.labelsHidden()
+			HStack {
+				Spacer()
+				Toggle("Crop", isOn: $outputCrop)
+				Button("Edit Crop") {
+					appState.navigationPath.append(
+						.editCrop(
+							asset,
+							metadata,
+							bounceGIF
+						)
+					)
+				}
+			}
 		}
 		.onAppear {
 			print("EDIT SCREEN - onappear")
