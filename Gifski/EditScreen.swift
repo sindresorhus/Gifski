@@ -420,11 +420,11 @@ private struct DimensionsSetting: View {
 			let height = dimensions.pixels.height * ratio
 			return CGSize(width: width, height: height).rounded()
 		}
-			.filter { $0.width <= videoDimensions.width && $0.height <= videoDimensions.height }
+		.filter { $0.width <= videoDimensions.width && $0.height <= videoDimensions.height }
 
 		let predefinedPixelDimensions = pixelDimensions
-		// TODO
-		//			.filter { resizableDimensions.validate(newSize: $0) }
+			// TODO
+//			.filter { resizableDimensions.validate(newSize: $0) }
 			.map { Dimensions.pixels($0, originalSize: videoDimensions) }
 
 		let percentCommonSizes: [Double] = [
@@ -488,7 +488,7 @@ private struct DimensionsSetting: View {
 
 	private func updateTextFieldsForCurrentDimensions() {
 		width = resizableDimensions.pixels.width.toDouble.clamped(to: resizableDimensions.widthMinMax).toIntAndClampingIfNeeded
-		height = resizableDimensions.pixels.height.toDouble.clamped(to: resizableDimensions.heightMinMax).toIntAndClampingIfNeeded
+				height = resizableDimensions.pixels.height.toDouble.clamped(to: resizableDimensions.heightMinMax).toIntAndClampingIfNeeded
 		percent = (resizableDimensions.percent * 100).rounded().toIntAndClampingIfNeeded
 		print("FF", resizableDimensions.percent.toIntAndClampingIfNeeded)
 		selectPredefinedSizeBasedOnCurrentDimensions()
