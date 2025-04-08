@@ -1,8 +1,6 @@
 import SwiftUI
 import AVFoundation
 
-
-
 struct EditScreen: View {
 	@Environment(AppState.self) private var appState
 	@Default(.outputQuality) private var outputQuality
@@ -43,7 +41,6 @@ struct EditScreen: View {
 		self._modifiedAsset = .init(wrappedValue: asset)
 		self._metadata = .init(wrappedValue: metadata)
 	}
-
 
 	var body: some View {
 		VStack {

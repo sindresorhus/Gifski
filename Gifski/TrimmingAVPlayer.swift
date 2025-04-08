@@ -18,7 +18,6 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	// end TrimmingAVPlayer + PreviewGenerator
 	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
-
 	func makeNSViewController(context: Context) -> NSViewControllerType {
 		.init(
 			playerItem: .init(asset: asset),
@@ -158,7 +157,6 @@ final class TrimmingAVPlayerViewController: NSViewController {
 			player.bouncePlayback = newValue
 		}
 	}
-
 
 	/**
 	Get or set the current player item.
