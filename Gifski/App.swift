@@ -38,6 +38,9 @@ struct AppMain: App {
 					SendFeedbackButton()
 				}
 			}
+		Settings {
+			PreferencesView()
+		}
 	}
 
 	private func setUpConfig() {
