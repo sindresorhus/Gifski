@@ -20,6 +20,17 @@ struct EditScreen: View {
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
 
+
+	/// EditScreen + PreviewGenerator
+	@State private var currentScrubbedTime: Double = .zero
+	@State private var showPreview = false
+	@StateObject private var singleFramePreviewGenerator = PreviewGenerator(
+		type: .singleFrame
+	)
+	@StateObject private var fullAnimationPreviewGenerator = PreviewGenerator(
+		type: .entireAnimation
+	)
+
 	init(
 		url: URL,
 		asset: AVAsset,
@@ -37,7 +48,13 @@ struct EditScreen: View {
 			TrimmingAVPlayer(
 				asset: modifiedAsset,
 				loopPlayback: loopGIF,
-				bouncePlayback: bounceGIF
+				bouncePlayback: bounceGIF,
+				showPreview: showPreview,
+				// EditScreen + PreviewGenerator
+				currentTimeDidChange: self.onCurrentTimeDidChange,
+				previewImage: singleFramePreviewGenerator.previewImage?.image,
+				previewAnimation: fullAnimationPreviewGenerator.previewImage?.image,
+				animationBeingGeneratedNow: fullAnimationPreviewGenerator.imageBeingGeneratedNow
 			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
@@ -61,19 +78,24 @@ struct EditScreen: View {
 		.onChange(of: outputQuality, initial: true) {
 			estimatedFileSizeModel.duration = metadata.duration
 			estimatedFileSizeModel.updateEstimate()
+			onSettingsDidChange()
 		}
 		// TODO: Make these a single call when tuples are equatable.
 		.onChange(of: resizableDimensions) {
 			estimatedFileSizeModel.updateEstimate()
+			onSettingsDidChange()
 		}
 		.onChange(of: timeRange) {
 			estimatedFileSizeModel.updateEstimate()
+			onSettingsDidChange()
 		}
 		.onChange(of: bounceGIF) {
 			estimatedFileSizeModel.updateEstimate()
+			onSettingsDidChange()
 		}
 		.onChange(of: frameRate) {
 			estimatedFileSizeModel.updateEstimate()
+			onSettingsDidChange()
 		}
 		.onChange(of: bounceGIF) {
 			guard bounceGIF else {
@@ -81,6 +103,13 @@ struct EditScreen: View {
 			}
 
 			showKeyframeRateWarningIfNeeded()
+		}
+		.onChange(of: showPreview) {
+			guard showPreview else {
+				return
+			}
+			/// Force a redraw of the preview on
+			onCurrentTimeDidChange(currentTime: self.currentScrubbedTime)
 		}
 		.alert2(
 			"Reverse Playback Preview Limitation",
@@ -148,6 +177,11 @@ struct EditScreen: View {
 	private var bottomBar: some View {
 		HStack {
 			Spacer()
+			if showPreview && (singleFramePreviewGenerator.imageBeingGeneratedNow || fullAnimationPreviewGenerator.imageBeingGeneratedNow) {
+				ProgressView()
+					.frame(width: 10, height: 10)
+			}
+			Toggle("Show Preview", isOn: $showPreview)
 			Button("Convert") {
 				appState.navigationPath.append(.conversion(conversionSettings))
 			}
@@ -621,5 +655,32 @@ private struct LoopSetting: View {
 		SSApp.runOnce(identifier: "gifLoopCountWarning") {
 			isGifLoopCountWarningPresented = true
 		}
+	}
+}
+
+
+///  EditScreen + PreviewGenerator
+extension EditScreen {
+	private func onSettingsDidChange() {
+		guard showPreview else {
+			return
+		}
+		singleFramePreviewGenerator.onSettingsDidChangeGeneratePreview(conversionSettings: self.conversionSettings)
+		fullAnimationPreviewGenerator.onSettingsDidChangeGeneratePreview(conversionSettings: self.conversionSettings)
+	}
+
+	private func onCurrentTimeDidChange(currentTime: Double) {
+		self.currentScrubbedTime = currentTime
+		guard showPreview else {
+			return
+		}
+		self.singleFramePreviewGenerator.onCurrentTimeDidChange(
+			currentTime: currentTime,
+			conversionSettings: conversionSettings
+		)
+		self.fullAnimationPreviewGenerator.onCurrentTimeDidChange(
+			currentTime: currentTime,
+			conversionSettings: conversionSettings
+		)
 	}
 }
