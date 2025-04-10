@@ -1,11 +1,26 @@
 import SwiftUI
 import CoreTransferable
 import AVFoundation
+import Defaults
 
 enum Constants {
 	static let allowedFrameRate = 3.0...50.0
 	static let loopCountRange = 0...100
 }
+
+
+
+extension CGRect: Defaults.Serializable {
+	static let initialCropRect: CGRect = .init(x: 0, y: 0, width: 1, height: 1)
+}
+/// Codable Rect for Cropping
+/// The coordinates are as follows:
+/// - The origin in the upper left hand corner
+///  - x is in [0,1]
+///  - y is in [0,1]
+///  It's just like a texCoords in a UV texture
+///  in common graphics subroutines.
+typealias CropRect = CGRect
 
 extension Defaults.Keys {
 	static let outputQuality = Key<Double>("outputQuality", default: 1)

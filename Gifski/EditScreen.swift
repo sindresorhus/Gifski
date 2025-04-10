@@ -12,6 +12,8 @@ struct EditScreen: View {
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
+	@State private var outputCrop = false
+	@State private var outputCropRect: CropRect = .initialCropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
@@ -19,6 +21,7 @@ struct EditScreen: View {
 	@State private var isReversePlaybackWarningPresented = false
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
+	@State private var showTrimmerDuringCrop = true
 
 	init(
 		url: URL,
@@ -37,7 +40,10 @@ struct EditScreen: View {
 			TrimmingAVPlayer(
 				asset: modifiedAsset,
 				loopPlayback: loopGIF,
-				bouncePlayback: bounceGIF
+				bouncePlayback: bounceGIF,
+				cropRect: $outputCropRect,
+				showCropRectUnderTrim: outputCrop,
+				showTrimmerDuringCrop: showTrimmerDuringCrop
 			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
@@ -49,6 +55,45 @@ struct EditScreen: View {
 		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
 		.navigationDocument(url)
+		.toolbar {
+			ToolbarItem(placement: .automatic) {
+				Button(action: {
+					outputCrop.toggle()
+				}) {
+					Label("Toggle Crop", systemImage: "crop")
+						.foregroundColor(outputCrop ? .accentColor : .primary)
+				}
+			}
+			if outputCrop {
+				ToolbarItem(placement: .automatic) {
+					Button(action: {
+						showTrimmerDuringCrop.toggle()
+					}) {
+						if showTrimmerDuringCrop {
+							Text("Hide Trimmer")
+						} else {
+							Text("Show Trimmer")
+						}
+					}
+				}
+				ToolbarItem(placement: .automatic) {
+					Menu("Aspect Ratio") {
+						ForEach(PresetAspectRatio.list, id: \.self) { aspectRatio in
+							Button(aspectRatio.label) {
+								outputCropRect = aspectRatio.cropRect(dimensions: metadata.dimensions)
+							}
+						}
+					}
+				}
+				ToolbarItem(placement: .automatic) {
+					Button(action: {
+						outputCropRect = .initialCropRect
+					}) {
+						Text("Reset")
+					}
+				}
+			}
+		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
 			Task {
 				await setSpeed()
@@ -119,8 +164,12 @@ struct EditScreen: View {
 		HStack(spacing: 0) {
 			Form {
 				DimensionsSetting(
+					asset: modifiedAsset,
+					metadata: metadata,
+					bounceGIF: bounceGIF,
 					videoDimensions: metadata.dimensions,
-					resizableDimensions: $resizableDimensions
+					resizableDimensions: $resizableDimensions,
+					outputCrop: $outputCrop
 				)
 				SpeedSetting()
 					.padding(.bottom, 6) // Makes the forms have equal height.
@@ -177,7 +226,8 @@ struct EditScreen: View {
 
 				return .forever
 			}(),
-			bounce: bounceGIF
+			bounce: bounceGIF,
+			crop: outputCrop ? outputCropRect : nil
 		)
 	}
 
@@ -213,6 +263,40 @@ struct EditScreen: View {
 		}
 	}
 }
+private struct PresetAspectRatio: Hashable {
+	var width: Int
+	var height: Int
+	init(_ width: Int, _ height: Int) {
+		self.width = width
+		self.height = height
+	}
+	var label: String {
+		"\(width):\(height)"
+	}
+
+	func cropRect(dimensions: CGSize) -> CropRect {
+		let newAspect = CGSize(width: width, height: height)
+		let newSize = newAspect.aspectFittedSize(targetWidth: dimensions.width, targetHeight: dimensions.height)
+
+		let cropWidth = newSize.width / dimensions.width
+		let cropHeight = newSize.height / dimensions.height
+		return .init(
+			origin: .init(x: 0.5 - cropWidth / 2.0, y: 0.5 - cropHeight / 2.0),
+			size: .init(
+				width: cropWidth,
+				height: cropHeight
+			)
+		)
+	}
+	static let list: [Self] = [
+		.init(16, 9),
+		.init(4, 3),
+		.init(1, 1),
+		.init(9, 16),
+		.init(3, 4)
+	]
+}
+
 
 enum PredefinedSizeItem: Hashable {
 	case custom
@@ -230,6 +314,10 @@ enum PredefinedSizeItem: Hashable {
 }
 
 private struct DimensionsSetting: View {
+	@Environment(AppState.self) private var appState
+	var asset: AVAsset
+	var metadata: AVAsset.VideoMetadata
+	var bounceGIF: Bool
 	@State private var predefinedSizes = [PredefinedSizeItem]()
 	@State private var selectedPredefinedSize: PredefinedSizeItem?
 	@State private var dimensionsType = DimensionsType.pixels
@@ -238,8 +326,12 @@ private struct DimensionsSetting: View {
 	@State private var percent = 0
 	@State private var isArrowKeyTipPresented = false
 
+	@State private var shouldCrop = false
+
 	let videoDimensions: CGSize
 	@Binding var resizableDimensions: Dimensions // TODO: Rename.
+	@Binding var outputCrop: Bool
+
 
 	var body: some View {
 		VStack(spacing: 16) {
