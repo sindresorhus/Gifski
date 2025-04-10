@@ -8,12 +8,12 @@ struct EditScreen: View {
 	@Default(.outputFPS) private var frameRate
 	@Default(.loopGIF) private var loopGIF
 	@Default(.suppressKeyframeWarning) private var suppressKeyframeWarning
-	@Default(.outputCrop) private var outputCrop
-	@Default(.outputCropRect) private var outputCropRect
 	@State private var url: URL
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
+	@State private var outputCrop = false
+	@State private var outputCropRect: CropRect = .initialCropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
@@ -21,6 +21,7 @@ struct EditScreen: View {
 	@State private var isReversePlaybackWarningPresented = false
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
+	@State private var showTrimmerDuringCrop = true
 
 	init(
 		url: URL,
@@ -36,22 +37,63 @@ struct EditScreen: View {
 	var body: some View {
 		VStack {
 			// TODO: Move the trimmer outside the video view.
-				TrimmingAVPlayer(
-					asset: modifiedAsset,
-					loopPlayback: loopGIF,
-					bouncePlayback: bounceGIF,
-					showCropRectUnderTrim: outputCrop ? outputCropRect : nil
-				) { timeRange in
-					DispatchQueue.main.async {
-						self.timeRange = timeRange
-					}
+			TrimmingAVPlayer(
+				asset: modifiedAsset,
+				loopPlayback: loopGIF,
+				bouncePlayback: bounceGIF,
+				cropRect: $outputCropRect,
+				showCropRectUnderTrim: outputCrop,
+				showTrimmerDuringCrop: showTrimmerDuringCrop
+			) { timeRange in
+				DispatchQueue.main.async {
+					self.timeRange = timeRange
 				}
+			}
 			controls
 			bottomBar
 		}
 		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
 		.navigationDocument(url)
+		.toolbar {
+			ToolbarItem(placement: .automatic) {
+				Button(action: {
+					outputCrop.toggle()
+				}) {
+					Label("Toggle Crop", systemImage: "crop")
+						.foregroundColor(outputCrop ? .accentColor : .primary)
+				}
+			}
+			if outputCrop {
+				ToolbarItem(placement: .automatic) {
+					Button(action: {
+						showTrimmerDuringCrop.toggle()
+					}) {
+						if showTrimmerDuringCrop {
+							Text("Hide Trimmer")
+						} else {
+							Text("Show Trimmer")
+						}
+					}
+				}
+				ToolbarItem(placement: .automatic) {
+					Menu("Aspect Ratio") {
+						ForEach(PresetAspectRatio.list, id: \.self) { aspectRatio in
+							Button(aspectRatio.label) {
+								outputCropRect = aspectRatio.cropRect(dimensions: metadata.dimensions)
+							}
+						}
+					}
+				}
+				ToolbarItem(placement: .automatic) {
+					Button(action: {
+						outputCropRect = .initialCropRect
+					}) {
+						Text("Reset")
+					}
+				}
+			}
+		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
 			Task {
 				await setSpeed()
@@ -221,6 +263,40 @@ struct EditScreen: View {
 		}
 	}
 }
+private struct PresetAspectRatio: Hashable {
+	var width: Int
+	var height: Int
+	init(_ width: Int, _ height: Int) {
+		self.width = width
+		self.height = height
+	}
+	var label: String {
+		"\(width):\(height)"
+	}
+
+	func cropRect(dimensions: CGSize) -> CropRect {
+		let newAspect = CGSize(width: width, height: height)
+		let newSize = newAspect.aspectFittedSize(targetWidth: dimensions.width, targetHeight: dimensions.height)
+
+		let cropWidth = newSize.width / dimensions.width
+		let cropHeight = newSize.height / dimensions.height
+		return .init(
+			origin: .init(x: 0.5 - cropWidth / 2.0, y: 0.5 - cropHeight / 2.0),
+			size: .init(
+				width: cropWidth,
+				height: cropHeight
+			)
+		)
+	}
+	static let list: [Self] = [
+		.init(16, 9),
+		.init(4, 3),
+		.init(1, 1),
+		.init(9, 16),
+		.init(3, 4)
+	]
+}
+
 
 enum PredefinedSizeItem: Hashable {
 	case custom
@@ -368,19 +444,6 @@ private struct DimensionsSetting: View {
 			.fixedSize()
 			.fillFrame(.horizontal, alignment: .trailing)
 			.labelsHidden()
-			HStack {
-				Spacer()
-				Toggle("Crop", isOn: $outputCrop)
-				Button("Edit Crop") {
-					appState.navigationPath.append(
-						.editCrop(
-							asset,
-							metadata,
-							bounceGIF
-						)
-					)
-				}
-			}
 		}
 		.onAppear {
 			print("EDIT SCREEN - onappear")

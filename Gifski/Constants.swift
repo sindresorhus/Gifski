@@ -28,8 +28,6 @@ extension Defaults.Keys {
 	static let outputFPS = Key<Int>("outputFPS", default: 10)
 	static let loopGIF = Key<Bool>("loopGif", default: true)
 	static let bounceGIF = Key<Bool>("bounceGif", default: false)
-	static let outputCrop = Key<Bool>("outputCrop", default: false)
-	static let outputCropRect: Key<CropRect> = .init("outputCropRect", default: .initialCropRect)
 	static let suppressKeyframeWarning = Key<Bool>("suppressKeyframeWarning", default: false)
 }
 
@@ -37,7 +35,6 @@ enum Route: Hashable {
 	case edit(URL, AVAsset, AVAsset.VideoMetadata)
 	case conversion(GIFGenerator.Conversion)
 	case completed(Data, URL)
-	case editCrop(AVAsset, AVAsset.VideoMetadata, /* BounceGIF */ Bool)
 }
 
 struct ExportableGIF: Transferable {

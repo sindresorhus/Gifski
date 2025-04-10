@@ -9,11 +9,14 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	var loopPlayback = false
 	var bouncePlayback = false
 	var speed = 1.0
-	var showCropRectUnderTrim: CropRect?
+	@Binding var cropRect: CropRect
+	var showCropRectUnderTrim = false
+	var showTrimmerDuringCrop = true
 	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
 	func makeNSViewController(context: Context) -> NSViewControllerType {
 		.init(
+			cropRect: $cropRect,
 			playerItem: .init(asset: asset),
 			controlsStyle: controlsStyle,
 			timeRangeDidChange: timeRangeDidChange
@@ -29,8 +32,8 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 		nsViewController.bouncePlayback = bouncePlayback
 		nsViewController.player.defaultRate = Float(speed)
 		nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
-
-		nsViewController.cropRect = showCropRectUnderTrim
+		nsViewController.showCropRectUnderTrim = showCropRectUnderTrim
+		nsViewController.showTrimmerDuringCrop = showTrimmerDuringCrop
 	}
 }
 
@@ -45,19 +48,28 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 	private var cancellables = Set<AnyCancellable>()
+	@Binding var cropRect: CropRect
 
 	private final class CropRectHolder: ObservableObject  {
-	   @Published var cropRect: CropRect = .initialCropRect
+		@Published var playerSize: CGSize = .zero
 	}
 
 
 	private var underTrimCropRectHolder = CropRectHolder()
 
 	private struct UnderTrimCropOverlay: View {
+		@Binding var cropRect: CropRect
 		/// Turning  of linter so I can use the default constructor
 		@StateObject var cropRectHolder: CropRectHolder // swiftlint:disable:this private_swiftui_state
 		var body: some View {
-			CropOverlayView(cropRect: $cropRectHolder.cropRect, editable: false)
+			CropOverlayView(
+				cropRect: $cropRect,
+				editable: true
+			)
+			.frame(
+				width: cropRectHolder.playerSize.width,
+				height: cropRectHolder.playerSize.height
+			)
 		}
 	}
 
@@ -65,13 +77,12 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
 
-
-	fileprivate var cropRect: CropRect? = .initialCropRect {
+	fileprivate var showCropRectUnderTrim = false {
 		didSet {
 			Task {
 				@MainActor in
-				underTrimCropRectHolder.cropRect = cropRect ?? .initialCropRect
-				if cropRect != nil {
+				underTrimCropRectHolder.playerSize = playerView.videoBounds.size
+				if showCropRectUnderTrim {
 					playerView.contentOverlayView?.addSubview(underTrimCropOverlayView)
 					underTrimCropOverlayView.constrainEdgesToSuperview()
 				} else {
@@ -81,6 +92,14 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		}
 	}
 
+	fileprivate var showTrimmerDuringCrop = true {
+		didSet {
+			guard let avTrimViewParent = (playerView.firstSubview(deep: true) { $0.simpleClassName == "AVTrimView" })?.superview?.superview?.superview else {
+				return
+			}
+			avTrimViewParent.isHidden = !showTrimmerDuringCrop
+		}
+	}
 	/**
 	The minimum duration the trimmer can be set to.
 	*/
@@ -127,10 +146,12 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	}
 
 	init(
+		cropRect: Binding<CropRect>,
 		playerItem: AVPlayerItem,
 		controlsStyle: AVPlayerViewControlsStyle = .inline,
 		timeRangeDidChange: ((ClosedRange<Double>) -> Void)? = nil
 	) {
+		self._cropRect = cropRect
 		self.playerItem = playerItem
 		self.player = LoopingPlayer(playerItem: playerItem)
 		self.controlsStyle = controlsStyle
@@ -148,7 +169,10 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	}
 
 	override func loadView() {
-		underTrimCropOverlayView = NSHostingView(rootView: UnderTrimCropOverlay(cropRectHolder: self.underTrimCropRectHolder))
+		underTrimCropOverlayView = NSHostingView(rootView: UnderTrimCropOverlay(
+			cropRect: $cropRect,
+			cropRectHolder: self.underTrimCropRectHolder
+		))
 		let playerView = TrimmingAVPlayerView()
 		playerView.allowsVideoFrameAnalysis = false
 		playerView.controlsStyle = controlsStyle
