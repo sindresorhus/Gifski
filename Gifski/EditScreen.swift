@@ -8,10 +8,12 @@ struct EditScreen: View {
 	@Default(.outputFPS) private var frameRate
 	@Default(.loopGIF) private var loopGIF
 	@Default(.suppressKeyframeWarning) private var suppressKeyframeWarning
+	@Default(.suppressCropTooltip) private var suppressCropTooltip
 	@State private var url: URL
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
+	@State private var outputCropRect: CropRect = .initialCropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
@@ -19,6 +21,12 @@ struct EditScreen: View {
 	@State private var isReversePlaybackWarningPresented = false
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
+	@State private var showCropTooltip = false
+
+	@State private var showEnterCustomAspectRatio = false
+
+	@State private var enterCustomAspectRatioWidth = 1
+	@State private var enterCustomAspectRatioHeight = 1
 
 	init(
 		url: URL,
@@ -31,13 +39,20 @@ struct EditScreen: View {
 		self._metadata = .init(wrappedValue: metadata)
 	}
 
+	private enum AspectRatio: Hashable {
+		case preset(PresetAspectRatio)
+		case custom
+		case divider
+	}
 	var body: some View {
 		VStack {
 			// TODO: Move the trimmer outside the video view.
 			TrimmingAVPlayer(
 				asset: modifiedAsset,
 				loopPlayback: loopGIF,
-				bouncePlayback: bounceGIF
+				bouncePlayback: bounceGIF,
+				cropRect: $outputCropRect,
+				showCropRectUnderTrim: appState.outputCrop
 			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
@@ -49,6 +64,44 @@ struct EditScreen: View {
 		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
 		.navigationDocument(url)
+		.toolbar {
+			ToolbarItemGroup {
+				if appState.outputCrop {
+					aspectRatioPicker
+					Button(action: {
+						outputCropRect = .initialCropRect
+					}) {
+						Text("Reset")
+					}.disabled(outputCropRect.isReset)
+				}
+				Toggle(isOn: .init(
+					get: {
+						appState.outputCrop
+					},
+					set: { newValue in
+						if newValue && !suppressCropTooltip {
+							showCropTooltip = true
+							suppressCropTooltip = true
+						}
+						appState.outputCrop = newValue
+					}
+				))
+				{
+					Label("Crop", systemImage: "crop")
+				}
+				.popover(isPresented: $showCropTooltip) {
+					VStack(alignment: .leading, spacing: 10) {
+						Text("Crop Tips")
+							.font(.headline)
+						Text("• Hold Shift to scale both sides.")
+						Text("• Hold Option to resize from the center.")
+						Text("• Hold both to resize from the center while keeping the aspect ratio intact.")
+					}
+					.padding()
+					.frame(width: 250)
+				}
+			}
+		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
 			Task {
 				await setSpeed()
@@ -101,6 +154,90 @@ struct EditScreen: View {
 		}
 	}
 
+	var aspectRatioPicker: some View {
+		Picker("Aspect Ratio", selection: .init(
+			get: {
+				let aspect = (outputCropRect.width * metadata.dimensions.width) / (outputCropRect.height * metadata.dimensions.height)
+				for preset in PresetAspectRatio.list {
+					if (Double(preset.width) / Double(preset.height)).isAlmostEqual(to: aspect)  {
+						return AspectRatio.preset(preset)
+					}
+				}
+				return AspectRatio.custom
+			},
+			set: { (newAspectRatio: AspectRatio) in
+				switch newAspectRatio {
+				case .divider:
+					return
+				case .custom:
+					let (width, height) = currentCropRectAspectRatio
+
+					enterCustomAspectRatioWidth = width
+					enterCustomAspectRatioHeight = height
+					showEnterCustomAspectRatio = true
+				case .preset(let preset):
+					outputCropRect = preset.cropRect(dimensions: metadata.dimensions)
+				}
+			}
+		)) {
+			ForEach(PresetAspectRatio.list, id: \.self) { aspectRatio in
+				Text(aspectRatio.label).tag(AspectRatio.preset(aspectRatio))
+			}
+			Divider().tag(AspectRatio.divider)
+			Text("Custom").tag(AspectRatio.custom)
+		}
+		.popover(isPresented: $showEnterCustomAspectRatio) {
+			VStack(alignment: .leading, spacing: 10) {
+				Text("Enter custom aspect ratio")
+					.font(.headline)
+					.padding()
+
+				HStack {
+					IntTextField(
+						value: $enterCustomAspectRatioWidth,
+						minMax: 1...100_000
+					)
+					.frame(width: 62.0)
+					.onChange(of: enterCustomAspectRatioWidth, initial: false) { _, newWidth in
+						outputCropRect = PresetAspectRatio(newWidth, enterCustomAspectRatioHeight).cropRect(dimensions: metadata.dimensions)
+					}
+					Text(":")
+					IntTextField(
+						value: $enterCustomAspectRatioHeight,
+						minMax: 1...100_000
+					)
+					.frame(width: 62.0)
+					.onChange(of: enterCustomAspectRatioHeight, initial: false) { _, newHeight in
+						outputCropRect = PresetAspectRatio(enterCustomAspectRatioWidth, newHeight).cropRect(dimensions: metadata.dimensions)
+					}
+				}.frame(width: 250)
+			}
+			.padding()
+			.frame(width: 250)
+		}
+	}
+
+	private var currentCropRectAspectRatio: (Int, Int) {
+		let width = Int(outputCropRect.width * metadata.dimensions.width)
+		let height = Int(outputCropRect.height * metadata.dimensions.height)
+
+		let gcdValue = gcd(width, height)
+		return (width / gcdValue, height / gcdValue)
+	}
+
+
+	private func gcd(_ a: Int, _ b: Int) -> Int {
+		var x = a
+		var y = b
+		var remainder = 0
+		while y != 0 {
+			remainder = x % y
+			x = y
+			y = remainder
+		}
+		return x
+	}
+
 	private func setSpeed() async {
 		do {
 			// We could have set the `rate` of the player instead of modifying the asset, but it's just easier to modify the asset as then it matches what we want to generate. Otherwise, we would have to translate trimming ranges to the correct speed, etc.
@@ -119,6 +256,9 @@ struct EditScreen: View {
 		HStack(spacing: 0) {
 			Form {
 				DimensionsSetting(
+					asset: modifiedAsset,
+					metadata: metadata,
+					bounceGIF: bounceGIF,
 					videoDimensions: metadata.dimensions,
 					resizableDimensions: $resizableDimensions
 				)
@@ -177,7 +317,8 @@ struct EditScreen: View {
 
 				return .forever
 			}(),
-			bounce: bounceGIF
+			bounce: bounceGIF,
+			crop: appState.outputCrop ? outputCropRect : nil
 		)
 	}
 
@@ -213,6 +354,40 @@ struct EditScreen: View {
 		}
 	}
 }
+private struct PresetAspectRatio: Hashable {
+	var width: Int
+	var height: Int
+	init(_ width: Int, _ height: Int) {
+		self.width = width
+		self.height = height
+	}
+	var label: String {
+		"\(width):\(height)"
+	}
+
+	func cropRect(dimensions: CGSize) -> CropRect {
+		let newAspect = CGSize(width: width, height: height)
+		let newSize = newAspect.aspectFittedSize(targetWidth: dimensions.width, targetHeight: dimensions.height)
+
+		let cropWidth = newSize.width / dimensions.width
+		let cropHeight = newSize.height / dimensions.height
+		return .init(
+			origin: .init(x: 0.5 - cropWidth / 2.0, y: 0.5 - cropHeight / 2.0),
+			size: .init(
+				x: cropWidth,
+				y: cropHeight
+			)
+		)
+	}
+	static let list: [Self] = [
+		.init(16, 9),
+		.init(4, 3),
+		.init(1, 1),
+		.init(9, 16),
+		.init(3, 4)
+	]
+}
+
 
 enum PredefinedSizeItem: Hashable {
 	case custom
@@ -230,6 +405,10 @@ enum PredefinedSizeItem: Hashable {
 }
 
 private struct DimensionsSetting: View {
+	@Environment(AppState.self) private var appState
+	var asset: AVAsset
+	var metadata: AVAsset.VideoMetadata
+	var bounceGIF: Bool
 	@State private var predefinedSizes = [PredefinedSizeItem]()
 	@State private var selectedPredefinedSize: PredefinedSizeItem?
 	@State private var dimensionsType = DimensionsType.pixels
@@ -238,8 +417,10 @@ private struct DimensionsSetting: View {
 	@State private var percent = 0
 	@State private var isArrowKeyTipPresented = false
 
+	@State private var shouldCrop = false
+
 	let videoDimensions: CGSize
-	@Binding var resizableDimensions: Dimensions // TODO: Rename.
+	@Binding var resizableDimensions: Dimensions // TODO: Rename.=
 
 	var body: some View {
 		VStack(spacing: 16) {
