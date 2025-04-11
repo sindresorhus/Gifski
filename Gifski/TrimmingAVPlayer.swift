@@ -350,6 +350,8 @@ fileprivate class TrimmerDragViews {
 	private var avTrimViewParent: NSView
 	private var drawHandleView: NSHostingView<DragHandleView>
 
+	var canDrag = false
+
 	static let originalHeight = 64.0
 	static let newHeight = 87.0
 
@@ -393,6 +395,8 @@ fileprivate class TrimmerDragViews {
 	}
 
 	func showDrag() {
+		canDrag = true
+
 		cursor.addSubview(drawHandleView)
 		drawHandleView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -406,7 +410,6 @@ fileprivate class TrimmerDragViews {
 		NSLayoutConstraint.deactivate(
 			cursor.constraints.filter { $0.firstAttribute == .height && $0.firstItem as? NSView == cursor }
 		)
-		
 		NSLayoutConstraint.activate([
 			cursor.heightAnchor.constraint(equalToConstant: Self.newHeight)
 		])
@@ -417,6 +420,8 @@ fileprivate class TrimmerDragViews {
 		}
 	}
 	func hideDrag() {
+		canDrag = false
+
 		self.drawHandleView.removeFromSuperview()
 
 
@@ -446,7 +451,7 @@ fileprivate class TrimmerDragViews {
 	}
 
 	@objc private func handleDrag(_ gesture: NSPanGestureRecognizer) {
-		guard
+		guard canDrag,
 			gesture.state == .began || gesture.state == .changed,
 			let view = gesture.view,
 			let superview = view.superview,
