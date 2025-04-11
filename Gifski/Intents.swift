@@ -21,9 +21,9 @@ struct ConvertIntent: AppIntent, ProgressReportingIntent {
 	@Parameter(
 		title: "Video",
 		description: "Accepts MP4 and MOV video files.",
-		supportedTypeIdentifiers: [
-			"public.mpeg-4",
-			"com.apple.quicktime-movie"
+		supportedContentTypes: [
+			.mpeg4Movie,
+			.quickTimeMovie
 		]
 	)
 	var video: IntentFile
