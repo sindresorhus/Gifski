@@ -41,28 +41,6 @@ extension DispatchQueue {
 }
 
 
-extension CGSize: @retroactive Hashable {
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(width)
-		hasher.combine(height)
-	}
-}
-
-extension CGPoint: @retroactive Hashable {
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(x)
-		hasher.combine(y)
-	}
-}
-
-extension CGRect: @retroactive Hashable {
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(origin)
-		hasher.combine(size)
-	}
-}
-
-
 func asyncNilCoalescing<T>(
 	_ optional: T?,
 	default defaultValue: @escaping @autoclosure () async throws -> T
@@ -172,7 +150,7 @@ struct RateOnAppStoreButton: View {
 
 // NOTE: This is moot with macOS 12, but `.values` property provided is super buggy and crashes a lot.
 extension Publisher where Failure == Never {
-	var toAsyncStream: AsyncStream<Output> {
+	var toAsyncSequence: some AsyncSequence<Output, Failure> {
 		AsyncStream(Output.self) { continuation in
 			let cancellable = sink { completion in
 				switch completion {
@@ -1407,7 +1385,7 @@ extension URL {
 
 	var isVideoDecodable: Bool {
 		get async throws {
-			try await AVAsset(url: self).isVideoDecodable
+			try await AVURLAsset(url: self).isVideoDecodable
 		}
 	}
 }
@@ -5340,8 +5318,8 @@ extension AVPlayerView {
 	/**
 	Activates trim mode without waiting for trimming to finish.
 	*/
-	func activateTrimming() async throws { // TODO: `throws(CancellationError)`.
-		_ = await updates(for: \.canBeginTrimming).first { $0 }
+	func activateTrimming() async throws { // TODO: `throws(CancellationError)` when `checkCancellation` has typed throws.
+		_ = await updates(for: \.canBeginTrimming).first(where: \.self)
 
 		try Task.checkCancellation()
 
@@ -5358,8 +5336,8 @@ extension NSObjectProtocol where Self: NSObject {
 	func updates<Value>(
 		for keyPath: KeyPath<Self, Value>,
 		options: NSKeyValueObservingOptions = [.initial, .new]
-	) -> AsyncStream<Value> {
-		publisher(for: keyPath, options: options).toAsyncStream
+	) -> some AsyncSequence<Value, Never> {
+		publisher(for: keyPath, options: options).toAsyncSequence
 	}
 }
 
