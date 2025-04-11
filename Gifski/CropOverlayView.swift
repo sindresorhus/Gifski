@@ -8,7 +8,8 @@ import SwiftUI
 import AVFoundation
 import AVKit
 
-fileprivate let cornerWidthHeight = 30.0
+fileprivate let cornerWidthHeight = 20.0
+
 
 struct CropOverlayView: View {
 	@Binding var cropRect: CropRect
@@ -28,8 +29,6 @@ struct CropOverlayView: View {
 	/// may be unset. So I'm turning off the linter here
 	// swiftlint:disable:next discouraged_optional_boolean
 	@State private var windowIsMovable: Bool?
-
-	@State private var flagsMonitor: Any?
 
 	var body: some View {
 		GeometryReader { geometry in
@@ -58,46 +57,50 @@ struct CropOverlayView: View {
 					}
 					context.blendMode = .clear
 					context.fill(holePath, with: .color(.black))
+					if editable {
+						context.blendMode = .normal
+						context.stroke(holePath, with: .color(.white.opacity(0.75)), lineWidth: 2)
+					}
 				}
+				.pointerStyle(isDragging ? .grabActive : .grabIdle)
+				.contentShape(
+					Path { path in
+						path.addRect(cropFrame.insetBy(dx: 5, dy: 5))
+					}
+				)
+				.gesture(
+					editable ?
+					DragGesture()
+						.onChanged { value in
+							isDragging = true
+							updateCropRect.beginDrag(withIntialCropRect: cropRect)
+							cropRect = updateCropRect.newCropRectFromDrag(
+								drag: value,
+								frame: frame,
+								position: .center,
+								dragMode: .normal,
+								endDrag: false
+							) ?? cropRect
+						}
+						.onEnded { value in
+							isDragging = false
+							cropRect = updateCropRect.newCropRectFromDrag(
+								drag: value,
+								frame: frame,
+								position: .center,
+								dragMode: .normal,
+								endDrag: true
+							) ?? cropRect
+						}
+					: nil
+				)
 
 				if isDragging {
 					DraggingSections(cropFrame: cropFrame)
-						.stroke()
+						.stroke(Color.white)
 						.allowsHitTesting(false)
 				}
 				if editable {
-					CusomCursor(cursor: isDragging ? .closedHand : .openHand)
-						.contentShape(
-							Path { path in
-								path.addRect(cropFrame)
-							}
-						)
-						.gesture(
-							editable ?
-							DragGesture()
-								.onChanged { value in
-									isDragging = true
-									updateCropRect.beginDrag(withIntialCropRect: cropRect)
-									cropRect = updateCropRect.newCropRectFromDrag(
-										drag: value,
-										frame: frame,
-										position: .center,
-										dragMode: .normal,
-										endDrag: false
-									) ?? cropRect
-								}
-								.onEnded { value in
-									isDragging = false
-									cropRect = updateCropRect.newCropRectFromDrag(
-										drag: value,
-										frame: frame,
-										position: .center,
-										dragMode: .normal,
-										endDrag: true
-									) ?? cropRect
-								}
-							: nil
-						)
 					ForEach(HandlePosition.allCases, id: \.self) { position in
 						if position != .center {
 							HandleView(
@@ -114,41 +117,28 @@ struct CropOverlayView: View {
 			}
 		}
 		.onAppear {
-			/// Stop the entire window from dragging
-			/// when we drag on the the crop mask
-			/// I would love a pure SwitUI way to do
-			/// this, do you know of one?
 			let windowIsMovable = SSApp.swiftUIMainWindow?.isMovableByWindowBackground
 			SSApp.swiftUIMainWindow?.isMovableByWindowBackground = false
 			Task {
 				@MainActor in
 				self.windowIsMovable = windowIsMovable
 			}
-			if let flagsMonitor {
-				NSEvent.removeMonitor(flagsMonitor)
-			}
-			flagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
-				Task {
-					@MainActor in
-					if event.modifierFlags.contains(.shift) {
-						self.dragMode = .scale
-						return
+		}
+		.onModifierKeysChanged(mask: [.option, .shift]) { _, new in
+			self.dragMode = {
+				if new.contains(.option) {
+					if new.contains(.shift) {
+						return .aspectRatioLockScale
 					}
-					if event.modifierFlags.contains(.option) {
-						self.dragMode = .symmetric
-						return
-					}
-					self.dragMode = .normal
-					return
+					return .symmetric
 				}
-				return event
-			}
+				if new.contains(.shift) {
+					return .scale
+				}
+				return .normal
+			}()
 		}
 		.onDisappear {
-			if let flagsMonitor {
-				NSEvent.removeMonitor(flagsMonitor)
-				self.flagsMonitor = nil
-			}
 			guard let oldSetting = windowIsMovable else {
 				return
 			}
@@ -192,23 +182,23 @@ struct CropOverlayView: View {
 		var isVertical: Bool {
 			self == .top || self == .bottom
 		}
-		@available(macOS 15, *)
-		var cursorPosition: NSCursor.FrameResizePosition {
+
+		private var pointerPosition: FrameResizePosition {
 			switch self {
 			case .bottom:
 				return .bottom
 			case .topRight:
-				return .topRight
+				return .topTrailing
 			case .topLeft:
-				return .topLeft
+				return .topLeading
 			case .bottomRight:
-				return .bottomRight
+				return .bottomTrailing
 			case .bottomLeft:
-				return .bottomLeft
+				return .bottomLeading
 			case .left:
-				return .left
+				return .leading
 			case .right:
-				return .right
+				return .trailing
 			case .center:
 				return .top
 			case .top:
@@ -216,68 +206,11 @@ struct CropOverlayView: View {
 			}
 		}
 
-		var cursor: NSCursor {
+		var pointerStyle: PointerStyle {
 			if self == .center {
-				return .openHand
+				return .grabIdle
 			}
-			if #available(macOS 15, *) {
-				return .frameResize(position: cursorPosition, directions: .all)
-			}
-			switch self {
-			case .bottom, .top:
-				return .resizeUpDown
-			case .bottomLeft, .bottomRight, .left, .right, .topLeft, .topRight:
-				return .resizeLeftRight
-			case .center:
-				return .openHand
-			}
-		}
-	}
-
-	private class CustomCursorView: NSView {
-		var cursor: NSCursor = .arrow
-
-		override func resetCursorRects() {
-			super.resetCursorRects()
-			addCursorRect(
-				self.bounds,
-				cursor: cursor
-			)
-		}
-	}
-
-	/// Backwards compaitble way for custom cursor
-	///
-	/// Normally I would just do something like
-	/// ```swift
-	///	var body: some View {
-	///		Rectangle()
-	///		.onHover {
-	///			hover in
-	///			if hover {
-	///				// also tried with: NSApp.windows.forEach { w in w.disableCursorRects }
-	///				NSCursor.openHand.set()
-	///			} else {
-	///				NSCursor.arrow.set()
-	///				//  NSApp.windows.forEach { w in w.enableCursorRects }
-	///
-	///			}
-	///		}
-	///	}
-	///	```
-	/// but this doesn't work when the CropOverlayView embedeed
-	/// in the TrimmingAVPlayer via a NSHosting View
-	///
-	/// We need this class instead.
-	/// If the app moves to macOS 15 we may be able to
-	/// use the  pointerStyle the modifier
-	private struct CusomCursor: NSViewRepresentable {
-		var cursor: NSCursor
-		func makeNSView(context: Context) -> CustomCursorView {
-			CustomCursorView()
-		}
-		func updateNSView(_ nsView: CustomCursorView, context: Context) {
-			nsView.cursor = cursor
+			return .frameResize(position: pointerPosition)
 		}
 	}
 
@@ -289,7 +222,7 @@ struct CropOverlayView: View {
 		var dragMode: DragMode
 		@Binding  var isDragging: Bool
 
-		private let cornerLineWidth = 5.0
+		private let cornerLineWidth = 3.0
 
 		@State private var updateCropRect = UpdateCropRect()
 
@@ -301,8 +234,9 @@ struct CropOverlayView: View {
 				} else {
 					ZStack {
 						CornerLine(corner: position, lineWidth: cornerLineWidth)
-							.stroke(lineWidth: cornerLineWidth)
-						CusomCursor(cursor: position.cursor)
+							.stroke(Color.white, lineWidth: cornerLineWidth)
+							.contentShape(Rectangle())
+							.pointerStyle(position.pointerStyle)
 					}.frame(width: cornerWidthHeight, height: cornerWidthHeight)
 				}
 			}
@@ -337,8 +271,7 @@ struct CropOverlayView: View {
 
 		private var sideView: some View {
 			ZStack {
-				Rectangle()
-					.fill(Color.cropSideWhite)
+				Color.clear
 					.frame(
 						width: sideViewWidth,
 						height: sideViewHeight
@@ -361,11 +294,7 @@ struct CropOverlayView: View {
 							))
 						}
 					)
-				CusomCursor(cursor: position.cursor)
-					.frame(
-						width: position.isVertical ? sideViewWidth : 20.0,
-						height: position.isVertical ? 20.0 : sideViewHeight
-					)
+					.pointerStyle(position.pointerStyle)
 			}
 		}
 		private var sideViewWidth: Double {
@@ -495,12 +424,29 @@ struct CropOverlayView: View {
 				assertionFailure()
 				return nil
 			}
-			let translationX = drag.location.x.clamped(from: frame.minX, to: frame.maxX) - drag.startLocation.x
-			let translationY = drag.location.y.clamped(from: frame.minY, to: frame.maxY) - drag.startLocation.y
 
-			let dx = translationX / frame.width
-			let dy = translationY / frame.height
+			let dragStartAnchor: UnitPoint = {
+				switch position {
+				case .bottom, .right, .center, .left, .top:
+					return .init(x: drag.startLocation.x / frame.width, y: drag.startLocation.y / frame.height)
+				case .topLeft:
+					return .init(x: cropRectAtBeginOfDrag.origin.x, y: cropRectAtBeginOfDrag.origin.y)
+				case .topRight:
+					return .init(x: (cropRectAtBeginOfDrag.origin.x + cropRectAtBeginOfDrag.width), y: cropRectAtBeginOfDrag.origin.y)
+				case .bottomRight:
+					return .init(x: (cropRectAtBeginOfDrag.origin.x + cropRectAtBeginOfDrag.width), y: cropRectAtBeginOfDrag.origin.y + cropRectAtBeginOfDrag.height)
+				case .bottomLeft:
+					return .init(x: cropRectAtBeginOfDrag.origin.x, y: cropRectAtBeginOfDrag.origin.y + cropRectAtBeginOfDrag.height)
+				}
+			}()
 
+			let dragLocation: UnitPoint = .init(
+				x: drag.location.x.clamped(from: frame.minX, to: frame.maxX) / frame.width,
+				y: drag.location.y.clamped(from: frame.minY, to: frame.maxY) / frame.height
+			)
+
+			let dx = dragLocation.x - dragStartAnchor.x
+			let dy = dragLocation.y - dragStartAnchor.y
 
 			if position == .center {
 				var outRect = cropRectAtBeginOfDrag
@@ -543,8 +489,73 @@ struct CropOverlayView: View {
 					dx: dx,
 					dy: dy
 				)
+			case .aspectRatioLockScale:
+				return applyAspectRatioLock(
+					position: position,
+					cropRectAtBeginOfDrag: cropRectAtBeginOfDrag,
+					frame: frame,
+					dragLocation: dragLocation
+				)
 			}
 		}
+		private func applyAspectRatioLock(
+			position: HandlePosition,
+			cropRectAtBeginOfDrag rect: CropRect,
+			frame: CGRect,
+			dragLocation: UnitPoint
+		) -> CropRect {
+			let dx = abs(dragLocation.x - rect.midX)
+			let dy = abs(dragLocation.y - rect.midY)
+			let rawScale: Double = {
+				let scaleWidth = dx / (rect.width / 2)
+				let scaleHeight = dy / (rect.height / 2)
+				return max(scaleWidth, scaleHeight)
+			}()
+
+			let minScale: Double = {
+				let minWidth = self.minWidth(frame: frame)
+				let minHeight = self.minHeight(frame: frame)
+
+				if rect.height < rect.width {
+					return minHeight / rect.height
+				}
+				return minWidth / rect.width
+			}()
+
+			let maxScale: Double = {
+				/// top and left sides
+				/// x = rect.midX - scale * rect.width / 2
+				/// 0 = rect.midX - maxScale * rect.width / 2
+				/// - rect.midX = - maxScale * rect.width / 2
+				/// rect.midX = maxScale * rect.width / 2
+				/// rect.midX / (rect.width / 2) = maxScale
+				/// 2.0 * rect.midX / rect.width = maxScale
+
+				var maxScale: Double = 2.0 * rect.midX / rect.width
+				maxScale = min(maxScale, 2.0 * rect.midY / rect.height)
+
+				/// right and bottom sides
+				/// x = rect.midX + scale * rect.width / 2
+				/// 1.0 = rect.midX + maxScale * rect.width / 2
+				/// 1.0 - rect.midX  = maxScale * rect.width / 2
+				/// 1.0 - rect.midX / (rect.width / 2) = maxScale
+				maxScale = min(maxScale, (1.0 - rect.midX) / (rect.width / 2))
+				maxScale = min(maxScale, (1.0 - rect.midY) / (rect.height / 2))
+				return maxScale
+			}()
+
+
+			let scale = minScale < maxScale ? rawScale.clamped(from: minScale, to: maxScale) : 1.0
+
+			var outRect = rect
+
+			outRect.width *= scale
+			outRect.height *= scale
+			outRect.x = rect.midX - outRect.width / 2
+			outRect.y = rect.midY - outRect.height / 2
+			return outRect
+		}
+
 		private func applyNormal(
 			position: HandlePosition,
 			cropRectAtBeginOfDrag cropRect: CropRect,
@@ -809,29 +820,7 @@ enum DragMode {
 	case normal
 	case symmetric
 	case scale
-	var handleColor: Color {
-		switch self {
-		case .normal:
-				.white
-		case .symmetric:
-				.blue
-		case .scale:
-				.yellow
-		}
-	}
-}
-struct CropCornerShape: View {
-	var dragMode: DragMode
-	var body: some View {
-		switch dragMode {
-		case .normal:
-			Circle().fill(dragMode.handleColor)
-		case .symmetric:
-			Rectangle().fill(dragMode.handleColor)
-		case .scale:
-			RoundedRectangle(cornerSize: .init(widthHeight: 5)).fill(dragMode.handleColor)
-		}
-	}
+	case aspectRatioLockScale
 }
 extension Color {
 	static let cropSideWhite: Color = .init(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.75)
