@@ -87,12 +87,13 @@ struct MainScreen: View {
 		.toolbar {
 			Color.clear
 		}
+		// `.materialActiveAppearance` does not currently work here. Remove `.windowIsVibrant` when it does.
+//		.containerBackground(.thinMaterial.materialActiveAppearance(.active), for: .window)
+		.toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+		.windowResizeBehavior(.disabled)
 		.windowTabbingMode(.disallowed)
 		.windowCollectionBehavior(.fullScreenNone)
 		.windowIsMovableByWindowBackground()
-		.windowIsResizable(false)
-		.windowIsRestorable(false)
-		.windowTitlebarAppearsTransparent()
 		.windowIsVibrant()
 	}
 }
