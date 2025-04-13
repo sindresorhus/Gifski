@@ -159,13 +159,6 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		print("TrimmingAVPlayerViewController - DEINIT")
 	}
 
-	func setRate(_ rate: Float) {
-		player.rate = rate
-	}
-
-	func seekToStart() {
-		player.seekToStart()
-	}
 
 	@available(*, unavailable)
 	required init?(coder: NSCoder) {
