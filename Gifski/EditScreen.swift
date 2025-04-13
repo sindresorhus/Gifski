@@ -20,16 +20,7 @@ struct EditScreen: View {
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
 
-
-	/// EditScreen + PreviewGenerator
-	@State private var currentScrubbedTime: Double = .zero
-	@State private var showPreview = false
-	@StateObject private var singleFramePreviewGenerator = PreviewGenerator(
-		type: .singleFrame
-	)
-	@StateObject private var fullAnimationPreviewGenerator = PreviewGenerator(
-		type: .entireAnimation
-	)
+	@State private var previewViewState = PreviewViewState()
 
 	init(
 		url: URL,
@@ -49,12 +40,11 @@ struct EditScreen: View {
 				asset: modifiedAsset,
 				loopPlayback: loopGIF,
 				bouncePlayback: bounceGIF,
-				showPreview: showPreview,
-				// EditScreen + PreviewGenerator
-				currentTimeDidChange: self.onCurrentTimeDidChange,
-				previewImage: singleFramePreviewGenerator.previewImage?.image,
-				previewAnimation: fullAnimationPreviewGenerator.previewImage?.image,
-				animationBeingGeneratedNow: fullAnimationPreviewGenerator.imageBeingGeneratedNow
+				onScrubToNewTime: previewViewState.onScrubToNewTime,
+				rateDidChange: previewViewState.onRateDidChange,
+				enablePlayButton: previewViewState.enablePlayButton,
+				pauseOnLoop: !previewViewState.showPreview,
+				viewUnderTrim: previewViewState.viewUnderTrim
 			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
@@ -66,6 +56,16 @@ struct EditScreen: View {
 		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
 		.navigationDocument(url)
+		.toolbar {
+			ToolbarItemGroup {
+				if previewViewState.somePreviewGenerationInProgress  {
+					ProgressView()
+						.scaleEffect(0.5)
+						.frame(width: 10, height: 1)
+				}
+				Toggle(previewViewState.showPreview ? "Hide Preview" : "Show Preview", isOn: $previewViewState.showPreview)
+			}
+		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
 			Task {
 				await setSpeed()
@@ -78,38 +78,35 @@ struct EditScreen: View {
 		.onChange(of: outputQuality, initial: true) {
 			estimatedFileSizeModel.duration = metadata.duration
 			estimatedFileSizeModel.updateEstimate()
-			onSettingsDidChange()
+			previewViewState.onSettingsDidChange(settings: conversionSettings)
 		}
 		// TODO: Make these a single call when tuples are equatable.
 		.onChange(of: resizableDimensions) {
 			estimatedFileSizeModel.updateEstimate()
-			onSettingsDidChange()
+			previewViewState.onSettingsDidChange(settings: conversionSettings)
 		}
 		.onChange(of: timeRange) {
 			estimatedFileSizeModel.updateEstimate()
-			onSettingsDidChange()
+			previewViewState.onSettingsDidChange(settings: conversionSettings)
 		}
 		.onChange(of: bounceGIF) {
 			estimatedFileSizeModel.updateEstimate()
-			onSettingsDidChange()
+			previewViewState.onSettingsDidChange(settings: conversionSettings)
 		}
 		.onChange(of: frameRate) {
 			estimatedFileSizeModel.updateEstimate()
-			onSettingsDidChange()
+			previewViewState.onSettingsDidChange(settings: conversionSettings)
+		}
+		.onChange(of: loopCount) {
+			previewViewState.onSettingsDidChange(settings: conversionSettings)
 		}
 		.onChange(of: bounceGIF) {
+			previewViewState.onSettingsDidChange(settings: conversionSettings)
 			guard bounceGIF else {
 				return
 			}
 
 			showKeyframeRateWarningIfNeeded()
-		}
-		.onChange(of: showPreview) {
-			guard showPreview else {
-				return
-			}
-			/// Force a redraw of the preview on
-			onCurrentTimeDidChange(currentTime: self.currentScrubbedTime)
 		}
 		.alert2(
 			"Reverse Playback Preview Limitation",
@@ -177,11 +174,6 @@ struct EditScreen: View {
 	private var bottomBar: some View {
 		HStack {
 			Spacer()
-			if showPreview && (singleFramePreviewGenerator.imageBeingGeneratedNow || fullAnimationPreviewGenerator.imageBeingGeneratedNow) {
-				ProgressView()
-					.frame(width: 10, height: 10)
-			}
-			Toggle("Show Preview", isOn: $showPreview)
 			Button("Convert") {
 				appState.navigationPath.append(.conversion(conversionSettings))
 			}
@@ -655,32 +647,5 @@ private struct LoopSetting: View {
 		SSApp.runOnce(identifier: "gifLoopCountWarning") {
 			isGifLoopCountWarningPresented = true
 		}
-	}
-}
-
-
-///  EditScreen + PreviewGenerator
-extension EditScreen {
-	private func onSettingsDidChange() {
-		guard showPreview else {
-			return
-		}
-		singleFramePreviewGenerator.onSettingsDidChangeGeneratePreview(conversionSettings: self.conversionSettings)
-		fullAnimationPreviewGenerator.onSettingsDidChangeGeneratePreview(conversionSettings: self.conversionSettings)
-	}
-
-	private func onCurrentTimeDidChange(currentTime: Double) {
-		self.currentScrubbedTime = currentTime
-		guard showPreview else {
-			return
-		}
-		self.singleFramePreviewGenerator.onCurrentTimeDidChange(
-			currentTime: currentTime,
-			conversionSettings: conversionSettings
-		)
-		self.fullAnimationPreviewGenerator.onCurrentTimeDidChange(
-			currentTime: currentTime,
-			conversionSettings: conversionSettings
-		)
 	}
 }
