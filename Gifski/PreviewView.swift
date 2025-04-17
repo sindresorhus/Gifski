@@ -119,8 +119,8 @@ final class PreviewViewState {
 		if fullAnimationPreviewGenerator.previewImage == nil {
 			shouldShowAnimation = false
 			/**
-			 Avoid infinite loop: stop the player if rate is already 0
-			 */
+			Avoid infinite loop: stop the player if rate is already 0.
+			*/
 			guard newRate != 0 else {
 				return
 			}
@@ -129,7 +129,7 @@ final class PreviewViewState {
 		}
 		shouldShowAnimation = newRate != 0
 
-		if newRate > 0 && previousRate == 0 {
+		if newRate > 0, previousRate == 0 {
 			player.seekToStart()
 		}
 	}

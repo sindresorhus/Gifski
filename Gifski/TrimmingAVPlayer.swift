@@ -66,7 +66,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let rateDidChange: ((AVPlayer, Float) -> Void)?
 
 
-	fileprivate var enablePlayButton = true {
+	fileprivate var isPlayButtonEnabled = true {
 		didSet {
 			guard oldValue != enablePlayButton else {
 				return
