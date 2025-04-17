@@ -3123,8 +3123,7 @@ extension LoopingPlayer {
 			let periodicTimeObserver = addPeriodicTimeObserver(
 				forInterval: CMTime(seconds: duration.toTimeInterval, preferredTimescale: CMTimeScale(NSEC_PER_SEC)),
 				queue: queue
-			)
-			{ time in
+			) { time in
 				guard !self.timeChangeDueToLoopBounceOrPlayButtonPress else {
 					return
 				}
