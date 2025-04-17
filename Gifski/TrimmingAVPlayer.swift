@@ -13,7 +13,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 
 	var onScrubToNewTime: ((AVPlayer, Double) -> Void)?
 	var rateDidChange: ((AVPlayer, Float) -> Void)?
-	var enablePlayButton = true
+	var isPlayButtonEnabled = true
 	var pauseOnLoop = true
 	var viewUnderTrim: NSView?
 
@@ -38,7 +38,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 		nsViewController.bouncePlayback = bouncePlayback
 		nsViewController.player.defaultRate = Float(speed)
 
-		nsViewController.enablePlayButton = enablePlayButton
+		nsViewController.isPlayButtonEnabled = isPlayButtonEnabled
 		nsViewController.viewUnderTrim = viewUnderTrim
 		nsViewController.player.pauseOnLoop = pauseOnLoop
 
@@ -68,10 +68,10 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 	fileprivate var isPlayButtonEnabled = true {
 		didSet {
-			guard oldValue != enablePlayButton else {
+			guard oldValue != isPlayButtonEnabled else {
 				return
 			}
-			playerView.enableOrDisablePlayButton(enable: enablePlayButton)
+			playerView.setPlayButtonEnabled(isPlayButtonEnabled)
 		}
 	}
 
@@ -311,7 +311,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 			playPauseButton.target = self
 		}
 
-		playPauseButton.isEnabled = enable
+		playPauseButton.isEnabled = enabled
 	}
 
 	@objc func playPauseButtonPressed(_ sender: Any) {

@@ -42,7 +42,7 @@ struct EditScreen: View {
 				bouncePlayback: bounceGIF,
 				onScrubToNewTime: previewViewState.onScrubToNewTime,
 				rateDidChange: previewViewState.onRateDidChange,
-				enablePlayButton: previewViewState.enablePlayButton,
+				isPlayButtonEnabled: previewViewState.isPlayButtonEnabled,
 				pauseOnLoop: !previewViewState.showPreview,
 				viewUnderTrim: previewViewState.viewUnderTrim
 			) { timeRange in

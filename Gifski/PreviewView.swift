@@ -22,7 +22,7 @@ final class PreviewViewState {
 		previewView = NSHostingView(rootView: PreviewView(previewViewState: self))
 	}
 	@MainActor
-	var enablePlayButton: Bool {
+	var isPlayButtonEnabled: Bool {
 		if !showPreview {
 			return true
 		}
