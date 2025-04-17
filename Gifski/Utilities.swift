@@ -3104,7 +3104,7 @@ final class LoopingPlayer: AVPlayer {
 }
 
 extension LoopingPlayer {
-	func scrubTimeStream(forInterval duration: Duration = .seconds(1_000_000.0), queue: DispatchQueue = .global(qos: .utility)) -> AsyncStream<Duration> {
+	func scrubTimeStream(forInterval duration: Duration = .seconds(1_000_000.0), queue: DispatchQueue = .global(qos: .utility)) -> some AsyncSequence<Duration, Never> {
 		AsyncStream { continuation in
 			/**
 			 https://developer.apple.com/documentation/avfoundation/monitoring-playback-progress-in-your-app

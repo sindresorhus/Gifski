@@ -217,8 +217,9 @@ final class TrimmingAVPlayerViewController: NSViewController {
 				rateDidChange?(player, newRate)
 			}
 			.store(in: &cancellables)
+
 		Task {
-			for await time in  self.player.scrubTimeStream() {
+			for await time in self.player.scrubTimeStream() {
 				self.onScrubToNewTime?(self.player, time.toTimeInterval)
 			}
 		}
@@ -286,7 +287,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 
 	var playPauseButtonTarget: AnyObject?
 
-	fileprivate func enableOrDisablePlayButton(enable: Bool) {
+	fileprivate func setPlayButtonEnabled(_ enabled: Bool) {
 		guard
 			let avTrimView = firstSubview(deep: true, where: { $0.simpleClassName == "AVTrimView" }),
 			let superview = avTrimView.superview
