@@ -3067,14 +3067,7 @@ final class LoopingPlayer: AVPlayer {
 				}
 				if pauseOnLoop {
 					/**
-					 Not having this pause causes a glitch on the loop
-					 during normal playback.
-
-					 But having the pause causes a glitch on the loop
-					 of preview playback because it will set the rate
-					 to zero causing it to enter pause mode but
-					 will immediatly unpause causing a flash of unwanted
-					 content
+					 Not having this pause causes a glitch on the loop during normal playback. But having the pause causes a glitch on the loop of preview playback because it will set the rate to zero causing it to enter pause mode but will immediatly unpause causing a flash of unwanted content
 					 */
 					pause()
 				}
@@ -3088,14 +3081,14 @@ final class LoopingPlayer: AVPlayer {
 					timeChangeDueToLoopBounceOrPlayButtonPress = true
 					seekToEnd()
 					playImmediately(atRate: -defaultRate)
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+					delay(.seconds(0.1)) {
 						self.timeChangeDueToLoopBounceOrPlayButtonPress = false
 					}
 				} else if loopPlayback {
 					timeChangeDueToLoopBounceOrPlayButtonPress = true
 					seekToStart()
 					playImmediately(atRate: defaultRate)
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+					delay(.seconds(0.1)) {
 						self.timeChangeDueToLoopBounceOrPlayButtonPress = false
 					}
 				}
@@ -3127,6 +3120,7 @@ extension LoopingPlayer {
 				guard !self.timeChangeDueToLoopBounceOrPlayButtonPress else {
 					return
 				}
+
 				continuation.yield(Duration.seconds(time.seconds))
 			}
 

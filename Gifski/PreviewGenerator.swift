@@ -36,16 +36,8 @@ final class PreviewGenerator {
 					 */
 					continue
 				}
-				Task {
-					@MainActor in
+				await MainActor.run {
 					self.imageBeingGeneratedNow = true
-				}
-				defer {
-					Task {
-						@MainActor in
-
-						self.imageBeingGeneratedNow = false
-					}
 				}
 				let data = await generatePreviewImage(
 					previewCommand: item.command
@@ -54,8 +46,10 @@ final class PreviewGenerator {
 					@MainActor in
 					self.previewImage = data?.toPreviewImage()
 				}
-
 				self.previewImageCommand = previewImageCommand
+				await MainActor.run {
+					self.imageBeingGeneratedNow = false
+				}
 			}
 		}
 	}
