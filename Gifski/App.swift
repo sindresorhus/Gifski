@@ -28,6 +28,13 @@ struct AppMain: App {
 				.keyboardShortcut("o")
 				.disabled(appState.isConverting)
 			}
+			CommandGroup(replacing: .textEditing) {
+				Button("Preview") {
+					appState.shouldShowPreview.toggle()
+				}
+				.keyboardShortcut("p", modifiers: [.command, .shift])
+				.disabled(!appState.onEditScreen)
+			}
 			CommandGroup(replacing: .help) {
 				Link("Website", destination: "https://sindresorhus.com/Gifski")
 				Link("Source Code", destination: "https://github.com/sindresorhus/Gifski")

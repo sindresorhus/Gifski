@@ -7,6 +7,18 @@ import DockProgress
 final class AppState {
 	static let shared = AppState()
 
+	var shouldShowPreview = false
+
+	var onEditScreen: Bool {
+		guard let path = navigationPath.last else {
+			return false
+		}
+		if case .edit = path {
+			return true
+		}
+		return false
+	}
+
 	var navigationPath = [Route]()
 	var isFileImporterPresented = false
 
