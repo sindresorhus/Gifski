@@ -3021,9 +3021,6 @@ final class LoopingPlayer: AVPlayer {
 		}
 	}
 
-
-	var pauseOnLoop = true
-
 	/**
 	Bounce the playback.
 	*/
@@ -3042,8 +3039,6 @@ final class LoopingPlayer: AVPlayer {
 		cancellable = nil
 		updateObserver()
 	}
-
-	var timeChangeDueToLoopBounceOrPlayButtonPress = false
 
 	private func updateObserver() {
 		guard bouncePlayback || loopPlayback else {
@@ -3065,69 +3060,21 @@ final class LoopingPlayer: AVPlayer {
 				guard let self else {
 					return
 				}
-				if pauseOnLoop {
-					/**
-					 Not having this pause causes a glitch on the loop during normal playback. But having the pause causes a glitch on the loop of preview playback because it will set the rate to zero causing it to enter pause mode but will immediatly unpause causing a flash of unwanted content
-					 */
-					pause()
-				}
 
+				pause()
 
 				if
 					bouncePlayback,
 					currentItem?.canPlayReverse == true,
 					currentTime().seconds > currentItem?.playbackRange?.lowerBound ?? 0
 				{
-					timeChangeDueToLoopBounceOrPlayButtonPress = true
 					seekToEnd()
 					playImmediately(atRate: -defaultRate)
-					delay(.seconds(0.1)) {
-						self.timeChangeDueToLoopBounceOrPlayButtonPress = false
-					}
 				} else if loopPlayback {
-					timeChangeDueToLoopBounceOrPlayButtonPress = true
 					seekToStart()
 					playImmediately(atRate: defaultRate)
-					delay(.seconds(0.1)) {
-						self.timeChangeDueToLoopBounceOrPlayButtonPress = false
-					}
 				}
 			}
-	}
-}
-
-extension LoopingPlayer {
-	func scrubTimeStream(forInterval duration: Duration = .seconds(1_000_000.0), queue: DispatchQueue = .global(qos: .utility)) -> some AsyncSequence<Duration, Never> {
-		AsyncStream { continuation in
-			/**
-			 https://developer.apple.com/documentation/avfoundation/monitoring-playback-progress-in-your-app
-			 This is where we keep track of how the user scrubbed on the timeline
-
-			 Notice that the interval it set to a large value
-			 This means that it will provide a callback in 2 cases.
-			 1. On loop, in which case it will show the first frame (or last
-			 if you have bounce enabled)
-			 2. When manually scrubbing. In which case it will show
-			 the frame you click on
-
-			 You can set this to a lower interval (like 0.1) for a live preview
-			 but performance will suffer
-			 */
-			let periodicTimeObserver = addPeriodicTimeObserver(
-				forInterval: CMTime(seconds: duration.toTimeInterval, preferredTimescale: CMTimeScale(NSEC_PER_SEC)),
-				queue: queue
-			) { time in
-				guard !self.timeChangeDueToLoopBounceOrPlayButtonPress else {
-					return
-				}
-
-				continuation.yield(Duration.seconds(time.seconds))
-			}
-
-			continuation.onTermination = { _ in
-				self.removeTimeObserver(periodicTimeObserver)
-			}
-		}
 	}
 }
 

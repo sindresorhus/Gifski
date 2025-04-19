@@ -1,55 +1,47 @@
 import AVKit
 import SwiftUI
 
+
 struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	typealias NSViewControllerType = TrimmingAVPlayerViewController
 
 	let asset: AVAsset
+	let assetVideoComposition: AVMutableVideoComposition?
 	var controlsStyle = AVPlayerViewControlsStyle.inline
 	var loopPlayback = false
 	var bouncePlayback = false
 	var speed = 1.0
-
-
-	var onScrubToNewTime: ((AVPlayer, Double) -> Void)?
-	var rateDidChange: ((AVPlayer, Float) -> Void)?
-	var isPlayButtonEnabled = true
-	var pauseOnLoop = true
-	var viewUnderTrim: NSView?
-
-	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
+	var timeRangeDidChange: TimeRangeDidChange?
 
 	func makeNSViewController(context: Context) -> NSViewControllerType {
 		.init(
 			playerItem: .init(asset: asset),
 			controlsStyle: controlsStyle,
-			onScrubToNewTime: onScrubToNewTime,
-			rateDidChange: rateDidChange,
 			timeRangeDidChange: timeRangeDidChange
 		)
 	}
 
 	func updateNSViewController(_ nsViewController: NSViewControllerType, context: Context) {
 		if asset != nsViewController.currentItem.asset {
-			nsViewController.currentItem = .init(asset: asset)
+			let item = AVPlayerItem(asset: asset)
+			item.videoComposition = assetVideoComposition
+			item.playbackRange = nsViewController.currentItem.playbackRange
+			nsViewController.currentItem = item
+		}
+
+		if assetVideoComposition != nsViewController.currentItem.videoComposition {
+			nsViewController.currentItem.videoComposition = assetVideoComposition
 		}
 
 		nsViewController.loopPlayback = loopPlayback
 		nsViewController.bouncePlayback = bouncePlayback
 		nsViewController.player.defaultRate = Float(speed)
 
-		nsViewController.isPlayButtonEnabled = isPlayButtonEnabled
-		nsViewController.viewUnderTrim = viewUnderTrim
-		nsViewController.player.pauseOnLoop = pauseOnLoop
-
-
 		if nsViewController.player.rate != 0 {
 			nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
 		}
 	}
 }
-
-
 
 // TODO: Move more of the logic here over to the SwiftUI view.
 /**
@@ -60,36 +52,8 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let playerItem: AVPlayerItem
 	fileprivate let player: LoopingPlayer
 	private let controlsStyle: AVPlayerViewControlsStyle
-	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
+	private let timeRangeDidChange: TimeRangeDidChange?
 	private var cancellables = Set<AnyCancellable>()
-	private let onScrubToNewTime: ((AVPlayer, Double) -> Void)?
-	private let rateDidChange: ((AVPlayer, Float) -> Void)?
-
-
-	fileprivate var isPlayButtonEnabled = true {
-		didSet {
-			guard oldValue != isPlayButtonEnabled else {
-				return
-			}
-			playerView.setPlayButtonEnabled(isPlayButtonEnabled)
-		}
-	}
-
-
-	fileprivate var viewUnderTrim: NSView? {
-		didSet {
-			guard oldValue != viewUnderTrim else {
-				return
-			}
-			oldValue?.removeFromSuperview()
-			guard let viewUnderTrim else {
-				return
-			}
-			playerView.contentOverlayView?.addSubview(viewUnderTrim)
-			viewUnderTrim.constrainEdgesToSuperview()
-		}
-	}
-
 
 	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
 
@@ -130,7 +94,10 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 			player.replaceCurrentItem(with: newValue)
 
-			DispatchQueue.main.async { [self] in
+			/**
+			 Need to delay for longer than just DispatchQueue.main, otherwise Preview Will be at time 0
+			 */
+			delay(.milliseconds(50)) { [self] in
 				player.rate = rate
 				player.currentItem?.seek(toPercentage: playbackPercentage)
 				player.currentItem?.playbackRangePercentage = playbackRangePercentage
@@ -141,24 +108,18 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	init(
 		playerItem: AVPlayerItem,
 		controlsStyle: AVPlayerViewControlsStyle = .inline,
-		onScrubToNewTime: ((AVPlayer, Double) -> Void)? = nil,
-		rateDidChange: ((AVPlayer, Float) -> Void)? = nil,
-		timeRangeDidChange: ((ClosedRange<Double>) -> Void)? = nil
+		timeRangeDidChange: TimeRangeDidChange? = nil
 	) {
 		self.playerItem = playerItem
 		self.player = LoopingPlayer(playerItem: playerItem)
 		self.controlsStyle = controlsStyle
 		self.timeRangeDidChange = timeRangeDidChange
-		self.rateDidChange = rateDidChange
-		self.onScrubToNewTime = onScrubToNewTime
-
 		super.init(nibName: nil, bundle: nil)
 	}
 
 	deinit {
 		print("TrimmingAVPlayerViewController - DEINIT")
 	}
-
 
 	@available(*, unavailable)
 	required init?(coder: NSCoder) {
@@ -178,6 +139,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 
+
 		// Support replacing the item.
 		player.publisher(for: \.currentItem)
 			.compactMap(\.self)
@@ -196,41 +158,24 @@ final class TrimmingAVPlayerViewController: NSViewController {
 				playerView.setupTrimmingObserver()
 
 				if let durationRange = $0.durationRange {
-					timeRangeDidChange?(durationRange)
+					timeRangeDidChange?(durationRange, .duration)
 				}
-
+				var count = 0
 				// This is here as it needs to be refreshed when the current item changes.
 				playerView.observeTrimmedTimeRange { [weak self] timeRange in
 					self?.timeRange = timeRange
-					self?.timeRangeDidChange?(timeRange)
+					self?.timeRangeDidChange?(timeRange, .observed(count: count))
+					count += 1
 				}
 			}
 			.store(in: &cancellables)
-
-		player
-			.publisher(for: \.rate)
-			.receive(on: DispatchQueue.main)
-			.sink { [weak self] newRate in
-				guard let self else {
-					return
-				}
-				rateDidChange?(player, newRate)
-			}
-			.store(in: &cancellables)
-
-		Task {
-			for await time in self.player.scrubTimeStream() {
-				self.onScrubToNewTime?(self.player, time.toTimeInterval)
-			}
-		}
 	}
 }
-
-
 
 final class TrimmingAVPlayerView: AVPlayerView {
 	private var timeRangeCancellable: AnyCancellable?
 	private var trimmingCancellable: AnyCancellable?
+
 
 	/**
 	The minimum duration the trimmer can be set to.
@@ -285,51 +230,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		.toCancellable
 	}
 
-	var playPauseButtonTarget: AnyObject?
-
-	fileprivate func setPlayButtonEnabled(_ enabled: Bool) {
-		guard
-			let avTrimView = firstSubview(deep: true, where: { $0.simpleClassName == "AVTrimView" }),
-			let superview = avTrimView.superview
-		else {
-			return
-		}
-		guard let playPauseButton = (superview.subviews
-			.first { $0 != avTrimView }?
-			.subviews
-			.first {
-				guard let button = ($0 as? NSButton),
-				button.action?.description == "playPauseButtonPressed:" else {
-					return false
-				}
-				return true
-			} as? NSButton) else {
-				return
-			}
-		if playPauseButton.target !== self {
-			playPauseButtonTarget = playPauseButton.target
-			playPauseButton.target = self
-		}
-
-		playPauseButton.isEnabled = enabled
-	}
-
-	@objc func playPauseButtonPressed(_ sender: Any) {
-		if let loopingPlayer = player as? LoopingPlayer,
-		/**
-		 only prevent time change notifications on play button press,
-		 not pause button press
-		 */
-		loopingPlayer.rate == 0 {
-			loopingPlayer.timeChangeDueToLoopBounceOrPlayButtonPress = true
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-				loopingPlayer.timeChangeDueToLoopBounceOrPlayButtonPress = false
-			}
-		}
-		NSApp.sendAction(#selector(self.playPauseButtonPressed(_:)), to: playPauseButtonTarget, from: sender)
-	}
-
-	fileprivate func hideTrimButtons(enablePlayButton: Bool = true) {
+	fileprivate func hideTrimButtons() {
 		// This method is a collection of hacks, so it might be acting funky on different OS versions.
 		guard
 			let avTrimView = firstSubview(deep: true, where: { $0.simpleClassName == "AVTrimView" }),
@@ -375,3 +276,10 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	*/
 	override func cancelOperation(_ sender: Any?) {}
 }
+
+enum TimeRangeDidChangeType {
+	case duration
+	case observed(count: Int)
+}
+
+typealias TimeRangeDidChange = (ClosedRange<Double>, TimeRangeDidChangeType) -> Void
