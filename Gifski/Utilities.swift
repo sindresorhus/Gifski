@@ -5324,6 +5324,13 @@ extension AVPlayerView {
 		try Task.checkCancellation()
 
 		Task {
+			/**
+			 In about 20% of my debug sessions, `beginTrimming` will crash because canBeginTrimming is false, so I added this check. I've seen multiple cases where this guard catches into the else statement and the trimming controls work just fine: in each and every case where canBeginTrimming was false, this function gets called again with a value of true.
+			 */
+			guard canBeginTrimming else {
+				return
+			}
+
 			await beginTrimming()
 		}
 

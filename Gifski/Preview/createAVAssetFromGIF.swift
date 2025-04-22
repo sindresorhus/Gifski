@@ -1,54 +1,26 @@
 //
-//  createVideoFromSetting.swift
+//  createAVAssetFromGIF.swift
 //  Gifski
 //
-//  Created by Michael Mulet on 4/17/25.
+//  Created by Michael Mulet on 4/22/25.
 //
 
 import Foundation
-import AVFoundation
-
-func createPreviewVideoFromSettings(_ settings: SettingsForPreview) async throws -> URL {
-	let data = try await GIFGenerator.run(settings.conversion) { _ in
-		/**
-		 No-op
-		 */
-	}
-	try Task.checkCancellation()
-	return try await createAVAssetFromGif(data: data, settings: settings)
-}
+import AVKit
 
 /**
- We have to add about 0.1 seconds to the upper range so that it avoids the bug where it will not show the preview when increasing the trim  to the right
+ Convert a GIF to an AVAAsset
  */
-func padEndTime(_ settings: SettingsForPreview) async throws -> SettingsForPreview {
-	let assetDuration = try await settings.conversion.asset.load(.duration)
-	var newConversion = settings.conversion
-
-	newConversion.timeRange = { () -> ClosedRange<Double>? in
-		guard let timeRange = settings.conversion.timeRange else {
-			return nil
-		}
-		let upperBound = min(assetDuration.seconds, timeRange.upperBound + 0.1)
-		return timeRange.lowerBound...(upperBound)
-	}()
-
-	return newConversion.settingsForPreview
-}
-
-private func createAVAssetFromGif(data: Data, settings: SettingsForPreview) async throws -> URL {
-	guard let imageSource = CGImageSourceCreateWithData(data as CFData, nil) else {
-		throw CreateAVAssetError.failedToCreateImageData
-	}
-
-	let numberOfImagesCount = CGImageSourceGetCount(imageSource)
-	guard numberOfImagesCount > 0
+func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullPreview, onProgress: (Double) -> Void) async throws -> TemporaryAVURLAsset {
+	let numberOfImages = CGImageSourceGetCount(imageSource)
+	guard numberOfImages > 0
 	else {
 		throw CreateAVAssetError.noImages
 	}
 	guard let firstCGImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
 		throw CreateAVAssetError.failedToCreateImage
 	}
+
 	let tempPath = FileManager.default.temporaryDirectory.appending(component: "\(UUID()).mov")
 	guard let assetWriter = try? AVAssetWriter(outputURL: tempPath, fileType: .mov) else {
 		throw CreateAVAssetError.failedToCreateAssetWriter
@@ -82,8 +54,8 @@ private func createAVAssetFromGif(data: Data, settings: SettingsForPreview) asyn
 	let frameRate: CMTimeScale
 	if let settingFrameRate = settings.conversion.frameRate {
 		frameRate = CMTimeScale(settingFrameRate)
-	} else if let inputFrameRaate = try? await settings.conversion.asset.frameRate {
-		frameRate = CMTimeScale(inputFrameRaate)
+	} else if let inputFrameRate = try? await settings.conversion.asset.frameRate {
+		frameRate = CMTimeScale(inputFrameRate)
 	} else {
 		frameRate = CMTimeScale(30.0)
 	}
@@ -94,8 +66,15 @@ private func createAVAssetFromGif(data: Data, settings: SettingsForPreview) asyn
 			continuation.yield()
 		}
 	}
+	var progressThreshold = 0.05
 	for await _ in dataReadyStream {
-		while writerInput.isReadyForMoreMediaData && frameIndex < numberOfImagesCount {
+		while writerInput.isReadyForMoreMediaData && frameIndex < numberOfImages {
+			let progress = Double(frameIndex) / Double(numberOfImages)
+			if progress > progressThreshold {
+				onProgress(progress)
+				progressThreshold = progress + 0.05
+			}
+
 			try Task.checkCancellation()
 
 			defer {
@@ -135,7 +114,7 @@ private func createAVAssetFromGif(data: Data, settings: SettingsForPreview) asyn
 			)
 			pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
 		}
-		if frameIndex >= numberOfImagesCount {
+		if frameIndex >= numberOfImages {
 			break
 		}
 	}
@@ -146,7 +125,7 @@ private func createAVAssetFromGif(data: Data, settings: SettingsForPreview) asyn
 			continuation.resume()
 		}
 	}
-	return tempPath
+	return TemporaryAVURLAsset(url: tempPath)
 }
 
 
@@ -157,47 +136,8 @@ enum CreateAVAssetError: Error {
 	case cannotAddWriterInput
 	case noImages
 }
-
-struct SettingsForPreview: Equatable {
-	let conversion: GIFGenerator.Conversion
-	init(conversion: GIFGenerator.Conversion) {
-		var newConversion = conversion
-		newConversion.loop = .never
-		newConversion.bounce = false
-		self.conversion = newConversion
-	}
-
-	func areTheSameBesidesTrim(_ settings: Self) -> Bool {
-		var copyOld = self.conversion
-		copyOld.timeRange = nil
-
-		var copyNew = settings.conversion
-		copyNew.timeRange = nil
-
-		return copyNew == copyOld
-	}
-
-	func trimRangeContainsTrimeRange(
-		of newSettings: Self,
-	) -> Bool {
-		guard let oldTimeRange = self.conversion.timeRange else {
-			/**
-			 nil means the entire duration, so all sets are subset of the range
-			 */
-			return true
-		}
-		guard let newTimeRange = newSettings.conversion.timeRange else {
-			/**
-			 old is not full, but new is full, thus it is not a subset
-			 */
-			return false
-		}
-		return oldTimeRange.contains(newTimeRange)
-	}
-}
-
-extension GIFGenerator.Conversion {
-	var settingsForPreview: SettingsForPreview {
-		SettingsForPreview(conversion: self)
+final class TemporaryAVURLAsset: AVURLAsset, @unchecked Sendable {
+	deinit {
+		try? FileManager.default.removeItem(at: self.url)
 	}
 }

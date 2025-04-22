@@ -6,12 +6,13 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	typealias NSViewControllerType = TrimmingAVPlayerViewController
 
 	let asset: AVAsset
-	let assetVideoComposition: AVMutableVideoComposition?
+	let shouldShowPreview: Bool
+	let fullPreviewStatus: FullPreviewGenerationEvent.Status?
 	var controlsStyle = AVPlayerViewControlsStyle.inline
 	var loopPlayback = false
 	var bouncePlayback = false
 	var speed = 1.0
-	var timeRangeDidChange: TimeRangeDidChange?
+	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
 	func makeNSViewController(context: Context) -> NSViewControllerType {
 		.init(
@@ -24,19 +25,30 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	func updateNSViewController(_ nsViewController: NSViewControllerType, context: Context) {
 		if asset != nsViewController.currentItem.asset {
 			let item = AVPlayerItem(asset: asset)
-			item.videoComposition = assetVideoComposition
+			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
+				item.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition
+			}
 			item.playbackRange = nsViewController.currentItem.playbackRange
 			nsViewController.currentItem = item
 		}
 
-		if assetVideoComposition != nsViewController.currentItem.videoComposition {
-			nsViewController.currentItem.videoComposition = assetVideoComposition
+		if let previewVideoCompositor = nsViewController.currentItem.customVideoCompositor as? PreviewVideoCompositor,
+		   previewVideoCompositor.fullPreviewStatus != fullPreviewStatus || previewVideoCompositor.shouldShowPreview != shouldShowPreview
+		{
+			previewVideoCompositor.fullPreviewStatus = fullPreviewStatus
+			previewVideoCompositor.shouldShowPreview = shouldShowPreview
+
+			/**
+			 Do this on every parameter change so that it will force the AVPlayer to redraw and update the preview
+			 */
+			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
+				nsViewController.currentItem.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition
+			}
 		}
 
 		nsViewController.loopPlayback = loopPlayback
 		nsViewController.bouncePlayback = bouncePlayback
 		nsViewController.player.defaultRate = Float(speed)
-
 		if nsViewController.player.rate != 0 {
 			nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
 		}
@@ -52,7 +64,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let playerItem: AVPlayerItem
 	fileprivate let player: LoopingPlayer
 	private let controlsStyle: AVPlayerViewControlsStyle
-	private let timeRangeDidChange: TimeRangeDidChange?
+	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 	private var cancellables = Set<AnyCancellable>()
 
 	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
@@ -94,10 +106,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 
 			player.replaceCurrentItem(with: newValue)
 
-			/**
-			 Need to delay for longer than just DispatchQueue.main, otherwise Preview Will be at time 0
-			 */
-			delay(.milliseconds(50)) { [self] in
+			DispatchQueue.main.async { [self] in
 				player.rate = rate
 				player.currentItem?.seek(toPercentage: playbackPercentage)
 				player.currentItem?.playbackRangePercentage = playbackRangePercentage
@@ -108,7 +117,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	init(
 		playerItem: AVPlayerItem,
 		controlsStyle: AVPlayerViewControlsStyle = .inline,
-		timeRangeDidChange: TimeRangeDidChange? = nil
+		timeRangeDidChange: ((ClosedRange<Double>) -> Void)? = nil
 	) {
 		self.playerItem = playerItem
 		self.player = LoopingPlayer(playerItem: playerItem)
@@ -134,11 +143,8 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		view = playerView
 	}
 
-
-
 	override func viewDidLoad() {
 		super.viewDidLoad()
-
 
 		// Support replacing the item.
 		player.publisher(for: \.currentItem)
@@ -158,14 +164,13 @@ final class TrimmingAVPlayerViewController: NSViewController {
 				playerView.setupTrimmingObserver()
 
 				if let durationRange = $0.durationRange {
-					timeRangeDidChange?(durationRange, .duration)
+					timeRangeDidChange?(durationRange)
 				}
-				var count = 0
+
 				// This is here as it needs to be refreshed when the current item changes.
 				playerView.observeTrimmedTimeRange { [weak self] timeRange in
 					self?.timeRange = timeRange
-					self?.timeRangeDidChange?(timeRange, .observed(count: count))
-					count += 1
+					self?.timeRangeDidChange?(timeRange)
 				}
 			}
 			.store(in: &cancellables)
@@ -175,7 +180,6 @@ final class TrimmingAVPlayerViewController: NSViewController {
 final class TrimmingAVPlayerView: AVPlayerView {
 	private var timeRangeCancellable: AnyCancellable?
 	private var trimmingCancellable: AnyCancellable?
-
 
 	/**
 	The minimum duration the trimmer can be set to.
@@ -276,10 +280,3 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	*/
 	override func cancelOperation(_ sender: Any?) {}
 }
-
-enum TimeRangeDidChangeType {
-	case duration
-	case observed(count: Int)
-}
-
-typealias TimeRangeDidChange = (ClosedRange<Double>, TimeRangeDidChangeType) -> Void

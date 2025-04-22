@@ -1,7 +1,6 @@
 import SwiftUI
 import AVFoundation
 
-
 struct EditScreen: View {
 	@Environment(AppState.self) private var appState
 	@Default(.outputQuality) private var outputQuality
@@ -12,7 +11,6 @@ struct EditScreen: View {
 	@State private var url: URL
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
-
 	@State private var metadata: AVAsset.VideoMetadata
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
@@ -21,8 +19,10 @@ struct EditScreen: View {
 	@State private var isReversePlaybackWarningPresented = false
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
+	@State private var fullPreviewState: FullPreviewGenerationEvent = .initialState
 
-	@State private var previewState: PreviewState?
+	private let requestNewFullPreview: RequestNewFullPreview
+	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
 
 	init(
 		url: URL,
@@ -33,33 +33,23 @@ struct EditScreen: View {
 		self._asset = .init(wrappedValue: asset)
 		self._modifiedAsset = .init(wrappedValue: asset)
 		self._metadata = .init(wrappedValue: metadata)
+		(fullPreviewStream, requestNewFullPreview) = createFullPreviewStream()
 	}
 
 	var body: some View {
 		VStack {
 			// TODO: Move the trimmer outside the video view.
 			TrimmingAVPlayer(
-				asset: currentAsset,
-				assetVideoComposition: currentComposition,
+				asset: modifiedAsset,
+				shouldShowPreview: appState.shouldShowPreview,
+				fullPreviewStatus: fullPreviewState.status,
 				loopPlayback: loopGIF,
 				bouncePlayback: bounceGIF
-			) { timeRange, type in
+			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
-					switch type {
-					case .duration:
-						return
-					case .observed(let counter):
-						/**
-						 Need the counter to be greater than 1 or elease will end up recreating the preview after the preview has been created (because the preview causes the currentAsset to change)
-						 */
-						guard counter > 1 else {
-							return
-						}
-						estimatedFileSizeModel.updateEstimate()
-						updatePreviewOnSettingsChange()
-						return
-					}
+					estimatedFileSizeModel.updateEstimate()
+					updatePreviewOnSettingsChange()
 				}
 			}
 			controls
@@ -70,18 +60,16 @@ struct EditScreen: View {
 		.navigationDocument(url)
 		.toolbar {
 			ToolbarItemGroup {
-				if previewState?.isGenerating ?? false {
-					ProgressView()
+				if fullPreviewState.isGenerating {
+					ProgressView(value: fullPreviewState.progress)
+						.progressViewStyle(.circular)
 						.scaleEffect(0.5)
 						.frame(width: 10, height: 1)
 				}
-				Toggle(isOn: .init(get: { shouldShowPreview }, set: {
-					appState.shouldShowPreview = $0
-				}))
+				Toggle(isOn: .init(get: { appState.shouldShowPreview }, set: { appState.shouldShowPreview = $0 }))
 				{
-					Label("Preview", systemImage: shouldShowPreview ? "eye" : "eye.slash")
+					Label("Preview", systemImage: appState.shouldShowPreview ? "eye" : "eye.slash")
 				}
-				.disabled(previewState?.previewAsset == nil)
 			}
 		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
@@ -103,6 +91,10 @@ struct EditScreen: View {
 			estimatedFileSizeModel.updateEstimate()
 			updatePreviewOnSettingsChange()
 		}
+		.onChange(of: timeRange) {
+			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
+		}
 		.onChange(of: bounceGIF) {
 			estimatedFileSizeModel.updateEstimate()
 		}
@@ -114,7 +106,6 @@ struct EditScreen: View {
 			guard bounceGIF else {
 				return
 			}
-
 			showKeyframeRateWarningIfNeeded()
 		}
 		.alert2(
@@ -134,120 +125,41 @@ struct EditScreen: View {
 				shouldShow = true
 			}
 		}
-	}
-
-	private func updatePreviewOnSettingsChange() {
-		print("hi")
-		Task {
-			await generatePreview(settingsForPreview: conversionSettings.settingsForPreview)
+		.task {
+			for await event in fullPreviewStream {
+				switch event {
+				case .empty, .generating:
+					break
+				case .ready(let settings, let asset, _, _):
+					try? await (modifiedAsset as? PreviewableComposition)?.updateFullPreviewTrack(settings: settings, newFullPreviewAsset: asset)
+				}
+				fullPreviewState = event
+			}
 		}
 	}
+
+	private func updatePreviewOnSettingsChange()  {
+		requestNewFullPreview(SettingsForFullPreview(conversion: conversionSettings, speed: Defaults[.outputSpeed], duration: metadata.duration.toTimeInterval ))
+	}
+
 
 	private func setSpeed() async {
 		do {
 			// We could have set the `rate` of the player instead of modifying the asset, but it's just easier to modify the asset as then it matches what we want to generate. Otherwise, we would have to translate trimming ranges to the correct speed, etc.
-			modifiedAsset = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) ?? modifiedAsset
 
-			/**
-			 1. Force an update of the preview because modifiedAsset has changed, 2. Since the asset has changed we want the invalidate the previewState so we can see the changedAsset right away.
-			 */
-			await MainActor.run {
-				resetPreviewState()
-				/**
-				 Delay so that the timeRange will be updated to the new time range
-				 */
-				delay(Duration.seconds(0.2)) {
-					Task {
-						await generatePreview(settingsForPreview: conversionSettings.settingsForPreview)
-					}
-				}
-			}
+			let changedSpeedAsset = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) ?? modifiedAsset
+			modifiedAsset = try await PreviewableComposition(extractPreviewableCompositionFrom: changedSpeedAsset)
 
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		} catch {
 			appState.error = error
 		}
 	}
 
-	private func resetPreviewState() {
-		switch previewState {
-		case .generatingPreview(_, _, let task):
-			task.cancel()
-		case .preview:
-			break
-		case .none:
-			break
-		}
-		previewState = nil
-	}
-
-
 	private func setUp() {
 		estimatedFileSizeModel.getConversionSettings = { conversionSettings }
-		Task {
-			await generatePreview(settingsForPreview: conversionSettings.settingsForPreview)
-		}
-	}
-
-	@MainActor
-	private func generatePreview(settingsForPreview settings: SettingsForPreview) async {
-		switch previewState {
-		case nil:
-			break
-		case .generatingPreview(
-			_,
-			let oldSettings,
-			let task
-		):
-			guard oldSettings != settings else {
-				return
-			}
-			task.cancel()
-		case .preview(_, let oldSettings):
-			if  oldSettings.areTheSameBesidesTrim(settings) &&
-				oldSettings.trimRangeContainsTrimeRange(of: settings)
-				{
-				return
-			}
-		}
-
-		let generateTask = Task { () async throws -> PreviewState? in
-			let paddedSettings = try await padEndTime(settings)
-			let url = try await createPreviewVideoFromSettings(paddedSettings)
-			try Task.checkCancellation()
-			let info = try await compositeAssetAndPreview(
-				modifiedAsset: modifiedAsset,
-				previewAsset: TemporaryAVURLAsset(url: url),
-				previewRange: paddedSettings.conversion.timeRange
-			)
-			return .preview(
-				info: info,
-				settings: settings
-			)
-		}
-
-		let oldPreviewState = previewState
-
-		previewState = .generatingPreview(
-			info: previewState?.info,
-			newPreviewSettings: settings,
-			task: generateTask.toCancellable
-		)
-		let result = await generateTask.result
-		switch result {
-		case .failure(let error):
-			guard !error.isCancelled else {
-				/**
-				 If we are cancelled, don't create any state changes, just return
-				 */
-				return
-			}
-			previewState = oldPreviewState
-			return
-		case .success(let newState):
-			previewState = newState
-			return
-		}
+		updatePreviewOnSettingsChange()
 	}
 
 	private var controls: some View {
@@ -294,19 +206,6 @@ struct EditScreen: View {
 		}
 		.padding()
 		.padding(.top, -16)
-	}
-
-	var shouldShowPreview: Bool {
-		appState.shouldShowPreview && previewState?.previewAsset != nil
-	}
-
-	private var currentAsset: AVAsset {
-		previewState?.previewAsset ?? modifiedAsset
-	}
-
-	private var currentComposition: AVMutableVideoComposition? {
-		let info = previewState?.info
-		return appState.shouldShowPreview ? info?.withPreviewVideoComposition : info?.withoutPreviewVideoComposition
 	}
 
 	private var conversionSettings: GIFGenerator.Conversion {
@@ -361,66 +260,6 @@ struct EditScreen: View {
 		}
 	}
 }
-
-final class TemporaryAVURLAsset: AVURLAsset, @unchecked Sendable {
-	deinit {
-		try? FileManager.default.removeItem(at: self.url)
-	}
-}
-
-extension CMPersistentTrackID {
-	static let modifiedAssetTrackID: CMPersistentTrackID = 1
-	static let previewAssetTrackID: CMPersistentTrackID = 2
-}
-
-private enum PreviewState {
-	case generatingPreview(
-		info: GeneratedPreview?,
-		newPreviewSettings: SettingsForPreview,
-		task: AnyCancellable
-	)
-	case preview(
-		info: GeneratedPreview,
-		settings: SettingsForPreview
-	)
-
-	var isGenerating: Bool {
-		switch self {
-		case .generatingPreview:
-			return true
-		case .preview:
-			return false
-		}
-	}
-
-	var info: GeneratedPreview? {
-		switch self {
-		case .generatingPreview(let info, _, _):
-			return info
-		case .preview(let info, _):
-			return info
-		}
-	}
-
-	var settings: SettingsForPreview? {
-		switch self {
-		case .generatingPreview(_, let settings, _):
-			return settings
-		case .preview(_, let settings):
-			return settings
-		}
-	}
-
-	var previewAsset: AVAsset? {
-		switch self {
-		case .generatingPreview(let info, _, _):
-			return info?.previewAVAsset
-		case .preview(let info, _):
-			return info.previewAVAsset
-		}
-	}
-}
-
 
 enum PredefinedSizeItem: Hashable {
 	case custom
