@@ -4,12 +4,11 @@ import DockProgress
 
 @MainActor
 @Observable
-final class AppState {
+final class AppState: ObservableBinding {
 	static let shared = AppState()
 
 	var shouldShowPreview = false
-
-	var onEditScreen: Bool {
+	var isOnEditScreen: Bool {
 		guard let path = navigationPath.last else {
 			return false
 		}

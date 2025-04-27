@@ -5524,3 +5524,14 @@ private struct AppActivityModifier: ViewModifier {
 			}
 	}
 }
+
+protocol ObservableBinding {}
+
+extension ObservableBinding {
+	func binding<T>(for keyPath: ReferenceWritableKeyPath<Self, T>) -> Binding<T> {
+		Binding(
+			get: { self[keyPath: keyPath] },
+			set: { self[keyPath: keyPath] = $0 }
+		)
+	}
+}

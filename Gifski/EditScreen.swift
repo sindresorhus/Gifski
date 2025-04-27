@@ -66,7 +66,7 @@ struct EditScreen: View {
 						.scaleEffect(0.5)
 						.frame(width: 10, height: 1)
 				}
-				Toggle(isOn: .init(get: { appState.shouldShowPreview }, set: { appState.shouldShowPreview = $0 }))
+				Toggle(isOn: appState.binding(for: \.shouldShowPreview))
 				{
 					Label("Preview", systemImage: appState.shouldShowPreview ? "eye" : "eye.slash")
 				}

@@ -29,11 +29,12 @@ struct AppMain: App {
 				.disabled(appState.isConverting)
 			}
 			CommandGroup(replacing: .textEditing) {
-				Button("Preview") {
-					appState.shouldShowPreview.toggle()
+				Toggle(isOn: appState.binding(for: \.shouldShowPreview))
+				{
+					Text("Preview")
 				}
 				.keyboardShortcut("p", modifiers: [.command, .shift])
-				.disabled(!appState.onEditScreen)
+				.disabled(!appState.isOnEditScreen)
 			}
 			CommandGroup(replacing: .help) {
 				Link("Website", destination: "https://sindresorhus.com/Gifski")
