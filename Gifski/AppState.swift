@@ -4,14 +4,26 @@ import DockProgress
 
 @MainActor
 @Observable
-final class AppState {
+final class AppState: ObservableBinding {
 	static let shared = AppState()
 
 	var navigationPath = [Route]()
 	var isFileImporterPresented = false
 
-	var outputCrop = false
-	var onEditScreen: Bool {
+
+	var isCropActive = false
+	var isCropActiveBinding: Binding<Bool> {
+		.init(get: { self.isCropActive }, set: { newValue in
+			if newValue && !Defaults[.suppressCropTooltip] {
+				self.showCropTooltip = true
+				Defaults[.suppressCropTooltip] = true
+			}
+			self.isCropActive = newValue
+		})
+	}
+	var showCropTooltip = false
+
+	var isOnEditScreen: Bool {
 		guard let path = navigationPath.last else {
 			return false
 		}

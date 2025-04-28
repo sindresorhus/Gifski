@@ -5517,3 +5517,19 @@ private struct AppActivityModifier: ViewModifier {
 			}
 	}
 }
+
+protocol ObservableBinding {}
+
+extension ObservableBinding {
+	func binding<T>(for keyPath: ReferenceWritableKeyPath<Self, T>) -> Binding<T> {
+		Binding(
+			get: { self[keyPath: keyPath] },
+			set: { self[keyPath: keyPath] = $0 }
+		)
+	}
+}
+
+func greatestCommonDivisor<T: BinaryInteger>(_ a: T, _ b: T) -> T {
+	let result = a % b
+	return result == 0 ? b : greatestCommonDivisor(b, result)
+}

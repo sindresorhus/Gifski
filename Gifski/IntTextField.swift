@@ -9,6 +9,8 @@ struct IntTextField: NSViewRepresentable {
 	var minMax: ClosedRange<Int>?
 	var delta = 1
 	var alternativeDelta = 10
+	var alignment: NSTextAlignment = .natural
+	var font: NSFont = .systemFont(ofSize: 12)
 	var onValueChange: ((Int) -> Void)?
 	var onBlur: ((Int) -> Void)?
 
@@ -30,6 +32,8 @@ struct IntTextField: NSViewRepresentable {
 
 	func updateNSView(_ nsView: IntTextFieldCocoa, context: Context) {
 		nsView.stringValue = "\(value)" // We intentionally do not use `nsView.intValue` as it formats the number.
+		nsView.alignment = alignment
+		nsView.font = font
 		nsView.minMax = minMax
 		nsView.delta = delta
 		nsView.alternativeDelta = alternativeDelta
