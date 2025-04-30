@@ -1,19 +1,11 @@
 import SwiftUI
 import CoreTransferable
 import AVFoundation
-import Defaults
 
 enum Constants {
 	static let allowedFrameRate = 3.0...50.0
 	static let loopCountRange = 0...100
 }
-
-
-
-extension CGRect: Defaults.Serializable {
-	static let initialCropRect: CGRect = .init(x: 0, y: 0, width: 1, height: 1)
-}
-
 
 extension Defaults.Keys {
 	static let outputQuality = Key<Double>("outputQuality", default: 1)
@@ -23,6 +15,10 @@ extension Defaults.Keys {
 	static let bounceGIF = Key<Bool>("bounceGif", default: false)
 	static let suppressKeyframeWarning = Key<Bool>("suppressKeyframeWarning", default: false)
 	static let suppressCropTooltip = Key<Bool>("suppressCropTooltip", default: false)
+}
+
+extension CGRect: Defaults.Serializable {
+	static let initialCropRect = Self(x: 0, y: 0, width: 1, height: 1)
 }
 
 enum Route: Hashable {
