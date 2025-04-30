@@ -262,7 +262,7 @@ private struct DimensionsSetting: View {
 	@State private var shouldCrop = false
 
 	let videoDimensions: CGSize
-	@Binding var resizableDimensions: Dimensions // TODO: Rename.=
+	@Binding var resizableDimensions: Dimensions // TODO: Rename.
 
 	var body: some View {
 		VStack(spacing: 16) {
