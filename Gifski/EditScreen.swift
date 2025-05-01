@@ -12,7 +12,7 @@ struct EditScreen: View {
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
-	@State private var outputCropRect: CropRect = .initialCropRect
+	@State private var outputCropRect = CropRect.initialCropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
