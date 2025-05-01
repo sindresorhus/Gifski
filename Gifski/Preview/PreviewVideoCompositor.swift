@@ -31,6 +31,13 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 			return
 		}
 		var outputFrame = ReadWriteableCVPixelBuffer(buf: &outputPixelBuffer)
+		/**
+		 Copy all attachments, (ie color space) to the outputFrame.
+		 */
+		if let attachments = CVBufferCopyAttachments(originalFrame.buf, .shouldPropagate) {
+			CVBufferSetAttachments(outputFrame.buf, attachments, .shouldPropagate)
+		}
+
 		let fullPreviewFrame = asyncVideoCompositionRequest.sourceFrame(byTrackID: .fullPreviewVideoTrack).map {
 			ReadableCVPixelBuffer(buf: $0)
 		}
