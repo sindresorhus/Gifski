@@ -137,9 +137,9 @@ fileprivate struct AspectRatioPicker: View {
 							self.customAspectRatio = .init(customAspectRatio.width, $0)
 						}),
 						minMax: 1...99,
-						font: .monospacedSystemFont(ofSize: 12, weight: .regular)
+						font: .monospacedDigitSystemFont(ofSize: 0, weight: .regular)
 					)
-					.frame(width: 23.0)
+					.frame(width: 26.0)
 				}.frame(width: 90)
 			}
 			.padding()
@@ -213,12 +213,8 @@ private struct PickerAspectRatio: Hashable {
 	]
 
 	func isAPreset() -> Bool {
-		let aspect = Double(width) / Double(height)
-		for preset in Self.presets {
-			if (Double(preset.width) / Double(preset.height)).isAlmostEqual(to: aspect)  {
-				return true
-			}
+		Self.presets.contains {
+			$0.aspectRatio.isAlmostEqual(to: self.aspectRatio)
 		}
-		return false
 	}
 }

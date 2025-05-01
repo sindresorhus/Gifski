@@ -267,8 +267,8 @@ extension CropRect {
 	}
 
 	/**
-	 Scale the crop rect by finding an anchor point on the opposite side of the handle (so if you grab the top left, the anchor point would be on the bottom right), then apply scale.  Also prevents the crop rect from leaving the rect, and it has minium size.
-	 */
+	Scale the crop rect by finding an anchor point on the opposite side of the handle (so if you grab the top left, the anchor point would be on the bottom right), then apply scale. Also prevents the crop rect from leaving the rect, and it has a minium size.
+	*/
 	func applyScale(
 		position: CropHandlePosition,
 		minSize: UnitPoint,

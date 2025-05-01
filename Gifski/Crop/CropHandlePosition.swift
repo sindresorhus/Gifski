@@ -127,9 +127,11 @@ struct RectSides: Equatable, Hashable {
 
 
 /**
- A position on a rectangle. Primary means left or top, secondary means right or bottom. Center is in the center
- */
-enum Side: Equatable, Hashable {
+A position on a rectangle.
+
+Primary means left or top, secondary means right or bottom. Center is in the center.
+*/
+enum Side: Hashable {
 	case primary
 	case center
 	case secondary
@@ -137,11 +139,11 @@ enum Side: Equatable, Hashable {
 	var location: Double {
 		switch self {
 		case .primary:
-			return 0
+			0
 		case .center:
-			return 0.5
+			0.5
 		case .secondary:
-			return 1
+			1
 		}
 	}
 }
