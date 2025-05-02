@@ -16,16 +16,11 @@ struct CropOverlayView: View {
 	@State private var isDragging = false
 	// swiftlint:disable:next discouraged_optional_boolean
 	@State private var windowIsMovable: Bool?
-
+	@State private var window: NSWindow?
 	var body: some View {
 		GeometryReader { geometry in
 			let frame = geometry.frame(in: .local)
-			let cropFrame = CGRect(
-				x: frame.width * cropRect.x,
-				y: frame.height * cropRect.y,
-				width: frame.width * cropRect.width,
-				height: frame.height * cropRect.height
-			)
+			let cropFrame = cropRect.unnormalize(forDimensions: frame.size)
 			ZStack {
 				Canvas { context, size in
 					/**
@@ -42,7 +37,7 @@ struct CropOverlayView: View {
 					context.fill(holePath, with: .color(.black))
 					if editable {
 						context.blendMode = .normal
-						context.stroke(holePath, with: .color(.white.opacity(0.75)), lineWidth: 2)
+						context.stroke(holePath, with: .color(.white), lineWidth: 1)
 					}
 				}
 				.pointerStyle(isDragging ? .grabActive : .grabIdle)
@@ -51,7 +46,7 @@ struct CropOverlayView: View {
 						path.addRect(cropFrame.insetBy(dx: 5, dy: 5))
 					}
 				)
-				.editCropDragGesture(
+				.cropDragGesture(
 					isDragging: $isDragging,
 					cropRect: $cropRect,
 					frame: frame,
@@ -80,14 +75,58 @@ struct CropOverlayView: View {
 				}
 			}
 		}
-		.onAppear {
-			let windowIsMovable = SSApp.swiftUIMainWindow?.isMovableByWindowBackground
-			SSApp.swiftUIMainWindow?.isMovableByWindowBackground = false
-			Task {
-				@MainActor in
-				self.windowIsMovable = windowIsMovable
+		/**
+		 The setter is necessary because there are lifecycle changes not captured by the $binding
+		 For example consider this:
+		 ```swift
+		 struct SomeView: View {
+			 @State var window: NSWindow?
+			 var body: some View {
+				Color.clear()
+				.bindHostingWindow($window)
+				.onDissapear {
+					/*
+					 By the time this is called `window` is already nil
+					 */
+					assert(window == nil)
+				}
+				.accessHostingWindow { window in
+					 /**
+					  when view dissapears this is never called
+					  */
+				}
+				.onChange(of: window) { old, new in
+					 /**
+					  when the veiw dissapears this is never called
+					  */
+				}
+			 }
+		 }
+		 ```
+		 This is because on view dissapear the following events happen in order:
+
+		 1. `viewDidMoveToWindow` with `window` == nil
+
+		 2. Then `onDisappear` is called
+
+		 ∞. ` accessHostingWindow` and `onChange` are never called because SwiftUI does not build the view again when dissapearing
+
+		 I need a custom setter to capture all changes before the the view disappears, and I can't use `accessHostingWindow` or `onChange(of:)` or `onDisappear`
+		 */
+		.bindHostingWindow(.init(get: {
+			window
+		}, set: { newWindow in
+			guard newWindow != window else {
+				return
 			}
-		}
+			if let windowIsMovable
+				{
+				window?.isMovableByWindowBackground = windowIsMovable
+			}
+			windowIsMovable = newWindow?.isMovableByWindowBackground
+			newWindow?.isMovableByWindowBackground = false
+			window = newWindow
+		}))
 		.onModifierKeysChanged(mask: [.option, .shift]) { _, new in
 			self.dragMode = {
 				if new.contains(.option) {
@@ -101,12 +140,6 @@ struct CropOverlayView: View {
 				}
 				return .normal
 			}()
-		}
-		.onDisappear {
-			guard let oldSetting = windowIsMovable else {
-				return
-			}
-			SSApp.swiftUIMainWindow?.isMovableByWindowBackground = oldSetting
 		}
 	}
 	/**
@@ -154,7 +187,7 @@ struct CropOverlayView: View {
 			}
 			.pointerStyle(position.pointerStyle)
 			.position(canvasPosition)
-			.editCropDragGesture(
+			.cropDragGesture(
 				isDragging: $isDragging,
 				cropRect: $cropRect,
 				frame: frame,
@@ -167,17 +200,12 @@ struct CropOverlayView: View {
 		 where to put place this handle in the canvas. Top is at the top, bottom is at the bottom, etc.
 		 */
 		private var canvasPosition: CGPoint {
-			let frame = {
-				switch position {
-				case .topLeft, .topRight, .bottomRight, .bottomLeft:
-					let inset = (Self.cornerWidthHeight + Self.cornerLineWidth) / 2.0 - 3.0
-					return cropFrame.insetBy(dx: inset, dy: inset)
-				case .center, .top, .left, .right, .bottom:
-					return cropFrame
-				}
-			}()
-			let (x, y) = position.location
-			return CGPoint(x: frame.minX + frame.width * x, y: frame.minY + frame.height * y)
+			let inset = (Self.cornerWidthHeight + Self.cornerLineWidth) / 2.0 - 3.0
+			let adjustedFrame = position.isCorner ? cropFrame.insetBy(dx: inset, dy: inset) : cropFrame
+			return CGPoint(
+				x: adjustedFrame.minX + adjustedFrame.width * position.location.x,
+				y: adjustedFrame.minY + adjustedFrame.height * position.location.y
+			)
 		}
 
 
@@ -191,8 +219,8 @@ struct CropOverlayView: View {
 				ZStack {
 					Color.clear
 						.frame(
-							width: sideViewWidth,
-							height: sideViewHeight
+							width: sideViewSize.width,
+							height: sideViewSize.height
 						)
 						.contentShape(
 							Path { path in
@@ -203,7 +231,7 @@ struct CropOverlayView: View {
 								if position.isVerticalOnlyHandle {
 									path.addRect(.init(
 										origin: .init(x: 0, y: -hitBoxSize / 2.0),
-										width: sideViewWidth,
+										width: sideViewSize.width,
 										height: hitBoxSize
 									))
 									return
@@ -211,24 +239,19 @@ struct CropOverlayView: View {
 								path.addRect(.init(
 									origin: .init(x: -hitBoxSize / 2.0, y: 0),
 									width: hitBoxSize,
-									height: sideViewHeight
+									height: sideViewSize.height
 								))
 							}
 						)
 				}
 			}
-			private var sideViewWidth: Double {
-				if position.isVerticalOnlyHandle {
-					return max(0.0, cropFrame.width - HandleView.cornerWidthHeight * 2.0)
+			private var sideViewSize: CGSize {
+				switch position.isVerticalOnlyHandle {
+				case true:
+					CGSize(width: max(0.0, cropFrame.width - HandleView.cornerWidthHeight * 2.0), height: 2.0)
+				case false:
+					CGSize(width: 2.0, height: max(0.0, cropFrame.height - HandleView.cornerWidthHeight * 2.0))
 				}
-				return 2.0
-			}
-
-			private var sideViewHeight: Double {
-				if position.isVerticalOnlyHandle {
-					return 2.0
-				}
-				return max(0.0, cropFrame.height - HandleView.cornerWidthHeight * 2.0)
 			}
 		}
 
@@ -237,7 +260,7 @@ struct CropOverlayView: View {
 			@Environment(\.displayScale) private var displayScale
 			var corner: CropHandlePosition
 
-			let hitboxExtensionSize = 10.0
+			let hitboxExtensionSize = 5.0
 
 			var body: some View {
 				CornerLineShape(displayScale: displayScale, corner: corner)
@@ -250,9 +273,8 @@ struct CropOverlayView: View {
 					.frame(width: HandleView.cornerWidthHeight, height: HandleView.cornerWidthHeight)
 			}
 			var offset: CGSize {
-				let (locationX, locationY) = corner.location
-				let sx = locationX * 2 - 1
-				let sy = locationY * 2 - 1
+				let sx = corner.location.x * 2 - 1
+				let sy = corner.location.y * 2 - 1
 				return .init(width: sx * hitboxExtensionSize, height: sy * hitboxExtensionSize)
 			}
 
@@ -303,5 +325,5 @@ struct CropOverlayView: View {
 }
 
 extension Color {
-	static let cropSideWhite: Color = .init(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.75)
+	static let cropSideWhite: Color = .white.opacity(0.75)
 }

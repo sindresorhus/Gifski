@@ -11,7 +11,6 @@ import AVFoundation
 
 struct CropToolbarItems: View {
 	@Environment(AppState.self) private var appState
-	@Default(.suppressCropTooltip) private var suppressCropTooltip
 	var metadata: AVAsset.VideoMetadata
 	@Binding var outputCropRect: CropRect
 
@@ -27,182 +26,187 @@ struct CropToolbarItems: View {
 			Label("Crop", systemImage: "crop")
 		}
 		.popover(isPresented: appState.binding(for: \.showCropTooltip)) {
-			VStack(alignment: .leading, spacing: 10) {
-				Text("Crop Tips")
-					.font(.headline)
-				Text("• Hold Shift to scale both sides.")
-				Text("• Hold Option to resize from the center.")
-				Text("• Hold both to resize from the center while keeping the aspect ratio intact.")
-			}
-			.padding()
-			.frame(width: 250)
+			TipsView(title: "Crop Tips", tips: Self.tips)
 		}
 	}
+	static let tips = [
+		"• Hold Shift to scale both sides.",
+		"• Hold Option to resize from the center.",
+		"• Hold both to resize from the center while keeping the aspect ratio intact."
+	]
 }
 
+/**
+The range of valid numbers for the aspect ratio.
+*/
+fileprivate let aspectRatioNumberRange = 1...99
 fileprivate struct AspectRatioPicker: View {
 	var metadata: AVAsset.VideoMetadata
 	@Binding var outputCropRect: CropRect
-
-	private enum AspectRatio: Hashable {
-		case preset(PickerAspectRatio)
-		case custom
-		case reset
-		case divider
-	}
 
 	@State private var customAspectRatio: PickerAspectRatio?
 	@State private var showEnterCustomAspectRatio = false
 
 	var body: some View {
-		Picker("Aspect Ratio", selection: .init(
-			get: {
-				let aspect = (outputCropRect.width * metadata.dimensions.width) / (outputCropRect.height * metadata.dimensions.height)
-
-				let ratios = {
-					guard let customAspectRatio else {
-						return PickerAspectRatio.presets
-					}
-					return PickerAspectRatio.presets + [customAspectRatio]
-				}()
-
-				for preset in ratios {
-					if (Double(preset.width) / Double(preset.height)).isAlmostEqual(to: aspect)  {
-						return AspectRatio.preset(preset)
-					}
-				}
-				return AspectRatio.custom
-			},
-			set: { (newAspectRatio: AspectRatio) in
-				switch newAspectRatio {
-				case .divider:
-					return
-				case .reset:
-					outputCropRect = .initialCropRect
-				case .custom:
-					customAspectRatio = customAspectRatio ?? currentCropRectAspectRatio
-					showEnterCustomAspectRatio = true
-				case .preset(let preset):
-					outputCropRect = preset.cropRect(dimensions: metadata.dimensions)
-				}
-			}
-		)) {
-			ForEach(PickerAspectRatio.presets, id: \.self) { aspectRatio in
-				Text(aspectRatio.label).tag(AspectRatio.preset(aspectRatio))
-			}
-			Divider().tag(AspectRatio.divider)
-			if let customAspectRatio,
-			   !customAspectRatio.isAPreset()
-			{
-				Text(customAspectRatio.label).tag(AspectRatio.preset(customAspectRatio))
-				Divider().tag(AspectRatio.divider)
-			}
-			Text("Custom").tag(AspectRatio.custom)
-			Text("Reset").tag(AspectRatio.reset)
+		Menu(selectionText) {
+			presetSection
+			customSection
+			optionsSection
 		}
-		.onChange(of: customAspectRatio, initial: false) { _, newRatio in
-			guard let newRatio else {
-				return
-			}
-			outputCropRect = PickerAspectRatio(newRatio.width, newRatio.height).cropRect(dimensions: metadata.dimensions)
+		.onChange(of: customAspectRatio) { _, newRatio in
+			updateCropRect(for: newRatio)
 		}
 		.popover(isPresented: $showEnterCustomAspectRatio) {
-			VStack(alignment: .leading, spacing: 10) {
-				HStack {
-					IntTextField(
-						value: .init(get: {
-							customAspectRatio?.width ?? 1
-						}, set: {
-							guard let customAspectRatio,
-								  $0 > 0 else {
-								return
-							}
-							self.customAspectRatio = .init($0, customAspectRatio.height)
-						}),
-						minMax: 1...99,
-						alignment: .right,
-						font: .monospacedSystemFont(ofSize: 12, weight: .regular)
-					)
-					.frame(width: 23.0)
-
-					Text(":")
-					IntTextField(
-						value: .init(get: {
-							customAspectRatio?.height ?? 1
-						}, set: {
-							guard let customAspectRatio,
-								  $0 > 0 else {
-								return
-							}
-							self.customAspectRatio = .init(customAspectRatio.width, $0)
-						}),
-						minMax: 1...99,
-						font: .monospacedDigitSystemFont(ofSize: 0, weight: .regular)
-					)
-					.frame(width: 26.0)
-				}.frame(width: 90)
-			}
-			.padding()
-			.frame(width: 90)
+			CustomAspectRatioView(customAspectRatio: $customAspectRatio)
 		}
 	}
-	private var currentCropRectAspectRatio: PickerAspectRatio {
-		let width = Int(outputCropRect.width * metadata.dimensions.width)
-		let height = Int(outputCropRect.height * metadata.dimensions.height)
 
-		let gcdValue = greatestCommonDivisor(width, height)
-		let ratioWidth = width / gcdValue
-		let ratioHeight = height / gcdValue
-		if ratioWidth < 100 && ratioHeight < 100 {
-			return .init(ratioWidth, ratioHeight)
-		}
-		let aspect = Double(ratioWidth) / Double(ratioHeight)
-		var bestError = Double.infinity
-		var bestPair = (width: 1, height: 1)
-		for denominator in 1..<100 {
-			let numeratior = Int(round(aspect * Double(denominator)))
-			guard numeratior > 0,
-				  numeratior < 100 else {
-				continue
-			}
-			let candidateAspect = Double(numeratior) / Double(denominator)
-			let error = abs(candidateAspect - aspect)
+	private var selectionText: String {
+		PickerAspectRatio.selectionText(for: aspect, customAspectRatio: customAspectRatio)
+	}
 
-			if error < bestError {
-				bestError = error
-				bestPair = (width: numeratior, height: denominator)
+	private var presetSection: some View {
+		Section(header: Text("Presets")) {
+			ForEach(PickerAspectRatio.presets, id: \.self) { aspectRatio in
+				AspectToggle(
+					aspectRatio: aspectRatio,
+					outputCropRect: $outputCropRect,
+					currentAspect: aspect,
+					dimensions: metadata.dimensions
+				)
 			}
 		}
-		return .init(bestPair.width, bestPair.height)
+	}
+	@ViewBuilder
+	private var customSection: some View {
+		if let customAspectRatio, !customAspectRatio.matchesPreset() {
+			Section(header: Text("Custom")) {
+				AspectToggle(
+					aspectRatio: customAspectRatio,
+					outputCropRect: $outputCropRect,
+					currentAspect: aspect,
+					dimensions: metadata.dimensions
+				)
+			}
+		}
+	}
+
+	private var optionsSection: some View {
+		Section(header: Text("Options")) {
+			Toggle(isOn: Binding(
+				get: { false },
+				set: { _ in handleCustomAspectToggle() }
+			)) {
+				Text("Custom")
+			}
+			Button("Reset") {
+				resetAspectRatio()
+			}
+		}
+	}
+
+	private var aspect: Double {
+		let cropRectInPixels = outputCropRect.unnormalize(forDimensions: metadata.dimensions)
+		return cropRectInPixels.width / cropRectInPixels.height
+	}
+
+	private func handleCustomAspectToggle() {
+		customAspectRatio = customAspectRatio ?? PickerAspectRatio.closestAspectRatio(
+			for: outputCropRect.unnormalize(forDimensions: metadata.dimensions).size,
+			within: aspectRatioNumberRange
+		)
+		showEnterCustomAspectRatio = true
+	}
+
+	private func resetAspectRatio() {
+		customAspectRatio = nil
+		outputCropRect = .initialCropRect
+	}
+
+	private func updateCropRect(for newRatio: PickerAspectRatio?) {
+		guard let newRatio else {
+			return
+		}
+		outputCropRect = PickerAspectRatio(newRatio.width, newRatio.height)
+			.cropRect(dimensions: metadata.dimensions)
+	}
+}
+
+private struct AspectToggle: View {
+	var aspectRatio: PickerAspectRatio
+	@Binding var outputCropRect: CropRect
+	var currentAspect: Double
+	var dimensions: CGSize
+
+	var body: some View {
+		Toggle(isOn: Binding(
+			get: { aspectRatio.aspectRatio.isAlmostEqual(to: currentAspect) },
+			set: { _ in outputCropRect = aspectRatio.cropRect(dimensions: dimensions) }
+		)) {
+			Text(aspectRatio.description)
+		}
+	}
+}
+
+private struct CustomAspectRatioView: View  {
+	@Binding var customAspectRatio: PickerAspectRatio?
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 10) {
+			HStack {
+				CustomAspectField(customAspectRatio: $customAspectRatio, side: \.width)
+				Text(":")
+				CustomAspectField(customAspectRatio: $customAspectRatio, side: \.height)
+			}.frame(width: 90)
+		}
+		.padding()
+		.frame(width: 90)
+	}
+}
+
+private struct CustomAspectField: View {
+	@Binding var customAspectRatio: PickerAspectRatio?
+	let side: WritableKeyPath<PickerAspectRatio, Int>
+
+	var body: some View {
+		IntTextField(
+			value: .init(get: {
+				customAspectRatio?[keyPath: side] ?? 1
+			}, set: {
+				guard var customAspectRatioCopy = customAspectRatio,
+					  $0 > 0 else {
+					return
+				}
+				customAspectRatioCopy[keyPath: side] = $0
+				self.customAspectRatio = customAspectRatioCopy
+			}),
+			minMax: aspectRatioNumberRange,
+			alignment: .right,
+			font: .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+		)
+		.frame(width: 26.0)
 	}
 }
 
 
+struct PickerAspectRatio: Hashable, CustomStringConvertible  {
+	var width: Int
+	var height: Int
 
-private struct PickerAspectRatio: Hashable {
-	let width: Int
-	let height: Int
 	init(_ width: Int, _ height: Int) {
 		self.width = width
 		self.height = height
 	}
-	var label: String {
+	var description: String {
 		"\(width):\(height)"
 	}
 
-	func cropRect(dimensions: CGSize) -> CropRect {
-		let newAspect = CGSize(width: width, height: height)
-		let newSize = newAspect.aspectFittedSize(targetWidth: dimensions.width, targetHeight: dimensions.height)
+	var aspectRatio: Double {
+		Double(width) / Double(height)
+	}
 
-		let cropWidth = newSize.width / dimensions.width
-		let cropHeight = newSize.height / dimensions.height
-		return .init(
-			origin: .init(x: 0.5 - cropWidth / 2.0, y: 0.5 - cropHeight / 2.0),
-			size: .init(
-				x: cropWidth,
-				y: cropHeight
-			)
-		)
+	func cropRect(dimensions: CGSize) -> CropRect {
+		CropRect.from(aspectWidth: Double(width), aspectHeight: Double(height), forDimensions: dimensions)
 	}
 	static let presets: [Self] = [
 		.init(16, 9),
@@ -211,10 +215,41 @@ private struct PickerAspectRatio: Hashable {
 		.init(9, 16),
 		.init(3, 4)
 	]
+}
 
-	func isAPreset() -> Bool {
-		Self.presets.contains {
-			$0.aspectRatio.isAlmostEqual(to: self.aspectRatio)
+extension PickerAspectRatio {
+	func matchesPreset() -> Bool {
+		Self.presets.contains { $0.isCloseTo(self.aspectRatio) }
+	}
+	func isCloseTo(_ aspect: Double, tolerance: Double = 0.01) -> Bool {
+		abs(self.aspectRatio - aspect) < tolerance
+	}
+
+	static func selectionText(for aspect: Double, customAspectRatio: PickerAspectRatio?) -> String {
+		let ratios = presets + (customAspectRatio.map { [$0] } ?? [])
+		return ratios.first { $0.aspectRatio.isAlmostEqual(to: aspect) }?.description ?? "Custom"
+	}
+	/**
+	Calculates the closest current aspect ratio of the cropRec with width and height less than 100. First, it tries to calculate the greatest common divisor (GCD) of the width and height to simplify the ratio. If the the width and height of the ratio are both less than 100, it uses that as the aspect ratio. Otherwise, it approximates the aspect ratio by finding the closest fraction with a denominator less than 100 that matches the current aspect ratio as closely as possible.
+	*/
+	static func closestAspectRatio(for size: CGSize, within range: ClosedRange<Int>) -> Self {
+		let (intWidth, intHeight) = size.integerAspectRatio()
+		if range.contains(intWidth), range.contains(intHeight) {
+			return .init(intWidth, intHeight)
 		}
+		return approximateAspectRatio(for: size, within: range)
+	}
+
+	private static func approximateAspectRatio(for size: CGSize, within range: ClosedRange<Int>) -> Self {
+		let aspect = size.width / size.height
+		let bestPairMap	 = range
+			.flatMap { denominator in
+				let numerator = Int(round(aspect * Double(denominator)))
+				return range.contains(numerator) ? [(numerator, denominator)] : []
+			}
+		let bestPair = bestPairMap.min { abs(Double($0.0) / Double($0.1) - aspect) < abs(Double($1.0) / Double($1.1) - aspect) }
+		?? (1, 1)
+
+		return .init(bestPair.0, bestPair.1)
 	}
 }

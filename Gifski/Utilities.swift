@@ -1408,6 +1408,22 @@ extension NSView {
 			bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -insets.bottom)
 		])
 	}
+
+	func getConstraintConstantFromSuperView(attribute: NSLayoutConstraint.Attribute) -> Double? {
+		guard let constant = getConstraintFromSuperview(attribute: attribute)?.constant else {
+			return nil
+		}
+		return Double(constant)
+	}
+	func getConstraintFromSuperview(attribute: NSLayoutConstraint.Attribute) -> NSLayoutConstraint? {
+		guard let superview else {
+			return nil
+		}
+		return superview.constraints.first {
+			($0.secondItem as? NSView == self && $0.secondAttribute == attribute) ||
+			($0.firstItem as? NSView == self && $0.firstAttribute == attribute)
+		}
+	}
 }
 
 
@@ -2117,6 +2133,21 @@ extension CGSize {
 	func aspectFill(to widthHeight: Double) -> Self {
 		aspectFill(to: Self(width: widthHeight, height: widthHeight))
 	}
+
+	/**
+	 Returns the simplest integer aspect ratio (width, height) for the current size.
+
+	 Usage:
+	 let (widthRatio, heightRatio) = size.integerAspectRatio()
+	 */
+	func integerAspectRatio() -> (Int, Int) {
+		let roundedWidth = Int(width.rounded())
+		let roundedHeight = Int(height.rounded())
+		let divisor = greatestCommonDivisor(roundedWidth, roundedHeight)
+		let widthRatio = roundedWidth / divisor
+		let heightRatio = roundedHeight / divisor
+		return (widthRatio, heightRatio)
+	}
 }
 
 
@@ -2650,6 +2681,18 @@ extension NSLayoutConstraint {
 			multiplier: multiplier.flatMap(CGFloat.init) ?? self.multiplier,
 			constant: constant.flatMap(CGFloat.init) ?? self.constant
 		)
+	}
+
+	func animate(
+		to constant: Double,
+		duration: TimeInterval = 0.25,
+		timingFunction: CAMediaTimingFunction =	CAMediaTimingFunction(name: .easeInEaseOut)
+	) {
+		NSAnimationContext.runAnimationGroup { context in
+			context.duration = duration
+			context.timingFunction = timingFunction
+			animator().constant = constant
+		}
 	}
 }
 
@@ -5532,4 +5575,22 @@ extension ObservableBinding {
 func greatestCommonDivisor<T: BinaryInteger>(_ a: T, _ b: T) -> T {
 	let result = a % b
 	return result == 0 ? b : greatestCommonDivisor(b, result)
+}
+
+
+struct TipsView: View {
+	let title: String
+	let tips: [String]
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 10) {
+			Text(title)
+				.font(.headline)
+			ForEach(tips, id: \.self) { tip in
+				Text(tip)
+			}
+		}
+		.padding()
+		.frame(width: 250)
+	}
 }

@@ -114,8 +114,7 @@ actor GIFGenerator {
 			previousTime = requestedTime.seconds
 
 			guard let image = conversion.croppedImage(image: try imageResult.image) else {
-				/// Is this an appropriate error?
-				throw CancellationError()
+				throw GIFGenerator.Error.cropNotInBounds
 			}
 
 			let actualTime = try imageResult.actualTime
@@ -343,23 +342,21 @@ extension GIFGenerator {
 			guard let dimensions else {
 				return nil
 			}
+			let cropInPixels = crop.unnormalize(forDimensions: dimensions)
 			return (
-				(dimensions.width.toDouble * crop.width).toIntAndClampingIfNeeded,
-				(dimensions.height.toDouble * crop.height).toIntAndClampingIfNeeded
+				cropInPixels.width.toIntAndClampingIfNeeded,
+				cropInPixels.height.toIntAndClampingIfNeeded
 			)
 		}
-		///Don't use croppedOutputDimensions here because the CGImage
-		///source may have a different size. Use the size directly from the image
+
+		 /**
+		 Don't use `croppedOutputDimensions` here because the CGImage source may have a different size. Use the size directly from the image. [If the rect parameter defines an area that is not in the image, returns nil](https://developer.apple.com/documentation/coregraphics/cgimage/1454683-cropping)
+		 */
 		func croppedImage(image: CGImage) -> CGImage? {
 			guard let crop else {
 				return image
 			}
-			return image.cropping(to: .init(
-				x: image.width.toDouble * crop.x,
-				y: image.height.toDouble * crop.y,
-				width: image.width.toDouble * crop.width,
-				height: image.height.toDouble * crop.height
-			))
+			return image.cropping(to: crop.unnormalize(forDimensions: (image.width, image.height)))
 		}
 
 		var gifDuration: Duration {
@@ -391,6 +388,8 @@ extension GIFGenerator {
 		case addFrameFailed(Swift.Error)
 		case writeFailed(Swift.Error)
 		case cancelled
+		case cropNotInBounds
+
 
 		var errorDescription: String? {
 			switch self {
@@ -408,6 +407,8 @@ extension GIFGenerator {
 				"Failed to write, with underlying error: \(error.localizedDescription)"
 			case .cancelled:
 				"The conversion was cancelled."
+			case .cropNotInBounds:
+				"The crop is not in bounds of the video"
 			}
 		}
 	}

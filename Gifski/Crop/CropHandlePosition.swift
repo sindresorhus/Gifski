@@ -19,7 +19,7 @@ enum CropHandlePosition: CaseIterable {
 	case topLeft
 	case center
 
-	var location: (Double, Double) {
+	var location: UnitPoint {
 		sides.location
 	}
 	var isVerticalOnlyHandle: Bool {
@@ -38,51 +38,52 @@ enum CropHandlePosition: CaseIterable {
 		sides.isBottom
 	}
 
+	var isCorner: Bool {
+		switch self {
+		case .topLeft, .topRight, .bottomLeft, .bottomRight:
+			return true
+		case .bottom, .top, .left, .right, .center:
+			return false
+		}
+	}
+
 	var sides: RectSides {
 		switch self {
 		case .top:
-			return .init(horizontal: .center, vertical: .primary)
+			.init(horizontal: .center, vertical: .primary)
 		case .topRight:
-			return .init(horizontal: .secondary, vertical: .primary)
+			.init(horizontal: .secondary, vertical: .primary)
 		case .right:
-			return .init(horizontal: .secondary, vertical: .center)
+			.init(horizontal: .secondary, vertical: .center)
 		case .bottomRight:
-			return .init(horizontal: .secondary, vertical: .secondary)
+			.init(horizontal: .secondary, vertical: .secondary)
 		case .bottom:
-			return .init(horizontal: .center, vertical: .secondary)
+			.init(horizontal: .center, vertical: .secondary)
 		case .bottomLeft:
-			return .init(horizontal: .primary, vertical: .secondary)
+			.init(horizontal: .primary, vertical: .secondary)
 		case .left:
-			return .init(horizontal: .primary, vertical: .center)
+			.init(horizontal: .primary, vertical: .center)
 		case .topLeft:
-			return .init(horizontal: .primary, vertical: .primary)
+			.init(horizontal: .primary, vertical: .primary)
 		case .center:
-			return .init(horizontal: .center, vertical: .center)
+			.init(horizontal: .center, vertical: .center)
 		}
 	}
 
 	private var pointerPosition: FrameResizePosition {
-		switch self {
-		case .top:
-			return .top
-		case .topRight:
-			return .topTrailing
-		case .right:
-			return .trailing
-		case .bottomRight:
-			return .bottomTrailing
-		case .bottom:
-			return .bottom
-		case .bottomLeft:
-			return .bottomLeading
-		case .left:
-			return .leading
-		case .topLeft:
-			return .topLeading
-		case .center:
-			return .top
-		}
+		Self.positionToPointer[self] ?? .top
 	}
+	private static let positionToPointer: [Self: FrameResizePosition] = [
+		.top: .top,
+		.topRight: .topTrailing,
+		.right: .trailing,
+		.bottomRight: .bottomTrailing,
+		.bottom: .bottom,
+		.bottomLeft: .bottomLeading,
+		.left: .leading,
+		.topLeft: .topLeading,
+		.center: .top
+	]
 
 	var pointerStyle: PointerStyle {
 		if self == .center {
@@ -97,9 +98,6 @@ struct RectSides: Equatable, Hashable {
 	let horizontal: Side
 	let vertical: Side
 
-	/**
-	 is a control to move the crop vertically TODO, better name
-	 */
 	var isVerticalOnlyHandle: Bool {
 		horizontal == .center && vertical != .center
 	}
@@ -120,8 +118,8 @@ struct RectSides: Equatable, Hashable {
 		vertical == .secondary
 	}
 
-	var location: (Double, Double) {
-		(horizontal.location, vertical.location)
+	var location: UnitPoint {
+		.init(x: horizontal.location, y: vertical.location)
 	}
 }
 
@@ -136,6 +134,9 @@ enum Side: Hashable {
 	case center
 	case secondary
 
+	/**
+	 Location in the cop, from 0-1
+	 */
 	var location: Double {
 		switch self {
 		case .primary:

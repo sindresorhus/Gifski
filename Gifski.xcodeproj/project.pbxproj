@@ -10,7 +10,7 @@
 		0C6125682DA8194600CF8181 /* CropOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6125672DA8194600CF8181 /* CropOverlayView.swift */; };
 		0CB0E7682DBF145200E012C1 /* CropRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7672DBF145200E012C1 /* CropRect.swift */; };
 		0CB0E76A2DBF18D000E012C1 /* CropHandlePosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7692DBF18D000E012C1 /* CropHandlePosition.swift */; };
-		0CB0E76C2DBF2A4800E012C1 /* EditCropDragGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E76B2DBF2A4800E012C1 /* EditCropDragGesture.swift */; };
+		0CB0E76C2DBF2A4800E012C1 /* CropDragGestureModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E76B2DBF2A4800E012C1 /* CropDragGestureModifier.swift */; };
 		0CB0E7712DBF4A6E00E012C1 /* CropToolBarItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7702DBF4A6E00E012C1 /* CropToolBarItems.swift */; };
 		0E7925202329BDBE00058B94 /* ShareController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareController.swift */; };
 		0E7925282329BDBE00058B94 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -88,7 +88,7 @@
 		0C6125672DA8194600CF8181 /* CropOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropOverlayView.swift; sourceTree = "<group>"; };
 		0CB0E7672DBF145200E012C1 /* CropRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropRect.swift; sourceTree = "<group>"; };
 		0CB0E7692DBF18D000E012C1 /* CropHandlePosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropHandlePosition.swift; sourceTree = "<group>"; };
-		0CB0E76B2DBF2A4800E012C1 /* EditCropDragGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCropDragGesture.swift; sourceTree = "<group>"; };
+		0CB0E76B2DBF2A4800E012C1 /* CropDragGestureModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropDragGestureModifier.swift; sourceTree = "<group>"; };
 		0CB0E7702DBF4A6E00E012C1 /* CropToolBarItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropToolBarItems.swift; sourceTree = "<group>"; };
 		0E79251B2329BDBE00058B94 /* Share Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E79251F2329BDBE00058B94 /* ShareController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareController.swift; sourceTree = "<group>"; usesTabs = 1; };
@@ -155,7 +155,7 @@
 			children = (
 				0CB0E7672DBF145200E012C1 /* CropRect.swift */,
 				0C6125672DA8194600CF8181 /* CropOverlayView.swift */,
-				0CB0E76B2DBF2A4800E012C1 /* EditCropDragGesture.swift */,
+				0CB0E76B2DBF2A4800E012C1 /* CropDragGestureModifier.swift */,
 				0CB0E7692DBF18D000E012C1 /* CropHandlePosition.swift */,
 				0CB0E7702DBF4A6E00E012C1 /* CropToolBarItems.swift */,
 			);
@@ -452,7 +452,7 @@
 				E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */,
 				0CB0E7712DBF4A6E00E012C1 /* CropToolBarItems.swift in Sources */,
 				E37F68E02ACAD9D1007F1A7F /* CompletedScreen.swift in Sources */,
-				0CB0E76C2DBF2A4800E012C1 /* EditCropDragGesture.swift in Sources */,
+				0CB0E76C2DBF2A4800E012C1 /* CropDragGestureModifier.swift in Sources */,
 				E33552EF2ACAC3190023AAE9 /* MainScreen.swift in Sources */,
 				E37F68E22ACAD9F1007F1A7F /* ConversionScreen.swift in Sources */,
 				85A5C44822CA41B500CAA94D /* VideoValidator.swift in Sources */,
@@ -488,7 +488,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = LT3G7HQ9TH;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -523,7 +523,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = LT3G7HQ9TH;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -680,7 +680,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = LT3G7HQ9TH;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -716,7 +716,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = LT3G7HQ9TH;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

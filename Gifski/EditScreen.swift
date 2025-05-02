@@ -32,7 +32,6 @@ struct EditScreen: View {
 		self._metadata = .init(wrappedValue: metadata)
 	}
 
-
 	var body: some View {
 		VStack {
 			// TODO: Move the trimmer outside the video view.
@@ -40,8 +39,8 @@ struct EditScreen: View {
 				asset: modifiedAsset,
 				loopPlayback: loopGIF,
 				bouncePlayback: bounceGIF,
-				cropRect: $outputCropRect,
-				showCropRectUnderTrim: appState.isCropActive
+				overlay: appState.isCropActive ? AnyView(CropOverlayView(cropRect: $outputCropRect, editable: true)) : nil,
+				isTrimmerDraggable: appState.isCropActive
 			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
@@ -131,9 +130,6 @@ struct EditScreen: View {
 		HStack(spacing: 0) {
 			Form {
 				DimensionsSetting(
-					asset: modifiedAsset,
-					metadata: metadata,
-					bounceGIF: bounceGIF,
 					videoDimensions: metadata.dimensions,
 					resizableDimensions: $resizableDimensions
 				)
@@ -230,7 +226,6 @@ struct EditScreen: View {
 	}
 }
 
-
 enum PredefinedSizeItem: Hashable {
 	case custom
 	case spacer
@@ -247,10 +242,6 @@ enum PredefinedSizeItem: Hashable {
 }
 
 private struct DimensionsSetting: View {
-	@Environment(AppState.self) private var appState
-	var asset: AVAsset
-	var metadata: AVAsset.VideoMetadata
-	var bounceGIF: Bool
 	@State private var predefinedSizes = [PredefinedSizeItem]()
 	@State private var selectedPredefinedSize: PredefinedSizeItem?
 	@State private var dimensionsType = DimensionsType.pixels
@@ -258,8 +249,6 @@ private struct DimensionsSetting: View {
 	@State private var height = 0
 	@State private var percent = 0
 	@State private var isArrowKeyTipPresented = false
-
-	@State private var shouldCrop = false
 
 	let videoDimensions: CGSize
 	@Binding var resizableDimensions: Dimensions // TODO: Rename.

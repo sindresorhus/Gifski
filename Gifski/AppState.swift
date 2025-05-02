@@ -14,9 +14,8 @@ final class AppState: ObservableBinding {
 	var isCropActive = false
 	var isCropActiveBinding: Binding<Bool> {
 		.init(get: { self.isCropActive }, set: { newValue in
-			if newValue && !Defaults[.suppressCropTooltip] {
+			SSApp.runOnce(identifier: "showCropTooltip") {
 				self.showCropTooltip = true
-				Defaults[.suppressCropTooltip] = true
 			}
 			self.isCropActive = newValue
 		})
@@ -24,13 +23,10 @@ final class AppState: ObservableBinding {
 	var showCropTooltip = false
 
 	var isOnEditScreen: Bool {
-		guard let path = navigationPath.last else {
+		guard case .edit = navigationPath.last else {
 			return false
 		}
-		if case .edit = path {
-			return true
-		}
-		return false
+		return true
 	}
 
 	// TODO: This can be inferred by checking the last element of navigationPath.

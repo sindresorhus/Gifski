@@ -14,32 +14,32 @@ import SwiftUI
  */
 struct CropRect: Equatable {
 	var origin: UnitPoint
-	var size: UnitPoint
+	var size: UnitSize
 
-	init(origin: UnitPoint, size: UnitPoint) {
+	init(origin: UnitPoint, size: UnitSize) {
 		self.origin = origin
 		self.size = size
 	}
 	init(x: Double, y: Double, width: Double, height: Double) {
 		self.origin = .init(x: x, y: y)
-		self.size = .init(x: width, y: height)
+		self.size = .init(width: width, height: height)
 	}
 
 
 	var width: Double {
 		get {
-			size.x
+			size.width
 		}
 		set {
-			size.x = newValue
+			size.width = newValue
 		}
 	}
 	var height: Double {
 		get {
-			size.y
+			size.height
 		}
 		set {
-			size.y = newValue
+			size.height = newValue
 		}
 	}
 	var x: Double {
@@ -59,16 +59,30 @@ struct CropRect: Equatable {
 		}
 	}
 	var midX: Double {
-		origin.x + (size.x / 2)
+		origin.x + (size.width / 2)
 	}
 	var midY: Double {
-		origin.y + (size.y / 2)
+		origin.y + (size.height / 2)
 	}
 
 
 	static let initialCropRect: CropRect = .init(x: 0, y: 0, width: 1, height: 1)
 	var isReset: Bool {
-		origin.x == 0 && origin.y == 0 && size.x == 1 && size.y == 1
+		origin.x == 0 && origin.y == 0 && size.width == 1 && size.height == 1
+	}
+	/**
+	 Produce an unnormalized CGRect in pixels.
+	 */
+	func unnormalize(forDimensions dimensions: CGSize) -> CGRect {
+		.init(
+			x: dimensions.width * x,
+			y: dimensions.height * y,
+			width: dimensions.width * width,
+			height: dimensions.height * height
+		)
+	}
+	func unnormalize(forDimensions dimensions: (Int, Int)) -> CGRect {
+		unnormalize(forDimensions: .init(width: Double(dimensions.0), height: Double(dimensions.1)))
 	}
 }
 
@@ -85,8 +99,23 @@ extension CropRect {
 	 */
 	static let minRectWidthHeight = 40.0
 
-	static func minSize(frame: CGRect) -> UnitPoint {
-		.init(x: minRectWidthHeight / frame.width, y: minRectWidthHeight / frame.height)
+	static func minSize(frame: CGRect) -> UnitSize {
+		.init(width: minRectWidthHeight / frame.width, height: minRectWidthHeight / frame.height)
+	}
+
+	static func from(aspectWidth: Double, aspectHeight: Double, forDimensions dimensions: CGSize) -> CropRect {
+		let newAspect = CGSize(width: aspectWidth, height: aspectHeight)
+		let newSize = newAspect.aspectFittedSize(targetWidth: dimensions.width, targetHeight: dimensions.height)
+
+		let cropWidth = newSize.width / dimensions.width
+		let cropHeight = newSize.height / dimensions.height
+		return .init(
+			origin: .init(x: 0.5 - cropWidth / 2.0, y: 0.5 - cropHeight / 2.0),
+			size: .init(
+				width: cropWidth,
+				height: cropHeight
+			)
+		)
 	}
 
 
@@ -130,15 +159,14 @@ extension CropRect {
 	}
 
 	func getRelativeDragDelta(drag: DragGesture.Value, position: CropHandlePosition, frame: CGRect) -> UnitPoint{
-		let (locationX, locationY) = position.location
 		let dragStartAnchor: UnitPoint = {
 			switch position {
 			case .bottom, .right, .center, .left, .top:
-				return .init(x: drag.startLocation.x / frame.width, y: drag.startLocation.y / frame.height)
+				.init(x: drag.startLocation.x / frame.width, y: drag.startLocation.y / frame.height)
 			case .topLeft, .topRight, .bottomLeft, .bottomRight:
-				return .init(
-					x: x + width * locationX,
-					y: y + height * locationY
+				.init(
+					x: x + width * position.location.x,
+					y: y + height * position.location.y
 				)
 			}
 		}()
@@ -165,12 +193,12 @@ extension CropRect {
 	 */
 	func applyNormal(
 		position: CropHandlePosition,
-		minSize: UnitPoint,
+		minSize: UnitSize,
 		delta: UnitPoint
 	) -> CropRect {
 		let (dx, dWidth) = Self.helpNormal(
-			primary: position.isLeft,
-			secondary: position.isRight,
+			isPrimary: position.isLeft,
+			isSecondary: position.isRight,
 			origin: x,
 			size: width,
 			minSize: minSize.width,
@@ -178,8 +206,8 @@ extension CropRect {
 		)
 
 		let (dy, dHeight) = Self.helpNormal(
-			primary: position.isTop,
-			secondary: position.isBottom,
+			isPrimary: position.isTop,
+			isSecondary: position.isBottom,
 			origin: y,
 			size: height,
 			minSize: minSize.height,
@@ -194,21 +222,22 @@ extension CropRect {
 	}
 
 	private static func helpNormal(
-		primary: Bool,
-		secondary: Bool,
+		isPrimary: Bool,
+		isSecondary: Bool,
 		origin: Double,
 		size: Double,
 		minSize: Double,
 		raw: Double
 	) -> (Double, Double) {
-		if primary {
+		switch (isPrimary, isSecondary) {
+		case (true, _):
 			let dx = raw.clamped(from: -origin, to: size - minSize)
 			return (dx, -dx)
-		}
-		guard secondary else {
+		case (_, true):
+			return (0.0, raw.clamped(from: minSize - size, to: (1.0 - origin) - size))
+		default:
 			return (0.0, 0.0)
 		}
-		return (0.0, raw.clamped(from: minSize - size, to: (1.0 - origin) - size))
 	}
 
 	/**
@@ -216,7 +245,7 @@ extension CropRect {
 	 */
 	func applySymmetric(
 		position: CropHandlePosition,
-		minSize: UnitPoint,
+		minSize: UnitSize,
 		delta: UnitPoint
 	) -> CropRect {
 		let dx = Double(delta.x).clamped(to: Self.symmetricDeltaRange(
@@ -271,24 +300,23 @@ extension CropRect {
 	*/
 	func applyScale(
 		position: CropHandlePosition,
-		minSize: UnitPoint,
+		minSize: UnitSize,
 		delta: UnitPoint
 	) -> CropRect {
-		let (locationX, locationY) = position.location
-		let scaleX = (locationX * 2) - 1
-		let scaleY = (locationY * 2) - 1
+		let scaleX = (position.location.x * 2) - 1
+		let scaleY = (position.location.y * 2) - 1
 
 		let handleCount = max((abs(scaleX) > 0 ? 1 : 0) + (abs(scaleY) > 0 ? 1 : 0), 1)
 		let (tempScale, anchorX) = Self.scaleAnchorPoint(
 			origin: x,
 			size: width,
-			location: locationX,
+			location: position.location.x,
 			scale: 1 + (scaleX * delta.x / width + scaleY * delta.y / height) / Double(handleCount)
 		)
 		var (scale, anchorY) = Self.scaleAnchorPoint(
 			origin: y,
 			size: height,
-			location: locationY,
+			location: position.location.y,
 			scale: tempScale
 		)
 		scale = max(scale, minSize.width / width, minSize.height / height)
@@ -323,7 +351,7 @@ extension CropRect {
 	 scale the crop rect while maintaining aspect ratio.  Also prevents the crop rect from leaving the rect, and it has minium size.
 	 */
 	func applyAspectRatioLock(
-		minSize: UnitPoint,
+		minSize: UnitSize,
 		dragLocation: UnitPoint
 	) -> CropRect {
 		let dx = abs(dragLocation.x - midX)
@@ -334,39 +362,37 @@ extension CropRect {
 			dy / (height / 2)
 		)
 
-		let minScale = max(
+		let scaleRange = max(
 			minSize.width / width,
 			minSize.height / height
-		)
-
-		let maxScale = [
+		)...[
 			2 * midX / width,
 			2 * (1 - midX) / width,
 			2 * midY / height,
 			2 * (1 - midY) / height
-		].min() ?? 1
+		].min()!
 
-		let scale = (minScale < maxScale)
-		? rawScale.clamped(from: minScale, to: maxScale)
-		: 1.0
+		let scale = rawScale.clamped(to: scaleRange)
 
-		let width = width * scale
-		let height = height * scale
+		let newWidth = width * scale
+		let newHeight = height * scale
 		return CropRect(
-			x: midX - width / 2,
-			y: midY - height / 2,
-			width: width,
-			height: height
+			x: midX - newWidth / 2,
+			y: midY - newHeight / 2,
+			width: newWidth,
+			height: newHeight
 		)
 	}
 }
-extension UnitPoint {
-	var width: Double {
-		x
-	}
-	var height: Double {
-		y
-	}
+
+/**
+ A normalized 2D size in a view’s coordinate space.
+
+ `UnitSize` is for sizes as [UnitPoint](UnitPoint) is for points
+ */
+struct UnitSize: Hashable {
+	var width: Double
+	var height: Double
 }
 
 extension DragGesture.Value {

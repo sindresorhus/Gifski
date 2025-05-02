@@ -9,13 +9,12 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	var loopPlayback = false
 	var bouncePlayback = false
 	var speed = 1.0
-	@Binding var cropRect: CropRect
-	var showCropRectUnderTrim = false
+	var overlay: AnyView?
+	var isTrimmerDraggable = false
 	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
 	func makeNSViewController(context: Context) -> NSViewControllerType {
 		.init(
-			cropRect: $cropRect,
 			playerItem: .init(asset: asset),
 			controlsStyle: controlsStyle,
 			timeRangeDidChange: timeRangeDidChange
@@ -31,7 +30,8 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 		nsViewController.bouncePlayback = bouncePlayback
 		nsViewController.player.defaultRate = Float(speed)
 		nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
-		nsViewController.showCropRectUnderTrim = showCropRectUnderTrim
+		nsViewController.overlay = overlay
+		nsViewController.isTrimmerDraggable = isTrimmerDraggable
 	}
 }
 
@@ -46,85 +46,64 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 	private var cancellables = Set<AnyCancellable>()
-	@Binding var cropRect: CropRect
+	private var underTrimOverlayView: NSHostingView<AnyView>?
 
-	private final class CropRectHolder: ObservableObject  {
-		@Published var playerSize: CGSize = .zero
-	}
+	fileprivate var overlay: AnyView? {
+		didSet {
+			if let underTrimOverlayView {
+				underTrimOverlayView.removeFromSuperview()
+			}
+			guard let overlay else {
+				underTrimOverlayView = nil
+				return
+			}
 
+			let underTrimOverlayView = NSHostingView(rootView: overlay)
+			playerView.contentOverlayView?.addSubview(underTrimOverlayView)
+			underTrimOverlayView.translatesAutoresizingMaskIntoConstraints = false
 
-	private var underTrimCropRectHolder = CropRectHolder()
-
-	private struct UnderTrimCropOverlay: View {
-		@Binding var cropRect: CropRect
-		/// Turning  of linter so I can use the default constructor
-		@StateObject var cropRectHolder: CropRectHolder // swiftlint:disable:this private_swiftui_state
-		var body: some View {
-			CropOverlayView(
-				cropRect: $cropRect,
-				editable: true
-			)
-			.frame(
-				width: cropRectHolder.playerSize.width,
-				height: cropRectHolder.playerSize.height
-			)
+			let videoBounds = playerView.videoBounds
+			guard let contentOverlayView = playerView.contentOverlayView else {
+				return
+			}
+			NSLayoutConstraint.activate([
+				underTrimOverlayView.leadingAnchor.constraint(equalTo: contentOverlayView.leadingAnchor, constant: videoBounds.origin.x),
+				underTrimOverlayView.topAnchor.constraint(equalTo: contentOverlayView.topAnchor, constant: videoBounds.origin.y),
+				underTrimOverlayView.widthAnchor.constraint(equalToConstant: videoBounds.size.width),
+				underTrimOverlayView.heightAnchor.constraint(equalToConstant: videoBounds.size.height)
+			])
+			self.underTrimOverlayView = underTrimOverlayView
 		}
 	}
 
-	private var underTrimCropOverlayView: NSHostingView<UnderTrimCropOverlay>!
+	fileprivate var isTrimmerDraggable = false {
+		didSet {
+			trimmerDragViews?.isDraggable = isTrimmerDraggable
+		}
+	}
 
 	var playerView: TrimmingAVPlayerView { view as! TrimmingAVPlayerView }
 
-	fileprivate var showCropRectUnderTrim = false {
-		didSet {
-			Task {
-				@MainActor in
-				if let trimmerDragViews = self.getTrimmerDragViews() {
-					if self.showCropRectUnderTrim {
-						trimmerDragViews.showDrag()
-					} else {
-						trimmerDragViews.hideDrag()
-					}
-				}
-
-				underTrimCropRectHolder.playerSize = playerView.videoBounds.size
-				guard showCropRectUnderTrim else {
-					underTrimCropOverlayView.removeFromSuperview()
-					return
-				}
-				playerView.contentOverlayView?.addSubview(underTrimCropOverlayView)
-
-				underTrimCropOverlayView.translatesAutoresizingMaskIntoConstraints = false
-				NSLayoutConstraint.deactivate(underTrimCropOverlayView.constraints)
-
-				guard let videoBounds = playerView.contentOverlayView?.bounds else {
-					return
-				}
-				NSLayoutConstraint.activate([
-					underTrimCropOverlayView.leadingAnchor.constraint(equalTo: playerView.contentOverlayView!.leadingAnchor, constant: videoBounds.origin.x),
-					underTrimCropOverlayView.topAnchor.constraint(equalTo: playerView.contentOverlayView!.topAnchor, constant: videoBounds.origin.y),
-					underTrimCropOverlayView.widthAnchor.constraint(equalToConstant: videoBounds.size.width),
-					underTrimCropOverlayView.heightAnchor.constraint(equalToConstant: videoBounds.size.height)
-				])
-			}
-		}
-	}
-	/// Can't use lazy here because at start this will be null
-	/// before the player is initialized (there won't be an AVTrimView)
+	/**
+	 Can't use lazy here because at start this will be null before the player is initialized (there won't be an AVTrimView)
+	 */
 	private var _trimmerDragViews: TrimmerDragViews?
 
-	private func getTrimmerDragViews() -> TrimmerDragViews? {
+	private var trimmerDragViews: TrimmerDragViews? {
 		if let _trimmerDragViews {
 			return _trimmerDragViews
 		}
+		/**
+		 Needed so that it will hide the trimmer when it is outside the view. This must be done now (as opposed to`viewDidLoad`) because layer is nil in `viewDidLoad`
+		 */
+		playerView.layer?.masksToBounds = true
 		guard let avTrimView = (playerView.firstSubview(deep: true) { $0.simpleClassName == "AVTrimView" })?.superview,
-		let avTrimViewParent = avTrimView.superview?.superview else {
+			  let avTrimViewParent = avTrimView.superview?.superview else {
 			return nil
 		}
-		_trimmerDragViews = TrimmerDragViews(avTrimView: avTrimView, avTrimViewParent: avTrimViewParent, showDragNow: false)
+		_trimmerDragViews = TrimmerDragViews(avTrimView: avTrimView, avTrimViewParent: avTrimViewParent, isDraggable: false)
 		return _trimmerDragViews
 	}
-
 
 	/**
 	The minimum duration the trimmer can be set to.
@@ -172,12 +151,10 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	}
 
 	init(
-		cropRect: Binding<CropRect>,
 		playerItem: AVPlayerItem,
 		controlsStyle: AVPlayerViewControlsStyle = .inline,
 		timeRangeDidChange: ((ClosedRange<Double>) -> Void)? = nil
 	) {
-		self._cropRect = cropRect
 		self.playerItem = playerItem
 		self.player = LoopingPlayer(playerItem: playerItem)
 		self.controlsStyle = controlsStyle
@@ -195,10 +172,6 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	}
 
 	override func loadView() {
-		underTrimCropOverlayView = NSHostingView(rootView: UnderTrimCropOverlay(
-			cropRect: $cropRect,
-			cropRectHolder: self.underTrimCropRectHolder
-		))
 		let playerView = TrimmingAVPlayerView()
 		playerView.allowsVideoFrameAnalysis = false
 		playerView.controlsStyle = controlsStyle
@@ -346,141 +319,156 @@ final class TrimmingAVPlayerView: AVPlayerView {
 
 fileprivate class TrimmerDragViews {
 	private var avTrimView: NSView
-	private var cursor: CustomCursorView
+	/**
+	 The view that holds the entire trimmer. The supermost view
+	 */
+	private var fullTrimmerView: CustomCursorView
 	private var avTrimViewParent: NSView
 	private var drawHandleView: NSHostingView<DragHandleView>
 
-	var canDrag = false
+	var isDraggable = false {
+		didSet {
+			if isDraggable {
+				showDrag()
+			} else {
+				hideDrag()
+			}
+		}
+	}
 
-	static let originalHeight = 64.0
+
+
+	/**
+	The initial offset of the trimmer from the bottom before we drag it anywhere
+	 */
+	static let dragBarHeight = 17.0
 	static let newHeight = 87.0
+	static let dragBarTopAnchor = 6.0
+	/**
+	 These offsets are computed before we swap the trimmer
+	 */
+	let trimmerBottomOffset: Double
+	let trimmerLeadingOffset: Double
+	let trimmerTrailingOffset: Double
+	let trimmerHeight: Double
 
-	init(avTrimView: NSView, avTrimViewParent: NSView, showDragNow: Bool){
+
+	init(avTrimView: NSView, avTrimViewParent: NSView, isDraggable: Bool){
 		self.avTrimView = avTrimView
 		self.avTrimViewParent = avTrimViewParent
-		self.cursor = CustomCursorView()
+		self.fullTrimmerView = CustomCursorView()
 		self.drawHandleView = NSHostingView(rootView: DragHandleView())
 
+		trimmerBottomOffset = -(avTrimViewParent.getConstraintConstantFromSuperView(attribute: .bottom) ?? 6.0)
+		trimmerLeadingOffset = avTrimViewParent.getConstraintConstantFromSuperView(attribute: .leading) ?? 6.0
+		trimmerHeight = avTrimViewParent.getConstraintConstantFromSuperView(attribute: .height) ?? 64.0
+		trimmerTrailingOffset = -(avTrimViewParent.getConstraintConstantFromSuperView(attribute: .trailing) ?? 6.0)
 
-		let parent = avTrimViewParent.superview
-
-		avTrimViewParent.removeFromSuperview()
-
-
-		cursor.translatesAutoresizingMaskIntoConstraints = false
-		cursor.addSubview(avTrimViewParent)
-		parent?.addSubview(cursor)
-
-		NSLayoutConstraint.activate([
-			avTrimViewParent.leadingAnchor.constraint(equalTo: cursor.leadingAnchor, constant: 0),
-			avTrimViewParent.bottomAnchor.constraint(equalTo: cursor.bottomAnchor, constant: 0),
-			avTrimViewParent.widthAnchor.constraint(equalTo: cursor.widthAnchor, constant: 0),
-			avTrimViewParent.heightAnchor.constraint(equalTo: cursor.heightAnchor, constant: 0)
-		])
-
-		NSLayoutConstraint.activate([
-			cursor.leadingAnchor.constraint(equalTo: parent!.leadingAnchor, constant: 6.0),
-			cursor.bottomAnchor.constraint(equalTo: parent!.bottomAnchor, constant: -6.0),
-			cursor.widthAnchor.constraint(equalToConstant: 748.0)
-		])
-		if showDragNow {
-			self.showDrag()
-		} else {
-			self.hideDrag()
-		}
+		swapParentView()
+		self.isDraggable = isDraggable
 
 		let panGesture = NSPanGestureRecognizer(target: self, action: #selector(handleDrag(_:)))
 		panGesture.delaysPrimaryMouseButtonEvents = false
-		cursor.addGestureRecognizer(panGesture)
+		fullTrimmerView.addGestureRecognizer(panGesture)
+	}
+	/**
+	 Remove the avTrimViewParent from its old location in the view hiearchy and swap with our fullTrimmerView.
+	 */
+	private func swapParentView() {
+		/**
+		 The view that previously held the full trimmer view,
+		 */
+		guard let parent = avTrimViewParent.superview else {
+			return
+		}
+
+		avTrimViewParent.removeFromSuperview()
+
+		fullTrimmerView.translatesAutoresizingMaskIntoConstraints = false
+		fullTrimmerView.addSubview(avTrimViewParent)
+		parent.addSubview(fullTrimmerView)
+
+		avTrimViewParent.constrainEdgesToSuperview()
+
+		NSLayoutConstraint.activate([
+			fullTrimmerView.leadingAnchor.constraint(equalTo: parent.leadingAnchor, constant: trimmerLeadingOffset),
+			fullTrimmerView.bottomAnchor.constraint(equalTo: parent.bottomAnchor, constant: trimmerBottomOffset),
+			fullTrimmerView.trailingAnchor.constraint(equalTo: parent.trailingAnchor, constant: trimmerTrailingOffset),
+			fullTrimmerView.heightAnchor.constraint(equalToConstant: trimmerHeight)
+		])
 	}
 
-	func showDrag() {
-		canDrag = true
-
-		cursor.addSubview(drawHandleView)
+	private func showDrag() {
+		fullTrimmerView.addSubview(drawHandleView)
 		drawHandleView.translatesAutoresizingMaskIntoConstraints = false
 
 		NSLayoutConstraint.activate([
-			drawHandleView.leadingAnchor.constraint(equalTo: cursor.leadingAnchor, constant: 0),
-			drawHandleView.trailingAnchor.constraint(equalTo: cursor.trailingAnchor, constant: 0),
-			drawHandleView.topAnchor.constraint(equalTo: cursor.topAnchor, constant: 6),
-			drawHandleView.heightAnchor.constraint(equalToConstant: 17.0)
+			drawHandleView.leadingAnchor.constraint(equalTo: fullTrimmerView.leadingAnchor, constant: 0),
+			drawHandleView.trailingAnchor.constraint(equalTo: fullTrimmerView.trailingAnchor, constant: 0),
+			drawHandleView.topAnchor.constraint(equalTo: fullTrimmerView.topAnchor, constant: Self.dragBarTopAnchor),
+			drawHandleView.heightAnchor.constraint(equalToConstant: Self.dragBarHeight)
 		])
 
-		NSLayoutConstraint.deactivate(
-			cursor.constraints.filter { $0.firstAttribute == .height && $0.firstItem as? NSView == cursor }
-		)
-		NSLayoutConstraint.activate([
-			cursor.heightAnchor.constraint(equalToConstant: Self.newHeight)
-		])
-		if let topConstraint = avTrimView.superview?.constraints.first(where: {
-			($0.firstItem as? NSView) == avTrimView && $0.firstAttribute == .top
-		}) {
-			topConstraint.constant = Self.newHeight - Self.originalHeight
-		}
+		fullTrimmerHeightConstraint?.constant = Self.newHeight
+		trimmerWindowTopConstraint?.constant = Self.newHeight - trimmerHeight
+		trimmerBottomConstraint?.animate(to: trimmerHeight)
 	}
-	func hideDrag() {
-		canDrag = false
 
+
+
+	private func hideDrag() {
 		self.drawHandleView.removeFromSuperview()
-
-
-		if let bottomConstraint = cursor.superview?.constraints.first(where: {
-			$0.firstItem as? NSView == cursor && $0.firstAttribute == .bottom
-		}) {
-			NSAnimationContext.runAnimationGroup { context in
-				context.duration = 0.25 // Set the animation duration (in seconds)
-				context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-				bottomConstraint.animator().constant = -6.0
-			}
-		}
-
-		NSLayoutConstraint.deactivate(
-			cursor.constraints.filter { $0.firstAttribute == .height && $0.firstItem as? NSView == cursor }
-		)
-
-		NSLayoutConstraint.activate([
-			cursor.heightAnchor.constraint(equalToConstant: Self.originalHeight)
-		])
-
-		if let topConstraint = avTrimView.superview?.constraints.first(where: {
-			($0.firstItem as? NSView) == avTrimView && $0.firstAttribute == .top
-		}) {
-			topConstraint.constant = 0
-		}
+		trimmerBottomConstraint?.animate(to: trimmerBottomOffset)
+		fullTrimmerHeightConstraint?.constant = trimmerHeight
+		trimmerWindowTopConstraint?.constant = 0
 	}
 
+	/**
+	 Bound the view so that it can only go just a bit below the bottom and to the top. Then also bound the drag gesture so that your drags outside the view bounds won't affect the drag.
+	 */
 	@objc private func handleDrag(_ gesture: NSPanGestureRecognizer) {
-		guard canDrag,
-			gesture.state == .began || gesture.state == .changed,
-			let view = gesture.view,
-			let superview = view.superview,
-			let bottomConstraint = superview.constraints.first(where: { $0.firstItem as? NSView == view && $0.firstAttribute == .bottom }) else {
+		guard isDraggable,
+			  let view = gesture.view,
+			  let superview = view.superview,
+			  let trimmerBottomConstraint else {
 			return
 		}
-
-		// Get the mouse location in the superview's coordinate space
-    	let mouseLocation = gesture.location(in: superview)
-		if !superview.bounds.contains(mouseLocation) {
+		let endLocation = gesture.location(in: superview).y
+		let translation = gesture.translation(in: superview).y
+		let startLocation = endLocation - translation
+		defer {
+			gesture.setTranslation(.zero, in: superview)
+		}
+		let bounds = superview.bounds.minY...superview.bounds.maxY
+		guard bounds.contains(startLocation) else {
 			return
 		}
+		let boundedTranslation = endLocation.clamped(to: bounds) - startLocation
+		let newBottom = trimmerBottomConstraint.constant - boundedTranslation
 
-		let translation = gesture.translation(in: superview)
-		let newBottom = bottomConstraint.constant - translation.y
 		let minBottom = -superview.bounds.height + view.frame.height
-		bottomConstraint.constant = max(minBottom, min(newBottom, 0))
-		gesture.setTranslation(.zero, in: superview)
+		let maxBottom = trimmerHeight
+		trimmerBottomConstraint.constant = max(minBottom, min(newBottom, maxBottom))
 	}
+
+	private lazy var fullTrimmerHeightConstraint: NSLayoutConstraint? = {
+		fullTrimmerView.constraints.first { $0.firstAttribute == .height && $0.firstItem as? NSView == fullTrimmerView }
+	}()
+
+	private lazy var trimmerBottomConstraint: NSLayoutConstraint? = {
+		fullTrimmerView.getConstraintFromSuperview(attribute: .bottom)
+	}()
+
+	private lazy var trimmerWindowTopConstraint: NSLayoutConstraint? = {
+		avTrimView.getConstraintFromSuperview(attribute: .top)
+	}()
 
 	private class CustomCursorView: NSView {
 		var cursor: NSCursor = .arrow
 
 		override func resetCursorRects() {
 			super.resetCursorRects()
-			addCursorRect(
-				self.bounds,
-				cursor: cursor
-			)
+			addCursorRect(bounds, cursor: cursor)
 		}
 	}
 

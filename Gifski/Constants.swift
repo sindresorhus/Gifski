@@ -14,11 +14,6 @@ extension Defaults.Keys {
 	static let loopGIF = Key<Bool>("loopGif", default: true)
 	static let bounceGIF = Key<Bool>("bounceGif", default: false)
 	static let suppressKeyframeWarning = Key<Bool>("suppressKeyframeWarning", default: false)
-	static let suppressCropTooltip = Key<Bool>("suppressCropTooltip", default: false)
-}
-
-extension CGRect: Defaults.Serializable {
-	static let initialCropRect = Self(x: 0, y: 0, width: 1, height: 1)
 }
 
 enum Route: Hashable {
