@@ -2681,6 +2681,12 @@ extension CMTime {
 
 		return 0...seconds
 	}
+	/**
+	Zero in the video timescale.
+	*/
+	static var videoZero: Self {
+		.init(seconds: 0, preferredTimescale: .video)
+	}
 }
 
 

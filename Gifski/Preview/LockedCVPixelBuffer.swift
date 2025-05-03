@@ -45,9 +45,7 @@ extension LockedCVPixelBuffer {
 	 - Returns: True if copy was successful, false on error
 	 */
 	func copy(to destination: inout ReadWriteableCVPixelBuffer) -> Bool {
-		/**
-		 0 in the cse of NonPlanar buffers
-		 */
+		// 0 in the cse of NonPlanar buffers
 		let planeCount = CVPixelBufferGetPlaneCount(buf)
 		guard planeCount == CVPixelBufferGetPlaneCount(destination.buf) else {
 			return false
@@ -119,7 +117,8 @@ fileprivate struct PixelBufferByteCopier<B: LockedCVPixelBuffer> {
 		else {
 			return false
 		}
-		if source.bytesPerRow == destination.bytesPerRow {
+
+		guard source.bytesPerRow != destination.bytesPerRow else {
 			memcpy(destination.baseAddress, source.baseAddress, source.height * source.bytesPerRow)
 			return true
 		}
@@ -136,6 +135,5 @@ fileprivate struct PixelBufferByteCopier<B: LockedCVPixelBuffer> {
 		}
 		rowPointer = rowPointer.advanced(by: bytesPerRow)
 		rowIndex += 1
-		return
 	}
 }

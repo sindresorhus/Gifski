@@ -35,6 +35,7 @@ struct AppMain: App {
 				}
 				.keyboardShortcut("p", modifiers: [.command, .shift])
 				.disabled(!appState.isOnEditScreen)
+				.help("Preview is only available when editing a video")
 			}
 			CommandGroup(replacing: .help) {
 				Link("Website", destination: "https://sindresorhus.com/Gifski")

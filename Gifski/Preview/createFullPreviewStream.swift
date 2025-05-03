@@ -41,28 +41,22 @@ import AVFoundation
  internally the fullPreviewStream works like this: It sets up its own AsyncStream that waits for calls to( RequestNewFullPreview)[RequestNewFullPreview], once there it cancels any existing requests for generation, then spawns a new task to generate the fullPreview.
  */
 func createFullPreviewStream() -> (AsyncStream<FullPreviewGenerationEvent>, RequestNewFullPreview) {
-	/**
-	 The output stream as this is a stream of FullPreviewGenerationEvents
-	 */
+	// The output stream as this is a stream of FullPreviewGenerationEvents
 	let ( stateStream, stateStreamContinuation ) = AsyncStream<FullPreviewGenerationEvent>.makeStream(bufferingPolicy: .bufferingNewest(100))
-	/**
-	 The input stream, input new settings to make fullPreviews of
-	 */
+
+	// The input stream, input new settings to make fullPreviews of
 	let ( newSettingsStream, newSettingsContinuation ) = AsyncStream<(SettingsForFullPreview)>.makeStream(bufferingPolicy: .bufferingNewest(5))
 
 	let mainLoop = Task {
-		/**
-		 The current cancellable task that may be creating a new fullPreview
-		 */
-		var generationTask: Task<(PreBakedFrames, TemporaryAVURLAsset), any Error>?
+		
+		// The current cancellable task that may be creating a new fullPreview
+		var generationTask: Task<(), Never>?
 		defer {
 			generationTask?.cancel()
 		}
 
 		var automaticRequestID = 0
-		/**
-		 The current state, used to determine if new settings are worth generating
-		 */
+		// The current state, used to determine if new settings are worth generating
 		var fullPreviewState: FullPreviewGenerationEvent = .empty(error: nil, requestID: -1)
 		/**
 		 Update the currentState and all listeners of the stream
@@ -84,9 +78,7 @@ func createFullPreviewStream() -> (AsyncStream<FullPreviewGenerationEvent>, Requ
 
 			requestID.p("starting new settings")
 			guard isNecessaryToCreateNewFullPreview(oldState: fullPreviewState, newSettings: newSettings, requestID: requestID) else {
-				/**
-				 Not necessary to create a new fullPreview, no state change
-				 */
+				// Not necessary to create a new fullPreview, no state change
 				continue
 			}
 			requestID.p("Generating")
@@ -98,42 +90,28 @@ func createFullPreviewStream() -> (AsyncStream<FullPreviewGenerationEvent>, Requ
 				requestID.p("canceled old ")
 			}
 			updatePreview(newPreviewState: .generating(settings: newSettings, progress: 0, requestID: requestID))
+
 			let currentGenerationTask = Task.detached(priority: .medium) {
-				try await generateNewFullPreview(settings: newSettings, requestID: requestID) { progress in
-					guard !Task.isCancelled else {
-						return
+				do {
+					let framesAndAsset = try await generateNewFullPreview(settings: newSettings, requestID: requestID) { progress in
+						guard !Task.isCancelled else {
+							return
+						}
+						updatePreview(newPreviewState: .generating(settings: newSettings, progress: progress, requestID: requestID))
 					}
-					updatePreview(newPreviewState: .generating(settings: newSettings, progress: progress, requestID: requestID))
-				}
-			}
-			generationTask = currentGenerationTask
-			/**
-			 Need a new task to await the result of the last generation because if we were to await the generation directly it would never get cancelled.
-			 */
-			Task(priority: .medium) {
-				let result = await currentGenerationTask.result
-				if Task.isCancelled {
-					requestID.p( "The entire stream was cancelled")
-				}
-				if currentGenerationTask.isCancelled {
-					requestID.p("I was cancelled")
-					return
-				}
-				switch result {
-				case .failure(let error):
-					requestID.p(error.localizedDescription)
-					if error.isCancelled {
-						return
-					}
-					updatePreview(newPreviewState: .empty(error: error.localizedDescription, requestID: requestID))
-					return
-				case .success(let framesAndAsset):
+					try Task.checkCancellation()
 					requestID.p("success")
 					let (preBaked, asset) = framesAndAsset
 					updatePreview(newPreviewState: .ready(settings: newSettings, asset: asset, preBaked: preBaked, requestID: requestID))
-					return
+				} catch {
+					if Task.isCancelled || error.isCancelled {
+						requestID.p("I was cancelled")
+						return
+					}
+					updatePreview(newPreviewState: .empty(error: error.localizedDescription, requestID: requestID))
 				}
 			}
+			generationTask = currentGenerationTask
 		}
 	}
 
@@ -173,26 +151,22 @@ fileprivate func generateNewFullPreview(settings: SettingsForFullPreview, reques
 }
 /**
  See if we can skip generating a fullPreview based on the last state
+
+ - Returns: `true` if a new generation is required, `false` otherwise.
  */
 fileprivate func isNecessaryToCreateNewFullPreview(oldState: FullPreviewGenerationEvent, newSettings settings: SettingsForFullPreview, requestID: Int) -> Bool {
 	switch oldState {
 	case .empty:
 		return true
-	case .generating(let currentGenerationSettings, _, let oldRequestID):
-		/**
-		 Skip if the settings are the same, this also means skip if the trim range expands or shrinks (if we didn't allow new generations on trim rang shrinks, then you could accidentally start a long fullPreview generation and have no way to cancel it)
-		 */
+	case .generating(let currentGenerationSettings, _, let oldRequestID),
+			.ready(let currentGenerationSettings, _, _, let oldRequestID):
 		if currentGenerationSettings == settings {
-			requestID.p("Skipping - Same as generating \(oldRequestID)")
+			requestID.p("Skipping - Same as \(oldRequestID)")
 			return false
 		}
-		return true
-	case .ready(let oldSettings, _, _, let oldRequestID):
-		/**
-		 Skip if the settings are the same beyond trim. Allow shrinking of the trim range without regeneration
-		 */
-		if oldSettings.areTheSameBesidesTimeRange(settings),
-		   oldSettings.timeRangeContainsTimeRange(of: settings){
+		if case .ready = oldState,
+		   currentGenerationSettings.areTheSameBesidesTimeRange(settings),
+		   currentGenerationSettings.timeRangeContainsTimeRange(of: settings) {
 			requestID.p("Skipping - Same as ready \(oldRequestID)")
 			return false
 		}

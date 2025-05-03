@@ -106,6 +106,7 @@ struct EditScreen: View {
 			guard bounceGIF else {
 				return
 			}
+
 			showKeyframeRateWarningIfNeeded()
 		}
 		.alert2(

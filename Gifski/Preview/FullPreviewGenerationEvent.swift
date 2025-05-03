@@ -19,17 +19,17 @@ enum FullPreviewGenerationEvent {
 	static let initialState: Self = .empty(error: nil, requestID: -1)
 	var requestID: Int {
 		switch self {
-		case	.empty(_, requestID: let requestID),
-				.generating(_, _, requestID: let requestID),
-				.ready(_, _, _, requestID: let requestID):
+		case let .empty(_, requestID),
+			let .generating(_, _, requestID),
+			let .ready(_, _, _, requestID):
 			return requestID
 		}
 	}
-	var progress: Double{
+	var progress: Double {
 		switch self {
 		case .empty:
 			return 0.0
-		case .generating(_, progress: let progress, _):
+		case let .generating(_, progress, _):
 			return progress
 		case .ready:
 			return 1.0
@@ -38,18 +38,18 @@ enum FullPreviewGenerationEvent {
 	var isGenerating: Bool {
 		switch self {
 		case .generating:
-			return true
+			true
 		case .empty, .ready:
-			return false
+			false
 		}
 	}
 	var status: Status? {
 		switch self {
 		case .empty:
 			return nil
-		case .generating(settings: let settings, _, _):
+		case let .generating(settings, _, _):
 			return .init(settings: settings, preBaked: nil, ready: false)
-		case .ready(settings: let settings, _, let preBaked, _):
+		case let .ready(settings, _, preBaked, _):
 			return .init(settings: settings, preBaked: preBaked, ready: true)
 		}
 	}
@@ -71,9 +71,9 @@ extension Optional where Wrapped == FullPreviewGenerationEvent.Status {
 	var isGenerating: Bool {
 		switch self {
 		case .none:
-			return false
+			false
 		case .some(let status):
-			return !status.ready
+			!status.ready
 		}
 	}
 }

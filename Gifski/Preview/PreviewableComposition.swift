@@ -24,22 +24,21 @@ final class PreviewableComposition: AVMutableComposition {
 			throw PreviewableCompositionError.couldNotCreateTracks
 		}
 		try compositionOriginalTrack.insertTimeRange(
-			CMTimeRange(start: .init(seconds: 0, preferredTimescale: 600), duration: duration),
+			CMTimeRange(start: .videoZero, duration: duration),
 			of: assetTrack,
-			at: .init(seconds: 0, preferredTimescale: 600)
+			at: .videoZero
 		)
-		/**
-		 Need to fill this track with content now or else the compositor will not get frames for this track even if we insertTimeRange of content later on. So this will fill it with the same data as the originalTrack
-		 */
+		
+		// Need to fill this track with content now or else the compositor will not get frames for this track even if we insertTimeRange of content later on. So this will fill it with the same data as the originalTrack
 		try compositionFullPreviewTrack.insertTimeRange(
-			CMTimeRange(start: .init(seconds: 0, preferredTimescale: 600), duration: duration),
+			CMTimeRange(start: .videoZero, duration: duration),
 			of: assetTrack,
-			at: .init(seconds: 0, preferredTimescale: 600)
+			at: .videoZero
 		)
 
 
 		let instruction = AVMutableVideoCompositionInstruction()
-		instruction.timeRange = CMTimeRange(start: .init(seconds: 0, preferredTimescale: 600), duration: duration)
+		instruction.timeRange = CMTimeRange(start: .videoZero, duration: duration)
 		instruction.layerInstructions = [AVMutableVideoCompositionLayerInstruction(assetTrack: compositionOriginalTrack), AVMutableVideoCompositionLayerInstruction(assetTrack: compositionFullPreviewTrack)]
 
 		videoComposition.frameDuration = frameDuration
@@ -68,9 +67,8 @@ final class PreviewableComposition: AVMutableComposition {
 		let fullPreviewRange = settings.conversion.timeRange ?? 0...fullPreviewAssetDuration.seconds
 		let fullPreviewStartTime = CMTime(seconds: fullPreviewRange.lowerBound, preferredTimescale: .video)
 		compositionFullPreviewTrack.insertEmptyTimeRange(.init(start: .zero, duration: duration))
-		/**
-		 see [PreBakedFrames](PreBakedFrames) for why this is necessary
-		 */
+		
+		// see [PreBakedFrames](PreBakedFrames) for why this is necessary
 		let offsets = PreBakedFrames.Offsets(
 			fullPreviewStartTime: fullPreviewStartTime,
 			fullPreviewEndTime: CMTime(seconds: fullPreviewRange.upperBound, preferredTimescale: .video),

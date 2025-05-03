@@ -1,7 +1,6 @@
 import AVKit
 import SwiftUI
 
-
 struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	typealias NSViewControllerType = TrimmingAVPlayerViewController
 
@@ -38,9 +37,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 			previewVideoCompositor.fullPreviewStatus = fullPreviewStatus
 			previewVideoCompositor.shouldShowPreview = shouldShowPreview
 
-			/**
-			 Do this on every parameter change so that it will force the AVPlayer to redraw and update the preview
-			 */
+			// Force AVPlayer redraw by updating video composition."
 			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
 				nsViewController.currentItem.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition
 			}

@@ -32,19 +32,12 @@ struct PreBakedFrames {
 		timeRange = settings.conversion.timeRange ?? 0...settings.assetDuration
 		let speed = settings.speed
 
-		/**
-		 +1 just to be safe
-		 */
+
+		// +1 just to be safe
 		let numberOfFramesToPrecomputeAtTheBeginning = min(numberOfFrames, Int(ceil(offsets.start.seconds * frameRate * speed)) + 1 )
 		let numberOfFramesToPrecomputeAtTheEnd = min(numberOfFrames, Int(ceil(offsets.end.seconds * frameRate * speed)) + 1)
-		/**
-		 So I need to precompute the #frames at beginning and end of asset, but not necessarily at be
-		 */
 
 		let beginningRange = Set(0..<numberOfFramesToPrecomputeAtTheBeginning)
-		/**
-		 +1 to be safe
-		 */
 		let endRange = Set(numberOfFrames - numberOfFramesToPrecomputeAtTheEnd..<numberOfFrames)
 		let allFrames = beginningRange.union(endRange)
 		let dict = try await allFrames.asyncMap { frameIndex in

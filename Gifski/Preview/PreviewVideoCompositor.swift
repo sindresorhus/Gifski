@@ -25,15 +25,13 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		guard var outputPixelBuffer = asyncVideoCompositionRequest.renderContext.newPixelBuffer(),
 			  let originalFrame = (asyncVideoCompositionRequest.sourceFrame(byTrackID: .originalVideoTrack).map {
 				  ReadableCVPixelBuffer(buf: $0)
-			  })
+			})
 		else {
 			asyncVideoCompositionRequest.finish(with: PreviewVideoCompositorError.failedToGetVideoFrame)
 			return
 		}
 		var outputFrame = ReadWriteableCVPixelBuffer(buf: &outputPixelBuffer)
-		/**
-		 Copy all attachments, (ie color space) to the outputFrame.
-		 */
+		//  Copy all attachments, (ie color space) to the outputFrame.
 		if let attachments = CVBufferCopyAttachments(originalFrame.buf, .shouldPropagate) {
 			CVBufferSetAttachments(outputFrame.buf, attachments, .shouldPropagate)
 		}
@@ -94,9 +92,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 			try await convertToGIFAndRender(originalFrame: originalFrame, outputFrame: &outputFrame, settings: fullPreviewStatus.settings, compositionTime: compositionTime)
 			return
 		}
-		/**
-		 Need this for the case where the player is paused, not showing the preview, then the user presses the show preview button. Due to a bug in AVPlayer it won't update the PreviewFrame (it's content wil exist (not nil) bit will bel be old and out of date), so we need to regenerate the content rather than use the fullPreviewFrame
-		 */
+		// Need this for the case where the player is paused, not showing the preview, then the user presses the show preview button. Due to a bug in AVPlayer it won't update the PreviewFrame (it's content wil exist (not nil) bit will bel be old and out of date), so we need to regenerate the content rather than use the fullPreviewFrame
 		if let lastGenerateTimeWhileNotShowingPreview = await lastGenerateTimeWhileNotShowingPreview,
 		   lastGenerateTimeWhileNotShowingPreview == compositionTime {
 			try await convertToGIFAndRender(originalFrame: originalFrame, outputFrame: &outputFrame, settings: fullPreviewStatus.settings, compositionTime: compositionTime)
@@ -134,9 +130,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		outputDimensions: (width: Int, height: Int)?,
 		outputQuality: Double
 	) async throws -> CGImage  {
-		/**
-		 Not the fastest way to convert CVPixelBuffer to image, but the runtime of `GIFGenerator.convertOneFrame` is so much larger that optimizing this would be a waste
-		 */
+		//  Not the fastest way to convert CVPixelBuffer to image, but the runtime of `GIFGenerator.convertOneFrame` is so much larger that optimizing this would be a waste
 		let ciImage = CIImage(cvPixelBuffer: videoFrame)
 		let ciContext = CIContext()
 		guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent)
@@ -229,9 +223,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
 	]
 	func renderContextChanged(_ newRenderContext: AVVideoCompositionRenderContext) {
-		/**
-		 no-op
-		 */
+		 // no-op
 	}
 
 	/**

@@ -18,9 +18,8 @@ struct SettingsForFullPreview: Equatable {
 		self.speed = speed
 		self.assetDuration = assetDuration
 		var newConversion = conversion
-		/**
-		 Pad the time just a bit so that when adjusting the trim range the preview will have a frame generated after the trim operation completes. *Note* It's the same value as [PreBakedFrames.bugFixOffset](PreBakedFrames.bugFixOffset), but this is not the cause of that bug, the bug remains without this code.
-		 */
+
+		// Pad the time just a bit so that when adjusting the trim range the preview will have a frame generated after the trim operation completes. *Note* It's the same value as [PreBakedFrames.bugFixOffset](PreBakedFrames.bugFixOffset), but this is not the cause of that bug, the bug remains without this code.
 		if let originalTimeRange = conversion.timeRange {
 			let lowerBound = max(0, originalTimeRange.lowerBound - 0.1)
 			let upperBound = min(assetDuration / speed, originalTimeRange.upperBound + 0.1)
@@ -40,6 +39,9 @@ struct SettingsForFullPreview: Equatable {
 		copyNew.timeRange = nil
 		return copyNew == copyOld
 	}
+	/**
+	 See if the time range of the new settings is a subset of the old settings
+	 */
 	func timeRangeContainsTimeRange(
 		of newSettings: Self,
 	) -> Bool {

@@ -9,13 +9,10 @@ final class AppState: ObservableBinding {
 
 	var shouldShowPreview = false
 	var isOnEditScreen: Bool {
-		guard let path = navigationPath.last else {
+		guard case .edit = navigationPath.last else {
 			return false
 		}
-		if case .edit = path {
-			return true
-		}
-		return false
+		return true
 	}
 
 	var navigationPath = [Route]()

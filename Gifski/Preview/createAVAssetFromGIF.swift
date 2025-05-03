@@ -13,12 +13,10 @@ import AVKit
  */
 func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullPreview, onProgress: (Double) -> Void) async throws -> TemporaryAVURLAsset {
 	let numberOfImages = CGImageSourceGetCount(imageSource)
-	guard numberOfImages > 0
+	guard numberOfImages > 0,
+		  let firstCGImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
 	else {
 		throw CreateAVAssetError.noImages
-	}
-	guard let firstCGImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
-		throw CreateAVAssetError.failedToCreateImage
 	}
 
 	let tempPath = FileManager.default.temporaryDirectory.appending(component: "\(UUID()).mov")
@@ -45,20 +43,24 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 	}
 	assetWriter.add(writerInput)
 
-	assetWriter.startWriting()
+	guard assetWriter.startWriting() else {
+		throw CreateAVAssetError.failedToStartWriting
+	}
 	assetWriter.startSession(atSourceTime: .zero)
 
 	let dispatchQueue = DispatchQueue(label: "com.gifski.assetWriterQueue")
 	var frameIndex = 0
 
-	let frameRate: CMTimeScale
-	if let settingFrameRate = settings.conversion.frameRate {
-		frameRate = CMTimeScale(settingFrameRate)
-	} else if let inputFrameRate = try? await settings.conversion.asset.frameRate {
-		frameRate = CMTimeScale(inputFrameRate)
-	} else {
-		frameRate = CMTimeScale(30.0)
-	}
+	let frameRate: CMTimeScale = await {
+		if let settingFrameRate = settings.conversion.frameRate {
+			return CMTimeScale(settingFrameRate)
+		}
+		if let inputFrameRate = try? await settings.conversion.asset.frameRate {
+			return CMTimeScale(inputFrameRate)
+		}
+		return CMTimeScale(30.0)
+	}()
+
 
 
 	let dataReadyStream = AsyncStream { continuation in
@@ -69,45 +71,24 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 	var progressThreshold = 0.05
 	for await _ in dataReadyStream {
 		while writerInput.isReadyForMoreMediaData && frameIndex < numberOfImages {
+			try Task.checkCancellation()
 			let progress = Double(frameIndex) / Double(numberOfImages)
 			if progress > progressThreshold {
 				onProgress(progress)
 				progressThreshold = progress + 0.05
 			}
-
-			try Task.checkCancellation()
-
 			defer {
 				frameIndex += 1
 			}
 			guard let cgImage = CGImageSourceCreateImageAtIndex(imageSource, frameIndex, nil) else {
 				continue
 			}
-			guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool else {
+			guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool,
+				  let pixelBuffer = createPixelBuffer(from: cgImage, using: pixelBufferPool)
+			else {
 				continue
-			}
-			var pixelBuffer: CVPixelBuffer?
-			guard CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBuffer) == kCVReturnSuccess,
-				  let pixelBuffer else {
-				continue
-			}
-			CVPixelBufferLockBaseAddress(pixelBuffer, [])
-			defer {
-				CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
 			}
 
-			guard let context = CGContext(
-				data: CVPixelBufferGetBaseAddress(pixelBuffer),
-				width: cgImage.width,
-				height: cgImage.height,
-				bitsPerComponent: 8,
-				bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
-				space: CGColorSpaceCreateDeviceRGB(),
-				bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
-			) else {
-				continue
-			}
-			context.draw(cgImage, in: CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height))
 			let presentationTime = CMTime(
 				value: CMTimeValue(frameIndex),
 				timescale: frameRate
@@ -125,14 +106,44 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 			continuation.resume()
 		}
 	}
+	guard assetWriter.status != .failed else {
+		throw CreateAVAssetError.failedToWrite
+	}
 	return TemporaryAVURLAsset(url: tempPath)
+}
+
+private func createPixelBuffer(from cgImage: CGImage, using pool: CVPixelBufferPool) -> CVPixelBuffer? {
+	var pixelBuffer: CVPixelBuffer?
+	guard CVPixelBufferPoolCreatePixelBuffer(nil, pool, &pixelBuffer) == kCVReturnSuccess,
+		  let pixelBuffer else {
+		return nil
+	}
+	CVPixelBufferLockBaseAddress(pixelBuffer, [])
+	defer {
+		CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
+	}
+	guard let context = CGContext(
+		data: CVPixelBufferGetBaseAddress(pixelBuffer),
+		width: cgImage.width,
+		height: cgImage.height,
+		bitsPerComponent: 8,
+		bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
+		space: CGColorSpaceCreateDeviceRGB(),
+		bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
+	) else {
+		return nil
+	}
+	context.draw(cgImage, in: CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height))
+	return pixelBuffer
 }
 
 
 enum CreateAVAssetError: Error {
+	case failedToStartWriting
 	case failedToCreateImageData
 	case failedToCreateImage
 	case failedToCreateAssetWriter
+	case failedToWrite
 	case cannotAddWriterInput
 	case noImages
 }

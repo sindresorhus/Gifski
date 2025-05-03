@@ -59,7 +59,7 @@ struct PreviewRenderer {
 	private let samplerState: MTLSamplerState
 	private let textureCache: CVMetalTextureCache
 	private let previewTextureCache: CVMetalTextureCache
-	private let originalTextureDescriptor: CVMetalTextureCache
+	private let originalTextureCache: CVMetalTextureCache
 	private let textureLoader: MTKTextureLoader
 
 	private init() throws {
@@ -112,7 +112,7 @@ struct PreviewRenderer {
 		}
 		self.textureCache = textureCache
 		self.previewTextureCache = previewTextureCache
-		self.originalTextureDescriptor = originalTextureCache
+		self.originalTextureCache = originalTextureCache
 
 		self.textureLoader = MTKTextureLoader(device: metalDevice)
 	}
@@ -141,7 +141,7 @@ struct PreviewRenderer {
 		originalFrame: LockedCVPixelBuffer,
 		outputFrame: inout ReadWriteableCVPixelBuffer
 	) async throws {
-		let originalTexture = try Texture.createFromImage(image: originalFrame, cache: originalTextureDescriptor)
+		let originalTexture = try Texture.createFromImage(image: originalFrame, cache: originalTextureCache)
 		let outputTexture = try Texture.createFromImage(image: outputFrame, cache: textureCache)
 		guard let commandBuffer = commandQueue.makeCommandBuffer() else {
 			throw RenderError.failedToCreateCommandBuffer
