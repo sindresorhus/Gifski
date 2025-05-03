@@ -23,9 +23,7 @@ struct CropOverlayView: View {
 			let cropFrame = cropRect.unnormalize(forDimensions: frame.size)
 			ZStack {
 				Canvas { context, size in
-					/**
-					 Darken the entire video by drawing a transparent black color, then "cut-out" the section what we are cropping. If we are editing we then draw a white outline over our path
-					 */
+					// Darken the entire video by drawing a transparent black color, then "cut-out" the section what we are cropping. If we are editing we then draw a white outline over our path
 					let entireCanvasPath = Path { path in
 						path.addRect(.init(origin: .zero, size: size))
 					}
@@ -224,9 +222,7 @@ struct CropOverlayView: View {
 						)
 						.contentShape(
 							Path { path in
-								/**
-								 A rectangle around the drag used to catch hits so we can drag.
-								 */
+								// A rectangle around the drag used to catch hits so we can drag.
 								let hitBoxSize = 20.0
 								if position.isVerticalOnlyHandle {
 									path.addRect(.init(

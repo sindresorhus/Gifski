@@ -93,9 +93,7 @@ final class TrimmingAVPlayerViewController: NSViewController {
 		if let _trimmerDragViews {
 			return _trimmerDragViews
 		}
-		/**
-		 Needed so that it will hide the trimmer when it is outside the view. This must be done now (as opposed to`viewDidLoad`) because layer is nil in `viewDidLoad`
-		 */
+		// Needed so that it will hide the trimmer when it is outside the view. This must be done now (as opposed to`viewDidLoad`) because layer is nil in `viewDidLoad`
 		playerView.layer?.masksToBounds = true
 		guard let avTrimView = (playerView.firstSubview(deep: true) { $0.simpleClassName == "AVTrimView" })?.superview,
 			  let avTrimViewParent = avTrimView.superview?.superview else {
@@ -364,7 +362,7 @@ fileprivate class TrimmerDragViews {
 		trimmerHeight = avTrimViewParent.getConstraintConstantFromSuperView(attribute: .height) ?? 64.0
 		trimmerTrailingOffset = -(avTrimViewParent.getConstraintConstantFromSuperView(attribute: .trailing) ?? 6.0)
 
-		swapParentView()
+		swapTrimmerSuperviews()
 		self.isDraggable = isDraggable
 
 		let panGesture = NSPanGestureRecognizer(target: self, action: #selector(handleDrag(_:)))
@@ -374,11 +372,9 @@ fileprivate class TrimmerDragViews {
 	/**
 	 Remove the avTrimViewParent from its old location in the view hiearchy and swap with our fullTrimmerView.
 	 */
-	private func swapParentView() {
-		/**
-		 The view that previously held the full trimmer view,
-		 */
-		guard let parent = avTrimViewParent.superview else {
+	private func swapTrimmerSuperviews() {
+		// The view that previously held the full trimmer view
+		guard let oldSuperview = avTrimViewParent.superview else {
 			return
 		}
 
@@ -386,14 +382,14 @@ fileprivate class TrimmerDragViews {
 
 		fullTrimmerView.translatesAutoresizingMaskIntoConstraints = false
 		fullTrimmerView.addSubview(avTrimViewParent)
-		parent.addSubview(fullTrimmerView)
+		oldSuperview.addSubview(fullTrimmerView)
 
 		avTrimViewParent.constrainEdgesToSuperview()
 
 		NSLayoutConstraint.activate([
-			fullTrimmerView.leadingAnchor.constraint(equalTo: parent.leadingAnchor, constant: trimmerLeadingOffset),
-			fullTrimmerView.bottomAnchor.constraint(equalTo: parent.bottomAnchor, constant: trimmerBottomOffset),
-			fullTrimmerView.trailingAnchor.constraint(equalTo: parent.trailingAnchor, constant: trimmerTrailingOffset),
+			fullTrimmerView.leadingAnchor.constraint(equalTo: oldSuperview.leadingAnchor, constant: trimmerLeadingOffset),
+			fullTrimmerView.bottomAnchor.constraint(equalTo: oldSuperview.bottomAnchor, constant: trimmerBottomOffset),
+			fullTrimmerView.trailingAnchor.constraint(equalTo: oldSuperview.trailingAnchor, constant: trimmerTrailingOffset),
 			fullTrimmerView.heightAnchor.constraint(equalToConstant: trimmerHeight)
 		])
 	}
