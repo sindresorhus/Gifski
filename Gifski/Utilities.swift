@@ -2681,6 +2681,12 @@ extension CMTime {
 
 		return 0...seconds
 	}
+	/**
+	Zero in the video timescale.
+	*/
+	static var videoZero: Self {
+		.init(seconds: 0, preferredTimescale: .video)
+	}
 }
 
 
@@ -5324,6 +5330,13 @@ extension AVPlayerView {
 		try Task.checkCancellation()
 
 		Task {
+			/**
+			 In about 20% of my debug sessions, `beginTrimming` will crash because canBeginTrimming is false, so I added this check. I've seen multiple cases where this guard catches into the else statement and the trimming controls work just fine: in each and every case where canBeginTrimming was false, this function gets called again with a value of true.
+			 */
+			guard canBeginTrimming else {
+				return
+			}
+
 			await beginTrimming()
 		}
 
@@ -5515,5 +5528,16 @@ private struct AppActivityModifier: ViewModifier {
 			.task(id: Tuple3(isActive, options, reason)) { // TODO: Use a tuple here when it can be equatable.
 				activity = isActive ? SSApp.beginActivity(options, reason: reason) : nil
 			}
+	}
+}
+
+protocol ObservableBinding {}
+
+extension ObservableBinding {
+	func binding<T>(for keyPath: ReferenceWritableKeyPath<Self, T>) -> Binding<T> {
+		Binding(
+			get: { self[keyPath: keyPath] },
+			set: { self[keyPath: keyPath] = $0 }
+		)
 	}
 }

@@ -28,6 +28,15 @@ struct AppMain: App {
 				.keyboardShortcut("o")
 				.disabled(appState.isConverting)
 			}
+			CommandGroup(replacing: .textEditing) {
+				Toggle(isOn: appState.binding(for: \.shouldShowPreview))
+				{
+					Text("Preview")
+				}
+				.keyboardShortcut("p", modifiers: [.command, .shift])
+				.disabled(!appState.isOnEditScreen)
+				.help("Preview is only available when editing a video")
+			}
 			CommandGroup(replacing: .help) {
 				Link("Website", destination: "https://sindresorhus.com/Gifski")
 				Link("Source Code", destination: "https://github.com/sindresorhus/Gifski")

@@ -19,6 +19,10 @@ struct EditScreen: View {
 	@State private var isReversePlaybackWarningPresented = false
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
+	@State private var fullPreviewState: FullPreviewGenerationEvent = .initialState
+
+	private let requestNewFullPreview: RequestNewFullPreview
+	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
 
 	init(
 		url: URL,
@@ -29,6 +33,7 @@ struct EditScreen: View {
 		self._asset = .init(wrappedValue: asset)
 		self._modifiedAsset = .init(wrappedValue: asset)
 		self._metadata = .init(wrappedValue: metadata)
+		(fullPreviewStream, requestNewFullPreview) = createFullPreviewStream()
 	}
 
 	var body: some View {
@@ -36,11 +41,15 @@ struct EditScreen: View {
 			// TODO: Move the trimmer outside the video view.
 			TrimmingAVPlayer(
 				asset: modifiedAsset,
+				shouldShowPreview: appState.shouldShowPreview,
+				fullPreviewStatus: fullPreviewState.status,
 				loopPlayback: loopGIF,
 				bouncePlayback: bounceGIF
 			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
+					estimatedFileSizeModel.updateEstimate()
+					updatePreviewOnSettingsChange()
 				}
 			}
 			controls
@@ -49,6 +58,20 @@ struct EditScreen: View {
 		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
 		.navigationDocument(url)
+		.toolbar {
+			ToolbarItemGroup {
+				if fullPreviewState.isGenerating {
+					ProgressView(value: fullPreviewState.progress)
+						.progressViewStyle(.circular)
+						.scaleEffect(0.5)
+						.frame(width: 10, height: 1)
+				}
+				Toggle(isOn: appState.binding(for: \.shouldShowPreview))
+				{
+					Label("Preview", systemImage: appState.shouldShowPreview ? "eye" : "eye.slash")
+				}
+			}
+		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
 			Task {
 				await setSpeed()
@@ -61,19 +84,23 @@ struct EditScreen: View {
 		.onChange(of: outputQuality, initial: true) {
 			estimatedFileSizeModel.duration = metadata.duration
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		}
 		// TODO: Make these a single call when tuples are equatable.
 		.onChange(of: resizableDimensions) {
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		}
 		.onChange(of: timeRange) {
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		}
 		.onChange(of: bounceGIF) {
 			estimatedFileSizeModel.updateEstimate()
 		}
 		.onChange(of: frameRate) {
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		}
 		.onChange(of: bounceGIF) {
 			guard bounceGIF else {
@@ -99,13 +126,33 @@ struct EditScreen: View {
 				shouldShow = true
 			}
 		}
+		.task {
+			for await event in fullPreviewStream {
+				switch event {
+				case .empty, .generating:
+					break
+				case .ready(let settings, let asset, _, _):
+					try? await (modifiedAsset as? PreviewableComposition)?.updateFullPreviewTrack(settings: settings, newFullPreviewAsset: asset)
+				}
+				fullPreviewState = event
+			}
+		}
 	}
+
+	private func updatePreviewOnSettingsChange()  {
+		requestNewFullPreview(SettingsForFullPreview(conversion: conversionSettings, speed: Defaults[.outputSpeed], duration: metadata.duration.toTimeInterval ))
+	}
+
 
 	private func setSpeed() async {
 		do {
 			// We could have set the `rate` of the player instead of modifying the asset, but it's just easier to modify the asset as then it matches what we want to generate. Otherwise, we would have to translate trimming ranges to the correct speed, etc.
-			modifiedAsset = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) ?? modifiedAsset
+
+			let changedSpeedAsset = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) ?? modifiedAsset
+			modifiedAsset = try await PreviewableComposition(extractPreviewableCompositionFrom: changedSpeedAsset)
+
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		} catch {
 			appState.error = error
 		}
@@ -113,6 +160,7 @@ struct EditScreen: View {
 
 	private func setUp() {
 		estimatedFileSizeModel.getConversionSettings = { conversionSettings }
+		updatePreviewOnSettingsChange()
 	}
 
 	private var controls: some View {
