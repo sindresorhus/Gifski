@@ -139,7 +139,7 @@ struct CreateCropIntent: AppIntent {
 
 	static let description = IntentDescription(
 		"""
-		Crop your Gifski GIF output
+		Creates a crop to pass into the “Convert Video to Animated GIF” action.
 		""",
 		searchKeywords: [
 			"video",
