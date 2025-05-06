@@ -29,7 +29,7 @@ struct AppMain: App {
 				.disabled(appState.isConverting)
 			}
 			CommandGroup(replacing: .textEditing) {
-				Toggle("Crop", isOn: appState.isCropActiveBinding)
+				Toggle("Crop", isOn: appState.binding(for: \.isCropActive))
 				.keyboardShortcut("c", modifiers: [.command, .shift])
 				.disabled(!appState.isOnEditScreen)
 			}

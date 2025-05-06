@@ -345,10 +345,8 @@ fileprivate class TrimmerDragViews {
 	/**
 	 These offsets are computed before we swap the trimmer
 	 */
-	let trimmerBottomOffset: Double
-	let trimmerLeadingOffset: Double
-	let trimmerTrailingOffset: Double
-	let trimmerHeight: Double
+
+	private let trimmerConstraints: TrimmerConstraints
 
 
 	init(avTrimView: NSView, avTrimViewParent: NSView, isDraggable: Bool){
@@ -357,10 +355,7 @@ fileprivate class TrimmerDragViews {
 		self.fullTrimmerView = CustomCursorView()
 		self.drawHandleView = NSHostingView(rootView: DragHandleView())
 
-		trimmerBottomOffset = -(avTrimViewParent.getConstraintConstantFromSuperView(attribute: .bottom) ?? 6.0)
-		trimmerLeadingOffset = avTrimViewParent.getConstraintConstantFromSuperView(attribute: .leading) ?? 6.0
-		trimmerHeight = avTrimViewParent.getConstraintConstantFromSuperView(attribute: .height) ?? 64.0
-		trimmerTrailingOffset = -(avTrimViewParent.getConstraintConstantFromSuperView(attribute: .trailing) ?? 6.0)
+		trimmerConstraints = TrimmerConstraints(avTrimViewParent: avTrimViewParent)
 
 		swapTrimmerSuperviews()
 		self.isDraggable = isDraggable
@@ -370,7 +365,7 @@ fileprivate class TrimmerDragViews {
 		fullTrimmerView.addGestureRecognizer(panGesture)
 	}
 	/**
-	 Remove the avTrimViewParent from its old location in the view hiearchy and swap with our fullTrimmerView.
+	 Remove the avTrimViewParent from its old location in the view hierarchy and swap with our fullTrimmerView.
 	 */
 	private func swapTrimmerSuperviews() {
 		// The view that previously held the full trimmer view
@@ -386,12 +381,7 @@ fileprivate class TrimmerDragViews {
 
 		avTrimViewParent.constrainEdgesToSuperview()
 
-		NSLayoutConstraint.activate([
-			fullTrimmerView.leadingAnchor.constraint(equalTo: oldSuperview.leadingAnchor, constant: trimmerLeadingOffset),
-			fullTrimmerView.bottomAnchor.constraint(equalTo: oldSuperview.bottomAnchor, constant: trimmerBottomOffset),
-			fullTrimmerView.trailingAnchor.constraint(equalTo: oldSuperview.trailingAnchor, constant: trimmerTrailingOffset),
-			fullTrimmerView.heightAnchor.constraint(equalToConstant: trimmerHeight)
-		])
+		trimmerConstraints.apply(toNewView: fullTrimmerView, avTrimViewParentSuperView: oldSuperview)
 	}
 
 	private func showDrag() {
@@ -406,16 +396,17 @@ fileprivate class TrimmerDragViews {
 		])
 
 		fullTrimmerHeightConstraint?.constant = Self.newHeight
-		trimmerWindowTopConstraint?.constant = Self.newHeight - trimmerHeight
-		trimmerBottomConstraint?.animate(to: trimmerHeight)
+		trimmerWindowTopConstraint?.constant = Self.newHeight - trimmerConstraints.height
+		trimmerBottomConstraint?.animate(to: trimmerConstraints.height) {
+			self.avTrimView.isHidden = true
+		}
 	}
-
-
 
 	private func hideDrag() {
 		self.drawHandleView.removeFromSuperview()
-		trimmerBottomConstraint?.animate(to: trimmerBottomOffset)
-		fullTrimmerHeightConstraint?.constant = trimmerHeight
+		avTrimView.isHidden = false
+		trimmerBottomConstraint?.animate(to: trimmerConstraints.bottomOffset)
+		fullTrimmerHeightConstraint?.constant = trimmerConstraints.height
 		trimmerWindowTopConstraint?.constant = 0
 	}
 
@@ -440,11 +431,10 @@ fileprivate class TrimmerDragViews {
 			return
 		}
 		let boundedTranslation = endLocation.clamped(to: bounds) - startLocation
-		let newBottom = trimmerBottomConstraint.constant - boundedTranslation
+		let newBottom = (trimmerBottomConstraint.constant - boundedTranslation).clamped(to: -superview.bounds.height + view.frame.height...trimmerConstraints.height)
 
-		let minBottom = -superview.bounds.height + view.frame.height
-		let maxBottom = trimmerHeight
-		trimmerBottomConstraint.constant = max(minBottom, min(newBottom, maxBottom))
+		trimmerBottomConstraint.constant = newBottom
+		avTrimView.isHidden = newBottom > trimmerConstraints.height - 2
 	}
 
 	private lazy var fullTrimmerHeightConstraint: NSLayoutConstraint? = {
@@ -458,6 +448,33 @@ fileprivate class TrimmerDragViews {
 	private lazy var trimmerWindowTopConstraint: NSLayoutConstraint? = {
 		avTrimView.getConstraintFromSuperview(attribute: .top)
 	}()
+	/**
+	 Grab the constraints on the trimmer while it is still constrained to its superview, so that when we move it to a new superview it will have no visual change
+	 */
+	private struct TrimmerConstraints {
+		let bottomOffset: Double
+		let leadingOffset: Double
+		let trailingOffset: Double
+		let height: Double
+
+		init(avTrimViewParent: NSView){
+			bottomOffset = -(avTrimViewParent.getConstraintConstantFromSuperView(attribute: .bottom) ?? 6.0)
+			leadingOffset = avTrimViewParent.getConstraintConstantFromSuperView(attribute: .leading) ?? 6.0
+			trailingOffset = -(avTrimViewParent.getConstraintConstantFromSuperView(attribute: .trailing) ?? 6.0)
+			height = avTrimViewParent.getConstraintConstantFromSuperView(attribute: .height) ?? 64.0
+		}
+		/**
+		 Apply the saved constraints to a new container view, placing it in the same position as avTrimViewParent used to be
+		 */
+		func apply(toNewView newView: NSView, avTrimViewParentSuperView oldSuperview: NSView) {
+			NSLayoutConstraint.activate([
+				newView.leadingAnchor.constraint(equalTo: oldSuperview.leadingAnchor, constant: leadingOffset),
+				newView.bottomAnchor.constraint(equalTo: oldSuperview.bottomAnchor, constant: bottomOffset),
+				newView.trailingAnchor.constraint(equalTo: oldSuperview.trailingAnchor, constant: trailingOffset),
+				newView.heightAnchor.constraint(equalToConstant: height)
+			])
+		}
+	}
 
 	private class CustomCursorView: NSView {
 		var cursor: NSCursor = .arrow

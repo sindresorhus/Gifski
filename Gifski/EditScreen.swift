@@ -55,6 +55,7 @@ struct EditScreen: View {
 		.toolbar {
 			ToolbarItemGroup {
 				CropToolbarItems(
+					isCropActive: appState.binding(for: \.isCropActive),
 					metadata: metadata,
 					outputCropRect: $outputCropRect
 				)

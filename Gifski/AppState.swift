@@ -12,15 +12,6 @@ final class AppState: ObservableBinding {
 
 
 	var isCropActive = false
-	var isCropActiveBinding: Binding<Bool> {
-		.init(get: { self.isCropActive }, set: { newValue in
-			SSApp.runOnce(identifier: "showCropTooltip") {
-				self.showCropTooltip = true
-			}
-			self.isCropActive = newValue
-		})
-	}
-	var showCropTooltip = false
 
 	var isOnEditScreen: Bool {
 		guard case .edit = navigationPath.last else {

@@ -77,6 +77,13 @@ extension Double {
 	Discouraged but sometimes needed when implicit coercion doesn't work.
 	*/
 	var toCGFloat: CGFloat { CGFloat(self) } // swiftlint:disable:this no_cgfloat no_cgfloat2
+
+	/**
+	 If this Double represents an aspectRatio, return the normalized aspect ratio for each side as a `CGSize`
+	 */
+	var normalizedAspectRatioSides: CGSize {
+		self > 1.0 ? .init(width: 1.0, height: 1.0 / self) : .init(width: self, height: 1.0 )
+	}
 }
 
 extension BinaryInteger {
@@ -2279,6 +2286,21 @@ extension CGRect {
 			yOffset: rect.height * yOffsetPercent
 		)
 	}
+
+	/**
+	 Returns a CGRect with the same center position, but a new size
+	 */
+	func centeredRectWith(size: CGSize) -> Self {
+		CGRect(x: midX - size.width / 2.0, y: midY - size.height / 2.0, width: size.width, height: size.height)
+	}
+
+
+	/**
+	 Returns a Crop Rect of the current Rect given a certain size
+	 */
+	func toCropRect(forVideoDimensions dimensions: CGSize) -> CropRect {
+		CropRect(x: x / dimensions.width, y: y / dimensions.height, width: width / dimensions.width, height: height / dimensions.height)
+	}
 }
 
 
@@ -2686,12 +2708,15 @@ extension NSLayoutConstraint {
 	func animate(
 		to constant: Double,
 		duration: TimeInterval = 0.25,
-		timingFunction: CAMediaTimingFunction =	CAMediaTimingFunction(name: .easeInEaseOut)
+		timingFunction: CAMediaTimingFunction =	CAMediaTimingFunction(name: .easeInEaseOut),
+		completionHandler: (() -> Void)? = nil
 	) {
 		NSAnimationContext.runAnimationGroup { context in
 			context.duration = duration
 			context.timingFunction = timingFunction
 			animator().constant = constant
+		} completionHandler: {
+			completionHandler?()
 		}
 	}
 }
@@ -5341,7 +5366,12 @@ extension CGSize {
 	var toInt: (width: Int, height: Int) {
 		(Int(width), Int(height))
 	}
+
+	var videoSizeDescription: String {
+		"\(Int(width))x\(Int(height))"
+	}
 }
+
 
 
 extension ClosedRange<Double> {
@@ -5441,6 +5471,10 @@ extension CGSize {
 		default:
 			return self
 		}
+	}
+
+	func aspectFittedSize(targetWidthHeight: Double) -> Self {
+		aspectFittedSize(targetWidth: targetWidthHeight, targetHeight: targetWidthHeight)
 	}
 
 	func aspectFittedSize(targetWidth: Int?, targetHeight: Int?) -> Self {

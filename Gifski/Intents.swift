@@ -1,73 +1,86 @@
 import AppIntents
 import AVFoundation
 
-enum CropEntity: AppEntity, Codable {
-	case noCrop
-	/**
-	 The exact coordinates in the image using a *bottom-left* origin (the rest of the app uses top-left origin)
-	 */
-	case exact(x: Int, y: Int, width: Int, height: Int)
-	case aspectRatio(width: Int, height: Int)
 
+struct CropEntity: AppEntity, Codable, Equatable, Hashable, Identifiable {
+	private static let errorId = "0"
 	var id: String {
-		do {
-			return try JSONEncoder().encode(self).base64EncodedString()
-		} catch {
-			return "0"
-		}
+		let encoder = JSONEncoder()
+		encoder.outputFormatting = .sortedKeys
+		return (try? encoder.encode(self).base64EncodedString()) ?? Self.errorId
+	}
+	init() {
+		self.mode = .aspectRatio
+		self.width = 1
+		self.height = 1
 	}
 	static var defaultQuery = CropEntityQuery()
-	static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Crop")
+	static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Crop")
+
 	var displayRepresentation: DisplayRepresentation {
-		DisplayRepresentation(title: .init(stringLiteral: description))
+		DisplayRepresentation(title: "\(description)")
 	}
 
+
+	var mode: CropIntentMode
+	var x: Int?
+	var bottomLeftY: Int?
+	var width: Int
+	var height: Int
+
 	var description: String {
-		switch self {
-		case .noCrop:
-			"No crop"
-		case let .aspectRatio(width: width, height: height):
+		switch mode {
+		case .exact:
+			"\(width)x\(height) at (\(x ?? 0),\(bottomLeftY ?? 0))"
+		case .aspectRatio:
 			"\(width):\(height)"
-		case let .exact(x: x, y: y, width: width, height: height):
-			"\(width)x\(height) at (\(x),\(y))"
 		}
 	}
 
+	func cropRect(forDimensions dimensions: (Int, Int)) throws -> CropRect? {
+		let (dimensionsWidth, dimensionsHeight) = dimensions
+		switch mode {
+		case .exact:
+			guard let bottomLeftY,
+				  let x
+			else {
+				return nil
+			}
+			let cropWidth = self.width > 1 ? self.width : 1
+			let cropHeight = self.height > 1 ? self.height : 1
+
+			let topLeftY = dimensionsHeight - bottomLeftY - cropHeight
+			let entityRect = CGRect(x: x, y: topLeftY, width: cropWidth, height: cropHeight)
+			let videoRect = CGRect(origin: .zero, size: .init(width: dimensionsWidth, height: dimensionsHeight))
+			let intersectionRect = videoRect.intersection(entityRect)
+
+			guard intersectionRect.width >= 1,
+				  intersectionRect.height >= 1 else {
+				throw CropOutOfBounds(enteredRect: CGRect(x: x, y: bottomLeftY, width: cropWidth, height: cropHeight), videoRect: videoRect)
+			}
+			return CropRect(
+				x: Double(intersectionRect.x) / Double(dimensionsWidth),
+				y: Double(intersectionRect.y) / Double(dimensionsHeight),
+				width: Double(intersectionRect.width) / Double(dimensionsWidth),
+				height: Double(intersectionRect.height) / Double(dimensionsHeight)
+			)
+		case .aspectRatio:
+			let aspectWidth = self.width > 1 ? self.width : 1
+			let aspectHeight = self.height > 1 ? self.height : 1
+			return CropRect.centeredFrom(aspectWidth: Double(aspectWidth), aspectHeight: Double(aspectHeight), forDimensions: .init(width: dimensionsWidth, height: dimensionsHeight))
+		}
+	}
 	static func from(id: String) throws -> Self {
+		guard id != Self.errorId else {
+			return Self()
+		}
 		guard let data = Data(base64Encoded: id) else {
 			throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: [], debugDescription: "Invalid ID format"))
 		}
 		return try JSONDecoder().decode(Self.self, from: data)
 	}
-	/**
-	 Convert from entity to CropRect which uses `UnitPoint` and `UnitSize` and a top-left origin (`.exact` uses a bottom-left origin)
-	 */
-	func cropRect(forDimensions dimensions: (Int, Int)) throws -> CropRect? {
-		let (width, height) = dimensions
-		switch self {
-		case .noCrop:
-			return nil
-		case let .exact(x: x, y: bottomLeftY, width: cropWidth, height: cropHeight):
-			let topLeftY = height - bottomLeftY - cropHeight
-			let entityRect = CGRect(x: x, y: topLeftY, width: cropWidth, height: cropHeight)
-			let videoRect = CGRect(origin: .zero, size: .init(width: width, height: height))
-			let intersectionRect = videoRect.intersection(entityRect)
-
-			guard intersectionRect.width >= 1,
-				  intersectionRect.height >= 1 else {
-				throw CropOutOfBounds.cropOutOfBounds(entityRect: entityRect, videoRect: videoRect)
-			}
-			return CropRect(
-				x: Double(intersectionRect.x) / Double(width),
-				y: Double(intersectionRect.y) / Double(height),
-				width: Double(intersectionRect.width) / Double(width),
-				height: Double(intersectionRect.height) / Double(height)
-			)
-		case let .aspectRatio(width: aspectWidth, height: aspectHeight):
-			return CropRect.from(aspectWidth: Double(aspectWidth), aspectHeight: Double(aspectHeight), forDimensions: .init(width: width, height: height))
-		}
-	}
 }
+
 
 struct CropEntityQuery: EntityQuery {
 	func entities(for identifiers: [CropEntity.ID]) async throws -> [CropEntity] {
@@ -77,56 +90,43 @@ struct CropEntityQuery: EntityQuery {
 	}
 	func suggestedEntities() async throws -> [CropEntity] {
 		PickerAspectRatio.presets.map {
-			.aspectRatio(width: $0.width, height: $0.height)
-		} + [.noCrop]
+			var crop  = CropEntity()
+			crop.mode = .aspectRatio
+			crop.width = $0.width
+			crop.height = $0.height
+			return crop
+		}
 	}
 }
 
-enum CropIntentMode: String, AppEnum, CaseIterable {
+enum CropIntentMode: String, AppEnum, CaseIterable, Codable, Hashable {
 	static var caseDisplayRepresentations: [Self: DisplayRepresentation] = [
-		.exact: DisplayRepresentation(stringLiteral: "Exact"),
-		.aspectRatio: DisplayRepresentation(stringLiteral: "Aspect Ratio")
+		.aspectRatio: DisplayRepresentation(title: "a fixed aspect ratio"),
+		.exact: DisplayRepresentation(title: "exact dimensions")
 	]
-
-	case exact
 	case aspectRatio
-
+	case exact
 	static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Crop Mode")
 }
-
-enum CropOutOfBounds: LocalizedError, CustomNSError {
-	case cropOutOfBounds(entityRect: CGRect, videoRect: CGRect)
-
+struct CropOutOfBounds: LocalizedError, CustomNSError {
+	let enteredRect: CGRect
+	let videoRect: CGRect
 	var errorDescription: String? {
-		switch self {
-		case let .cropOutOfBounds(entityRect: entityRect, videoRect: videoRect):
-			"Crop rectangle is out of bounds! It's \(entityRect.width)x\(entityRect.height) at \(entityRect.x),\(entityRect.maxY), but it needs to fit inside \(videoRect.width)x\(videoRect.height) for this video."
-		}
+		"Crop rectangle is out of bounds! It's \(enteredRect.width)x\(enteredRect.height) at (\(enteredRect.x),\(enteredRect.y)), but it needs to fit inside \(videoRect.width)x\(videoRect.height) for this video."
 	}
 	var failureReason: String? {
-		switch self {
-		case .cropOutOfBounds:
-			"The crop rectangle is too small."
-		}
+		"The crop rectangle is out of bounds."
 	}
 	var recoverySuggestion: String? {
-		switch self {
-		case .cropOutOfBounds:
-			"Make the crop rectangle larger."
-		}
+		"Move the crop rectangle into the video bounds."
 	}
 	/**
 	 Needed for the error description to show in shortcuts
 	 */
 	static var errorDomain: String { "CropOutOfBoundsError" }
-
-	var errorCode: Int {
-		switch self {
-		case .cropOutOfBounds:
-			return 1
-		}
-	}
-
+	/**
+	 Needed  for the error description to show in shortcuts
+	 */
 	var errorUserInfo: [String: Any] {
 		[
 			NSLocalizedDescriptionKey: errorDescription ?? "Crop rectangle is out of bounds."
@@ -155,20 +155,10 @@ struct CreateCropIntent: AppIntent {
 	static var parameterSummary: some ParameterSummary {
 		Switch(\.$mode) {
 			Case(.exact) {
-				Summary("Create a crop with exact dimensions") {
-					\.$mode
-					\.$x
-					\.$y
-					\.$width
-					\.$height
-				}
+				Summary("Create a crop with \(\.$mode):  \(\.$width)x\(\.$height) at (\(\.$x), \(\.$y))")
 			}
 			DefaultCase {
-				Summary("Create a crop with a fixed aspect ratio") {
-					\.$mode
-					\.$aspectWidth
-					\.$aspectHeight
-				}
+				Summary("Create a crop with \(\.$mode):  \(\.$aspectWidth):\(\.$aspectHeight)")
 			}
 		}
 	}
@@ -233,12 +223,20 @@ struct CreateCropIntent: AppIntent {
 	}
 
 	var entity: CropEntity {
+		var entity = CropEntity()
 		switch mode {
 		case .exact:
-			.exact(x: x, y: y, width: width, height: height)
+			entity.mode = .exact
+			entity.x = x
+			entity.bottomLeftY = y
+			entity.width = width
+			entity.height = height
 		case .aspectRatio:
-			.aspectRatio(width: aspectWidth, height: aspectHeight)
+			entity.mode = .aspectRatio
+			entity.width = aspectWidth
+			entity.height = aspectHeight
 		}
+		return entity
 	}
 }
 
@@ -329,10 +327,9 @@ struct ConvertIntent: AppIntent, ProgressReportingIntent {
 
 	@Parameter(
 		title: "Crop",
-		description: "Optionally crop the video",
-		default: .noCrop
+		description: "Optionally crop the video.",
 	)
-	var crop: CropEntity
+	var crop: CropEntity?
 
 	// TODO: Dimensions setting. Percentage or width/height.
 
@@ -413,7 +410,7 @@ struct ConvertIntent: AppIntent, ProgressReportingIntent {
 			frameRate: frameRate,
 			loop: loop ? .forever : .never,
 			bounce: bounce,
-			crop: try crop.cropRect(forDimensions: dimensions ?? metadata.dimensions.toInt)
+			crop: try crop?.cropRect(forDimensions: dimensions ?? metadata.dimensions.toInt)
 		)
 
 		// TODO: Progress does not seem to show in the Shortcuts app.
