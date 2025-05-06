@@ -39,7 +39,7 @@ struct EditScreen: View {
 				asset: modifiedAsset,
 				loopPlayback: loopGIF,
 				bouncePlayback: bounceGIF,
-				overlay: appState.isCropActive ? AnyView(CropOverlayView(cropRect: $outputCropRect, editable: true)) : nil,
+				overlay: appState.isCropActive ? AnyView(CropOverlayView(cropRect: $outputCropRect, dimensions: metadata.dimensions, editable: true)) : nil,
 				isTrimmerDraggable: appState.isCropActive
 			) { timeRange in
 				DispatchQueue.main.async {

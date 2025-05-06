@@ -108,29 +108,10 @@ enum CropIntentMode: String, AppEnum, CaseIterable, Codable, Hashable {
 	case exact
 	static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Crop Mode")
 }
-struct CropOutOfBounds: LocalizedError, CustomNSError {
-	let enteredRect: CGRect
-	let videoRect: CGRect
-	var errorDescription: String? {
-		"Crop rectangle is out of bounds! It's \(enteredRect.width)x\(enteredRect.height) at (\(enteredRect.x),\(enteredRect.y)), but it needs to fit inside \(videoRect.width)x\(videoRect.height) for this video."
-	}
-	var failureReason: String? {
-		"The crop rectangle is out of bounds."
-	}
-	var recoverySuggestion: String? {
-		"Move the crop rectangle into the video bounds."
-	}
-	/**
-	 Needed for the error description to show in shortcuts
-	 */
-	static var errorDomain: String { "CropOutOfBoundsError" }
-	/**
-	 Needed  for the error description to show in shortcuts
-	 */
-	var errorUserInfo: [String: Any] {
-		[
-			NSLocalizedDescriptionKey: errorDescription ?? "Crop rectangle is out of bounds."
-		]
+struct CropOutOfBounds: Error, CustomLocalizedStringResourceConvertible {
+	let localizedStringResource: LocalizedStringResource
+	init(enteredRect: CGRect, videoRect: CGRect) {
+		localizedStringResource = .init(stringLiteral: "Crop rectangle is out of bounds! It's \(Int(enteredRect.width.rounded()))x\(Int(enteredRect.height.rounded())) at (\(Int(enteredRect.x.rounded())),\(Int(enteredRect.y.rounded())), but it needs to fit inside \(Int(videoRect.width.rounded()))x\(Int(videoRect.height.rounded())) for this video.")
 	}
 }
 
@@ -240,6 +221,16 @@ struct CreateCropIntent: AppIntent {
 	}
 }
 
+enum ConvertOutputMode: String, AppEnum, CaseIterable, Codable, Hashable {
+	static var caseDisplayRepresentations: [Self: DisplayRepresentation] = [
+		.animatedGIF: DisplayRepresentation(title: "animated GIF"),
+		.preview: DisplayRepresentation(title: "a single frame GIF preview")
+	]
+	case animatedGIF
+	case preview
+	static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Output Mode")
+}
+
 struct ConvertIntent: AppIntent, ProgressReportingIntent {
 	static let title: LocalizedStringResource = "Convert Video to Animated GIF"
 
@@ -331,12 +322,19 @@ struct ConvertIntent: AppIntent, ProgressReportingIntent {
 	)
 	var crop: CropEntity?
 
+	@Parameter(
+		title: "Output Mode",
+		description: "Output an animated GIF or a single frame preview of the GIF.",
+		default: .animatedGIF
+	)
+	var outputMode: ConvertOutputMode
+
 	// TODO: Dimensions setting. Percentage or width/height.
 
 	static var parameterSummary: some ParameterSummary {
 		Switch(\.$dimensionsType) {
 			Case(.pixels) {
-				Summary("Convert \(\.$video) to animated GIF") {
+				Summary("Convert \(\.$video) to \(\.$outputMode)") {
 					\.$quality
 					\.$frameRate
 					\.$loop
@@ -348,7 +346,7 @@ struct ConvertIntent: AppIntent, ProgressReportingIntent {
 				}
 			}
 			DefaultCase {
-				Summary("Convert \(\.$video) to animated GIF") {
+				Summary("Convert \(\.$video) to \(\.$outputMode)") {
 					\.$quality
 					\.$frameRate
 					\.$loop
@@ -368,40 +366,40 @@ struct ConvertIntent: AppIntent, ProgressReportingIntent {
 		defer {
 			try? FileManager.default.removeItem(at: videoURL)
 		}
+		let data = try await generateGIF(videoURL: videoURL)
+		let file = data.toIntentFile(contentType: .gif, filename: videoURL.filenameWithoutExtension)
+		return .result(value: file)
+	}
 
+	func generateGIF(videoURL: URL) async throws -> Data {
 		let (videoAsset, metadata) = try await VideoValidator.validate(videoURL)
 
-		let dimensions: (Int, Int)? = {
-			switch dimensionsType {
-			case .pixels:
-				guard dimensionsWidth != nil || dimensionsHeight != nil else {
-					return nil
-				}
-
-				let size = metadata.dimensions.aspectFittedSize(
-					targetWidth: dimensionsWidth,
-					targetHeight: dimensionsHeight
-				)
-
-				return (
-					Int(size.width.rounded()),
-					Int(size.height.rounded())
-				)
-			case .percent:
-				guard let dimensionsPercent else {
-					return nil
-				}
-
-				let factor = dimensionsPercent / 100
-
-				return (
-					Int((metadata.dimensions.width * factor).rounded()),
-					Int((metadata.dimensions.height * factor).rounded())
-				)
+		switch outputMode {
+		case .preview:
+			guard let frame = try await videoAsset.image(at: .init(seconds: metadata.duration.toTimeInterval / 3.0, preferredTimescale: .video)) else {
+				throw CouldNotGeneratePreview()
 			}
-		}()
+			return try await GIFGenerator.convertOneFrame(
+				frame: frame,
+				dimensions: dimensions(metadataDimensions: metadata.dimensions),
+				quality: quality
+			)
+		case .animatedGIF:
+			// TODO: Progress does not seem to show in the Shortcuts app.
+			progress.totalUnitCount = 100
+			return try await GIFGenerator.run(try conversionSettings(
+				videoAsset: videoAsset,
+				videoURL: videoURL,
+				metaDatDimensions: metadata.dimensions
+			)) { fractionCompleted in
+				progress.completedUnitCount = .init(fractionCompleted * 100)
+			}
+		}
+	}
 
-		let conversion = GIFGenerator.Conversion(
+	func conversionSettings(videoAsset: AVAsset, videoURL: URL, metaDatDimensions: CGSize) throws -> GIFGenerator.Conversion {
+		let dimensions = self.dimensions(metadataDimensions: metaDatDimensions)
+		return GIFGenerator.Conversion(
 			asset: videoAsset,
 			sourceURL: videoURL,
 			timeRange: nil,
@@ -410,21 +408,41 @@ struct ConvertIntent: AppIntent, ProgressReportingIntent {
 			frameRate: frameRate,
 			loop: loop ? .forever : .never,
 			bounce: bounce,
-			crop: try crop?.cropRect(forDimensions: dimensions ?? metadata.dimensions.toInt)
+			crop: try crop?.cropRect(forDimensions: dimensions ?? metaDatDimensions.toInt)
 		)
-
-		// TODO: Progress does not seem to show in the Shortcuts app.
-
-		let generator = GIFGenerator()
-
-		progress.totalUnitCount = 100
-
-		let data = try await generator.run(conversion) { fractionCompleted in
-			progress.completedUnitCount = .init(fractionCompleted * 100)
-		}
-
-		let file = data.toIntentFile(contentType: .gif, filename: videoURL.filenameWithoutExtension)
-
-		return .result(value: file)
 	}
+
+	func dimensions(metadataDimensions dimensions: CGSize) -> (Int, Int)? {
+		switch dimensionsType {
+		case .pixels:
+			guard dimensionsWidth != nil || dimensionsHeight != nil else {
+				return nil
+			}
+
+			let size = dimensions.aspectFittedSize(
+				targetWidth: dimensionsWidth,
+				targetHeight: dimensionsHeight
+			)
+
+			return (
+				Int(size.width.rounded()),
+				Int(size.height.rounded())
+			)
+		case .percent:
+			guard let dimensionsPercent else {
+				return nil
+			}
+
+			let factor = dimensionsPercent / 100
+
+			return (
+				Int((dimensions.width * factor).rounded()),
+				Int((dimensions.height * factor).rounded())
+			)
+		}
+	}
+}
+
+struct CouldNotGeneratePreview: Error, CustomLocalizedStringResourceConvertible {
+	let localizedStringResource = LocalizedStringResource(stringLiteral: "Could not generate a preview image from the source video.")
 }

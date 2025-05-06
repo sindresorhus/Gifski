@@ -88,33 +88,59 @@ struct CropRect: Equatable {
 		let cropRectInPixels = unnormalize(forDimensions: dimensions)
 		let aspectSize = CGSize(width: aspectWidth, height: aspectHeight)
 		let normalizedAspect = aspectSize.aspectRatio.normalizedAspectRatioSides
-		let maxScale = min(
-			maxScaleForSide(in: 0...dimensions.width, center: cropRectInPixels.midX, normalizedAspectOfSide: normalizedAspect.width),
-			maxScaleForSide(in: 0...dimensions.height, center: cropRectInPixels.midY, normalizedAspectOfSide: normalizedAspect.height)
-		)
-		let desiredScale = aspectSize
-			.aspectFittedSize(targetWidthHeight: cropRectInPixels.size.longestSide)[keyPath: desiredSide(aspectRatio: normalizedAspect.aspectRatio)]
 
+		let scaleBounds = Self.scaleBounds(videoDimensions: dimensions, center: cropRectInPixels.center, normalizedAspect: normalizedAspect)
+
+		let desiredScale = aspectSize
+			.aspectFittedSize(targetWidthHeight: cropRectInPixels.size.longestSide)[keyPath: Self.desiredSide(aspectRatio: normalizedAspect.aspectRatio)].toDouble
+
+		let newLongestSide = desiredScale.clamped(to: scaleBounds)
+
+		let newAspect = Self.clampAspect(aspectRatio: normalizedAspect.aspectRatio, newLongestSide: newLongestSide)
 
 		return cropRectInPixels
-			.centeredRectWith(size: normalizedAspect * min(maxScale, desiredScale))
+			.centeredRectWith(size: newAspect * newLongestSide)
 			.toCropRect(forVideoDimensions: dimensions)
+	}
+	/**
+	 Adjust the aspectRatio such that is achievable (not too small)
+	 */
+	private static func clampAspect(aspectRatio: Double, newLongestSide: Double) -> CGSize {
+		if aspectRatio >= 1.0 {
+			return min(aspectRatio, newLongestSide / minRectWidthHeight).normalizedAspectRatioSides
+		}
+		return max(aspectRatio, minRectWidthHeight / newLongestSide).normalizedAspectRatioSides
 	}
 
 	//swiftlint:disable:next no_cgfloat
-	private func desiredSide(aspectRatio: Double) -> KeyPath<CGSize, CGFloat> {
+	private static func desiredSide(aspectRatio: Double) -> KeyPath<CGSize, CGFloat> {
 		aspectRatio >= 1.0 ? \.width : \.height
 	}
 
-	private func maxScaleForSide(in range: ClosedRange<Double>, center: Double, normalizedAspectOfSide: Double ) -> Double {
+	private static func scaleBounds(videoDimensions dimensions: CGSize, center: CGPoint, normalizedAspect: CGSize) -> ClosedRange<Double> {
+		let maxScale = min(
+			maxScaleForSide(in: 0...dimensions.width, center: center.x, normalizedAspectOfSide: normalizedAspect.width),
+			maxScaleForSide(in: 0...dimensions.height, center: center.y, normalizedAspectOfSide: normalizedAspect.height)
+		)
+		return 0...maxScale
+	}
+
+	private static func maxScaleForSide(in range: ClosedRange<Double>, center: Double, normalizedAspectOfSide: Double = 1.0) -> Double {
 		min(center - range.lowerBound, range.upperBound - center ) * 2.0 / normalizedAspectOfSide
 	}
 
+	private static func minScaleForSide(minSize: Double, normalizedAspectOfSide: Double = 1.0) -> Double {
+		minSize / normalizedAspectOfSide
+	}
+
 	/**
-	 Returns a CGRect with the same center position, but a new size
+	 Returns a CGRect with the same center position, but a new size fit within the bounds of the video
 	 */
-	func centeredRectWith(size: UnitSize) -> Self {
-		Self(x: midX - size.width / 2.0, y: midY - size.height / 2.0, width: size.width, height: size.height)
+	func centeredRectWith(size: UnitSize, minSize: UnitSize) -> Self {
+		let newWidth = size.width.clamped(from: minSize.width, to: Self.maxScaleForSide(in: 0...1, center: midX))
+		let newHeight = size.height.clamped(from: minSize.height, to: Self.maxScaleForSide(in: 0...1, center: midY))
+
+		return Self(x: midX - newWidth / 2.0, y: midY - newHeight / 2.0, width: newWidth, height: newHeight)
 	}
 }
 
@@ -129,21 +155,24 @@ extension CropRect {
 	/**
 	 The minimum cropRect width/height in pixels. As crop rectangles use unitPoints for size, you need frame to convert a crop rect to pixels and use [CropRect.minSize](CropRect.minSize)
 	 */
-	static let minRectWidthHeight = 40.0
+	static let minRectWidthHeight = 100.0
 
-	static func minSize(frame: CGRect) -> UnitSize {
-		.init(width: minRectWidthHeight / frame.width, height: minRectWidthHeight / frame.height)
+	static func minSize(videoSize: CGSize) -> UnitSize {
+		.init(width: minRectWidthHeight / videoSize.width, height: minRectWidthHeight / videoSize.height)
 	}
 
 	/**
 	 Returns a crop rect centered in a video from an aspect and dimensions
 	 */
 	static func centeredFrom(aspectWidth: Double, aspectHeight: Double, forDimensions dimensions: CGSize) -> CropRect {
-		let newAspect = CGSize(width: aspectWidth, height: aspectHeight)
-		let newSize = newAspect.aspectFittedSize(targetWidth: dimensions.width, targetHeight: dimensions.height)
+		let aspectSize = CGSize(width: aspectWidth, height: aspectHeight)
+		let fittedSize = aspectSize.aspectFittedSize(targetWidth: dimensions.width, targetHeight: dimensions.height)
 
+		let newAspect = clampAspect(aspectRatio: aspectSize.aspectRatio, newLongestSide: fittedSize.longestSide)
+		let newSize = newAspect * fittedSize.longestSide
 		let cropWidth = newSize.width / dimensions.width
 		let cropHeight = newSize.height / dimensions.height
+
 		return .init(
 			origin: .init(x: 0.5 - cropWidth / 2.0, y: 0.5 - cropHeight / 2.0),
 			size: .init(
@@ -157,6 +186,7 @@ extension CropRect {
 	func applyDragToCropRect(
 		drag: DragGesture.Value,
 		frame: CGRect,
+		dimensions: CGSize,
 		position: CropHandlePosition,
 		dragMode: DragMode
 	) -> CropRect {
@@ -165,7 +195,7 @@ extension CropRect {
 		if position == .center {
 			return applyCenterDrag(delta: delta)
 		}
-		let minSize = CropRect.minSize(frame: frame)
+		let minSize = CropRect.minSize(videoSize: dimensions)
 		switch dragMode {
 		case .normal:
 			return applyNormal(

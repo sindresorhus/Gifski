@@ -12,6 +12,7 @@ private struct CropDragGestureModifier: ViewModifier {
 	@Binding var isDragging: Bool
 	@Binding var cropRect: CropRect
 	let frame: CGRect
+	let dimensions: CGSize
 	let position: CropHandlePosition
 	let dragMode: CropRect.DragMode
 
@@ -31,6 +32,7 @@ private struct CropDragGestureModifier: ViewModifier {
 				cropRect = initial.applyDragToCropRect(
 					drag: drag,
 					frame: frame,
+					dimensions: dimensions,
 					position: position,
 					dragMode: dragMode
 				)
@@ -48,6 +50,7 @@ extension View {
 		isDragging: Binding<Bool>,
 		cropRect: Binding<CropRect>,
 		frame: CGRect,
+		dimensions: CGSize,
 		position: CropHandlePosition,
 		dragMode: CropRect.DragMode
 	) -> some View {
@@ -55,6 +58,7 @@ extension View {
 			isDragging: isDragging,
 			cropRect: cropRect,
 			frame: frame,
+			dimensions: dimensions,
 			position: position,
 			dragMode: dragMode
 		))

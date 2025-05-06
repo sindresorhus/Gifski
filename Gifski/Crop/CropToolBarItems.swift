@@ -49,12 +49,20 @@ struct CropToolbarItems: View {
 The range of valid numbers for the aspect ratio.
 */
 fileprivate let aspectRatioNumberRange = 1...99
+
+fileprivate enum CustomFieldType {
+	case pixel
+	case aspect
+}
+
 fileprivate struct AspectRatioPicker: View {
 	var metadata: AVAsset.VideoMetadata
 	@Binding var outputCropRect: CropRect
 
-	@State private var customAspectRatio: PickerAspectRatio?
 	@State private var showEnterCustomAspectRatio = false
+	@State private var customAspectRatio: PickerAspectRatio?
+	@State private var customPixelSize: CGSize = .zero
+	@State private var modifiedCustomField: CustomFieldType?
 
 	var body: some View {
 		Menu(selectionText) {
@@ -68,8 +76,14 @@ fileprivate struct AspectRatioPicker: View {
 			}
 			outputCropRect = outputCropRect.withAspectRatio(for: newRatio, forDimensions: metadata.dimensions)
 		}
-		.popover(isPresented: $showEnterCustomAspectRatio) {
-			CustomAspectRatioView(cropRect: $outputCropRect, customAspectRatio: $customAspectRatio, dimensions: metadata.dimensions)
+		.staticPopover(isPresented: $showEnterCustomAspectRatio) {
+			CustomAspectRatioView(
+				cropRect: $outputCropRect,
+				customAspectRatio: $customAspectRatio,
+				customPixelSize: $customPixelSize,
+				modifiedCustomField: $modifiedCustomField,
+				dimensions: metadata.dimensions
+			)
 		}
 	}
 
@@ -122,10 +136,13 @@ fileprivate struct AspectRatioPicker: View {
 	}
 
 	private func handleCustomAspectButton() {
+		let cropSizeRightNow = outputCropRect.unnormalize(forDimensions: metadata.dimensions).size
 		customAspectRatio = PickerAspectRatio.closestAspectRatio(
-			for: outputCropRect.unnormalize(forDimensions: metadata.dimensions).size,
+			for: cropSizeRightNow,
 			within: aspectRatioNumberRange
 		)
+		customPixelSize = cropSizeRightNow
+		modifiedCustomField = nil
 		showEnterCustomAspectRatio = true
 	}
 
@@ -149,7 +166,7 @@ private struct AspectToggle: View {
 				outputCropRect = outputCropRect.withAspectRatio(for: aspectRatio, forDimensions: dimensions)
 			}
 		)) {
-			Text(aspectRatio.description(forVideoDimensions: dimensions, cropRect: outputCropRect))
+			Text(aspectRatio.description)
 		}
 	}
 }
@@ -157,53 +174,75 @@ private struct AspectToggle: View {
 private struct CustomAspectRatioView: View  {
 	@Binding var cropRect: CropRect
 	@Binding var customAspectRatio: PickerAspectRatio?
+	@Binding var customPixelSize: CGSize
+	@Binding var modifiedCustomField: CustomFieldType?
 	var dimensions: CGSize
 
 	var body: some View {
 		VStack(spacing: 10) {
 			HStack {
-				CustomAspectField(customAspectRatio: $customAspectRatio, side: \.width)
+				CustomAspectField(customAspectRatio: $customAspectRatio, modifiedCustomField: $modifiedCustomField, side: \.width)
 				Text(":")
-				CustomAspectField(customAspectRatio: $customAspectRatio, side: \.height)
-			}.frame(width: 90)
+				CustomAspectField(customAspectRatio: $customAspectRatio, modifiedCustomField: $modifiedCustomField, side: \.height)
+			}.frame(width: 90).opacity(modifiedCustomField == .pixel ? 0.5 : 1.0)
 			HStack {
-				CustomPixelField(cropRect: $cropRect, dimensions: dimensions, side: \.width)
+				CustomPixelField(customPixelSize: $customPixelSize, cropRect: $cropRect, modifiedCustomField: $modifiedCustomField, dimensions: dimensions, side: \.width)
 				Text("x")
-				CustomPixelField(cropRect: $cropRect, dimensions: dimensions, side: \.height)
-			}.frame(width: 135)
+				CustomPixelField(customPixelSize: $customPixelSize, cropRect: $cropRect, modifiedCustomField: $modifiedCustomField, dimensions: dimensions, side: \.height)
+			}.frame(width: 135).opacity(modifiedCustomField == .aspect ? 0.5 : 1.0)
 		}
 		.padding()
 		.frame(width: 135)
 	}
 }
 
+private let fieldFont: NSFont = .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
 
 private struct CustomPixelField: View {
+	@Binding var customPixelSize: CGSize
 	@Binding var cropRect: CropRect
+	@Binding var modifiedCustomField: CustomFieldType?
+
 	var dimensions: CGSize
 	// swiftlint:disable:next no_cgfloat
 	let side: WritableKeyPath<CGSize, CGFloat>
+	@State private var showWarning = false
+
+	static let minValue = 100
 	var body: some View {
 		IntTextField(
 			value: .init(get: {
-				Int(cropRect.unnormalize(forDimensions: dimensions).size[keyPath: side])
+				value
 			}, set: {
-				guard minMax.contains($0)  else {
-					return
-				}
+				let newValue = $0.clamped(to: Self.minValue...Int(dimensions[keyPath: side]))
 				var newSize = cropRect.size
-				newSize[keyPath: unitSizeSide] = Double($0) / dimensions[keyPath: side]
-				cropRect = cropRect.centeredRectWith(size: newSize)
+				newSize[keyPath: unitSizeSide] = Double(newValue) / dimensions[keyPath: side]
+				cropRect = cropRect.centeredRectWith(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
+
+				if value != $0 {
+					modifiedCustomField = .pixel
+				}
+				customPixelSize[keyPath: side] = Double($0)
+				showWarning = $0 < Self.minValue
 			}),
-			minMax: minMax,
+			minMax: Self.minValue...Int(dimensions[keyPath: side]),
 			alignment: isWidth ? .right : .left,
-			font: .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+			font: fieldFont
 		)
 		.frame(width: 42.0)
+		.popover2(isPresented: $showWarning) {
+			VStack {
+				Text("Value is too small!")
+				Text("\(value) < \(Self.minValue)")
+			}
+			.padding()
+		}
 	}
-	var minMax: ClosedRange<Int> {
-		101...Int(dimensions[keyPath: side])
+
+	var value: Int {
+		Int(customPixelSize[keyPath: side].rounded())
 	}
+
 	var isWidth: Bool {
 		side == \.width
 	}
@@ -214,6 +253,7 @@ private struct CustomPixelField: View {
 
 private struct CustomAspectField: View {
 	@Binding var customAspectRatio: PickerAspectRatio?
+	@Binding var modifiedCustomField: CustomFieldType?
 	let side: WritableKeyPath<PickerAspectRatio, Int>
 
 	var body: some View {
@@ -225,12 +265,15 @@ private struct CustomAspectField: View {
 					  $0 > 0 else {
 					return
 				}
+				if customAspectRatioCopy[keyPath: side] != $0 {
+					modifiedCustomField = .aspect
+				}
 				customAspectRatioCopy[keyPath: side] = $0
 				self.customAspectRatio = customAspectRatioCopy
 			}),
 			minMax: aspectRatioNumberRange,
 			alignment: side == \.width ? .right : .left,
-			font: .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+			font: fieldFont
 		)
 		.frame(width: 26.0)
 	}

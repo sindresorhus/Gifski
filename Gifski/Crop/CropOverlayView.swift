@@ -11,6 +11,7 @@ import AVKit
 
 struct CropOverlayView: View {
 	@Binding var cropRect: CropRect
+	let dimensions: CGSize
 	var editable: Bool
 	@State private var dragMode = CropRect.DragMode.normal
 	@State private var isDragging = false
@@ -48,6 +49,7 @@ struct CropOverlayView: View {
 					isDragging: $isDragging,
 					cropRect: $cropRect,
 					frame: frame,
+					dimensions: dimensions,
 					position: .center,
 					dragMode: dragMode
 				)
@@ -64,6 +66,7 @@ struct CropOverlayView: View {
 								position: position,
 								cropRect: $cropRect,
 								frame: frame,
+								dimensions: dimensions,
 								cropFrame: cropFrame,
 								dragMode: dragMode,
 								isDragging: $isDragging
@@ -165,6 +168,7 @@ struct CropOverlayView: View {
 		let position: CropHandlePosition
 		@Binding var cropRect: CropRect
 		let frame: CGRect
+		let dimensions: CGSize
 		var cropFrame: CGRect
 		var dragMode: CropRect.DragMode
 		@Binding  var isDragging: Bool
@@ -189,6 +193,7 @@ struct CropOverlayView: View {
 				isDragging: $isDragging,
 				cropRect: $cropRect,
 				frame: frame,
+				dimensions: dimensions,
 				position: position,
 				dragMode: dragMode
 			)

@@ -5628,3 +5628,53 @@ struct TipsView: View {
 		.frame(width: 250)
 	}
 }
+
+
+/**
+ Use the size of the select box when it is opened, so the popover doesn't move as the select box changes shape
+ */
+struct StaticPopover<PopoverContent: View>: ViewModifier {
+	@Binding var isPresented: Bool
+	let popoverContent: () -> PopoverContent
+
+	@State private var size: CGSize?
+	@State private var visibleSize: CGSize?
+
+	func body(content: Content, ) -> some View {
+		ZStack(alignment: .trailing) {
+			content
+				.readSize(into: $size)
+				.onChange(of: isPresented) {
+					visibleSize = size
+				}
+			if isPresented {
+				Color.clear
+					.fillFrame()
+					.frame(width: visibleSize?.width, height: visibleSize?.height)
+					.popover2(isPresented: $isPresented, arrowEdge: .bottom) {
+						popoverContent()
+					}
+			}
+		}
+	}
+}
+
+extension View {
+	func readSize(_ onChange: @escaping (CGSize) -> Void) -> some View {
+		onGeometryChange(for: CGSize.self) { proxy in
+			proxy.size
+		} action: {
+			onChange($0)
+		}
+	}
+
+	func readSize(into binding: Binding<CGSize?>) -> some View {
+		readSize {
+			binding.wrappedValue = $0
+		}
+	}
+
+	func staticPopover<PopoverContent: View>(isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> PopoverContent) -> some View {
+		modifier(StaticPopover(isPresented: isPresented, popoverContent: content))
+	}
+}
