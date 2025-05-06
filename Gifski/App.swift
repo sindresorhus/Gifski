@@ -29,6 +29,7 @@ struct AppMain: App {
 				.disabled(appState.isConverting)
 			}
 			CommandGroup(replacing: .textEditing) {
+				@Bindable var appState = appState
 				Toggle("Crop", isOn: $appState.isCropActive)
 					.keyboardShortcut("c", modifiers: [.command, .shift])
 					.disabled(!appState.isOnEditScreen)

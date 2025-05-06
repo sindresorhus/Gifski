@@ -4,7 +4,7 @@ import DockProgress
 
 @MainActor
 @Observable
-final class AppState: ObservableBinding {
+final class AppState {
 	static let shared = AppState()
 
 	var navigationPath = [Route]()

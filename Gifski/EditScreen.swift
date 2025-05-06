@@ -54,8 +54,9 @@ struct EditScreen: View {
 		.navigationDocument(url)
 		.toolbar {
 			ToolbarItemGroup {
+				@Bindable var appState = appState
 				CropToolbarItems(
-					isCropActive: appState.binding(for: \.isCropActive),
+					isCropActive: $appState.isCropActive,
 					metadata: metadata,
 					outputCropRect: $outputCropRect
 				)
