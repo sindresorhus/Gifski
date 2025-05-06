@@ -29,9 +29,10 @@ struct AppMain: App {
 				.disabled(appState.isConverting)
 			}
 			CommandGroup(replacing: .textEditing) {
-				Toggle("Crop", isOn: appState.binding(for: \.isCropActive))
-				.keyboardShortcut("c", modifiers: [.command, .shift])
-				.disabled(!appState.isOnEditScreen)
+				@Bindable var appState = appState
+				Toggle("Crop", isOn: $appState.isCropActive)
+					.keyboardShortcut("c", modifiers: [.command, .shift])
+					.disabled(!appState.isOnEditScreen)
 			}
 			CommandGroup(replacing: .help) {
 				Link("Website", destination: "https://sindresorhus.com/Gifski")
