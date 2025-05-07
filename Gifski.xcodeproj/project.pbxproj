@@ -9,11 +9,11 @@
 /* Begin PBXBuildFile section */
 		0E7925202329BDBE00058B94 /* ShareController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareController.swift */; };
 		0E7925282329BDBE00058B94 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		5FF0DFFB278BA5DB00A80F09 /* libgifski_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F6ABD84278BA5A20040DDF0 /* libgifski_static.a */; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
 		85A5C44822CA41B500CAA94D /* VideoValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A5C44722CA41B500CAA94D /* VideoValidator.swift */; };
 		C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2040B8820435871004EE259 /* GifskiWrapper.swift */; };
 		E30C8EEF29387E7A002E053F /* Gifski.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30C8EEE29387E7A002E053F /* Gifski.swift */; };
+		E31054142DCBEBA1008B7E7F /* libgifski_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E310540F2DCBEB4A008B7E7F /* libgifski_static.a */; };
 		E31A4F3124AD36870097B1A5 /* InternetAccessPolicy.json in Resources */ = {isa = PBXBuildFile; fileRef = E31A4F2C24AD36870097B1A5 /* InternetAccessPolicy.json */; };
 		E3339E932395766800303839 /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E922395766800303839 /* Defaults */; };
 		E3339E9D2395789500303839 /* DockProgress in Frameworks */ = {isa = PBXBuildFile; productRef = E3339E9C2395789500303839 /* DockProgress */; };
@@ -46,19 +46,19 @@
 			remoteGlobalIDString = 0E79251A2329BDBE00058B94;
 			remoteInfo = ShareExtension;
 		};
-		5F6ABD83278BA5A20040DDF0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5F6ABD7D278BA5A20040DDF0 /* gifski.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = CA603FE154B925B01F7BB01B;
-			remoteInfo = "gifski-staticlib";
-		};
 		5FF0DFFC278BA5E200A80F09 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5F6ABD7D278BA5A20040DDF0 /* gifski.xcodeproj */;
 			proxyType = 1;
 			remoteGlobalIDString = CA007E48158959EA34BF617B;
 			remoteInfo = "gifski-staticlib";
+		};
+		E310540E2DCBEB4A008B7E7F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5F6ABD7D278BA5A20040DDF0 /* gifski.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = CA007E4815895A689885C260;
+			remoteInfo = "gifski.a (static library)";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -136,9 +136,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E31054142DCBEBA1008B7E7F /* libgifski_static.a in Frameworks */,
 				E3998CF22ACD7148009F8117 /* Sentry in Frameworks */,
 				E36BD7A52B9E2C2400B8D86C /* ExtendedAttributes in Frameworks */,
-				5FF0DFFB278BA5DB00A80F09 /* libgifski_static.a in Frameworks */,
 				E3339E932395766800303839 /* Defaults in Frameworks */,
 				E3339E9D2395789500303839 /* DockProgress in Frameworks */,
 			);
@@ -161,7 +161,7 @@
 		5F6ABD7E278BA5A20040DDF0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5F6ABD84278BA5A20040DDF0 /* libgifski_static.a */,
+				E310540F2DCBEB4A008B7E7F /* libgifski_static.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -348,11 +348,11 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		5F6ABD84278BA5A20040DDF0 /* libgifski_static.a */ = {
+		E310540F2DCBEB4A008B7E7F /* libgifski_static.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
 			path = libgifski_static.a;
-			remoteRef = 5F6ABD83278BA5A20040DDF0 /* PBXContainerItemProxy */;
+			remoteRef = E310540E2DCBEB4A008B7E7F /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -570,7 +570,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MACOSX_DEPLOYMENT_TARGET = 15.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -630,7 +630,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MACOSX_DEPLOYMENT_TARGET = 15.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;

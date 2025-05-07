@@ -1,10 +1,10 @@
 //! This is for reading GIFs as an input for re-encoding as another GIF
 
-use std::io::Read;
 use crate::source::{Fps, Source};
 use crate::{BinResult, SrcPath};
 use gif::Decoder;
 use gifski::Collector;
+use std::io::Read;
 
 pub struct GifDecoder {
     speed: f32,

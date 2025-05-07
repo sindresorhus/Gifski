@@ -10,14 +10,12 @@ pub use rgb::RGBA8;
 const LOOKAHEAD: usize = 5;
 
 #[derive(Debug, Default, Copy, Clone)]
-struct Acc {
-    r: [u8; LOOKAHEAD],
-    g: [u8; LOOKAHEAD],
-    b: [u8; LOOKAHEAD],
-    blur: [RGB8; LOOKAHEAD],
+pub struct Acc {
+    px_blur: [(RGB8, RGB8); LOOKAHEAD],
     alpha_bits: u8,
     can_stay_for: u8,
     stayed_for: u8,
+    /// The last pixel used (currently on screen)
     bg_set: RGBA8,
 }
 
@@ -30,10 +28,7 @@ impl Acc {
             return None;
         }
         if self.alpha_bits & (1 << idx) == 0 {
-            Some((
-                RGB8::new(self.r[idx], self.g[idx], self.b[idx]),
-                self.blur[idx],
-            ))
+            Some(self.px_blur[idx])
         } else {
             None
         }
@@ -42,20 +37,14 @@ impl Acc {
     #[inline(always)]
     pub fn append(&mut self, val: RGBA8, val_blur: RGB8) {
         for n in 1..LOOKAHEAD {
-            self.r[n - 1] = self.r[n];
-            self.g[n - 1] = self.g[n];
-            self.b[n - 1] = self.b[n];
-            self.blur[n - 1] = self.blur[n];
+            self.px_blur[n - 1] = self.px_blur[n];
         }
         self.alpha_bits >>= 1;
 
         if val.a < 128 {
             self.alpha_bits |= 1 << (LOOKAHEAD - 1);
         } else {
-            self.r[LOOKAHEAD - 1] = val.r;
-            self.g[LOOKAHEAD - 1] = val.g;
-            self.b[LOOKAHEAD - 1] = val.b;
-            self.blur[LOOKAHEAD - 1] = val_blur;
+            self.px_blur[LOOKAHEAD - 1] = (val.rgb(), val_blur);
         }
     }
 }
@@ -89,10 +78,7 @@ impl<T> Denoiser<T> {
     pub fn new(width: usize, height: usize, quality: u8) -> Result<Self, WrongSizeError> {
         let area = width.checked_mul(height).ok_or(WrongSizeError)?;
         let clear = Acc {
-            r: Default::default(),
-            g: Default::default(),
-            b: Default::default(),
-            blur: Default::default(),
+            px_blur: [(RGB8::new(0, 0, 0), RGB8::new(0, 0, 0)); LOOKAHEAD],
             alpha_bits: (1 << LOOKAHEAD) - 1,
             bg_set: RGBA8::default(),
             stayed_for: 0,
@@ -120,9 +106,10 @@ impl<T> Denoiser<T> {
             let mut median1 = Vec::with_capacity(self.splat.width() * self.splat.height());
             let mut imp_map1 = Vec::with_capacity(self.splat.width() * self.splat.height());
 
+            let odd_frame = self.frames & 1 != 0;
             for acc in self.splat.pixels_mut() {
                 acc.append(RGBA8::new(0, 0, 0, 0), RGB8::new(0, 0, 0));
-                let (m, i) = acc.next_pixel(self.threshold, self.frames & 1 != 0);
+                let (m, i) = acc.next_pixel(self.threshold, odd_frame);
                 median1.push_in_cap(m);
                 imp_map1.push_in_cap(i);
             }
@@ -160,10 +147,11 @@ impl<T> Denoiser<T> {
 
         let mut median = Vec::with_capacity(frame.width() * frame.height());
         let mut imp_map = Vec::with_capacity(frame.width() * frame.height());
+        let odd_frame = self.frames & 1 != 0;
         for ((acc, src), src_blur) in self.splat.pixels_mut().zip(frame.pixels()).zip(frame_blurred.pixels()) {
             acc.append(src, src_blur);
 
-            let (m, i) = acc.next_pixel(self.threshold, self.frames & 1 != 0);
+            let (m, i) = acc.next_pixel(self.threshold, odd_frame);
             median.push_in_cap(m);
             imp_map.push_in_cap(i);
         }
@@ -200,21 +188,20 @@ impl Acc {
             } else { 1<<20 };
 
             if self.stayed_for < self.can_stay_for {
-                self.stayed_for += 1;
                 // If this is the second, corrective frame, then
                 // give it weight proportional to its staying duration
-                let max = if self.stayed_for > 1 { 0 } else {
+                let max = if self.stayed_for > 0 { 0 } else {
                     [0, 40, 80, 100, 110][self.can_stay_for.min(4) as usize]
                 };
                 // min == 0 may wipe pixels totally clear, so give them at least a second chance,
                 // if quality setting allows
-                #[allow(overlapping_range_endpoints)]
                 let min = match threshold {
-                    0..=300 if self.stayed_for <= 3 => 1, // q >= 75
-                    300..=500 if self.stayed_for <= 2 => 1,
-                    400..=900 if self.stayed_for <= 1 => 1, // q >= 50
+                    0..300 if self.stayed_for < 3 => 1, // q >= 75
+                    300..500 if self.stayed_for < 2 => 1,
+                    400..900 if self.stayed_for < 1 => 1, // q >= 50
                     _ => 0,
                 };
+                self.stayed_for += 1;
                 return (self.bg_set, pixel_importance(diff_with_bg, threshold, min, max));
             }
 
@@ -226,7 +213,7 @@ impl Acc {
             // See how long this bg can stay
             let mut stays_frames = 0;
             for i in 1..LOOKAHEAD {
-                if self.get(i).map_or(false, |(c, blurred)| color_diff(c, curr) < threshold || color_diff(blurred, curr_blur) < threshold) {
+                if self.get(i).is_some_and(|(c, blurred)| color_diff(c, curr) < threshold || color_diff(blurred, curr_blur) < threshold) {
                     stays_frames = i;
                 } else {
                     break;
@@ -238,12 +225,6 @@ impl Acc {
                 self.bg_set = curr.with_alpha(255);
                 return (self.bg_set, pixel_importance(diff_with_bg, threshold, 10, 110));
             }
-            let smoothed_curr = RGB8::new(
-                get_median(&self.r, stays_frames + 1),
-                get_median(&self.g, stays_frames + 1),
-                get_median(&self.b, stays_frames + 1),
-            );
-
             let imp = if stays_frames <= 1 {
                 pixel_importance(diff_with_bg, threshold, 5, 80)
             } else if stays_frames == 2 {
@@ -252,7 +233,8 @@ impl Acc {
                 pixel_importance(diff_with_bg, threshold, 50, 205)
             };
 
-            self.bg_set = smoothed_curr.with_alpha(255);
+            // set the new current (bg) color to the median of the frames it matches
+            self.bg_set = get_medians(&self.px_blur, stays_frames).with_alpha(255);
             // shorten stay-for to use overlapping ranges for smoother transitions
             self.can_stay_for = (stays_frames as u8).min(LOOKAHEAD as u8 - 1);
             self.stayed_for = 0;
@@ -307,19 +289,21 @@ macro_rules! blur_channel {
 #[inline(never)]
 pub(crate) fn smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
     let mut out = Vec::with_capacity(frame.width() * frame.height());
-    loop9_img(frame, |_,_, top, mid, bot| {
+    loop9_img(frame, |_, _, top, mid, bot| {
         out.push_in_cap(if mid.curr.a > 0 {
             let median_r = median_channel!(top, mid, bot, r);
             let median_g = median_channel!(top, mid, bot, g);
             let median_b = median_channel!(top, mid, bot, b);
 
             let blurred = RGB8::new(median_r, median_g, median_b);
-            if color_diff(mid.curr.rgb(), blurred) < 16*16*6 {
+            if color_diff(mid.curr.rgb(), blurred) < 16 * 16 * 6 {
                 blurred
             } else {
                 mid.curr.rgb()
             }
-        } else { RGB8::new(255,0,255) });
+        } else {
+            RGB8::new(255, 0, 255)
+        });
     });
     ImgVec::new(out, frame.width(), frame.height())
 }
@@ -327,19 +311,21 @@ pub(crate) fn smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
 #[inline(never)]
 pub(crate) fn less_smart_blur(frame: ImgRef<RGBA8>) -> ImgVec<RGB8> {
     let mut out = Vec::with_capacity(frame.width() * frame.height());
-    loop9_img(frame, |_,_, top, mid, bot| {
+    loop9_img(frame, |_, _, top, mid, bot| {
         out.push_in_cap(if mid.curr.a > 0 {
             let median_r = blur_channel!(top, mid, bot, r);
             let median_g = blur_channel!(top, mid, bot, g);
             let median_b = blur_channel!(top, mid, bot, b);
 
             let blurred = RGB8::new(median_r, median_g, median_b);
-            if color_diff(mid.curr.rgb(), blurred) < 16*16*6 {
+            if color_diff(mid.curr.rgb(), blurred) < 16 * 16 * 6 {
                 blurred
             } else {
                 mid.curr.rgb()
             }
-        } else { RGB8::new(255,0,255) });
+        } else {
+            RGB8::new(255, 0, 255)
+        });
     });
     ImgVec::new(out, frame.width(), frame.height())
 }
@@ -365,29 +351,38 @@ fn avg8(a: u8, b: u8) -> u8 {
 }
 
 #[inline(always)]
-fn get_median(src: &[u8; LOOKAHEAD], len: usize) -> u8 {
-    match len {
-        1 => src[0],
-        2 => avg8(src[0], src[1]),
-        3 => {
-            let mut tmp = [0u8; 3];
-            tmp.copy_from_slice(&src[0..3]);
+fn zip(zip: impl Fn(fn(&(RGB8, RGB8)) -> u8) -> u8) -> RGB8 {
+    RGB8 {
+        r: zip(|px| px.0.r),
+        g: zip(|px| px.0.g),
+        b: zip(|px| px.0.b),
+    }
+}
+
+#[inline(always)]
+fn get_medians(src: &[(RGB8, RGB8); LOOKAHEAD], len_minus_one: usize) -> RGB8 {
+    match len_minus_one {
+        0 => src[0].0,
+        1 => zip(|ch| avg8(ch(&src[0]), ch(&src[1]))),
+        2 => zip(|ch| {
+            let mut tmp: [u8; 3] = std::array::from_fn(|i| ch(&src[i]));
             tmp.sort_unstable();
             tmp[1]
-        },
-        4 => {
-            let mut tmp = [0u8; 4];
-            tmp.copy_from_slice(&src[0..4]);
+        }),
+        3 => zip(|ch| {
+            let mut tmp: [u8; 3] = std::array::from_fn(|i| ch(&src[i]));
             tmp.sort_unstable();
             avg8(tmp[1], tmp[2])
-        },
-        5 => {
-            let mut tmp = [0u8; 5];
-            tmp.copy_from_slice(&src[0..5]);
+        }),
+        4 => zip(|ch| {
+            let mut tmp: [u8; 3] = std::array::from_fn(|i| ch(&src[i]));
             tmp.sort_unstable();
             tmp[2]
+        }),
+        _ => {
+            debug_assert!(false);
+            src[0].0
         },
-        _ => unreachable!(),
     }
 }
 
@@ -411,8 +406,8 @@ fn px<T>(f: Denoised<T>) -> (RGBA8, T) {
 
 #[test]
 fn one() {
-    let mut d = Denoiser::new(1,1, 100).unwrap();
-    let w = RGBA8::new(255,255,255,255);
+    let mut d = Denoiser::new(1, 1, 100).unwrap();
+    let w = RGBA8::new(255, 255, 255, 255);
     let frame = ImgVec::new(vec![w], 1, 1);
     let frame_blurred = smart_blur(frame.as_ref());
 
@@ -452,7 +447,6 @@ fn three() {
     assert_eq!(px(d.pop()), (b, 2));
     assert!(matches!(d.pop(), Denoised::Done));
 }
-
 
 #[test]
 fn four() {
@@ -520,7 +514,6 @@ fn six() {
     assert_eq!(px(d.pop()), (x, 5));
     assert!(matches!(d.pop(), Denoised::Done));
 }
-
 
 #[test]
 fn many() {

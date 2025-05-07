@@ -8,8 +8,11 @@
 #![allow(clippy::redundant_closure_for_method_calls)]
 #![allow(clippy::wildcard_imports)]
 
-use clap::error::ErrorKind::MissingRequiredArgument;
 use clap::builder::NonEmptyStringValueParser;
+use clap::error::ErrorKind::MissingRequiredArgument;
+use clap::value_parser;
+use yuv::color::MatrixCoefficients;
+use gifski::{Repeat, Settings};
 use std::io::stdin;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -17,22 +20,20 @@ use std::io::IsTerminal;
 use std::io::Read;
 use std::io::StdinLock;
 use std::io::Stdout;
-use gifski::{Settings, Repeat};
-use clap::value_parser;
 
 #[cfg(feature = "video")]
 mod ffmpeg_source;
-mod png;
 mod gif_source;
-mod y4m_source;
+mod png;
 mod source;
+mod y4m_source;
 use crate::source::Source;
 
 use gifski::progress::{NoProgress, ProgressReporter};
 
 pub type BinResult<T, E = Box<dyn std::error::Error + Send + Sync>> = Result<T, E>;
 
-use clap::{Command, Arg, ArgAction};
+use clap::{Arg, ArgAction, Command};
 
 use std::env;
 use std::fmt;
@@ -77,7 +78,7 @@ fn bin_main() -> BinResult<()> {
                             .short('r')
                             .help("Frame rate of animation. If using PNG files as \
                                    input, this means the speed, as all frames are \
-                                   kept. If video is used, it will be resampled to \
+                                   kept.\nIf video is used, it will be resampled to \
                                    this constant rate by dropping and/or duplicating \
                                    frames")
                             .value_parser(value_parser!(f32))
@@ -179,6 +180,15 @@ fn bin_main() -> BinResult<()> {
                             .num_args(1)
                             .value_parser(parse_color)
                             .value_name("RGBHEX"))
+                        .arg(Arg::new("y4m-color-override")
+                            .long("y4m-color-override")
+                            .help("The color space of the input YUV4MPEG2 video\n\
+                                   Possible values: bt709 fcc bt470bg bt601 smpte240 ycgco\n\
+                                   Defaults to bt709 for HD and bt601 for SD resolutions")
+                            .num_args(1)
+                            .hide_short_help(true)
+                            .value_parser(parse_color_space)
+                            .value_name("bt709"))
                         .try_get_matches_from(wild::args_os())
                         .unwrap_or_else(|e| {
                             if e.kind() == MissingRequiredArgument && !stdin().is_terminal() {
@@ -220,6 +230,7 @@ fn bin_main() -> BinResult<()> {
     let speed: f32 = matches.get_one::<f32>("fast-forward").copied().ok_or("?")?;
     let fixed_colors = matches.get_many::<Vec<rgb::RGB8>>("fixed-color");
     let matte = matches.get_one::<rgb::RGB8>("matte");
+    let in_color_space = matches.get_one::<MatrixCoefficients>("y4m-color-override").copied();
 
     let rate = source::Fps { fps, speed };
 
@@ -239,8 +250,7 @@ fn bin_main() -> BinResult<()> {
 
     if fps > 100.0 || fps <= 0.0 {
         return Err("100 fps is maximum".into());
-    }
-    else if !quiet && fps > 50.0 {
+    } else if !quiet && fps > 50.0 {
         eprintln!("warning: web browsers support max 50 fps");
     }
 
@@ -285,7 +295,7 @@ fn bin_main() -> BinResult<()> {
                 }
                 SrcPath::Stdin(BufReader::new(fd))
             } else {
-                SrcPath::Path(path.to_path_buf())
+                SrcPath::Path(path.clone())
             };
             match file_type(&mut src).unwrap_or(FileType::Other) {
                 FileType::PNG | FileType::JPEG => return Err("Only a single image file was given as an input. This is not enough to make an animation.".into()),
@@ -298,7 +308,7 @@ fn bin_main() -> BinResult<()> {
                 _ if path.is_dir() => {
                     return Err(format!("{} is a directory, not a PNG file", path.display()).into());
                 },
-                other_type => get_video_decoder(other_type, src, rate, settings)?,
+                other_type => get_video_decoder(other_type, src, rate, in_color_space, settings)?,
             }
         } else {
             if bounce {
@@ -413,7 +423,7 @@ fn panic_err(err: Box<dyn std::any::Any + Send>) -> String {
 }
 
 fn parse_color(c: &str) -> Result<rgb::RGB8, String> {
-    let c = c.trim_matches(|c:char| c.is_ascii_whitespace());
+    let c = c.trim_matches(|c: char| c.is_ascii_whitespace());
     let c = c.strip_prefix('#').unwrap_or(c);
 
     if c.len() != 6 {
@@ -429,7 +439,7 @@ fn parse_color(c: &str) -> Result<rgb::RGB8, String> {
 }
 
 fn parse_colors(colors: &str) -> Result<Vec<rgb::RGB8>, String> {
-    colors.split(|c:char| c == ' ' || c == ',')
+    colors.split([' ', ','])
         .filter(|c| !c.is_empty())
         .map(parse_color)
         .collect()
@@ -437,8 +447,23 @@ fn parse_colors(colors: &str) -> Result<Vec<rgb::RGB8>, String> {
 
 #[test]
 fn color_parser() {
-    assert_eq!(parse_colors("#123456 78abCD,, ,").unwrap(), vec![rgb::RGB8::new(0x12,0x34,0x56), rgb::RGB8::new(0x78,0xab,0xcd)]);
+    assert_eq!(parse_colors("#123456 78abCD,, ,").unwrap(), vec![rgb::RGB8::new(0x12, 0x34, 0x56), rgb::RGB8::new(0x78, 0xab, 0xcd)]);
     assert!(parse_colors("#12345").is_err());
+}
+
+fn parse_color_space(value: &str) -> Result<MatrixCoefficients, String> {
+    let value = value.to_lowercase();
+    let value = value.trim();
+    let matrix = match value {
+        "bt709" => MatrixCoefficients::BT709,
+        "fcc" => MatrixCoefficients::FCC,
+        "bt470bg" => MatrixCoefficients::BT470BG,
+        "bt601" => MatrixCoefficients::BT601,
+        "smpte240" => MatrixCoefficients::SMPTE240,
+        "ycgco" => MatrixCoefficients::YCgCo,
+        _ => return Err("unsupported color space".into()),
+    };
+    Ok(matrix)
 }
 
 #[allow(clippy::upper_case_acronyms)]
@@ -456,7 +481,7 @@ fn file_type(src: &mut SrcPath) -> BinResult<FileType> {
             _ => {
                 let mut file = std::fs::File::open(path)?;
                 file.read_exact(&mut buf)?;
-            }
+            },
         },
         SrcPath::Stdin(stdin) => {
             let buf_in = stdin.fill_buf()?;
@@ -494,18 +519,15 @@ fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
         };
         let canon = path.canonicalize();
         if let Some(parent) = canon.as_deref().unwrap_or(path).parent() {
-            if parent.as_os_str() != "" {
-                if let Ok(false) = path.try_exists() {
-                    use std::fmt::Write;
-                    if msg.len() > 80 {
-                        msg.push('\n');
-                    }
-                    write!(&mut msg, " (directory \"{}\" doesn't exist either)", parent.display())?;
-
+            if parent.as_os_str() != "" && matches!(path.try_exists(), Ok(false)) {
+                use std::fmt::Write;
+                if msg.len() > 80 {
+                    msg.push('\n');
                 }
+                write!(&mut msg, " (directory \"{}\" doesn't exist either)", parent.display())?;
             }
         }
-        if path.to_str().map_or(false, |p| p.contains(['*','?','['])) {
+        if path.to_str().is_some_and(|p| p.contains(['*', '?', '['])) {
             msg += "\nThe wildcard pattern did not match any files.";
         } else if path.is_relative() {
             use std::fmt::Write;
@@ -514,7 +536,7 @@ fn check_if_paths_exist(paths: &[PathBuf]) -> BinResult<()> {
         if path.extension() == Some("gif".as_ref()) {
             msg = format!("\nDid you mean to use -o \"{}\" to specify it as the output file instead?", path.display());
         }
-        return Err(msg.into())
+        return Err(msg.into());
     }
     Ok(())
 }
@@ -553,9 +575,9 @@ impl fmt::Display for DestPath<'_> {
 }
 
 #[cfg(feature = "video")]
-fn get_video_decoder(ftype: FileType, src: SrcPath, fps: source::Fps, settings: Settings) -> BinResult<Box<dyn Source>> {
+fn get_video_decoder(ftype: FileType, src: SrcPath, fps: source::Fps, in_color_space: Option<MatrixCoefficients>, settings: Settings) -> BinResult<Box<dyn Source>> {
     Ok(if ftype == FileType::Y4M {
-        Box::new(y4m_source::Y4MDecoder::new(src, fps)?)
+        Box::new(y4m_source::Y4MDecoder::new(src, fps, in_color_space)?)
     } else {
         Box::new(ffmpeg_source::FfmpegDecoder::new(src, fps, settings)?)
     })
@@ -563,15 +585,15 @@ fn get_video_decoder(ftype: FileType, src: SrcPath, fps: source::Fps, settings: 
 
 #[cfg(not(feature = "video"))]
 #[cold]
-fn get_video_decoder(ftype: FileType, src: SrcPath, fps: source::Fps, _: Settings) -> BinResult<Box<dyn Source>> {
+fn get_video_decoder(ftype: FileType, src: SrcPath, fps: source::Fps, in_color_space: Option<MatrixCoefficients>, _: Settings) -> BinResult<Box<dyn Source>> {
     if ftype == FileType::Y4M {
-        Ok(Box::new(y4m_source::Y4MDecoder::new(src, fps)?))
+        Ok(Box::new(y4m_source::Y4MDecoder::new(src, fps, in_color_space)?))
     } else {
         let path = match &src {
             SrcPath::Path(path) => path,
             SrcPath::Stdin(_) => Path::new("video.mp4"),
         };
-        let rel_path = path.file_name().map(Path::new).unwrap_or(path);
+        let rel_path = path.file_name().map_or(path, Path::new);
         Err(format!(r#"Video support is permanently disabled in this distribution of gifski.
 
 The only 'video' format supported at this time is YUV4MPEG2, which can be piped from ffmpeg:
@@ -627,12 +649,12 @@ impl ProgressReporter for ProgressBar {
             let total_size = bytes * self.pb.total / self.frames;
             let new_estimate = if total_size >= self.previous_estimate { total_size } else { (self.previous_estimate + total_size) / 2 };
             self.previous_estimate = new_estimate;
-            if self.displayed_estimate.abs_diff(new_estimate) > new_estimate/10 {
+            if self.displayed_estimate.abs_diff(new_estimate) > new_estimate / 10 {
                 self.displayed_estimate = new_estimate;
                 let (num, unit, x) = if new_estimate > 1_000_000 {
-                    (new_estimate as f64/1_000_000., "MB", if new_estimate > 10_000_000 {0} else {1})
+                    (new_estimate as f64 / 1_000_000., "MB", if new_estimate > 10_000_000 { 0 } else { 1 })
                 } else {
-                    (new_estimate as f64/1_000., "KB", 0)
+                    (new_estimate as f64 / 1_000., "KB", 0)
                 };
                 self.pb.message(&format!("{num:.x$}{unit} GIF; Frame "));
             }

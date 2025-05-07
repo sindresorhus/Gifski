@@ -1,8 +1,6 @@
 use crate::source::{Fps, Source};
-use crate::SrcPath;
-use crate::BinResult;
-use gifski::Collector;
-use gifski::Settings;
+use crate::{BinResult, SrcPath};
+use gifski::{Collector, Settings};
 use imgref::*;
 use rgb::*;
 
@@ -17,6 +15,7 @@ impl Source for FfmpegDecoder {
     fn total_frames(&self) -> Option<u64> {
         Some(self.frames)
     }
+
     fn collect(&mut self, dest: &mut Collector) -> BinResult<()> {
         self.collect_frames(dest)
     }
@@ -36,12 +35,7 @@ impl FfmpegDecoder {
         let stream = input_context.streams().best(ffmpeg::media::Type::Video).ok_or("The file has no video tracks")?;
         let time_base = stream.time_base().numerator() as f64 / stream.time_base().denominator() as f64;
         let frames = (stream.duration() as f64 * time_base * filter_fps as f64).ceil() as u64;
-        Ok(Self {
-            input_context,
-            frames,
-            rate,
-            settings,
-        })
+        Ok(Self { input_context, frames, rate, settings })
     }
 
     #[inline(never)]
@@ -75,7 +69,6 @@ impl FfmpegDecoder {
             filter.validate()?;
             (stream.index(), decoder, filter)
         };
-
 
         let add_frame = |rgba_frame: &ffmpeg::util::frame::Video, pts: f64, pos: i64| -> BinResult<()> {
             let stride = rgba_frame.stride(0) as usize;

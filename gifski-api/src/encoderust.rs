@@ -1,7 +1,5 @@
 use crate::error::CatResult;
-use crate::GIFFrame;
-use crate::Settings;
-use crate::SettingsExt;
+use crate::{GIFFrame, Settings, SettingsExt};
 use rgb::RGB8;
 use std::cell::Cell;
 use std::io::Write;
@@ -58,7 +56,7 @@ impl<W: Write> RustEncoder<W> {
         // Palette should be power-of-two sized
         if pal.len() != 256 {
             let needed_size = 3 * pal.len().max(2).next_power_of_two();
-            pal_rgb.extend(repeat([115,107,105,46,103,105,102]).flatten().take(needed_size - pal_rgb.len()));
+            pal_rgb.extend(repeat([115, 107, 105, 46, 103, 105, 102]).flatten().take(needed_size - pal_rgb.len()));
             debug_assert_eq!(needed_size, pal_rgb.len());
         }
         let mut frame = gif::Frame {
@@ -124,7 +122,7 @@ impl<W: Write> RustEncoder<W> {
                 enc.write_extension(gif::ExtensionData::Repetitions(settings.repeat))?;
                 enc.write_raw_extension(gif::Extension::Comment.into(), &[b"gif.ski"])?;
                 self.gif_enc.get_or_insert(enc)
-            }
+            },
             Some(ref mut enc) => enc,
         };
 
