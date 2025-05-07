@@ -77,6 +77,13 @@ extension Double {
 	Discouraged but sometimes needed when implicit coercion doesn't work.
 	*/
 	var toCGFloat: CGFloat { CGFloat(self) } // swiftlint:disable:this no_cgfloat no_cgfloat2
+
+	/**
+	 If this Double represents an aspectRatio, return the normalized aspect ratio for each side as a `CGSize`
+	 */
+	var normalizedAspectRatioSides: CGSize {
+		self > 1.0 ? .init(width: 1.0, height: 1.0 / self) : .init(width: self, height: 1.0 )
+	}
 }
 
 extension BinaryInteger {
@@ -1408,6 +1415,22 @@ extension NSView {
 			bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -insets.bottom)
 		])
 	}
+
+	func getConstraintConstantFromSuperView(attribute: NSLayoutConstraint.Attribute) -> Double? {
+		guard let constant = getConstraintFromSuperview(attribute: attribute)?.constant else {
+			return nil
+		}
+		return Double(constant)
+	}
+	func getConstraintFromSuperview(attribute: NSLayoutConstraint.Attribute) -> NSLayoutConstraint? {
+		guard let superview else {
+			return nil
+		}
+		return superview.constraints.first {
+			($0.secondItem as? NSView == self && $0.secondAttribute == attribute) ||
+			($0.firstItem as? NSView == self && $0.firstAttribute == attribute)
+		}
+	}
 }
 
 
@@ -2117,6 +2140,21 @@ extension CGSize {
 	func aspectFill(to widthHeight: Double) -> Self {
 		aspectFill(to: Self(width: widthHeight, height: widthHeight))
 	}
+
+	/**
+	 Returns the simplest integer aspect ratio (width, height) for the current size.
+
+	 Usage:
+	 let (widthRatio, heightRatio) = size.integerAspectRatio()
+	 */
+	func integerAspectRatio() -> (Int, Int) {
+		let roundedWidth = Int(width.rounded())
+		let roundedHeight = Int(height.rounded())
+		let divisor = greatestCommonDivisor(roundedWidth, roundedHeight)
+		let widthRatio = roundedWidth / divisor
+		let heightRatio = roundedHeight / divisor
+		return (widthRatio, heightRatio)
+	}
 }
 
 
@@ -2247,6 +2285,21 @@ extension CGRect {
 			xOffset: rect.width * xOffsetPercent,
 			yOffset: rect.height * yOffsetPercent
 		)
+	}
+
+	/**
+	 Returns a CGRect with the same center position, but a new size
+	 */
+	func centeredRectWith(size: CGSize) -> Self {
+		CGRect(x: midX - size.width / 2.0, y: midY - size.height / 2.0, width: size.width, height: size.height)
+	}
+
+
+	/**
+	 Returns a Crop Rect of the current Rect given a certain size
+	 */
+	func toCropRect(forVideoDimensions dimensions: CGSize) -> CropRect {
+		CropRect(x: x / dimensions.width, y: y / dimensions.height, width: width / dimensions.width, height: height / dimensions.height)
 	}
 }
 
@@ -2650,6 +2703,21 @@ extension NSLayoutConstraint {
 			multiplier: multiplier.flatMap(CGFloat.init) ?? self.multiplier,
 			constant: constant.flatMap(CGFloat.init) ?? self.constant
 		)
+	}
+
+	func animate(
+		to constant: Double,
+		duration: TimeInterval = 0.25,
+		timingFunction: CAMediaTimingFunction =	CAMediaTimingFunction(name: .easeInEaseOut),
+		completionHandler: (() -> Void)? = nil
+	) {
+		NSAnimationContext.runAnimationGroup { context in
+			context.duration = duration
+			context.timingFunction = timingFunction
+			animator().constant = constant
+		} completionHandler: {
+			completionHandler?()
+		}
 	}
 }
 
@@ -5298,7 +5366,12 @@ extension CGSize {
 	var toInt: (width: Int, height: Int) {
 		(Int(width), Int(height))
 	}
+
+	var videoSizeDescription: String {
+		"\(Int(width))x\(Int(height))"
+	}
 }
+
 
 
 extension ClosedRange<Double> {
@@ -5398,6 +5471,10 @@ extension CGSize {
 		default:
 			return self
 		}
+	}
+
+	func aspectFittedSize(targetWidthHeight: Double) -> Self {
+		aspectFittedSize(targetWidth: targetWidthHeight, targetHeight: targetWidthHeight)
 	}
 
 	func aspectFittedSize(targetWidth: Int?, targetHeight: Int?) -> Self {
@@ -5515,5 +5592,78 @@ private struct AppActivityModifier: ViewModifier {
 			.task(id: Tuple3(isActive, options, reason)) { // TODO: Use a tuple here when it can be equatable.
 				activity = isActive ? SSApp.beginActivity(options, reason: reason) : nil
 			}
+	}
+}
+
+func greatestCommonDivisor<T: BinaryInteger>(_ a: T, _ b: T) -> T {
+	let result = a % b
+	return result == 0 ? b : greatestCommonDivisor(b, result)
+}
+
+
+struct TipsView: View {
+	let title: String
+	let tips: [String]
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 10) {
+			Text(title)
+				.font(.headline)
+			ForEach(tips, id: \.self) { tip in
+				Text(tip)
+			}
+		}
+		.padding()
+		.frame(width: 250)
+	}
+}
+
+
+/**
+ Use the size of the select box when it is opened, so the popover doesn't move as the select box changes shape
+ */
+struct StaticPopover<PopoverContent: View>: ViewModifier {
+	@Binding var isPresented: Bool
+	let popoverContent: () -> PopoverContent
+
+	@State private var size: CGSize?
+	@State private var visibleSize: CGSize?
+
+	func body(content: Content, ) -> some View {
+		ZStack(alignment: .trailing) {
+			content
+				.readSize(into: $size)
+				.onChange(of: isPresented) {
+					visibleSize = size
+				}
+			if isPresented {
+				Color.clear
+					.fillFrame()
+					.frame(width: visibleSize?.width, height: visibleSize?.height)
+					.popover2(isPresented: $isPresented, arrowEdge: .bottom) {
+						popoverContent()
+					}
+			}
+		}
+	}
+}
+
+extension View {
+	func readSize(_ onChange: @escaping (CGSize) -> Void) -> some View {
+		onGeometryChange(for: CGSize.self) { proxy in
+			proxy.size
+		} action: {
+			onChange($0)
+		}
+	}
+
+	func readSize(into binding: Binding<CGSize?>) -> some View {
+		readSize {
+			binding.wrappedValue = $0
+		}
+	}
+
+	func staticPopover<PopoverContent: View>(isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> PopoverContent) -> some View {
+		modifier(StaticPopover(isPresented: isPresented, popoverContent: content))
 	}
 }

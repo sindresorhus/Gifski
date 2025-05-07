@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C6125682DA8194600CF8181 /* CropOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6125672DA8194600CF8181 /* CropOverlayView.swift */; };
+		0CB0E7682DBF145200E012C1 /* CropRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7672DBF145200E012C1 /* CropRect.swift */; };
+		0CB0E76A2DBF18D000E012C1 /* CropHandlePosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7692DBF18D000E012C1 /* CropHandlePosition.swift */; };
+		0CB0E76C2DBF2A4800E012C1 /* CropDragGestureModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E76B2DBF2A4800E012C1 /* CropDragGestureModifier.swift */; };
+		0CB0E7712DBF4A6E00E012C1 /* CropToolBarItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7702DBF4A6E00E012C1 /* CropToolBarItems.swift */; };
+		0CE429B42DC992DB0041C8AC /* PickerAspectRatio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE429B32DC992DB0041C8AC /* PickerAspectRatio.swift */; };
 		0E7925202329BDBE00058B94 /* ShareController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareController.swift */; };
 		0E7925282329BDBE00058B94 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5FF0DFFB278BA5DB00A80F09 /* libgifski_static.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F6ABD84278BA5A20040DDF0 /* libgifski_static.a */; };
@@ -80,6 +86,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0C6125672DA8194600CF8181 /* CropOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropOverlayView.swift; sourceTree = "<group>"; };
+		0CB0E7672DBF145200E012C1 /* CropRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropRect.swift; sourceTree = "<group>"; };
+		0CB0E7692DBF18D000E012C1 /* CropHandlePosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropHandlePosition.swift; sourceTree = "<group>"; };
+		0CB0E76B2DBF2A4800E012C1 /* CropDragGestureModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropDragGestureModifier.swift; sourceTree = "<group>"; };
+		0CB0E7702DBF4A6E00E012C1 /* CropToolBarItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropToolBarItems.swift; sourceTree = "<group>"; };
+		0CE429B32DC992DB0041C8AC /* PickerAspectRatio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickerAspectRatio.swift; sourceTree = "<group>"; };
 		0E79251B2329BDBE00058B94 /* Share Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E79251F2329BDBE00058B94 /* ShareController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -140,6 +152,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0CB0E7662DBF143D00E012C1 /* Crop */ = {
+			isa = PBXGroup;
+			children = (
+				0CB0E7672DBF145200E012C1 /* CropRect.swift */,
+				0C6125672DA8194600CF8181 /* CropOverlayView.swift */,
+				0CB0E76B2DBF2A4800E012C1 /* CropDragGestureModifier.swift */,
+				0CB0E7692DBF18D000E012C1 /* CropHandlePosition.swift */,
+				0CB0E7702DBF4A6E00E012C1 /* CropToolBarItems.swift */,
+				0CE429B32DC992DB0041C8AC /* PickerAspectRatio.swift */,
+			);
+			path = Crop;
+			sourceTree = "<group>";
+		};
 		0E79251C2329BDBE00058B94 /* Share Extension */ = {
 			isa = PBXGroup;
 			children = (
@@ -216,6 +241,7 @@
 			children = (
 				E3AE62861E5CD2F300035A2F /* App.swift */,
 				E3A6BD102245345C00F62256 /* Constants.swift */,
+				0CB0E7662DBF143D00E012C1 /* Crop */,
 				E33552F02ACAC3280023AAE9 /* AppState.swift */,
 				E3FC365B2377FA0000CF7C59 /* Shared.swift */,
 				E33552EE2ACAC3190023AAE9 /* MainScreen.swift */,
@@ -414,7 +440,9 @@
 				E33552F12ACAC3280023AAE9 /* AppState.swift in Sources */,
 				E3A6BD112245345C00F62256 /* Constants.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
+				0C6125682DA8194600CF8181 /* CropOverlayView.swift in Sources */,
 				8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */,
+				0CB0E76A2DBF18D000E012C1 /* CropHandlePosition.swift in Sources */,
 				E3908B7426754568000723A7 /* EstimatedFileSize.swift in Sources */,
 				D957BCDE234941C200A9A9F9 /* CheckerboardView.swift in Sources */,
 				E33552F32ACAC5D80023AAE9 /* StartScreen.swift in Sources */,
@@ -423,8 +451,12 @@
 				8548806522B78E8300E97401 /* IntTextField.swift in Sources */,
 				E3961F802AC9F2A700708EB7 /* Intents.swift in Sources */,
 				E30C8EEF29387E7A002E053F /* Gifski.swift in Sources */,
+				0CB0E7682DBF145200E012C1 /* CropRect.swift in Sources */,
+				0CE429B42DC992DB0041C8AC /* PickerAspectRatio.swift in Sources */,
 				E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */,
+				0CB0E7712DBF4A6E00E012C1 /* CropToolBarItems.swift in Sources */,
 				E37F68E02ACAD9D1007F1A7F /* CompletedScreen.swift in Sources */,
+				0CB0E76C2DBF2A4800E012C1 /* CropDragGestureModifier.swift in Sources */,
 				E33552EF2ACAC3190023AAE9 /* MainScreen.swift in Sources */,
 				E37F68E22ACAD9F1007F1A7F /* ConversionScreen.swift in Sources */,
 				85A5C44822CA41B500CAA94D /* VideoValidator.swift in Sources */,
@@ -460,6 +492,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -470,6 +503,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
@@ -493,6 +527,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -503,6 +538,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -648,6 +684,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -663,6 +700,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -682,6 +720,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = YG56YK5RN5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -697,6 +736,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sindresorhus.Gifski;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

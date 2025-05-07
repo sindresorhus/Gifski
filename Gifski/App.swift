@@ -28,6 +28,12 @@ struct AppMain: App {
 				.keyboardShortcut("o")
 				.disabled(appState.isConverting)
 			}
+			CommandGroup(replacing: .textEditing) {
+				@Bindable var appState = appState
+				Toggle("Crop", isOn: $appState.isCropActive)
+					.keyboardShortcut("c", modifiers: [.command, .shift])
+					.disabled(!appState.isOnEditScreen)
+			}
 			CommandGroup(replacing: .help) {
 				Link("Website", destination: "https://sindresorhus.com/Gifski")
 				Link("Source Code", destination: "https://github.com/sindresorhus/Gifski")

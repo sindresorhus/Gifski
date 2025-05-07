@@ -10,6 +10,16 @@ final class AppState {
 	var navigationPath = [Route]()
 	var isFileImporterPresented = false
 
+	var isCropActive = false
+
+	var isOnEditScreen: Bool {
+		guard case .edit = navigationPath.last else {
+			return false
+		}
+
+		return true
+	}
+
 	// TODO: This can be inferred by checking the last element of navigationPath.
 	var isConverting = false
 

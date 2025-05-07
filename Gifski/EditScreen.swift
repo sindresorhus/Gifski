@@ -12,6 +12,7 @@ struct EditScreen: View {
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
+	@State private var outputCropRect = CropRect.initialCropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
@@ -37,7 +38,9 @@ struct EditScreen: View {
 			TrimmingAVPlayer(
 				asset: modifiedAsset,
 				loopPlayback: loopGIF,
-				bouncePlayback: bounceGIF
+				bouncePlayback: bounceGIF,
+				overlay: appState.isCropActive ? AnyView(CropOverlayView(cropRect: $outputCropRect, dimensions: metadata.dimensions, editable: true)) : nil,
+				isTrimmerDraggable: appState.isCropActive
 			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
@@ -49,6 +52,16 @@ struct EditScreen: View {
 		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
 		.navigationDocument(url)
+		.toolbar {
+			ToolbarItemGroup {
+				@Bindable var appState = appState
+				CropToolbarItems(
+					isCropActive: $appState.isCropActive,
+					metadata: metadata,
+					outputCropRect: $outputCropRect
+				)
+			}
+		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
 			Task {
 				await setSpeed()
@@ -177,7 +190,8 @@ struct EditScreen: View {
 
 				return .forever
 			}(),
-			bounce: bounceGIF
+			bounce: bounceGIF,
+			crop: appState.isCropActive ? outputCropRect : nil
 		)
 	}
 
