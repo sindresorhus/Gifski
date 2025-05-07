@@ -30,15 +30,19 @@ struct IntTextField: NSViewRepresentable {
 		return nsView
 	}
 
-	private let textFieldForDefaultValues = NSTextField()
-
 	func updateNSView(_ nsView: IntTextFieldCocoa, context: Context) {
 		nsView.stringValue = "\(value)" // We intentionally do not use `nsView.intValue` as it formats the number.
-		nsView.alignment = alignment ?? textFieldForDefaultValues.alignment
-		nsView.font = font ?? textFieldForDefaultValues.font
 		nsView.minMax = minMax
 		nsView.delta = delta
 		nsView.alternativeDelta = alternativeDelta
+
+		if let alignment {
+			nsView.alignment = alignment
+		}
+
+		if let font {
+			nsView.font = font
+		}
 	}
 }
 

@@ -1,11 +1,3 @@
-//
-//  CropHandlePosition.swift
-//  Gifski
-//
-//  Created by Michael Mulet on 4/27/25.
-//
-
-import Foundation
 import SwiftUI
 
 enum CropHandlePosition: CaseIterable {
@@ -22,18 +14,23 @@ enum CropHandlePosition: CaseIterable {
 	var location: UnitPoint {
 		sides.location
 	}
+
 	var isVerticalOnlyHandle: Bool {
 		sides.isVerticalOnlyHandle
 	}
+
 	var isLeft: Bool {
 		sides.isLeft
 	}
+
 	var isRight: Bool {
 		sides.isRight
 	}
+
 	var isTop: Bool {
 		sides.isTop
 	}
+
 	var isBottom: Bool {
 		sides.isBottom
 	}
@@ -41,9 +38,9 @@ enum CropHandlePosition: CaseIterable {
 	var isCorner: Bool {
 		switch self {
 		case .topLeft, .topRight, .bottomLeft, .bottomRight:
-			return true
+			true
 		case .bottom, .top, .left, .right, .center:
-			return false
+			false
 		}
 	}
 
@@ -73,6 +70,7 @@ enum CropHandlePosition: CaseIterable {
 	private var pointerPosition: FrameResizePosition {
 		Self.positionToPointer[self] ?? .top
 	}
+
 	private static let positionToPointer: [Self: FrameResizePosition] = [
 		.top: .top,
 		.topRight: .topTrailing,
@@ -89,6 +87,7 @@ enum CropHandlePosition: CaseIterable {
 		if self == .center {
 			return .grabIdle
 		}
+
 		return .frameResize(position: pointerPosition)
 	}
 }
@@ -135,8 +134,8 @@ enum Side: Hashable {
 	case secondary
 
 	/**
-	 Location in the cop, from 0-1
-	 */
+	Location in the crop, from 0-1.
+	*/
 	var location: Double {
 		switch self {
 		case .primary:
