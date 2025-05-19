@@ -37,11 +37,6 @@ struct CropToolbarItems: View {
 	]
 }
 
-/**
-The range of valid numbers for the aspect ratio.
-*/
-private let aspectRatioNumberRange = 1...99
-
 private enum CustomFieldType {
 	case pixel
 	case aspect
@@ -143,7 +138,7 @@ private struct AspectRatioPicker: View {
 
 		customAspectRatio = PickerAspectRatio.closestAspectRatio(
 			for: cropSizeRightNow,
-			within: aspectRatioNumberRange
+			within: CropRect.defaultAspectRatioBounds
 		)
 
 		customPixelSize = cropSizeRightNow
@@ -189,14 +184,26 @@ private struct CustomAspectRatioView: View {
 				CustomAspectField(
 					customAspectRatio: $customAspectRatio,
 					modifiedCustomField: $modifiedCustomField,
-					side: \.width
+					side: \.width,
+					aspectRatioNumberRange: cropRect.aspectRatioBoundsForSide(
+						aspectWidth: Double(customAspectRatio?.width ?? 1),
+						aspectHeight: Double(customAspectRatio?.height ?? 1),
+						forDimensions: dimensions,
+						side: \.width
+					)
 				)
 				Text(":")
 					.foregroundStyle(.secondary)
 				CustomAspectField(
 					customAspectRatio: $customAspectRatio,
 					modifiedCustomField: $modifiedCustomField,
-					side: \.height
+					side: \.height,
+					aspectRatioNumberRange: cropRect.aspectRatioBoundsForSide(
+						aspectWidth: Double(customAspectRatio?.width ?? 1),
+						aspectHeight: Double(customAspectRatio?.height ?? 1),
+						forDimensions: dimensions,
+						side: \.height
+					)
 				)
 			}
 			.frame(width: 90)
@@ -248,14 +255,24 @@ private struct CustomPixelField: View {
 
 					var newSize = cropRect.size
 					newSize[keyPath: unitSizeSide] = Double(newValue) / dimensions[keyPath: side]
-					cropRect = cropRect.centeredRectWith(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
+//					cropRect = cropRect.centeredRectWith(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
+
+					cropRect = cropRect.changeSize(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
+
+
+
 
 					if value != $0 {
 						modifiedCustomField = .pixel
 					}
 
-					customPixelSize[keyPath: side] = Double($0)
-					showWarning = $0 < Self.minValue
+					if $0 < Self.minValue {
+						customPixelSize[keyPath: side] = Double(Self.minValue)
+						showWarning = true
+					} else {
+						customPixelSize[keyPath: side] = Double($0)
+						showWarning = false
+					}
 				}
 			),
 			minMax: Self.minValue...Int(dimensions[keyPath: side]),
@@ -289,6 +306,7 @@ private struct CustomAspectField: View {
 	@Binding var customAspectRatio: PickerAspectRatio?
 	@Binding var modifiedCustomField: CustomFieldType?
 	let side: WritableKeyPath<PickerAspectRatio, Int>
+	let aspectRatioNumberRange: ClosedRange<Int>
 
 	var body: some View {
 		IntTextField(
@@ -308,7 +326,7 @@ private struct CustomAspectField: View {
 						modifiedCustomField = .aspect
 					}
 
-					customAspectRatioCopy[keyPath: side] = $0
+					customAspectRatioCopy[keyPath: side] = $0.clamped(to: aspectRatioNumberRange)
 					customAspectRatio = customAspectRatioCopy
 				}
 			),
@@ -317,6 +335,14 @@ private struct CustomAspectField: View {
 			font: .fieldFont
 		)
 		.frame(width: 26.0)
+	}
+
+	var isWidth: Bool {
+		side == \.width
+	}
+
+	var unitSizeSide: WritableKeyPath<UnitSize, Double> {
+		isWidth ? \.width : \.height
 	}
 }
 

@@ -47,6 +47,41 @@ extension CropRect {
 		origin.y + (size.height / 2)
 	}
 
+	enum Axis {
+		case horizontal
+		case vertical
+
+		// swiftlint:disable:next no_cgfloat
+		var origin: WritableKeyPath<UnitPoint, CGFloat> {
+			switch self {
+			case .horizontal:
+				\.x
+			case .vertical:
+				\.y
+			}
+		}
+
+		var size: WritableKeyPath<UnitSize, Double> {
+			switch self {
+			case .horizontal:
+				\.width
+			case .vertical:
+				\.height
+			}
+		}
+	}
+
+	func mid(axis: Axis) -> Double {
+		switch axis {
+		case .horizontal:
+			midX
+		case .vertical:
+			midY
+		}
+	}
+
+
+
 	var isReset: Bool {
 		origin.x == 0 && origin.y == 0 && size.width == 1 && size.height == 1
 	}
@@ -93,6 +128,58 @@ extension CropRect {
 	}
 
 	/**
+	 Computes the minimum and maximum aspect ratio value for a particular side while keeping the values within `Self.defaultAspectRatioBounds`. See [unclampedAspectRatioBoundsForSide](unclampedAspectRatioBoundsForSide)
+	*/
+	func aspectRatioBoundsForSide(
+		aspectWidth: Double,
+		aspectHeight: Double,
+		forDimensions dimensions: CGSize,
+		side: KeyPath<UnitSize, Double>
+	) -> ClosedRange<Int> {
+		unclampedAspectRatioBoundsForSide(aspectWidth: aspectWidth, aspectHeight: aspectHeight, forDimensions: dimensions, side: side).clamped(to: Self.defaultAspectRatioBounds)
+	}
+	/**
+	Computes the minimum and maximum aspect ratio value for a particular side. (for example, for `\.width` this function will calculate the range of valid widths assuming `aspectHeight` is kept constant)
+	 */
+	private func unclampedAspectRatioBoundsForSide(
+		aspectWidth: Double,
+		aspectHeight: Double,
+		forDimensions dimensions: CGSize,
+		side: KeyPath<UnitSize, Double>
+	) -> ClosedRange<Int> {
+		let aspectRatioBounds = self.aspectRatioBounds(aspectWidth: aspectWidth, aspectHeight: aspectHeight, forDimensions: dimensions)
+		if side == \.width {
+			return Int(ceil(aspectHeight * aspectRatioBounds.lowerBound ))...Int(floor( aspectHeight * aspectRatioBounds.upperBound ))
+		}
+		return Int(ceil(aspectWidth / aspectRatioBounds.upperBound))...Int(floor( aspectWidth / aspectRatioBounds.lowerBound ))
+	}
+	/**
+	Computes the minimum and maximum aspect ratio for a cropRect
+	*/
+	private func aspectRatioBounds(
+		aspectWidth: Double,
+		aspectHeight: Double,
+		forDimensions dimensions: CGSize
+	) -> ClosedRange<Double> {
+		if width == 1.0 || height == 1.0 {
+			return (Self.minRectWidthHeight / dimensions.height)...(dimensions.width / Self.minRectWidthHeight)
+		}
+		let cropRectInPixels = unnormalize(forDimensions: dimensions)
+		let aspectSize = CGSize(width: aspectWidth, height: aspectHeight)
+		let newLongestSide = withAspectRatioInsideCurrentRectLongestSide(
+			cropRectInPixels: cropRectInPixels,
+			aspectSize: aspectSize,
+			withinVideoDimensions: dimensions
+		)
+		return (Self.minRectWidthHeight / newLongestSide)...(newLongestSide / Self.minRectWidthHeight)
+	}
+
+	/**
+	The range of valid numbers for the aspect ratio.
+	*/
+	static let defaultAspectRatioBounds = 1...99
+
+	/**
 	Adjusts the crop rect to fit a specified aspect ratio inside the current rect and scaling down if necessary to ensure it remains within the given video dimensions.
 
 	- Parameters:
@@ -109,6 +196,26 @@ extension CropRect {
 	) -> Self {
 		let cropRectInPixels = unnormalize(forDimensions: dimensions)
 		let aspectSize = CGSize(width: aspectWidth, height: aspectHeight)
+		let newLongestSide = withAspectRatioInsideCurrentRectLongestSide(
+			cropRectInPixels: cropRectInPixels,
+			aspectSize: aspectSize,
+			withinVideoDimensions: dimensions
+		)
+		let newAspect = Self.clampAspect(
+			aspectRatio: aspectSize.aspectRatio,
+			newLongestSide: newLongestSide
+		)
+
+		return cropRectInPixels
+			.centeredRectWith(size: newAspect * newLongestSide)
+			.toCropRect(forVideoDimensions: dimensions)
+	}
+
+	private func withAspectRatioInsideCurrentRectLongestSide(
+		cropRectInPixels: CGRect,
+		aspectSize: CGSize,
+		withinVideoDimensions dimensions: CGSize
+	) -> Double {
 		let normalizedAspect = aspectSize.aspectRatio.normalizedAspectRatioSides
 
 		let scaleBounds = Self.scaleBounds(
@@ -121,16 +228,7 @@ extension CropRect {
 			.aspectFittedSize(targetWidthHeight: cropRectInPixels.size.longestSide)[keyPath: Self.desiredSide(aspectRatio: normalizedAspect.aspectRatio)]
 			.toDouble
 
-		let newLongestSide = desiredScale.clamped(to: scaleBounds)
-
-		let newAspect = Self.clampAspect(
-			aspectRatio: normalizedAspect.aspectRatio,
-			newLongestSide: newLongestSide
-		)
-
-		return cropRectInPixels
-			.centeredRectWith(size: newAspect * newLongestSide)
-			.toCropRect(forVideoDimensions: dimensions)
+		return desiredScale.clamped(to: scaleBounds)
 	}
 
 	/**
@@ -178,25 +276,36 @@ extension CropRect {
 	}
 
 	/**
-	Returns a `CGRect` with the same center position, but a new size fit within the bounds of the video.
+	Returns a new `CGRect` trying to exapne or shrink the size. If the size is within te video bounds it will expand, otherwise it will change the center position and expand)
 	*/
-	func centeredRectWith(size: UnitSize, minSize: UnitSize) -> Self {
-		let newWidth = size.width.clamped(
-			from: minSize.width,
-			to: Self.maxScaleForSide(in: 0...1, center: midX)
+	func changeSize(size: UnitSize, minSize: UnitSize) -> Self {
+		var out = Self(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
+		changeSizeFor(axis: .horizontal, size: size, minSize: minSize, out: &out)
+		changeSizeFor(axis: .vertical, size: size, minSize: minSize, out: &out)
+		return out
+	}
+
+	private func changeSizeFor(
+		axis: Axis,
+		size: UnitSize,
+		minSize: UnitSize,
+		out: inout Self
+	) {
+		let newSideLength = size[keyPath: axis.size].clamped(
+			from: minSize[keyPath: axis.size],
+			to: 1.0
 		)
 
-		let newHeight = size.height.clamped(
-			from: minSize.height,
-			to: Self.maxScaleForSide(in: 0...1, center: midY)
-		)
+		var newOrigin = mid(axis: axis) - newSideLength / 2.0
 
-		return Self(
-			x: midX - newWidth / 2.0,
-			y: midY - newHeight / 2.0,
-			width: newWidth,
-			height: newHeight
-		)
+		if newOrigin < 0 {
+			newOrigin = 0
+		} else if newOrigin + newSideLength > 1.0 {
+			newOrigin = 1.0 - newSideLength
+		}
+
+		out.origin[keyPath: axis.origin] = newOrigin
+		out.size[keyPath: axis.size] = newSideLength
 	}
 }
 
