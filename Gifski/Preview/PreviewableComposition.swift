@@ -28,7 +28,6 @@ final class PreviewableComposition: AVMutableComposition {
 			of: assetTrack,
 			at: .videoZero
 		)
-		
 		// Need to fill this track with content now or else the compositor will not get frames for this track even if we insertTimeRange of content later on. So this will fill it with the same data as the originalTrack
 		try compositionFullPreviewTrack.insertTimeRange(
 			CMTimeRange(start: .videoZero, duration: duration),
@@ -67,7 +66,6 @@ final class PreviewableComposition: AVMutableComposition {
 		let fullPreviewRange = settings.conversion.timeRange ?? 0...fullPreviewAssetDuration.seconds
 		let fullPreviewStartTime = CMTime(seconds: fullPreviewRange.lowerBound, preferredTimescale: .video)
 		compositionFullPreviewTrack.insertEmptyTimeRange(.init(start: .zero, duration: duration))
-		
 		// see [PreBakedFrames](PreBakedFrames) for why this is necessary
 		let offsets = PreBakedFrames.Offsets(
 			fullPreviewStartTime: fullPreviewStartTime,

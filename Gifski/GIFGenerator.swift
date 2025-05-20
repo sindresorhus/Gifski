@@ -50,7 +50,7 @@ actor GIFGenerator {
 		onProgress: @escaping (Double) -> Void
 	) async throws -> Data {
 		gifski = try Gifski(
-			dimensions: conversion.dimensions,
+			dimensions: conversion.croppedOutputDimensions,
 			quality: conversion.quality.clamped(to: 0.1...1),
 			loop: conversion.loop
 		)
@@ -131,7 +131,10 @@ actor GIFGenerator {
 
 			previousTime = requestedTime.seconds
 
-			let image = try imageResult.image
+			guard let image = conversion.croppedImage(image: try imageResult.image) else {
+				throw GIFGenerator.Error.cropNotInBounds
+			}
+
 			let actualTime = try imageResult.actualTime
 
 			do {
@@ -348,23 +351,56 @@ extension GIFGenerator {
 		var frameRate: Int?
 		var loop: Gifski.Loop
 		var bounce: Bool
+		var crop: CropRect?
+	}
+}
 
-		var gifDuration: Duration {
-			get async throws {
-				// TODO: Make this lazy so it's only used for fallback.
-				let fallbackRange = try await asset.firstVideoTrack?.load(.timeRange).range
+extension GIFGenerator.Conversion {
+	var croppedOutputDimensions: (width: Int, height: Int)? {
+		guard let crop else {
+			return dimensions
+		}
 
-				guard let duration = (timeRange ?? fallbackRange)?.length else {
-					return .zero
-				}
+		guard let dimensions else {
+			return nil
+		}
 
-				// TODO: Do this when Swift supports async in `??`.
-//				guard let duration = (timeRange ?? asset.firstVideoTrack?.timeRange.range)?.length else {
-//					return .zero
-//				}
+		let cropInPixels = crop.unnormalize(forDimensions: dimensions)
 
-				return .seconds(bounce ? (duration * 2) : duration)
+		return (
+			cropInPixels.width.toIntAndClampingIfNeeded,
+			cropInPixels.height.toIntAndClampingIfNeeded
+		)
+	}
+
+	/**
+	We don't use `croppedOutputDimensions` here because the `CGImage` source may have a different size. We use the size directly from the image.
+
+	If the rect parameter defines an area that is not in the image, it returns nil: https://developer.apple.com/documentation/coregraphics/cgimage/1454683-cropping
+	*/
+	func croppedImage(image: CGImage) -> CGImage? {
+		guard let crop else {
+			return image
+		}
+
+		return image.cropping(to: crop.unnormalize(forDimensions: (image.width, image.height)))
+	}
+
+	var gifDuration: Duration {
+		get async throws {
+			// TODO: Make this lazy so it's only used for fallback.
+			let fallbackRange = try await asset.firstVideoTrack?.load(.timeRange).range
+
+			guard let duration = (timeRange ?? fallbackRange)?.length else {
+				return .zero
 			}
+
+			// TODO: Do this when Swift supports async in `??`.
+			//				guard let duration = (timeRange ?? asset.firstVideoTrack?.timeRange.range)?.length else {
+			//					return .zero
+			//				}
+
+			return .seconds(bounce ? (duration * 2) : duration)
 		}
 	}
 }
@@ -377,6 +413,7 @@ extension GIFGenerator {
 		case generateFrameFailed(Swift.Error)
 		case addFrameFailed(Swift.Error)
 		case writeFailed(Swift.Error)
+		case cropNotInBounds
 		case cancelled
 
 		var errorDescription: String? {
@@ -393,6 +430,8 @@ extension GIFGenerator {
 				"Failed to add frame, with underlying error: \(error.localizedDescription)"
 			case .writeFailed(let error):
 				"Failed to write, with underlying error: \(error.localizedDescription)"
+			case .cropNotInBounds:
+				"The crop is not in bounds of the video."
 			case .cancelled:
 				"The conversion was cancelled."
 			}

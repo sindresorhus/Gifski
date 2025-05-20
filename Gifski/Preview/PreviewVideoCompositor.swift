@@ -23,9 +23,10 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 	private var outputCache = OutputCache()
 	func startRequest(_ asyncVideoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
 		guard var outputPixelBuffer = asyncVideoCompositionRequest.renderContext.newPixelBuffer(),
-			  let originalFrame = (asyncVideoCompositionRequest.sourceFrame(byTrackID: .originalVideoTrack).map {
-				  ReadableCVPixelBuffer(buf: $0)
-			})
+			  let originalFrame = (
+				asyncVideoCompositionRequest.sourceFrame(byTrackID: .originalVideoTrack).map {
+					ReadableCVPixelBuffer(buf: $0)
+				})
 		else {
 			asyncVideoCompositionRequest.finish(with: PreviewVideoCompositorError.failedToGetVideoFrame)
 			return

@@ -48,7 +48,6 @@ func createFullPreviewStream() -> (AsyncStream<FullPreviewGenerationEvent>, Requ
 	let ( newSettingsStream, newSettingsContinuation ) = AsyncStream<(SettingsForFullPreview)>.makeStream(bufferingPolicy: .bufferingNewest(5))
 
 	let mainLoop = Task {
-		
 		// The current cancellable task that may be creating a new fullPreview
 		var generationTask: Task<(), Never>?
 		defer {

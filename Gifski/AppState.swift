@@ -4,7 +4,7 @@ import DockProgress
 
 @MainActor
 @Observable
-final class AppState: ObservableBinding {
+final class AppState {
 	static let shared = AppState()
 
 	var shouldShowPreview = false
@@ -17,6 +17,8 @@ final class AppState: ObservableBinding {
 
 	var navigationPath = [Route]()
 	var isFileImporterPresented = false
+
+	var isCropActive = false
 
 	// TODO: This can be inferred by checking the last element of navigationPath.
 	var isConverting = false

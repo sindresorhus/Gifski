@@ -9,6 +9,8 @@ struct IntTextField: NSViewRepresentable {
 	var minMax: ClosedRange<Int>?
 	var delta = 1
 	var alternativeDelta = 10
+	var alignment: NSTextAlignment?
+	var font: NSFont?
 	var onValueChange: ((Int) -> Void)?
 	var onBlur: ((Int) -> Void)?
 
@@ -33,6 +35,14 @@ struct IntTextField: NSViewRepresentable {
 		nsView.minMax = minMax
 		nsView.delta = delta
 		nsView.alternativeDelta = alternativeDelta
+
+		if let alignment {
+			nsView.alignment = alignment
+		}
+
+		if let font {
+			nsView.font = font
+		}
 	}
 }
 

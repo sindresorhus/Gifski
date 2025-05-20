@@ -1,7 +1,7 @@
 use crate::WrongSizeError;
-use std::num::TryFromIntError;
-use std::io;
 use quick_error::quick_error;
+use std::io;
+use std::num::TryFromIntError;
 
 quick_error! {
     #[derive(Debug)]
@@ -58,7 +58,7 @@ impl From<gif::EncodingError> for Error {
     fn from(err: gif::EncodingError) -> Self {
         match err {
             gif::EncodingError::Io(err) => err.into(),
-            other => Error::Gif(other),
+            other => Self::Gif(other),
         }
     }
 }

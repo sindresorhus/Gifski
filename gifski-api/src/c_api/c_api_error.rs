@@ -41,7 +41,7 @@ impl From<GifskiError> for io::Error {
             WRITE_ZERO => EK::WriteZero,
             INTERRUPTED => EK::Interrupted,
             UNEXPECTED_EOF => EK::UnexpectedEof,
-            _ => return io::Error::new(EK::Other, g),
+            _ => return Self::other(g),
         }.into()
     }
 }

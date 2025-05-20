@@ -34,25 +34,25 @@
 
 use encoderust::RustEncoder;
 use gif::DisposalMethod;
-use imagequant::{Image, QuantizationResult, Attributes};
+use imagequant::{Attributes, Image, QuantizationResult};
 use imgref::*;
 use rgb::*;
 
 mod error;
 pub use crate::error::*;
-use ordered_channel::Sender as OrdQueue;
-use ordered_channel::Receiver as OrdQueueIter;
 use ordered_channel::bounded as ordqueue_new;
+use ordered_channel::Receiver as OrdQueueIter;
+use ordered_channel::Sender as OrdQueue;
 pub mod progress;
 use crate::progress::*;
 pub mod c_api;
 mod denoise;
 use crate::denoise::*;
-mod encoderust;
 pub mod collector;
-use crate::collector::{InputFrameResized, InputFrame, FrameSource};
+mod encoderust;
 #[doc(inline)]
 pub use crate::collector::Collector;
+use crate::collector::{FrameSource, InputFrame, InputFrameResized};
 
 #[cfg(feature = "gifsicle")]
 mod gifsicle;
@@ -64,9 +64,8 @@ use std::cell::Cell;
 use std::io::prelude::*;
 use std::num::NonZeroU8;
 use std::rc::Rc;
-use std::thread;
 use std::sync::atomic::Ordering::Relaxed;
-
+use std::thread;
 
 /// Number of repetitions
 pub type Repeat = gif::Repeat;
@@ -126,9 +125,9 @@ impl SettingsExt {
         debug_assert!(gifsicle_quality <= 100);
         // lossy LZW adds its own dithering, so the input could be less nosiy to compensate
         // but don't change dithering unless gifsicle quality < 90, and don't completely disable it
-        let gifsicle_factor = 0.25 + f32::from(gifsicle_quality) * (1./100. * 1./0.9 * 0.75);
+        let gifsicle_factor = 0.25 + f32::from(gifsicle_quality) * (1. / 100. * 1. / 0.9 * 0.75);
 
-        (f32::from(self.s.quality) * (1./50. * gifsicle_factor) - 1.).clamp(0.2, 1.)
+        (f32::from(self.s.quality) * (1. / 50. * gifsicle_factor) - 1.).clamp(0.2, 1.)
     }
 }
 
@@ -236,7 +235,7 @@ struct FrameMessage {
 ///         Ok(())
 ///     });
 ///
-///     writer.write(std::fs::File::create("demo.gif")?, &mut progress::NoProgress{})?;
+///     writer.write(std::fs::File::create("demo.gif")?, &mut progress::NoProgress {})?;
 ///     frames_thread.join().unwrap()
 /// })?;
 /// Ok::<_, Error>(())
@@ -246,7 +245,7 @@ pub fn new(settings: Settings) -> GifResult<(Collector, Writer)> {
     if settings.quality == 0 || settings.quality > 100 {
         return Err(Error::WrongSize("quality must be 1-100".into())); // I forgot to add a better error variant
     }
-    if settings.width.unwrap_or(0) > 1<<16 || settings.height.unwrap_or(0) > 1<<16 {
+    if settings.width.unwrap_or(0) > 1 << 16 || settings.height.unwrap_or(0) > 1 << 16 {
         return Err(Error::WrongSize("image size too large".into()));
     }
 
@@ -317,7 +316,7 @@ fn dither_image(mut image: ImgRefMut<RGBA8>) {
 
     // dithering of anti-aliased edges can look very fuzzy, so disable it near the edges
     let mut anti_aliasing = vec![false; width * height];
-    loop9::loop9(image.as_ref(), 0, 0, width, height, |x,y, top, mid, bot| {
+    loop9::loop9(image.as_ref(), 0, 0, width, height, |x, y, top, mid, bot| {
         if mid.curr.a != 255 && mid.curr.a != 0 {
             fn is_edge(a: u8, b: u8) -> bool {
                 a < 12 && b >= 240 ||
@@ -376,7 +375,7 @@ fn dimensions_for_image((img_w, img_h): (usize, usize), resize_to: (Option<u32>,
         (Some(w), None) => {
             let w = (w as usize).min(img_w);
             (w, img_h * w / img_w)
-        }
+        },
         (None, Some(h)) => {
             let h = (h as usize).min(img_h);
             (img_w * h / img_h, h)
@@ -498,8 +497,8 @@ impl Writer {
         res.set_dithering_level(self.settings.dithering_level())?;
 
         let mut out = Vec::new();
-        out.try_reserve_exact(width*height).map_err(imagequant::liq_error::from)?;
-        res.optionally_prepare_for_dithering_with_background_set(&mut img, &mut out.spare_capacity_mut()[..width*height])?;
+        out.try_reserve_exact(width * height).map_err(imagequant::liq_error::from)?;
+        res.optionally_prepare_for_dithering_with_background_set(&mut img, &mut out.spare_capacity_mut()[..width * height])?;
 
         Ok((liq, res, img, out))
     }
@@ -686,7 +685,7 @@ impl Writer {
             match denoiser.pop() {
                 Denoised::Done => {
                     debug_assert!(inputs.next().is_none());
-                    break
+                    break;
                 },
                 Denoised::NotYet => {},
                 Denoised::Frame { importance_map, frame: image, meta: (ordinal_frame_number, pts, last_frame_duration) } => {
@@ -698,7 +697,7 @@ impl Writer {
                         pts, frame_duration: last_frame_duration.value().max(1. / 100.),
                     })?;
                 },
-            };
+            }
             next_frame = inputs.next();
         }
 
@@ -864,7 +863,7 @@ fn transparent_index_from_palette(mut image8_pal: Vec<RGBA8>, mut image8: ImgRef
     let mut transparent_index = None;
     for (i, p) in image8_pal.iter_mut().enumerate() {
         if p.a <= 128 {
-            *p = RGBA8::new(71,80,76,0);
+            *p = RGBA8::new(71, 80, 76, 0);
             let new_index = i as u8;
             if let Some(old_index) = transparent_index {
                 image8.pixels_mut().filter(|px| **px == new_index).for_each(|px| *px = old_index);
@@ -912,7 +911,7 @@ fn trim_image(mut image_trimmed: ImgRef<u8>, image8_pal: &[RGB8], transparent_in
         } else {
             let Some(pal_px) = image8_pal.get(px as usize) else {
                 debug_assert!(false, "{px} > {}", image8_pal.len());
-                return false
+                return false;
             };
             pal_px.with_alpha(255) == bg
         }
@@ -946,7 +945,7 @@ fn trim_image(mut image_trimmed: ImgRef<u8>, image8_pal: &[RGB8], transparent_in
         screen = screen.sub_image(0, top, screen.width(), screen.height() - top);
     }
 
-    let left = (0..image_trimmed.width()-1)
+    let left = (0..image_trimmed.width() - 1)
         .take_while(|&x| {
             (0..image_trimmed.height()).all(|y| {
                 let px = image_trimmed[(x, y)];

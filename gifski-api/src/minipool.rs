@@ -1,8 +1,8 @@
+use crate::Error;
+use crossbeam_channel::Sender;
 use std::num::NonZeroU8;
 use std::panic::catch_unwind;
 use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
-use crossbeam_channel::Sender;
-use crate::Error;
 
 #[inline]
 pub fn new_channel<P, C, M, R>(num_threads: NonZeroU8, name: &str, producer: P, mut consumer: C) -> Result<R, Error> where

@@ -1,4 +1,3 @@
-
 pub struct GiflossyImage<'data> {
     img: &'data [u8],
     width: u16,
@@ -109,7 +108,7 @@ struct Lookup<'a> {
     pub best_total_diff: u64,
 }
 
-impl<'a> Lookup<'a> {
+impl Lookup<'_> {
     pub fn lossy_node(&mut self, pos: usize, node_id: NodeId, total_diff: u64, dither: RgbDiff) {
         let Some(px) = self.image.px_at_pos(pos) else {
             return;
@@ -162,12 +161,7 @@ impl<'a> Lookup<'a> {
                 self.best_pos = new_pos;
                 self.best_total_diff = new_diff;
             }
-            self.lossy_node(
-                new_pos,
-                node_id,
-                new_diff,
-                new_dither,
-            );
+            self.lossy_node(new_pos, node_id, new_diff, new_dither);
         }
     }
 }
@@ -249,7 +243,7 @@ impl GiflossyWriter {
                     best_pos: pos + 1,
                     best_total_diff: 0,
                 };
-                l.lossy_node(pos + 1, u16::from(px), 0, RgbDiff { r: 0, g: 0, b: 0 }, );
+                l.lossy_node(pos + 1, u16::from(px), 0, RgbDiff { r: 0, g: 0, b: 0 });
                 run = l.best_pos - pos;
                 pos = l.best_pos;
                 let selected_node = &code_table.nodes[l.best_node as usize];
@@ -279,7 +273,7 @@ impl GiflossyWriter {
                             output_code = code_table.clear_code;
                             pos = clear_pos;
                             bufpos_bits = clear_bufpos_bits;
-                            buf.truncate((bufpos_bits + 7) / 8);
+                            buf.truncate(bufpos_bits.div_ceil(8));
                             if buf.len() > bufpos_bits / 8 {
                                 buf[bufpos_bits / 8] &= (1 << (bufpos_bits & 7)) - 1;
                             }
@@ -296,7 +290,7 @@ impl GiflossyWriter {
             } else {
                 run = 0;
                 output_code = code_table.clear_code + 1;
-            };
+            }
         }
         Ok(buf)
     }

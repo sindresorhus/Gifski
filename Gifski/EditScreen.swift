@@ -12,6 +12,7 @@ struct EditScreen: View {
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
+	@State private var outputCropRect = CropRect.initialCropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
@@ -44,7 +45,9 @@ struct EditScreen: View {
 				shouldShowPreview: appState.shouldShowPreview,
 				fullPreviewStatus: fullPreviewState.status,
 				loopPlayback: loopGIF,
-				bouncePlayback: bounceGIF
+				bouncePlayback: bounceGIF,
+				overlay: appState.isCropActive ? AnyView(CropOverlayView(cropRect: $outputCropRect, dimensions: metadata.dimensions, editable: true)) : nil,
+				isTrimmerDraggable: appState.isCropActive
 			) { timeRange in
 				DispatchQueue.main.async {
 					self.timeRange = timeRange
@@ -66,10 +69,19 @@ struct EditScreen: View {
 						.scaleEffect(0.5)
 						.frame(width: 10, height: 1)
 				}
-				Toggle(isOn: appState.binding(for: \.shouldShowPreview))
+				@Bindable var appState = appState
+				Toggle(isOn: $appState.shouldShowPreview)
 				{
 					Label("Preview", systemImage: appState.shouldShowPreview ? "eye" : "eye.slash")
 				}
+			}
+			ToolbarItemGroup {
+				@Bindable var appState = appState
+				CropToolbarItems(
+					isCropActive: $appState.isCropActive,
+					metadata: metadata,
+					outputCropRect: $outputCropRect
+				)
 			}
 		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
@@ -225,7 +237,8 @@ struct EditScreen: View {
 
 				return .forever
 			}(),
-			bounce: bounceGIF
+			bounce: bounceGIF,
+			crop: appState.isCropActive ? outputCropRect : nil
 		)
 	}
 
