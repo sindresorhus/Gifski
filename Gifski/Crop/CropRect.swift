@@ -287,7 +287,7 @@ extension CropRect {
 	}
 
 	/**
-	Returns a new `CGRect` trying to exapne or shrink the size. If the size is within te video bounds it will expand, otherwise it will change the center position and expand)
+	Returns a new `CGRect` trying to expand or shrink the size. If the size is within the video bounds it will expand, otherwise it will change the center position and expand)
 	*/
 	func changeSize(size: UnitSize, minSize: UnitSize) -> Self {
 		var out = Self(x: 0.0, y: 0.0, width: 0.0, height: 0.0)
@@ -458,7 +458,7 @@ extension CropRect {
 
 	If you grab the top-left corner, the bottom location and right-hand side location remains the same while the top and left sides move.
 
-	Also prevents the crop rect from leaving the rect, and it has a minium size.
+	Also prevents the crop rect from leaving the rect, and it has a minimum size.
 	*/
 	func applyNormal(
 		position: CropHandlePosition,
@@ -513,9 +513,9 @@ extension CropRect {
 	/**
 	Apply a scaling such that it is symmetric depending on drag direction.
 
-	For example, if you drag a corner along the axis to the center, the entire rect will scale uniformly from the center. If you drag to the left, the entire crop rect will scale horizontially from the the center, and so on.
+	For example, if you drag a corner along the axis to the center, the entire rect will scale uniformly from the center. If you drag to the left, the entire crop rect will scale horizontally from the center, and so on.
 
-	Also prevents the crop rect from leaving the rect, and it has minium size.
+	Also prevents the crop rect from leaving the rect, and it has minimum size.
 	*/
 	func applySymmetric(
 		position: CropHandlePosition,
@@ -585,7 +585,7 @@ extension CropRect {
 	/**
 	Scale the crop rect by finding an anchor point on the opposite side of the handle (so if you grab the top left, the anchor point would be on the bottom-right), then apply scale.
 
-	Also prevents the crop rect from leaving the rect, and it has a minium size.
+	Also prevents the crop rect from leaving the rect, and it has a minimum size.
 	*/
 	func applyScale(
 		position: CropHandlePosition,
@@ -647,7 +647,7 @@ extension CropRect {
 	/**
 	Scale the crop rect while maintaining aspect ratio.
 
-	Also prevents the crop rect from leaving the rect, and it has minium size.
+	Also prevents the crop rect from leaving the rect, and it has minimum size.
 	*/
 	func applyAspectRatioLock(
 		minSize: UnitSize,
