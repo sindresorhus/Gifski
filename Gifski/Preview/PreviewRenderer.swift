@@ -16,18 +16,18 @@ struct PreviewRenderer {
 	/**
 	 Render the preview to the outputFrame
 	 */
-	static func renderPreview(previewFrame: LockedCVPixelBuffer, originalFrame: LockedCVPixelBuffer, outputFrame: inout ReadWriteableCVPixelBuffer) async throws {
-		try await shared.get().drawFrame(previewFrame: previewFrame, originalFrame: originalFrame, outputFrame: &outputFrame)
+	static func renderPreview(previewFrame: CVPixelBuffer, outputFrame: CVPixelBuffer, fragmentUniforms: FragmentUniforms) async throws {
+		try await shared.get().drawFrame(previewFrame: previewFrame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
 	}
 	/**
 	 Render the preview to the output frame based on a (CGImage)[CGImage]
 	 */
-	static func renderPreview(previewFrame: CGImage, originalFrame: LockedCVPixelBuffer, outputFrame: inout ReadWriteableCVPixelBuffer) async throws {
-		try await shared.get().drawFrame(previewFrame: previewFrame, originalFrame: originalFrame, outputFrame: &outputFrame)
+	static func renderPreview(previewFrame: CGImage, outputFrame: CVPixelBuffer, fragmentUniforms: FragmentUniforms) async throws {
+		try await shared.get().drawFrame(previewFrame: previewFrame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
 	}
 
-	static func renderPreview(previewFrame: MTLTexture, originalFrame: LockedCVPixelBuffer, outputFrame: inout ReadWriteableCVPixelBuffer) async throws {
-		try await shared.get().drawGifFrameInCenterMetal(previewTexture: previewFrame, originalFrame: originalFrame, outputFrame: &outputFrame)
+	static func renderPreview(previewFrame: MTLTexture, outputFrame: CVPixelBuffer, fragmentUniforms: FragmentUniforms) async throws {
+		try await shared.get().drawGifFrameInCenterMetal(previewTexture: previewFrame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
 	}
 
 	static func convertToTexture(cgImage: CGImage) async throws -> MTLTexture {
@@ -49,8 +49,25 @@ struct PreviewRenderer {
 		var scale: SIMD2<Float>
 	}
 
-	private struct FragmentUniforms {
-		var blurStrength: Float
+	struct FragmentUniforms: Equatable {
+		var videoBounds: SIMD4<Float>
+		var firstColor: SIMD4<Float>
+		var secondColor: SIMD4<Float>
+		var gridSize: SIMD4<Int>
+		/**
+		Construct the checkerboard fragment uniforms from the bounds of the playerView and the videoBounds. This will calculate the necessary size and offset so that the checkboard pattern will match the background `CheckboardView`
+		 */
+		init(isDarkMode: Bool, videoBounds: CGRect) {
+			self.videoBounds = .init(
+				x: Float(videoBounds.minX),
+				y: Float(videoBounds.minY),
+				z: Float(videoBounds.width),
+				w: Float(videoBounds.height)
+			)
+			self.gridSize = .init(x: CheckerboardView.gridSize, y: 0, z: 0, w: 0)
+			self.firstColor = (isDarkMode ? CheckerboardView.firstColorDark : CheckerboardView.firstColorLight ).asLinearSIMD4 ?? .zero
+			self.secondColor = (isDarkMode ? CheckerboardView.secondColorDark : CheckerboardView.secondColorLight ).asLinearSIMD4 ?? .zero
+		}
 	}
 
 	private let metalDevice: MTLDevice
@@ -59,7 +76,6 @@ struct PreviewRenderer {
 	private let samplerState: MTLSamplerState
 	private let textureCache: CVMetalTextureCache
 	private let previewTextureCache: CVMetalTextureCache
-	private let originalTextureCache: CVMetalTextureCache
 	private let textureLoader: MTKTextureLoader
 
 	private init() throws {
@@ -101,47 +117,41 @@ struct PreviewRenderer {
 		var previewTextureCache: CVMetalTextureCache?
 		CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &previewTextureCache)
 
-		var originalTextureCache: CVMetalTextureCache?
-		CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &originalTextureCache)
-
 		guard let textureCache,
-			  let previewTextureCache,
-			  let originalTextureCache
+			  let previewTextureCache
 		else {
 			throw RenderError.failedToMakeTextureCache
 		}
 		self.textureCache = textureCache
 		self.previewTextureCache = previewTextureCache
-		self.originalTextureCache = originalTextureCache
 
 		self.textureLoader = MTKTextureLoader(device: metalDevice)
 	}
 
 	private func drawFrame(
-		previewFrame: LockedCVPixelBuffer,
-		originalFrame: LockedCVPixelBuffer,
-		outputFrame: inout ReadWriteableCVPixelBuffer
+		previewFrame: CVPixelBuffer,
+		outputFrame: CVPixelBuffer,
+		fragmentUniforms: FragmentUniforms
 	) async throws {
 		let gifTexture = try Texture.createFromImage(image: previewFrame, cache: previewTextureCache)
-		try await drawGifFrameInCenterMetal(previewTexture: gifTexture.tex, originalFrame: originalFrame, outputFrame: &outputFrame)
+		try await drawGifFrameInCenterMetal(previewTexture: gifTexture.tex, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
 	}
 
 	private func drawFrame(
 		previewFrame: CGImage,
-		originalFrame: LockedCVPixelBuffer,
-		outputFrame: inout ReadWriteableCVPixelBuffer
+		outputFrame: CVPixelBuffer,
+		fragmentUniforms: FragmentUniforms
 	) async throws {
 		let texture = try await convertToTexture(cgImage: previewFrame)
 
-		try await drawGifFrameInCenterMetal(previewTexture: texture, originalFrame: originalFrame, outputFrame: &outputFrame)
+		try await drawGifFrameInCenterMetal(previewTexture: texture, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
 	}
 
 	private func drawGifFrameInCenterMetal(
 		previewTexture: MTLTexture,
-		originalFrame: LockedCVPixelBuffer,
-		outputFrame: inout ReadWriteableCVPixelBuffer
+		outputFrame: CVPixelBuffer,
+		fragmentUniforms: FragmentUniforms
 	) async throws {
-		let originalTexture = try Texture.createFromImage(image: originalFrame, cache: originalTextureCache)
 		let outputTexture = try Texture.createFromImage(image: outputFrame, cache: textureCache)
 		guard let commandBuffer = commandQueue.makeCommandBuffer() else {
 			throw RenderError.failedToCreateCommandBuffer
@@ -161,13 +171,12 @@ struct PreviewRenderer {
 		renderEncoder.setCullMode(.none)
 
 		renderEncoder.setFragmentTexture(previewTexture, index: 0)
-		renderEncoder.setFragmentTexture(originalTexture.tex, index: 1)
 		renderEncoder.setFragmentSamplerState(samplerState, index: 0)
 
-		var uniforms = VertexUniforms(scale: .init(x: Float(previewTexture.width.toDouble / originalTexture.tex.width.toDouble), y: Float(previewTexture.height.toDouble / originalTexture.tex.height.toDouble)))
+		var uniforms = VertexUniforms(scale: .init(x: Float(previewTexture.width.toDouble / outputTexture.tex.width.toDouble), y: Float(previewTexture.height.toDouble / outputTexture.tex.height.toDouble)))
 		renderEncoder.setMeshBytes(&uniforms, length: MemoryLayout<VertexUniforms>.size, index: 0)
 
-		var fragmentUniforms = FragmentUniforms(blurStrength: 20.5)
+		var fragmentUniforms = fragmentUniforms
 		renderEncoder.setFragmentBytes(&fragmentUniforms, length: MemoryLayout<FragmentUniforms>.size, index: 0)
 
 		renderEncoder.drawMeshThreadgroups(
@@ -200,16 +209,16 @@ struct PreviewRenderer {
 			self.cv = cv
 			self.tex = tex
 		}
-		static func createFromImage(image: LockedCVPixelBuffer, cache: CVMetalTextureCache) throws -> Self {
-			let videoWidth = CVPixelBufferGetWidth(image.buf)
-			let videoHeight = CVPixelBufferGetHeight(image.buf)
+		static func createFromImage(image: CVPixelBuffer, cache: CVMetalTextureCache) throws -> Self {
+			let videoWidth = CVPixelBufferGetWidth(image)
+			let videoHeight = CVPixelBufferGetHeight(image)
 
 			var cv: CVMetalTexture?
 			guard
 				CVMetalTextureCacheCreateTextureFromImage(
 					nil,
 					cache,
-					image.buf,
+					image,
 					nil,
 					.bgra8Unorm,
 					videoWidth,

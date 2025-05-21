@@ -8,64 +8,64 @@
 import Foundation
 import CoreVideo
 
-/**
- A CVPixelBuffer that has had it's base address locked via [CVPixelBufferLockBaseAddress](CVPixelBufferLockBaseAddress)
- */
-protocol LockedCVPixelBuffer {
-	var buf: CVPixelBuffer {get}
-}
-
-final class ReadableCVPixelBuffer: LockedCVPixelBuffer {
-	let buf: CVPixelBuffer
-	init(buf: CVPixelBuffer){
-		self.buf = buf
-		CVPixelBufferLockBaseAddress(buf, [.readOnly])
-	}
-	deinit {
-		CVPixelBufferUnlockBaseAddress(buf, [.readOnly])
-	}
-}
-
-/**
- When using  ReadWriteableCVPixelBuffer  as a parameter, mark it as inout to express that the buffer contents will change
- */
-final class ReadWriteableCVPixelBuffer: LockedCVPixelBuffer {
-	let buf: CVPixelBuffer
-	init(buf: inout CVPixelBuffer) {
-		self.buf = buf
-		CVPixelBufferLockBaseAddress(buf, [])
-	}
-	deinit{
-		CVPixelBufferUnlockBaseAddress(buf, [])
-	}
-}
-
-extension LockedCVPixelBuffer {
+extension CVPixelBuffer {
 	/**
 	 - Returns: True if copy was successful, false on error
 	 */
-	func copy(to destination: inout ReadWriteableCVPixelBuffer) -> Bool {
-		// 0 in the cse of NonPlanar buffers
-		let planeCount = CVPixelBufferGetPlaneCount(buf)
-		guard planeCount == CVPixelBufferGetPlaneCount(destination.buf) else {
-			return false
-		}
-		let planes = planeCount == 0 ? [nil] : Array(0..<planeCount).map { Optional($0) }
-		for planeIndex in planes {
-			guard let source = PixelBufferByteCopier(buffer: self, plane: planeIndex),
-				  var destination = PixelBufferByteCopier(buffer: destination, plane: planeIndex)
-			else {
-				return false
+	func copy(to destination: CVPixelBuffer) -> Bool {
+		withLocked(flags: [.readOnly]) { sourcePlanes in
+			destination.withLocked(flags: []) { destinationPlanes in
+				guard sourcePlanes.count == destinationPlanes.count else {
+					return false
+				}
+				for (sourcePlane, destinationPlane) in zip(sourcePlanes, destinationPlanes) {
+					guard sourcePlane.copy(to: destinationPlane) else {
+						return false
+					}
+				}
+				return true
 			}
-			guard source.copy(to: &destination) else {
-				return false
-			}
-		}
-		return true
+		} ?? false
 	}
+
+	func withLocked<T>(flags: CVPixelBufferLockFlags = [], _ body: ([LockedPixelBufferPlane]) throws -> T?) rethrows -> T? {
+		guard CVPixelBufferLockBaseAddress(self, flags) == kCVReturnSuccess else {
+			return nil
+		}
+		defer { CVPixelBufferUnlockBaseAddress(self, flags) }
+		let planeCount = CVPixelBufferGetPlaneCount(self)
+		if planeCount == 0 {
+			guard let base = CVPixelBufferGetBaseAddress(self) else {
+				return nil
+			}
+			return try body([
+				.init(
+					base: base,
+					bytesPerRow: CVPixelBufferGetBytesPerRow(self),
+					height: CVPixelBufferGetHeight(self)
+				)
+			])
+		}
+		let planes = (0..<planeCount).compactMap { planeIndex -> LockedPixelBufferPlane? in
+			guard let base = CVPixelBufferGetBaseAddressOfPlane(self, planeIndex) else {
+				return nil
+			}
+			return
+				.init(
+					base: base,
+					bytesPerRow: CVPixelBufferGetBytesPerRowOfPlane(self, planeIndex),
+					height: CVPixelBufferGetHeightOfPlane(self, planeIndex)
+				)
+		}
+		guard planes.count == planeCount else {
+			return nil
+		}
+		return try body(planes)
+	}
+
 	func makeANewBufferThatThisCanCopyTo() -> CVPixelBuffer? {
 		var out: CVPixelBuffer?
-		guard CVPixelBufferCreate(kCFAllocatorDefault, CVPixelBufferGetWidth(buf), CVPixelBufferGetHeight(buf), CVPixelBufferGetPixelFormatType(buf), CVPixelBufferCopyCreationAttributes(buf), &out) == kCVReturnSuccess
+		guard CVPixelBufferCreate(kCFAllocatorDefault, CVPixelBufferGetWidth(self), CVPixelBufferGetHeight(self), CVPixelBufferGetPixelFormatType(self), CVPixelBufferCopyCreationAttributes(self), &out) == kCVReturnSuccess
 		else {
 			return nil
 		}
@@ -73,67 +73,30 @@ extension LockedCVPixelBuffer {
 	}
 }
 
-/**
- Helper class to make [LockedCVPixelBuffer.copy](LockedCVPixelBuffer.copy(to:)) more elegant. It handles copying for planar and non planer frames in the same way
- */
-fileprivate struct PixelBufferByteCopier<B: LockedCVPixelBuffer> {
-	private let baseAddress: UnsafeMutableRawPointer
-	private let width: Int
-	private let height: Int
-	private let bytesPerRow: Int
-	private let pixelFormatType: OSType
+struct LockedPixelBufferPlane {
+	let base: UnsafeMutableRawPointer
+	let bytesPerRow: Int
+	let height: Int
 
-	private var rowPointer: UnsafeMutableRawPointer
-	private var rowIndex = 0
-	init?(buffer lockedBuffer: B, plane: Int? = nil) {
-		let buffer = lockedBuffer.buf
-		pixelFormatType = CVPixelBufferGetPixelFormatType(buffer)
-		if let plane {
-			guard let baseAddress = CVPixelBufferGetBaseAddressOfPlane(buffer, plane) else {
-				return nil
-			}
-			self.baseAddress = baseAddress
-			width = CVPixelBufferGetWidthOfPlane(buffer, plane)
-			height = CVPixelBufferGetHeightOfPlane(buffer, plane)
-			bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(buffer, plane)
-			rowPointer = baseAddress
-			return
-		}
-		guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else {
-			return nil
-		}
-		self.baseAddress = baseAddress
-		width = CVPixelBufferGetWidth(buffer)
-		height = CVPixelBufferGetHeight(buffer)
-		bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
-		rowPointer = baseAddress
-	}
-	func copy(to originalDestination: inout PixelBufferByteCopier<ReadWriteableCVPixelBuffer>) -> Bool {
-		var source = self
-		var destination = originalDestination
-		guard source.height == destination.height,
-			  source.width == destination.width,
-			  source.pixelFormatType == destination.pixelFormatType
+	func copy(to destination: Self) -> Bool {
+		guard height == destination.height
 		else {
 			return false
 		}
 
-		guard source.bytesPerRow != destination.bytesPerRow else {
-			memcpy(destination.baseAddress, source.baseAddress, source.height * source.bytesPerRow)
+		guard bytesPerRow != destination.bytesPerRow else {
+			memcpy(destination.base, base, height * bytesPerRow)
 			return true
 		}
-		for _ in 0..<source.height {
-			memcpy(destination.rowPointer, source.rowPointer, min(source.bytesPerRow, destination.bytesPerRow))
-			destination.advanceRow()
-			source.advanceRow()
+		var destinationBase = destination.base
+		var sourceBase = base
+
+		let minBytesPerRow = min(bytesPerRow, destination.bytesPerRow)
+		for _ in 0..<height {
+			memcpy(destinationBase, sourceBase, minBytesPerRow)
+			sourceBase = sourceBase.advanced(by: bytesPerRow)
+			destinationBase = destinationBase.advanced(by: destination.bytesPerRow)
 		}
 		return true
-	}
-	private mutating func advanceRow() {
-		guard rowIndex < height - 1 else {
-			return
-		}
-		rowPointer = rowPointer.advanced(by: bytesPerRow)
-		rowIndex += 1
 	}
 }

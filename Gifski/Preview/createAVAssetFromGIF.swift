@@ -118,23 +118,26 @@ private func createPixelBuffer(from cgImage: CGImage, using pool: CVPixelBufferP
 		  let pixelBuffer else {
 		return nil
 	}
-	CVPixelBufferLockBaseAddress(pixelBuffer, [])
-	defer {
-		CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
+
+	return pixelBuffer.withLocked { planes in
+		guard planes.count == 1,
+			  let plane = planes.first else {
+			return nil
+		}
+		guard let context = CGContext(
+			data: plane.base,
+			width: cgImage.width,
+			height: cgImage.height,
+			bitsPerComponent: 8,
+			bytesPerRow: plane.bytesPerRow,
+			space: CGColorSpaceCreateDeviceRGB(),
+			bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
+		) else {
+			return nil
+		}
+		context.draw(cgImage, in: CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height))
+		return pixelBuffer
 	}
-	guard let context = CGContext(
-		data: CVPixelBufferGetBaseAddress(pixelBuffer),
-		width: cgImage.width,
-		height: cgImage.height,
-		bitsPerComponent: 8,
-		bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
-		space: CGColorSpaceCreateDeviceRGB(),
-		bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
-	) else {
-		return nil
-	}
-	context.draw(cgImage, in: CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height))
-	return pixelBuffer
 }
 
 

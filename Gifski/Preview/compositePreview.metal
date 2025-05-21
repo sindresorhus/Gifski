@@ -106,15 +106,22 @@ struct fragmentIn
 };
 
 struct FragmentUniforms {
-	float blurStrength;
+	float4 videoBounds;
+	float4 firstColor;
+	float4 secondColor;
+	int4 gridSize;
 };
+
+
+float4 color(float c){
+	return float4(c, c, c, 1.0);
+}
 
 /**
  If preview it just draws a texture. if the original, it blurs it.
  */
 fragment float4 previewFragment(fragmentIn in [[stage_in]],
 							   texture2d<float> inputTexture [[texture(0)]],
-								texture2d<float> texture2 [[texture(1)]],
 							   sampler inputSampler [[sampler(0)]],
 								constant FragmentUniforms &uniforms [[buffer(0)]]
 								) {
@@ -122,19 +129,10 @@ fragment float4 previewFragment(fragmentIn in [[stage_in]],
 		return inputTexture.sample(inputSampler, in.v.texCoords);
 	}
 
-	float blurStrength = uniforms.blurStrength;
-	float2 texelSize = blurStrength / float2(texture2.get_width(), texture2.get_height());
-	float blurKernel[3][3] = {
-		{1.0/16, 2.0/16, 1.0/16},
-		{2.0/16, 4.0/16, 2.0/16},
-		{1.0/16, 2.0/16, 1.0/16}
-	};
-	float4 color = float4(0.0);
-	for (int x = -1; x <= 1; ++x) {
-		for (int y = -1; y <= 1; ++y) {
-			float2 offset = float2(x, y) * texelSize;
-			color += blurKernel[x+1][y+1] * texture2.sample(inputSampler, in.v.texCoords + offset);
-		}
-	}
-	return color;
+	float2 texCoordsInPixels = in.v.texCoords * uniforms.videoBounds.zw + uniforms.videoBounds.xy;
+	int gridSize = uniforms.gridSize.x;
+
+	int checkerX = (int(texCoordsInPixels.x) % (gridSize*2)) >= gridSize ? 1 : 0;
+	int checkerY = (int(texCoordsInPixels.y) % (gridSize*2)) >= gridSize ? 1 : 0;
+	return (checkerX + checkerY) % 2 == 0 ? uniforms.firstColor : uniforms.secondColor;
 }

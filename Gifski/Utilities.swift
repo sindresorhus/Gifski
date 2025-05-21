@@ -5689,3 +5689,31 @@ extension View {
 		}
 	}
 }
+
+extension ColorScheme {
+	var isDarkMode: Bool {
+		self == .dark
+	}
+}
+
+extension Bool {
+	var asPaddedFloat4: SIMD4<Float> {
+		.init(x: self ? 1.0 : 0.0, y: 0.0, z: 0.0, w: 0.0)
+	}
+}
+
+//swiftlint:disable:next no_cgfloat
+extension Array where Element == CGFloat {
+	var asSIMD4: SIMD4<Float>? {
+		guard self.count == 4 else {
+			return nil
+		}
+		return .init(x: Float(self[0]), y: Float(self[1]), z: Float(self[2]), w: Float(self[3]))
+	}
+}
+
+extension Color {
+	var asLinearSIMD4: SIMD4<Float>? {
+		NSColor(self).usingColorSpace(.genericRGB)?.cgColor.components?.asSIMD4
+	}
+}

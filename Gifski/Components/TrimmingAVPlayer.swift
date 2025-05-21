@@ -2,6 +2,7 @@ import AVKit
 import SwiftUI
 
 struct TrimmingAVPlayer: NSViewControllerRepresentable {
+	@Environment(\.colorScheme) private var colorScheme
 	typealias NSViewControllerType = TrimmingAVPlayerViewController
 
 	let asset: AVAsset
@@ -32,12 +33,15 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 			item.playbackRange = nsViewController.currentItem.playbackRange
 			nsViewController.currentItem = item
 		}
+		let fragmentUniforms = PreviewRenderer.FragmentUniforms(isDarkMode: colorScheme.isDarkMode, videoBounds: nsViewController.playerView.videoBounds)
 
 		if let previewVideoCompositor = nsViewController.currentItem.customVideoCompositor as? PreviewVideoCompositor,
-		   previewVideoCompositor.fullPreviewStatus != fullPreviewStatus || previewVideoCompositor.shouldShowPreview != shouldShowPreview
+		   previewVideoCompositor.fullPreviewStatus != fullPreviewStatus || previewVideoCompositor.shouldShowPreview != shouldShowPreview || previewVideoCompositor.fragmentUniforms != fragmentUniforms
+
 		{
 			previewVideoCompositor.fullPreviewStatus = fullPreviewStatus
 			previewVideoCompositor.shouldShowPreview = shouldShowPreview
+			previewVideoCompositor.fragmentUniforms = fragmentUniforms
 
 			// Force AVPlayer redraw by updating video composition."
 			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
@@ -48,7 +52,9 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 		nsViewController.loopPlayback = loopPlayback
 		nsViewController.bouncePlayback = bouncePlayback
 		nsViewController.player.defaultRate = Float(speed)
-		nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
+		if nsViewController.player.rate != 0 {
+			nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
+		}
 		nsViewController.overlay = overlay
 		nsViewController.isTrimmerDraggable = isTrimmerDraggable
 	}
