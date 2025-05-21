@@ -80,8 +80,6 @@ extension CropRect {
 		}
 	}
 
-
-
 	var isReset: Bool {
 		origin.x == 0 && origin.y == 0 && size.width == 1 && size.height == 1
 	}
@@ -128,7 +126,9 @@ extension CropRect {
 	}
 
 	/**
-	 Computes the minimum and maximum aspect ratio value for a particular side while keeping the values within `Self.defaultAspectRatioBounds`. See [unclampedAspectRatioBoundsForSide](unclampedAspectRatioBoundsForSide)
+	Computes the minimum and maximum aspect ratio value for a particular side while keeping the values within `Self.defaultAspectRatioBounds`.
+	
+	See [unclampedAspectRatioBoundsForSide](unclampedAspectRatioBoundsForSide)
 	*/
 	func aspectRatioBoundsForSide(
 		aspectWidth: Double,
@@ -138,9 +138,12 @@ extension CropRect {
 	) -> ClosedRange<Int> {
 		unclampedAspectRatioBoundsForSide(aspectWidth: aspectWidth, aspectHeight: aspectHeight, forDimensions: dimensions, side: side).clamped(to: Self.defaultAspectRatioBounds)
 	}
+
 	/**
-	Computes the minimum and maximum aspect ratio value for a particular side. (for example, for `\.width` this function will calculate the range of valid widths assuming `aspectHeight` is kept constant)
-	 */
+	Computes the minimum and maximum aspect ratio value for a particular side.
+	
+	For example, for `\.width`, this function will calculate the range of valid widths assuming `aspectHeight` is kept constant.
+	*/
 	private func unclampedAspectRatioBoundsForSide(
 		aspectWidth: Double,
 		aspectHeight: Double,
@@ -148,13 +151,16 @@ extension CropRect {
 		side: KeyPath<UnitSize, Double>
 	) -> ClosedRange<Int> {
 		let aspectRatioBounds = self.aspectRatioBounds(aspectWidth: aspectWidth, aspectHeight: aspectHeight, forDimensions: dimensions)
+
 		if side == \.width {
 			return Int(ceil(aspectHeight * aspectRatioBounds.lowerBound ))...Int(floor( aspectHeight * aspectRatioBounds.upperBound ))
 		}
-		return Int(ceil(aspectWidth / aspectRatioBounds.upperBound))...Int(floor( aspectWidth / aspectRatioBounds.lowerBound ))
+
+		return Int(ceil(aspectWidth / aspectRatioBounds.upperBound))...Int(floor(aspectWidth / aspectRatioBounds.lowerBound))
 	}
+
 	/**
-	Computes the minimum and maximum aspect ratio for a cropRect
+	Computes the minimum and maximum aspect ratio for a crop rect.
 	*/
 	private func aspectRatioBounds(
 		aspectWidth: Double,
@@ -164,13 +170,16 @@ extension CropRect {
 		if width == 1.0 || height == 1.0 {
 			return (Self.minRectWidthHeight / dimensions.height)...(dimensions.width / Self.minRectWidthHeight)
 		}
+
 		let cropRectInPixels = unnormalize(forDimensions: dimensions)
 		let aspectSize = CGSize(width: aspectWidth, height: aspectHeight)
+
 		let newLongestSide = withAspectRatioInsideCurrentRectLongestSide(
 			cropRectInPixels: cropRectInPixels,
 			aspectSize: aspectSize,
 			withinVideoDimensions: dimensions
 		)
+
 		return (Self.minRectWidthHeight / newLongestSide)...(newLongestSide / Self.minRectWidthHeight)
 	}
 
@@ -196,11 +205,13 @@ extension CropRect {
 	) -> Self {
 		let cropRectInPixels = unnormalize(forDimensions: dimensions)
 		let aspectSize = CGSize(width: aspectWidth, height: aspectHeight)
+
 		let newLongestSide = withAspectRatioInsideCurrentRectLongestSide(
 			cropRectInPixels: cropRectInPixels,
 			aspectSize: aspectSize,
 			withinVideoDimensions: dimensions
 		)
+
 		let newAspect = Self.clampAspect(
 			aspectRatio: aspectSize.aspectRatio,
 			newLongestSide: newLongestSide
