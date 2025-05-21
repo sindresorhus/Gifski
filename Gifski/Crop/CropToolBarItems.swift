@@ -255,12 +255,7 @@ private struct CustomPixelField: View {
 
 					var newSize = cropRect.size
 					newSize[keyPath: unitSizeSide] = Double(newValue) / dimensions[keyPath: side]
-//					cropRect = cropRect.centeredRectWith(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
-
 					cropRect = cropRect.changeSize(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
-
-
-
 
 					if value != $0 {
 						modifiedCustomField = .pixel
