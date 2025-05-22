@@ -7,7 +7,6 @@ import DockProgress
 final class AppState {
 	static let shared = AppState()
 
-	var shouldShowPreview = false
 	var isOnEditScreen: Bool {
 		guard case .edit = navigationPath.last else {
 			return false
@@ -18,7 +17,40 @@ final class AppState {
 	var navigationPath = [Route]()
 	var isFileImporterPresented = false
 
-	var isCropActive = false
+	enum Mode {
+		case normal
+		case editCrop
+		case preview
+	}
+	var mode: Mode = .normal
+
+	var shouldShowPreview: Bool {
+		mode == .preview
+	}
+
+	var isCropActive: Bool {
+		mode == .editCrop
+	}
+
+	var requestNewFullPreview: RequestNewFullPreview?
+
+	/**
+	Provides a binding for a toggle button to access a certain mode, getter returns true if in that mode. Setter will toggle the mode on, but return to inital mode if set to off (if we are in the specified mode)
+	 */
+	func toggleMode(mode: Mode) -> Binding<Bool> {
+		.init(get: {
+			self.mode == mode
+		}, set: { newValue in
+			if newValue {
+				self.mode = mode
+				return
+			}
+			guard self.mode == mode else {
+				return
+			}
+			self.mode = .normal
+		})
+	}
 
 	// TODO: This can be inferred by checking the last element of navigationPath.
 	var isConverting = false

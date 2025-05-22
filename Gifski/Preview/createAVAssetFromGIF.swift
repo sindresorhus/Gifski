@@ -11,7 +11,7 @@ import AVKit
 /**
  Convert a GIF to an AVAAsset
  */
-func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullPreview, onProgress: (Double) -> Void) async throws -> TemporaryAVURLAsset {
+func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullPreview, onProgress: @escaping (Double) -> Void) async throws -> TemporaryAVURLAsset {
 	let numberOfImages = CGImageSourceGetCount(imageSource)
 	guard numberOfImages > 0,
 		  let firstCGImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
@@ -48,7 +48,6 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 	}
 	assetWriter.startSession(atSourceTime: .zero)
 
-	let dispatchQueue = DispatchQueue(label: "com.gifski.assetWriterQueue")
 	var frameIndex = 0
 
 	let frameRate: CMTimeScale = await {
@@ -62,50 +61,54 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 	}()
 
 
+	let dispatchQueue = DispatchQueue(label: "com.gifski.assetWriterQueue")
+	let sendableImageSource = SendableWrapper(imageSource)
+	let sendableWriterInput = SendableWrapper(writerInput)
+	let sendablePixelBufferAdaptor = SendableWrapper(pixelBufferAdaptor)
 
-	let dataReadyStream = AsyncStream { continuation in
+	try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
 		writerInput.requestMediaDataWhenReady(on: dispatchQueue) {
-			continuation.yield()
+			do {
+				var progressThreshold = 0.05
+				while sendableWriterInput.value.isReadyForMoreMediaData && frameIndex < numberOfImages {
+					try Task.checkCancellation()
+					let progress = Double(frameIndex) / Double(numberOfImages)
+					if progress > progressThreshold {
+						onProgress(progress)
+						progressThreshold = progress + 0.05
+					}
+					defer {
+						frameIndex += 1
+					}
+					guard let cgImage = CGImageSourceCreateImageAtIndex(sendableImageSource.value, frameIndex, nil) else {
+						throw CreateAVAssetError.failedToCreateImage
+					}
+					guard let pixelBufferPool = sendablePixelBufferAdaptor.value.pixelBufferPool,
+						  let pixelBuffer = createPixelBuffer(from: cgImage, using: pixelBufferPool)
+					else {
+						throw CreateAVAssetError.failedToCreatePixelBuffer
+					}
+
+					let presentationTime = CMTime(
+						value: CMTimeValue(frameIndex),
+						timescale: frameRate
+					)
+					guard sendablePixelBufferAdaptor.value.append(pixelBuffer, withPresentationTime: presentationTime) else {
+						throw CreateAVAssetError.cannotAppendNewImage
+					}
+				}
+				if frameIndex >= numberOfImages {
+					sendableWriterInput.value.markAsFinished()
+					continuation.resume()
+				}
+			} catch {
+				sendableWriterInput.value.markAsFinished()
+				continuation.resume(throwing: error)
+			}
 		}
 	}
-	var progressThreshold = 0.05
-	for await _ in dataReadyStream {
-		while writerInput.isReadyForMoreMediaData && frameIndex < numberOfImages {
-			try Task.checkCancellation()
-			let progress = Double(frameIndex) / Double(numberOfImages)
-			if progress > progressThreshold {
-				onProgress(progress)
-				progressThreshold = progress + 0.05
-			}
-			defer {
-				frameIndex += 1
-			}
-			guard let cgImage = CGImageSourceCreateImageAtIndex(imageSource, frameIndex, nil) else {
-				continue
-			}
-			guard let pixelBufferPool = pixelBufferAdaptor.pixelBufferPool,
-				  let pixelBuffer = createPixelBuffer(from: cgImage, using: pixelBufferPool)
-			else {
-				continue
-			}
-
-			let presentationTime = CMTime(
-				value: CMTimeValue(frameIndex),
-				timescale: frameRate
-			)
-			pixelBufferAdaptor.append(pixelBuffer, withPresentationTime: presentationTime)
-		}
-		if frameIndex >= numberOfImages {
-			break
-		}
-	}
-
 	writerInput.markAsFinished()
-	await withCheckedContinuation { continuation in
-		assetWriter.finishWriting {
-			continuation.resume()
-		}
-	}
+	await assetWriter.finishWriting()
 	guard assetWriter.status != .failed else {
 		throw CreateAVAssetError.failedToWrite
 	}
@@ -119,7 +122,7 @@ private func createPixelBuffer(from cgImage: CGImage, using pool: CVPixelBufferP
 		return nil
 	}
 
-	return pixelBuffer.withLocked { planes in
+	return pixelBuffer.withLockedPlanes { planes in
 		guard planes.count == 1,
 			  let plane = planes.first else {
 			return nil
@@ -145,9 +148,11 @@ enum CreateAVAssetError: Error {
 	case failedToStartWriting
 	case failedToCreateImageData
 	case failedToCreateImage
+	case failedToCreatePixelBuffer
 	case failedToCreateAssetWriter
 	case failedToWrite
 	case cannotAddWriterInput
+	case cannotAppendNewImage
 	case noImages
 }
 final class TemporaryAVURLAsset: AVURLAsset, @unchecked Sendable {

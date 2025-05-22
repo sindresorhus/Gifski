@@ -18,7 +18,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 	@MainActor
 	var fullPreviewStatus: FullPreviewGenerationEvent.Status?
 	@MainActor
-	var fragmentUniforms: PreviewRenderer.FragmentUniforms = .init(isDarkMode: true, videoBounds: .zero)
+	var previewCheckerboardParams: PreviewRenderer.PreviewCheckerboardParameters = .init(isDarkMode: true, videoBounds: .zero)
 	/**
 	 see [OutputCache](PreviewVideoCompositor.OutputCache) on why we need this
 	 */
@@ -41,7 +41,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 				)
 			} catch {
 				assertionFailure()
-				self.renderOriginal(from: originalFrame, to: outputFrame)
+				try? self.renderOriginal(from: originalFrame, to: outputFrame)
 				asyncVideoCompositionRequest.finish(
 					withComposedVideoFrame: outputFrame
 				)
@@ -64,7 +64,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 					lastGenerateTimeWhileNotShowingPreview = compositionTime
 				}
 			}
-			renderOriginal(
+			try renderOriginal(
 				from: originalFrame,
 				to: outputFrame
 			)
@@ -72,11 +72,11 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		}
 
 		guard let fullPreviewStatus else {
-			if await outputCache.restoreFromCache(to: outputFrame, at: compositionTime, with: fullPreviewStatus?.settings) {
+			if try await outputCache.restoreFromCache(to: outputFrame, at: compositionTime, with: fullPreviewStatus?.settings) {
 				return
 			}
 
-			renderOriginal(
+			try renderOriginal(
 				from: originalFrame,
 				to: outputFrame
 			)
@@ -94,35 +94,34 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		}
 		guard let fullPreviewFrame else {
 			if let preBakedFrame = fullPreviewStatus.preBaked?.getPreBakedFrame(forTime: compositionTime)  {
-				try await PreviewRenderer.renderPreview(previewFrame: preBakedFrame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
+				try await PreviewRenderer.renderPreview(previewFrame: preBakedFrame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
 				return
 			}
 			try await convertToGIFAndRender(originalFrame: originalFrame, outputFrame: outputFrame, settings: fullPreviewStatus.settings, compositionTime: compositionTime)
 			return
 		}
-		if await outputCache.restoreFromCache(to: outputFrame, at: compositionTime, with: fullPreviewStatus.settings) {
+		if try await outputCache.restoreFromCache(to: outputFrame, at: compositionTime, with: fullPreviewStatus.settings) {
 			return
 		}
 
-		try await PreviewRenderer.renderPreview(previewFrame: fullPreviewFrame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
+		try await PreviewRenderer.renderPreview(previewFrame: fullPreviewFrame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
 		return
 	}
 	private func convertToGIFAndRender(originalFrame: CVPixelBuffer, outputFrame: CVPixelBuffer, settings: SettingsForFullPreview, compositionTime: OriginalCompositionTime) async throws {
-		let frame = try await convertFrameToGIF(videoFrame: originalFrame, outputDimensions: settings.conversion.dimensions, outputQuality: settings.conversion.quality)
-		try await PreviewRenderer.renderPreview(previewFrame: frame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
-		await outputCache.cacheBuffer(outputFrame, at: compositionTime, with: settings)
+		let frame = try await convertFrameToGIF(videoFrame: originalFrame, settings: settings)
+		try await PreviewRenderer.renderPreview(previewFrame: frame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
+		try await outputCache.cacheBuffer(outputFrame, at: compositionTime, with: settings)
 	}
-	@discardableResult
+
 	private func renderOriginal(
 		from videoFrame: CVPixelBuffer,
 		to outputFrame: CVPixelBuffer,
-	) -> Bool {
-		videoFrame.copy(to: outputFrame)
+	) throws {
+		try videoFrame.copy(to: outputFrame)
 	}
 	private func convertFrameToGIF(
 		videoFrame: CVPixelBuffer,
-		outputDimensions: (width: Int, height: Int)?,
-		outputQuality: Double
+		settings: SettingsForFullPreview
 	) async throws -> CGImage  {
 		//  Not the fastest way to convert CVPixelBuffer to image, but the runtime of `GIFGenerator.convertOneFrame` is so much larger that optimizing this would be a waste
 		let ciImage = CIImage(cvPixelBuffer: videoFrame)
@@ -131,11 +130,13 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		else {
 			throw PreviewVideoCompositorError.failedToCreateCGContext
 		}
-		let intDimensions = outputDimensions ?? (width: cgImage.width, height: cgImage.height)
+		guard let croppedImage = settings.conversion.croppedImage(image: cgImage) else {
+			throw GIFGenerator.Error.cropNotInBounds
+		}
 		let data = try await GIFGenerator.convertOneFrame(
-			frame: cgImage,
-			dimensions: intDimensions,
-			quality: max(0.1, outputQuality),
+			frame: croppedImage,
+			dimensions: settings.conversion.croppedOutputDimensions,
+			quality: max(0.1, settings.conversion.quality),
 			fast: true
 		)
 		guard let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
@@ -163,38 +164,35 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		private var latest: Latest?
 
 		/**
-		 If settings is nil, match with any settings
+		 If settings is nil, match with any settings, returns true if we restored from cache, false if we couldn't and throws an error on error
 		 */
-		func restoreFromCache(to buffer: CVPixelBuffer, at time: OriginalCompositionTime, with settings: SettingsForFullPreview?) -> Bool {
+		func restoreFromCache(to buffer: CVPixelBuffer, at time: OriginalCompositionTime, with settings: SettingsForFullPreview?) throws -> Bool {
 			guard let latest,
 				  latest.writeTime == time,
 				  let cache else {
 				return false
 			}
 			guard let settings else {
-				return cache.copy(to: buffer)
+				try cache.copy(to: buffer)
+				return true
 			}
 
 			guard latest.settings.areTheSameBesidesTimeRange(settings) else {
 				return false
 			}
-			return cache.copy(to: buffer)
+			try cache.copy(to: buffer)
+			return true
 		}
-		func cacheBuffer(_ buffer: CVPixelBuffer, at time: OriginalCompositionTime, with settings: SettingsForFullPreview) {
+		func cacheBuffer(_ buffer: CVPixelBuffer, at time: OriginalCompositionTime, with settings: SettingsForFullPreview) throws {
 			if let cache {
-				guard buffer.copy(to: cache) else {
-					return
-				}
+				try buffer.copy(to: cache)
 				latest = Latest(writeTime: time, settings: settings)
 				return
 			}
-			guard let copyable = buffer.makeANewBufferThatThisCanCopyTo() else {
+			guard let copyable = buffer.makeCompatibleBuffer() else {
 				return
 			}
-
-			guard buffer.copy(to: copyable) else {
-				return
-			}
+			try buffer.copy(to: copyable)
 			cache = copyable
 			latest = Latest(writeTime: time, settings: settings)
 		}

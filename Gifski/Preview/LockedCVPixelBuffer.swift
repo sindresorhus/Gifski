@@ -12,91 +12,104 @@ extension CVPixelBuffer {
 	/**
 	 - Returns: True if copy was successful, false on error
 	 */
-	func copy(to destination: CVPixelBuffer) -> Bool {
-		withLocked(flags: [.readOnly]) { sourcePlanes in
-			destination.withLocked(flags: []) { destinationPlanes in
+	func copy(to destination: CVPixelBuffer) throws {
+		try withLockedPlanes(flags: [.readOnly]) { sourcePlanes in
+			try destination.withLockedPlanes(flags: []) { destinationPlanes in
 				guard sourcePlanes.count == destinationPlanes.count else {
-					return false
+					throw CopyError.planesMismatch
 				}
 				for (sourcePlane, destinationPlane) in zip(sourcePlanes, destinationPlanes) {
-					guard sourcePlane.copy(to: destinationPlane) else {
-						return false
-					}
+					try sourcePlane.copy(to: destinationPlane)
 				}
-				return true
 			}
-		} ?? false
+		}
 	}
 
-	func withLocked<T>(flags: CVPixelBufferLockFlags = [], _ body: ([LockedPixelBufferPlane]) throws -> T?) rethrows -> T? {
+	enum CopyError: Error {
+		case planesMismatch
+		case heightMismatch
+	}
+
+	func withLockedBaseAddress<T>(
+		flags: CVPixelBufferLockFlags = [],
+		_ body: (CVPixelBuffer) throws -> T?
+	) rethrows -> T? {
 		guard CVPixelBufferLockBaseAddress(self, flags) == kCVReturnSuccess else {
 			return nil
 		}
 		defer { CVPixelBufferUnlockBaseAddress(self, flags) }
-		let planeCount = CVPixelBufferGetPlaneCount(self)
-		if planeCount == 0 {
-			guard let base = CVPixelBufferGetBaseAddress(self) else {
-				return nil
-			}
-			return try body([
-				.init(
-					base: base,
-					bytesPerRow: CVPixelBufferGetBytesPerRow(self),
-					height: CVPixelBufferGetHeight(self)
-				)
-			])
-		}
-		let planes = (0..<planeCount).compactMap { planeIndex -> LockedPixelBufferPlane? in
-			guard let base = CVPixelBufferGetBaseAddressOfPlane(self, planeIndex) else {
-				return nil
-			}
-			return
-				.init(
-					base: base,
-					bytesPerRow: CVPixelBufferGetBytesPerRowOfPlane(self, planeIndex),
-					height: CVPixelBufferGetHeightOfPlane(self, planeIndex)
-				)
-		}
-		guard planes.count == planeCount else {
-			return nil
-		}
-		return try body(planes)
+		return try body(self)
 	}
 
-	func makeANewBufferThatThisCanCopyTo() -> CVPixelBuffer? {
+	func withLockedPlanes<T>(
+		flags: CVPixelBufferLockFlags = [],
+		_ body: ([LockedPlane]) throws -> T?
+	) rethrows -> T? {
+		try withLockedBaseAddress(flags: flags) { buffer in
+			let planeCount = buffer.planeCount
+			if planeCount == 0 {
+				guard let base = buffer.baseAddress else {
+					return nil
+				}
+				return try body([
+					.init(
+						base: base,
+						bytesPerRow: buffer.bytesPerRow,
+						height: buffer.height
+					)
+				])
+			}
+			let planes = (0..<planeCount).compactMap { planeIndex -> LockedPlane? in
+				guard let base = buffer.baseAddressOfPlane(planeIndex) else {
+					return nil
+				}
+				return .init(
+					base: base,
+					bytesPerRow: buffer.bytesPerRowOfPlane(planeIndex),
+					height: buffer.heightOfPlane(planeIndex)
+				)
+			}
+			guard planes.count == planeCount else {
+				return nil
+			}
+			return try body(planes)
+		}
+	}
+
+	func makeCompatibleBuffer() -> CVPixelBuffer? {
 		var out: CVPixelBuffer?
-		guard CVPixelBufferCreate(kCFAllocatorDefault, CVPixelBufferGetWidth(self), CVPixelBufferGetHeight(self), CVPixelBufferGetPixelFormatType(self), CVPixelBufferCopyCreationAttributes(self), &out) == kCVReturnSuccess
+		guard CVPixelBufferCreate(kCFAllocatorDefault, width, height, pixelFormatType, creationAttributes, &out) == kCVReturnSuccess
 		else {
 			return nil
 		}
 		return out
 	}
-}
 
-struct LockedPixelBufferPlane {
-	let base: UnsafeMutableRawPointer
-	let bytesPerRow: Int
-	let height: Int
+	struct LockedPlane {
+		let base: UnsafeMutableRawPointer
+		let bytesPerRow: Int
+		let height: Int
 
-	func copy(to destination: Self) -> Bool {
-		guard height == destination.height
-		else {
-			return false
+		func copy(to destination: Self) throws {
+			guard height == destination.height
+			else {
+				throw CopyError.heightMismatch
+			}
+
+			guard bytesPerRow != destination.bytesPerRow else {
+				memcpy(destination.base, base, height * bytesPerRow)
+				return
+			}
+			var destinationBase = destination.base
+			var sourceBase = base
+
+			let minBytesPerRow = min(bytesPerRow, destination.bytesPerRow)
+			for _ in 0..<height {
+				memcpy(destinationBase, sourceBase, minBytesPerRow)
+				sourceBase = sourceBase.advanced(by: bytesPerRow)
+				destinationBase = destinationBase.advanced(by: destination.bytesPerRow)
+			}
+			return
 		}
-
-		guard bytesPerRow != destination.bytesPerRow else {
-			memcpy(destination.base, base, height * bytesPerRow)
-			return true
-		}
-		var destinationBase = destination.base
-		var sourceBase = base
-
-		let minBytesPerRow = min(bytesPerRow, destination.bytesPerRow)
-		for _ in 0..<height {
-			memcpy(destinationBase, sourceBase, minBytesPerRow)
-			sourceBase = sourceBase.advanced(by: bytesPerRow)
-			destinationBase = destinationBase.advanced(by: destination.bytesPerRow)
-		}
-		return true
 	}
 }

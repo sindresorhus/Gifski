@@ -3,6 +3,41 @@ import AVFoundation
 
 struct EditScreen: View {
 	@Environment(AppState.self) private var appState
+	var url: URL
+	var asset: AVAsset
+	var metadata: AVAsset.VideoMetadata
+	@State private var outputCropRect: CropRect = .initialCropRect
+
+	private let requestNewFullPreview: RequestNewFullPreview
+	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
+
+	init(url: URL, asset: AVAsset, metadata: AVAsset.VideoMetadata) {
+		self.url = url
+		self.asset = asset
+		self.metadata = metadata
+		(fullPreviewStream, requestNewFullPreview) = createFullPreviewStream()
+	}
+
+	var body: some View {
+		_EditScreen(
+			url: url,
+			asset: asset,
+			metadata: metadata,
+			outputCropRect: $outputCropRect,
+			// Need to
+			overlay: NSHostingView(rootView: CropOverlayView(
+				cropRect: $outputCropRect,
+				dimensions: metadata.dimensions,
+				editable: appState.isCropActive
+			)),
+			requestNewFullPreview: requestNewFullPreview,
+			fullPreviewStream: fullPreviewStream
+		)
+	}
+}
+
+private struct _EditScreen: View {
+	@Environment(AppState.self) private var appState
 	@Default(.outputQuality) private var outputQuality
 	@Default(.bounceGIF) private var bounceGIF
 	@Default(.outputFPS) private var frameRate
@@ -12,7 +47,7 @@ struct EditScreen: View {
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
-	@State private var outputCropRect = CropRect.initialCropRect
+	@Binding var outputCropRect: CropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
@@ -24,37 +59,30 @@ struct EditScreen: View {
 
 	private let requestNewFullPreview: RequestNewFullPreview
 	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
+	private var overlay: NSView
 
 	init(
 		url: URL,
 		asset: AVAsset,
-		metadata: AVAsset.VideoMetadata
+		metadata: AVAsset.VideoMetadata,
+		outputCropRect: Binding<CropRect>,
+		overlay: NSView,
+		requestNewFullPreview: @escaping RequestNewFullPreview,
+		fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
 	) {
 		self._url = .init(wrappedValue: url)
 		self._asset = .init(wrappedValue: asset)
 		self._modifiedAsset = .init(wrappedValue: asset)
 		self._metadata = .init(wrappedValue: metadata)
-		(fullPreviewStream, requestNewFullPreview) = createFullPreviewStream()
+		self._outputCropRect = outputCropRect
+		self.overlay = overlay
+		self.requestNewFullPreview = requestNewFullPreview
+		self.fullPreviewStream = fullPreviewStream
 	}
 
 	var body: some View {
 		VStack {
-			// TODO: Move the trimmer outside the video view.
-			TrimmingAVPlayer(
-				asset: modifiedAsset,
-				shouldShowPreview: appState.shouldShowPreview,
-				fullPreviewStatus: fullPreviewState.status,
-				loopPlayback: loopGIF,
-				bouncePlayback: bounceGIF,
-				overlay: appState.isCropActive ? AnyView(CropOverlayView(cropRect: $outputCropRect, dimensions: metadata.dimensions, editable: true)) : nil,
-				isTrimmerDraggable: appState.isCropActive
-			) { timeRange in
-				DispatchQueue.main.async {
-					self.timeRange = timeRange
-					estimatedFileSizeModel.updateEstimate()
-					updatePreviewOnSettingsChange()
-				}
-			}
+			trimmingAVPlayer
 			controls
 			bottomBar
 		}
@@ -69,8 +97,7 @@ struct EditScreen: View {
 						.scaleEffect(0.5)
 						.frame(width: 10, height: 1)
 				}
-				@Bindable var appState = appState
-				Toggle(isOn: $appState.shouldShowPreview)
+				Toggle(isOn: appState.toggleMode(mode: .preview))
 				{
 					Label("Preview", systemImage: appState.shouldShowPreview ? "eye" : "eye.slash")
 				}
@@ -78,7 +105,7 @@ struct EditScreen: View {
 			ToolbarItemGroup {
 				@Bindable var appState = appState
 				CropToolbarItems(
-					isCropActive: $appState.isCropActive,
+					isCropActive: appState.toggleMode(mode: .editCrop),
 					metadata: metadata,
 					outputCropRect: $outputCropRect
 				)
@@ -175,6 +202,31 @@ struct EditScreen: View {
 		updatePreviewOnSettingsChange()
 	}
 
+	/**
+	Too many modifiers on `body` `VStack`, have to move to a helper
+	 */
+	private var trimmingAVPlayer: some View {
+		// TODO: Move the trimmer outside the video view.
+		TrimmingAVPlayer(
+			asset: modifiedAsset,
+			shouldShowPreview: appState.shouldShowPreview,
+			fullPreviewStatus: fullPreviewState.status,
+			loopPlayback: loopGIF,
+			bouncePlayback: bounceGIF,
+			overlay: appState.shouldShowPreview ? nil : overlay,
+			isTrimmerDraggable: appState.isCropActive
+		) { timeRange in
+			DispatchQueue.main.async {
+				self.timeRange = timeRange
+				estimatedFileSizeModel.updateEstimate()
+				updatePreviewOnSettingsChange()
+			}
+		}
+		.onChange(of: outputCropRect) {
+			updatePreviewOnSettingsChange()
+		}
+	}
+
 	private var controls: some View {
 		HStack(spacing: 0) {
 			Form {
@@ -238,7 +290,7 @@ struct EditScreen: View {
 				return .forever
 			}(),
 			bounce: bounceGIF,
-			crop: appState.isCropActive ? outputCropRect : nil
+			crop: outputCropRect
 		)
 	}
 

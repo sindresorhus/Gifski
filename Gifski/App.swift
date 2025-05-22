@@ -29,15 +29,13 @@ struct AppMain: App {
 				.disabled(appState.isConverting)
 			}
 			CommandGroup(replacing: .textEditing) {
-				@Bindable var appState = appState
-				Toggle("Preview", isOn: $appState.shouldShowPreview)
+				Toggle("Preview", isOn: appState.toggleMode(mode: .preview))
 					.keyboardShortcut("p", modifiers: [.command, .shift])
 					.disabled(!appState.isOnEditScreen)
 					.help("Preview is only available when editing a video")
 			}
 			CommandGroup(replacing: .textEditing) {
-				@Bindable var appState = appState
-				Toggle("Crop", isOn: $appState.isCropActive)
+				Toggle("Crop", isOn: appState.toggleMode(mode: .editCrop))
 					.keyboardShortcut("c", modifiers: [.command, .shift])
 					.disabled(!appState.isOnEditScreen)
 			}

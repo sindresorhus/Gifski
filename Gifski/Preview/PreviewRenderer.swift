@@ -1,123 +1,57 @@
 import CoreImage
+import AppKit
 import CoreGraphics
 
 struct PreviewRenderer {
-	struct FragmentUniforms: Equatable {
-		var videoBounds: SIMD4<Float>
-		var firstColor: SIMD4<Float>
-		var secondColor: SIMD4<Float>
-		var gridSize: SIMD4<Int>
-
-		init(isDarkMode: Bool, videoBounds: CGRect) {
-			self.videoBounds = .init(
-				x: Float(videoBounds.minX),
-				y: Float(videoBounds.minY),
-				z: Float(videoBounds.width),
-				w: Float(videoBounds.height)
-			)
-			self.gridSize = .init(x: CheckerboardView.gridSize, y: 0, z: 0, w: 0)
-			self.firstColor = (isDarkMode ? CheckerboardView.firstColorDark : CheckerboardView.firstColorLight).asLinearSIMD4 ?? .zero
-			self.secondColor = (isDarkMode ? CheckerboardView.secondColorDark : CheckerboardView.secondColorLight).asLinearSIMD4 ?? .zero
-		}
+	struct PreviewCheckerboardParameters: Equatable {
+		let isDarkMode: Bool
+		let videoBounds: CGRect
 	}
 
 	static func renderPreview(
 		previewFrame: CVPixelBuffer,
 		outputFrame: CVPixelBuffer,
-		fragmentUniforms: FragmentUniforms
+		previewCheckerboardParams: PreviewCheckerboardParameters
 	) async throws {
-		let context = CIContext()
-		let outputWidth = Double(CVPixelBufferGetWidth(outputFrame))
-		let outputHeight = Double(CVPixelBufferGetHeight(outputFrame))
-		let outputSize = CGSize(width: outputWidth, height: outputHeight)
-		let outputRect = CGRect(origin: .zero, size: outputSize)
-
-		let checkerboard = createCheckerboard(
-			size: outputSize,
-			gridSize: fragmentUniforms.gridSize.x,
-			firstColor: fragmentUniforms.firstColor.ciColor,
-			secondColor: fragmentUniforms.secondColor.ciColor
-		)
-
-		let previewImage = CIImage(cvPixelBuffer: previewFrame)
-		let previewBounds = previewImage.extent
-		let scale = min(
-			outputWidth / previewBounds.width,
-			outputHeight / previewBounds.height
-		)
-
-		let scaledSize = CGSize(
-			width: previewBounds.width * scale,
-			height: previewBounds.height * scale
-		)
-
-		let centeredRect = CGRect(
-			x: (outputWidth - scaledSize.width) / 2,
-			y: (outputHeight - scaledSize.height) / 2,
-			width: scaledSize.width,
-			height: scaledSize.height
-		)
-
-		let transform = CGAffineTransform.identity
-			.translatedBy(x: centeredRect.minX, y: centeredRect.minY)
-			.scaledBy(x: scale, y: scale)
-
-		let scaledPreview = previewImage.transformed(by: transform)
-		let result = scaledPreview.composited(over: checkerboard)
-
-		try context.render(
-			result.cropped(to: outputRect),
-			to: outputFrame,
-			bounds: outputRect,
-			colorSpace: CGColorSpace(name: CGColorSpace.sRGB)
-		)
+		try await renderPreview(previewImage: CIImage(cvPixelBuffer: previewFrame), outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
 	}
 
 	static func renderPreview(
 		previewFrame: CGImage,
 		outputFrame: CVPixelBuffer,
-		fragmentUniforms: FragmentUniforms
+		previewCheckerboardParams: PreviewCheckerboardParameters
+	) async throws {
+		try await renderPreview(previewImage: CIImage(cgImage: previewFrame), outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
+	}
+
+	private static func renderPreview(
+		previewImage: CIImage,
+		outputFrame: CVPixelBuffer,
+		previewCheckerboardParams: PreviewCheckerboardParameters
 	) async throws {
 		let context = CIContext()
-		let outputWidth = Double(CVPixelBufferGetWidth(outputFrame))
-		let outputHeight = Double(CVPixelBufferGetHeight(outputFrame))
+		let outputWidth = Double(outputFrame.width)
+		let outputHeight = Double(outputFrame.height)
 		let outputSize = CGSize(width: outputWidth, height: outputHeight)
 		let outputRect = CGRect(origin: .zero, size: outputSize)
 
 		let checkerboard = createCheckerboard(
-			size: outputSize,
-			gridSize: fragmentUniforms.gridSize.x,
-			firstColor: fragmentUniforms.firstColor.ciColor,
-			secondColor: fragmentUniforms.secondColor.ciColor
+			outputRect: outputRect,
+			uniforms: previewCheckerboardParams
 		)
 
-		let previewImage = CIImage(cgImage: previewFrame)
 		let previewBounds = previewImage.extent
-		let scale = min(
-			outputWidth / previewBounds.width,
-			outputHeight / previewBounds.height
-		)
 
-		let scaledSize = CGSize(
-			width: previewBounds.width * scale,
-			height: previewBounds.height * scale
-		)
-
-		let centeredRect = CGRect(
-			x: (outputWidth - scaledSize.width) / 2,
-			y: (outputHeight - scaledSize.height) / 2,
-			width: scaledSize.width,
-			height: scaledSize.height
-		)
+		let translationX = (outputWidth - previewBounds.width) / 2 - previewBounds.minX
+		let translationY = (outputHeight - previewBounds.height) / 2 - previewBounds.minY
 
 		let transform = CGAffineTransform.identity
-			.translatedBy(x: centeredRect.minX, y: centeredRect.minY)
-			.scaledBy(x: scale, y: scale)
+			.translatedBy(x: translationX, y: translationY)
 
-		let scaledPreview = previewImage.transformed(by: transform)
-		let result = scaledPreview.composited(over: checkerboard)
+		let translatedPreview = previewImage.transformed(by: transform)
+		let result = translatedPreview.composited(over: checkerboard)
 
-		try context.render(
+		context.render(
 			result.cropped(to: outputRect),
 			to: outputFrame,
 			bounds: outputRect,
@@ -126,33 +60,30 @@ struct PreviewRenderer {
 	}
 
 	private static func createCheckerboard(
-		size: CGSize,
-		gridSize: Int,
-		firstColor: CIColor,
-		secondColor: CIColor
+		outputRect: CGRect,
+		uniforms: PreviewCheckerboardParameters
 	) -> CIImage {
 		guard let filter = CIFilter(name: "CICheckerboardGenerator") else {
 			return CIImage.empty()
 		}
+		let scaleX = outputRect.width / uniforms.videoBounds.width
+		let scaleY = outputRect.height / uniforms.videoBounds.height
 
-		filter.setValue(Double(gridSize), forKey: "inputWidth")
-		filter.setValue(firstColor, forKey: "inputColor0")
-		filter.setValue(secondColor, forKey: "inputColor1")
+		filter.setValue(Double(CheckerboardView.gridSize) * scaleX, forKey: "inputWidth")
+
+		filter.setValue((uniforms.isDarkMode ? CheckerboardView.firstColorDark : CheckerboardView.firstColorLight).asLinearCIColor ?? .black, forKey: "inputColor0")
+		filter.setValue((uniforms.isDarkMode ? CheckerboardView.secondColorDark : CheckerboardView.secondColorLight).asLinearCIColor ?? .white, forKey: "inputColor1")
+
 		filter.setValue(
-			CIVector(x: size.width / 2, y: size.height / 2),
+			CIVector(
+				x: outputRect.midX + uniforms.videoBounds.midX * scaleX,
+				y: outputRect.midY + uniforms.videoBounds.midY * scaleY
+			),
 			forKey: "inputCenter"
 		)
-
 		guard let output = filter.outputImage else {
 			return CIImage.empty()
 		}
-
-		return output.cropped(to: CGRect(origin: .zero, size: size))
-	}
-}
-
-extension SIMD4 where Scalar == Float {
-	var ciColor: CIColor {
-		CIColor(red: Double(x), green: Double(y), blue: Double(z), alpha: Double(w))
+		return output
 	}
 }

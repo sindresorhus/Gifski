@@ -5696,24 +5696,75 @@ extension ColorScheme {
 	}
 }
 
-extension Bool {
-	var asPaddedFloat4: SIMD4<Float> {
-		.init(x: self ? 1.0 : 0.0, y: 0.0, z: 0.0, w: 0.0)
-	}
-}
-
-//swiftlint:disable:next no_cgfloat
-extension Array where Element == CGFloat {
-	var asSIMD4: SIMD4<Float>? {
-		guard self.count == 4 else {
-			return nil
-		}
-		return .init(x: Float(self[0]), y: Float(self[1]), z: Float(self[2]), w: Float(self[3]))
-	}
-}
-
 extension Color {
-	var asLinearSIMD4: SIMD4<Float>? {
-		NSColor(self).usingColorSpace(.genericRGB)?.cgColor.components?.asSIMD4
+	/**
+	 Convert to CIColor using the color components rather than the `CIColor(color:)` or `CIColor(cgColor:)` initilizers because those don't respect the change in colorspace
+	 */
+	var asLinearCIColor: CIColor? {
+		(NSColor(self).usingColorSpace(.genericRGB)?.cgColor.components).map {
+			CIColor(red: $0[0], green: $0[1], blue: $0[2], alpha: $0[3])
+		}
+	}
+}
+
+
+extension CVPixelBuffer {
+	var planeCount: Int {
+		CVPixelBufferGetPlaneCount(self)
+	}
+
+	var width: Int {
+		CVPixelBufferGetWidth(self)
+	}
+
+	var height: Int {
+		CVPixelBufferGetHeight(self)
+	}
+
+	var pixelFormatType: OSType {
+		CVPixelBufferGetPixelFormatType(self)
+	}
+
+	var bytesPerRow: Int {
+		CVPixelBufferGetBytesPerRow(self)
+	}
+
+	var baseAddress: UnsafeMutableRawPointer? {
+		CVPixelBufferGetBaseAddress(self)
+	}
+
+	var creationAttributes: CFDictionary {
+		CVPixelBufferCopyCreationAttributes(self)
+	}
+
+	func baseAddressOfPlane(_ plane: Int) -> UnsafeMutableRawPointer? {
+		CVPixelBufferGetBaseAddressOfPlane(self, plane)
+	}
+
+	func bytesPerRowOfPlane(_ plane: Int) -> Int {
+		CVPixelBufferGetBytesPerRowOfPlane(self, plane)
+	}
+
+	func heightOfPlane(_ plane: Int) -> Int {
+		CVPixelBufferGetHeightOfPlane(self, plane)
+	}
+}
+
+final class SendableWrapper<T>: @unchecked Sendable {
+	private var unsafeValue: T
+
+	private let lock = NSLock()
+
+	var value: T {
+		get {
+			lock.withLock { unsafeValue }
+		}
+		set {
+			lock.withLock { unsafeValue = newValue }
+		}
+	}
+
+	init(_ value: T) {
+		unsafeValue = value
 	}
 }

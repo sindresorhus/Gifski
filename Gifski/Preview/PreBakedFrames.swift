@@ -2,7 +2,7 @@ import Foundation
 import AVKit
 
 /**
- Bug in AVPlayer: if the left trimmer is to the far left (the beginning of the video) or the far right, the avVideoPlayer will prevent frame redraws on swiftUI updates (like pressing the showPreviewButton on / off). I have tried everything I can think of to find the real source of the error, but for now here is a workaround. We offset the track by just a bit on each end and prebake the frames just for the end. This offset will prevent the fullPreviewTrack from spanning the entire video range, and the pre-render keeps smooth video playback.
+ Bug in AVPlayer: if the left trimmer is to the far left (the beginning of the video) or the far right, the avVideoPlayer will prevent frame redraws on swiftUI updates (like pressing the showPreviewButton on / off, or switching to crop mode). I have tried everything I can think of to find the real source of the error, but for now here is a workaround. We offset the track by just a bit on each end and prebake the frames just for the end. This offset will prevent the fullPreviewTrack from spanning the entire video range, and the pre-render keeps smooth video playback.
  */
 struct PreBakedFrames {
 	private let frames: [Int: CGImage]
@@ -12,7 +12,7 @@ struct PreBakedFrames {
 	private let timeRange: ClosedRange<Double>
 	private let numberOfFrames: Int
 
-	private static let bugFixOffset = 0.1
+	private static let bugFixOffset = 0.5
 
 	init(_ imageSource: CGImageSource, settings: SettingsForFullPreview) async throws {
 		numberOfFrames = CGImageSourceGetCount(imageSource)
