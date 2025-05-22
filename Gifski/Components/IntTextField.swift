@@ -32,7 +32,6 @@ struct IntTextField: NSViewRepresentable {
 			onInvalid?($0)
 		}
 
-
 		return nsView
 	}
 
