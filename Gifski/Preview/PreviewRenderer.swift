@@ -13,7 +13,15 @@ struct PreviewRenderer {
 		outputFrame: CVPixelBuffer,
 		previewCheckerboardParams: PreviewCheckerboardParameters
 	) async throws {
-		try await renderPreview(previewImage: CIImage(cvPixelBuffer: previewFrame), outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
+		let previewImage = CIImage(
+			cvPixelBuffer: previewFrame,
+			options: outputFrame.colorSpace.map { space -> [CIImageOption: Any] in
+				[
+					.colorSpace: space
+				]
+			}
+		)
+		try await renderPreview(previewImage: previewImage, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
 	}
 
 	static func renderPreview(
@@ -55,7 +63,7 @@ struct PreviewRenderer {
 			result.cropped(to: outputRect),
 			to: outputFrame,
 			bounds: outputRect,
-			colorSpace: CGColorSpace(name: CGColorSpace.sRGB)
+			colorSpace: outputFrame.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)
 		)
 	}
 
@@ -71,8 +79,8 @@ struct PreviewRenderer {
 
 		filter.setValue(Double(CheckerboardView.gridSize) * scaleX, forKey: "inputWidth")
 
-		filter.setValue((uniforms.isDarkMode ? CheckerboardView.firstColorDark : CheckerboardView.firstColorLight).asLinearCIColor ?? .black, forKey: "inputColor0")
-		filter.setValue((uniforms.isDarkMode ? CheckerboardView.secondColorDark : CheckerboardView.secondColorLight).asLinearCIColor ?? .white, forKey: "inputColor1")
+		filter.setValue((uniforms.isDarkMode ? CheckerboardView.firstColorDark : CheckerboardView.firstColorLight).ciColor ?? .black, forKey: "inputColor0")
+		filter.setValue((uniforms.isDarkMode ? CheckerboardView.secondColorDark : CheckerboardView.secondColorLight).ciColor ?? .white, forKey: "inputColor1")
 
 		filter.setValue(
 			CIVector(

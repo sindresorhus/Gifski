@@ -5697,13 +5697,8 @@ extension ColorScheme {
 }
 
 extension Color {
-	/**
-	 Convert to CIColor using the color components rather than the `CIColor(color:)` or `CIColor(cgColor:)` initilizers because those don't respect the change in colorspace
-	 */
-	var asLinearCIColor: CIColor? {
-		(NSColor(self).usingColorSpace(.genericRGB)?.cgColor.components).map {
-			CIColor(red: $0[0], green: $0[1], blue: $0[2], alpha: $0[3])
-		}
+	var ciColor: CIColor? {
+		CIColor(color: NSColor(self))
 	}
 }
 
@@ -5747,6 +5742,11 @@ extension CVPixelBuffer {
 
 	func heightOfPlane(_ plane: Int) -> Int {
 		CVPixelBufferGetHeightOfPlane(self, plane)
+	}
+
+	var colorSpace: CGColorSpace? {
+		let attachments = CVBufferCopyAttachments(self, .shouldPropagate) as? [String: Any]
+		return (attachments?[kCVImageBufferCGColorSpaceKey as String] as! CGColorSpace)
 	}
 }
 
