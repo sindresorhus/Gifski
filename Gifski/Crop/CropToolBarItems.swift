@@ -242,8 +242,8 @@ private struct CustomPixelField: View {
 	// swiftlint:disable:next no_cgfloat
 	let side: WritableKeyPath<CGSize, CGFloat>
 	@State private var showWarning = false
+	@State private var warningCount = 0
 
-	static let minValue = 100
 	var body: some View {
 		IntTextField(
 			value: .init(
@@ -251,34 +251,39 @@ private struct CustomPixelField: View {
 					value
 				},
 				set: {
-					let newValue = $0.clamped(to: Self.minValue...Int(dimensions[keyPath: side]))
+					guard minMax.contains($0) else {
+						return
+					}
 
 					var newSize = cropRect.size
-					newSize[keyPath: unitSizeSide] = Double(newValue) / dimensions[keyPath: side]
+					newSize[keyPath: unitSizeSide] = Double($0) / dimensions[keyPath: side]
 					cropRect = cropRect.changeSize(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
 
 					if value != $0 {
 						modifiedCustomField = .pixel
 					}
-
-					if $0 < Self.minValue {
-						customPixelSize[keyPath: side] = Double(Self.minValue)
-						showWarning = true
-					} else {
-						customPixelSize[keyPath: side] = Double($0)
-						showWarning = false
-					}
+					customPixelSize[keyPath: side] = Double($0)
+					showWarning = false
 				}
 			),
-			minMax: Self.minValue...Int(dimensions[keyPath: side]),
+			minMax: minMax,
 			alignment: isWidth ? .right : .left,
-			font: .fieldFont
+			font: .fieldFont,
+			//swiftlint:disable:next trailing_closure
+			onInvalid: { invalidValue in
+				customPixelSize[keyPath: side] = Double(invalidValue.clamped(to: minMax))
+				warningCount += 1
+				showWarning = true
+			}
 		)
+		.onChange(of: warningCount){
+//			// no-op. Having the `warningCount` in the view hiearchy causes SwiftUI to refresh the `IntTextField` whenever an invalid value is entered even if we have already set the pixel size to `Self.minValue`. Can't use `.id()` modifier because it will close the popover.
+		}
 		.frame(width: 42.0)
 		.popover2(isPresented: $showWarning) {
 			VStack {
-				Text("Value is too small")
-				Text("\(value) < \(Self.minValue)")
+				Text("Value must be:")
+				Text("\(minMax.lowerBound) ≤ Value ≤ \(minMax.upperBound)")
 			}
 			.padding()
 		}
@@ -290,6 +295,10 @@ private struct CustomPixelField: View {
 
 	var isWidth: Bool {
 		side == \.width
+	}
+
+	var minMax: ClosedRange<Int> {
+		Int(CropRect.minRectWidthHeight)...Int(dimensions[keyPath: side])
 	}
 
 	var unitSizeSide: WritableKeyPath<UnitSize, Double> {

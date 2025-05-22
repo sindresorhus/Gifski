@@ -13,6 +13,7 @@ struct IntTextField: NSViewRepresentable {
 	var font: NSFont?
 	var onValueChange: ((Int) -> Void)?
 	var onBlur: ((Int) -> Void)?
+	var onInvalid: ((Int) -> Void)?
 
 	func makeNSView(context: Context) -> IntTextFieldCocoa {
 		let nsView = IntTextFieldCocoa()
@@ -26,6 +27,11 @@ struct IntTextField: NSViewRepresentable {
 			value = $0
 			onBlur?($0)
 		}
+
+		nsView.onInvalid = {
+			onInvalid?($0)
+		}
+
 
 		return nsView
 	}
@@ -61,6 +67,7 @@ final class IntTextFieldCocoa: NSTextField, NSTextFieldDelegate, NSControlTextEd
 
 	var onValueChange: ((Int) -> Void)?
 	var onBlur: ((Int) -> Void)?
+	var onInvalid: ((Int) -> Void)?
 	var minMax: ClosedRange<Int>?
 
 	var isEmpty: Bool { stringValue.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -110,7 +117,7 @@ final class IntTextFieldCocoa: NSTextField, NSTextFieldDelegate, NSControlTextEd
 			if minMax.contains(tentativeNewValue) {
 				setValue()
 			} else {
-				indicateValidationFailure()
+				indicateValidationFailure(invalidValue: tentativeNewValue)
 			}
 		} else {
 			setValue()
@@ -141,7 +148,7 @@ final class IntTextFieldCocoa: NSTextField, NSTextFieldDelegate, NSControlTextEd
 
 	private func handleValueChange() {
 		if !isValid(integerValue) {
-			indicateValidationFailure()
+			indicateValidationFailure(invalidValue: integerValue)
 		}
 
 		onValueChange?(integerValue)
@@ -149,14 +156,15 @@ final class IntTextFieldCocoa: NSTextField, NSTextFieldDelegate, NSControlTextEd
 
 	func controlTextDidEndEditing(_ object: Notification) {
 		if !isValid(integerValue) {
-			indicateValidationFailure()
+			indicateValidationFailure(invalidValue: integerValue)
 		}
 
 		onBlur?(integerValue)
 	}
 
-	func indicateValidationFailure() {
+	func indicateValidationFailure(invalidValue: Int) {
 		shake(direction: .horizontal)
+		onInvalid?(invalidValue)
 	}
 
 	private func isValid(_ value: Int) -> Bool {
