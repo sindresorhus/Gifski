@@ -276,9 +276,7 @@ private struct CustomPixelField: View {
 				showWarning = true
 			}
 		)
-		.onChange(of: warningCount){
-//			// no-op. Having the `warningCount` in the view hiearchy causes SwiftUI to refresh the `IntTextField` whenever an invalid value is entered even if we have already set the pixel size to `Self.minValue`. Can't use `.id()` modifier because it will close the popover.
-		}
+		.onChange(of: warningCount) {} // Noop. Having the `warningCount` in the view hiearchy causes SwiftUI to refresh the `IntTextField` whenever an invalid value is entered even if we have already set the pixel size to `Self.minValue`. Can't use `.id()` modifier because it will close the popover.
 		.frame(width: 42.0)
 		.popover2(isPresented: $showWarning) {
 			VStack {
