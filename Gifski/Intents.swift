@@ -243,16 +243,6 @@ struct CreateCropIntent: AppIntent {
 	}
 }
 
-enum ConvertOutputMode: String, AppEnum, CaseIterable, Codable, Hashable {
-	static var caseDisplayRepresentations: [Self: DisplayRepresentation] = [
-		.animatedGIF: DisplayRepresentation(title: "animated GIF"),
-		.preview: DisplayRepresentation(title: "a single frame GIF preview")
-	]
-	case animatedGIF
-	case preview
-	static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Output Mode")
-}
-
 struct ConvertIntent: AppIntent, ProgressReportingIntent {
 	static let title: LocalizedStringResource = "Convert Video to Animated GIF"
 

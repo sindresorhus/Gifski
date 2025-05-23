@@ -37,11 +37,6 @@ struct CropToolbarItems: View {
 	]
 }
 
-/**
-The range of valid numbers for the aspect ratio.
-*/
-private let aspectRatioNumberRange = 1...99
-
 private enum CustomFieldType {
 	case pixel
 	case aspect
@@ -71,6 +66,23 @@ private struct AspectRatioPicker: View {
 				for: customAspectRatio,
 				forDimensions: metadata.dimensions
 			)
+
+			// Change the `customAspectRatio` to reflect the bounded crop rect (as in it is not too small on one side), but debounce it to let the user enter intermediate invalid values.
+			Debouncer.debounce(delay: .seconds(2)) {
+				let cropSizeRightNow = outputCropRect.unnormalize(forDimensions: metadata.dimensions).size
+
+				let newRatio = PickerAspectRatio.closestAspectRatio(
+					for: cropSizeRightNow,
+					within: CropRect.defaultAspectRatioBounds
+				)
+
+				guard newRatio.aspectRatio != self.customAspectRatio?.aspectRatio else {
+					// Prevent simplifaction (like `25:5` -> `5:1`), only assign if the aspect ratio is new.
+					return
+				}
+
+				self.customAspectRatio = newRatio
+			}
 		}
 		.staticPopover(isPresented: $showEnterCustomAspectRatio) {
 			CustomAspectRatioView(
@@ -143,7 +155,7 @@ private struct AspectRatioPicker: View {
 
 		customAspectRatio = PickerAspectRatio.closestAspectRatio(
 			for: cropSizeRightNow,
-			within: aspectRatioNumberRange
+			within: CropRect.defaultAspectRatioBounds
 		)
 
 		customPixelSize = cropSizeRightNow
@@ -235,8 +247,8 @@ private struct CustomPixelField: View {
 	// swiftlint:disable:next no_cgfloat
 	let side: WritableKeyPath<CGSize, CGFloat>
 	@State private var showWarning = false
+	@State private var warningCount = 0
 
-	static let minValue = 100
 	var body: some View {
 		IntTextField(
 			value: .init(
@@ -244,29 +256,37 @@ private struct CustomPixelField: View {
 					value
 				},
 				set: {
-					let newValue = $0.clamped(to: Self.minValue...Int(dimensions[keyPath: side]))
+					guard minMax.contains($0) else {
+						return
+					}
 
 					var newSize = cropRect.size
-					newSize[keyPath: unitSizeSide] = Double(newValue) / dimensions[keyPath: side]
-					cropRect = cropRect.centeredRectWith(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
+					newSize[keyPath: unitSizeSide] = Double($0) / dimensions[keyPath: side]
+					cropRect = cropRect.changeSize(size: newSize, minSize: CropRect.minSize(videoSize: dimensions))
 
 					if value != $0 {
 						modifiedCustomField = .pixel
 					}
 
 					customPixelSize[keyPath: side] = Double($0)
-					showWarning = $0 < Self.minValue
+					showWarning = false
 				}
 			),
-			minMax: Self.minValue...Int(dimensions[keyPath: side]),
+			minMax: minMax,
 			alignment: isWidth ? .right : .left,
-			font: .fieldFont
+			font: .fieldFont,
+			//swiftlint:disable:next trailing_closure
+			onInvalid: { invalidValue in
+				customPixelSize[keyPath: side] = Double(invalidValue.clamped(to: minMax))
+				warningCount += 1
+				showWarning = true
+			}
 		)
+		.onChange(of: warningCount) {} // Noop. Having the `warningCount` in the view hierarchy causes SwiftUI to refresh the `IntTextField` whenever an invalid value is entered even if we have already set the pixel size to `Self.minValue`. Can't use `.id()` modifier because it will close the popover.
 		.frame(width: 42.0)
 		.popover2(isPresented: $showWarning) {
 			VStack {
-				Text("Value is too small")
-				Text("\(value) < \(Self.minValue)")
+				Text("Value must be in the range \(minMax.lowerBound) to \(minMax.upperBound)")
 			}
 			.padding()
 		}
@@ -278,6 +298,10 @@ private struct CustomPixelField: View {
 
 	var isWidth: Bool {
 		side == \.width
+	}
+
+	var minMax: ClosedRange<Int> {
+		Int(CropRect.minRectWidthHeight)...Int(dimensions[keyPath: side])
 	}
 
 	var unitSizeSide: WritableKeyPath<UnitSize, Double> {
@@ -308,15 +332,27 @@ private struct CustomAspectField: View {
 						modifiedCustomField = .aspect
 					}
 
-					customAspectRatioCopy[keyPath: side] = $0
+					customAspectRatioCopy[keyPath: side] = $0.clamped(to: minMax)
 					customAspectRatio = customAspectRatioCopy
 				}
 			),
-			minMax: aspectRatioNumberRange,
+			minMax: minMax,
 			alignment: side == \.width ? .right : .left,
 			font: .fieldFont
 		)
 		.frame(width: 26.0)
+	}
+
+	var minMax: ClosedRange<Int> {
+		CropRect.defaultAspectRatioBounds
+	}
+
+	var isWidth: Bool {
+		side == \.width
+	}
+
+	var unitSizeSide: WritableKeyPath<UnitSize, Double> {
+		isWidth ? \.width : \.height
 	}
 }
 
