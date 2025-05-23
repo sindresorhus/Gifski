@@ -66,9 +66,11 @@ private struct AspectRatioPicker: View {
 				for: customAspectRatio,
 				forDimensions: metadata.dimensions
 			)
-			// Change the customAspectRatio to reflect the bounded crop Rect (as in it is not too small on one side), but debounce it to let the user enter intermediate invalid values.
-			Debouncer.debounce(delay: .seconds(1.7)) {
+
+			// Change the `customAspectRatio` to reflect the bounded crop rect (as in it is not too small on one side), but debounce it to let the user enter intermediate invalid values.
+			Debouncer.debounce(delay: .seconds(2)) {
 				let cropSizeRightNow = outputCropRect.unnormalize(forDimensions: metadata.dimensions).size
+
 				self.customAspectRatio = PickerAspectRatio.closestAspectRatio(
 					for: cropSizeRightNow,
 					within: CropRect.defaultAspectRatioBounds
@@ -258,6 +260,7 @@ private struct CustomPixelField: View {
 					if value != $0 {
 						modifiedCustomField = .pixel
 					}
+
 					customPixelSize[keyPath: side] = Double($0)
 					showWarning = false
 				}
