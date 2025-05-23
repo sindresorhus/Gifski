@@ -71,15 +71,16 @@ private struct AspectRatioPicker: View {
 			Debouncer.debounce(delay: .seconds(2)) {
 				let cropSizeRightNow = outputCropRect.unnormalize(forDimensions: metadata.dimensions).size
 
-
 				let newRatio = PickerAspectRatio.closestAspectRatio(
 					for: cropSizeRightNow,
 					within: CropRect.defaultAspectRatioBounds
 				)
+
 				guard newRatio.aspectRatio != self.customAspectRatio?.aspectRatio else {
-					// Prevent simplifaction (like `25:5` -> `5:1`), only assign if the aspect ratio is new
+					// Prevent simplifaction (like `25:5` -> `5:1`), only assign if the aspect ratio is new.
 					return
 				}
+
 				self.customAspectRatio = newRatio
 			}
 		}
