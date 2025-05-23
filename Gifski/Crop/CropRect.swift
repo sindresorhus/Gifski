@@ -126,40 +126,6 @@ extension CropRect {
 	}
 
 	/**
-	Computes the minimum and maximum aspect ratio value for a particular side while keeping the values within `Self.defaultAspectRatioBounds`.
-	
-	See [unclampedAspectRatioBoundsForSide](unclampedAspectRatioBoundsForSide)
-	*/
-	func aspectRatioBoundsForSide(
-		aspectWidth: Double,
-		aspectHeight: Double,
-		forDimensions dimensions: CGSize,
-		side: KeyPath<UnitSize, Double>
-	) -> ClosedRange<Int> {
-		unclampedAspectRatioBoundsForSide(aspectWidth: aspectWidth, aspectHeight: aspectHeight, forDimensions: dimensions, side: side).clamped(to: Self.defaultAspectRatioBounds)
-	}
-
-	/**
-	Computes the minimum and maximum aspect ratio value for a particular side.
-	
-	For example, for `\.width`, this function will calculate the range of valid widths assuming `aspectHeight` is kept constant.
-	*/
-	private func unclampedAspectRatioBoundsForSide(
-		aspectWidth: Double,
-		aspectHeight: Double,
-		forDimensions dimensions: CGSize,
-		side: KeyPath<UnitSize, Double>
-	) -> ClosedRange<Int> {
-		let aspectRatioBounds = self.aspectRatioBounds(aspectWidth: aspectWidth, aspectHeight: aspectHeight, forDimensions: dimensions)
-
-		if side == \.width {
-			return Int(ceil(aspectHeight * aspectRatioBounds.lowerBound ))...Int(floor( aspectHeight * aspectRatioBounds.upperBound ))
-		}
-
-		return Int(ceil(aspectWidth / aspectRatioBounds.upperBound))...Int(floor(aspectWidth / aspectRatioBounds.lowerBound))
-	}
-
-	/**
 	Computes the minimum and maximum aspect ratio for a crop rect.
 	*/
 	private func aspectRatioBounds(

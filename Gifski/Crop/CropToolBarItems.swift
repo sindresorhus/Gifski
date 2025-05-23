@@ -66,6 +66,14 @@ private struct AspectRatioPicker: View {
 				for: customAspectRatio,
 				forDimensions: metadata.dimensions
 			)
+			// Change the customAspectRatio to reflect the bounded crop Rect (as in it is not too small on one side), but debounce it to let the user enter intermediate invalid values.
+			Debouncer.debounce(delay: .seconds(1.7)) {
+				let cropSizeRightNow = outputCropRect.unnormalize(forDimensions: metadata.dimensions).size
+				self.customAspectRatio = PickerAspectRatio.closestAspectRatio(
+					for: cropSizeRightNow,
+					within: CropRect.defaultAspectRatioBounds
+				)
+			}
 		}
 		.staticPopover(isPresented: $showEnterCustomAspectRatio) {
 			CustomAspectRatioView(
@@ -184,26 +192,14 @@ private struct CustomAspectRatioView: View {
 				CustomAspectField(
 					customAspectRatio: $customAspectRatio,
 					modifiedCustomField: $modifiedCustomField,
-					side: \.width,
-					aspectRatioNumberRange: cropRect.aspectRatioBoundsForSide(
-						aspectWidth: Double(customAspectRatio?.width ?? 1),
-						aspectHeight: Double(customAspectRatio?.height ?? 1),
-						forDimensions: dimensions,
-						side: \.width
-					)
+					side: \.width
 				)
 				Text(":")
 					.foregroundStyle(.secondary)
 				CustomAspectField(
 					customAspectRatio: $customAspectRatio,
 					modifiedCustomField: $modifiedCustomField,
-					side: \.height,
-					aspectRatioNumberRange: cropRect.aspectRatioBoundsForSide(
-						aspectWidth: Double(customAspectRatio?.width ?? 1),
-						aspectHeight: Double(customAspectRatio?.height ?? 1),
-						forDimensions: dimensions,
-						side: \.height
-					)
+					side: \.height
 				)
 			}
 			.frame(width: 90)
@@ -276,12 +272,11 @@ private struct CustomPixelField: View {
 				showWarning = true
 			}
 		)
-		.onChange(of: warningCount) {} // Noop. Having the `warningCount` in the view hiearchy causes SwiftUI to refresh the `IntTextField` whenever an invalid value is entered even if we have already set the pixel size to `Self.minValue`. Can't use `.id()` modifier because it will close the popover.
+		.onChange(of: warningCount) {} // Noop. Having the `warningCount` in the view hierarchy causes SwiftUI to refresh the `IntTextField` whenever an invalid value is entered even if we have already set the pixel size to `Self.minValue`. Can't use `.id()` modifier because it will close the popover.
 		.frame(width: 42.0)
 		.popover2(isPresented: $showWarning) {
 			VStack {
-				Text("Value must be:")
-				Text("\(minMax.lowerBound) ≤ Value ≤ \(minMax.upperBound)")
+				Text("Value must be in the range \(minMax.lowerBound) to \(minMax.upperBound)")
 			}
 			.padding()
 		}
@@ -308,7 +303,6 @@ private struct CustomAspectField: View {
 	@Binding var customAspectRatio: PickerAspectRatio?
 	@Binding var modifiedCustomField: CustomFieldType?
 	let side: WritableKeyPath<PickerAspectRatio, Int>
-	let aspectRatioNumberRange: ClosedRange<Int>
 
 	var body: some View {
 		IntTextField(
@@ -328,15 +322,19 @@ private struct CustomAspectField: View {
 						modifiedCustomField = .aspect
 					}
 
-					customAspectRatioCopy[keyPath: side] = $0.clamped(to: aspectRatioNumberRange)
+					customAspectRatioCopy[keyPath: side] = $0.clamped(to: minMax)
 					customAspectRatio = customAspectRatioCopy
 				}
 			),
-			minMax: aspectRatioNumberRange,
+			minMax: minMax,
 			alignment: side == \.width ? .right : .left,
 			font: .fieldFont
 		)
 		.frame(width: 26.0)
+	}
+
+	var minMax: ClosedRange<Int> {
+		CropRect.defaultAspectRatioBounds
 	}
 
 	var isWidth: Bool {
