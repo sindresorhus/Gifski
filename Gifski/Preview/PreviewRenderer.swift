@@ -2,13 +2,39 @@ import CoreImage
 import AppKit
 import CoreGraphics
 
-struct PreviewRenderer {
+actor PreviewRenderer {
+	static let shared = PreviewRenderer()
+
 	struct PreviewCheckerboardParameters: Equatable {
 		let isDarkMode: Bool
 		let videoBounds: CGRect
 	}
 
+	static func renderOriginal(
+		from videoFrame: CVPixelBuffer,
+		to outputFrame: CVPixelBuffer,
+	) async throws {
+		try await shared.renderOriginal(from: videoFrame, to: outputFrame)
+	}
+
 	static func renderPreview(
+		previewFrame: CVPixelBuffer,
+		outputFrame: CVPixelBuffer,
+		previewCheckerboardParams: PreviewCheckerboardParameters
+	) async throws {
+		try await shared.renderPreview(previewFrame: previewFrame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
+	}
+
+	static func renderPreview(
+		previewFrame: CGImage,
+		outputFrame: CVPixelBuffer,
+		previewCheckerboardParams: PreviewCheckerboardParameters
+	) async throws {
+		try await shared.renderPreview(previewFrame: previewFrame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
+	}
+
+
+	private func renderPreview(
 		previewFrame: CVPixelBuffer,
 		outputFrame: CVPixelBuffer,
 		previewCheckerboardParams: PreviewCheckerboardParameters
@@ -24,7 +50,7 @@ struct PreviewRenderer {
 		try await renderPreview(previewImage: previewImage, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
 	}
 
-	static func renderPreview(
+	private func renderPreview(
 		previewFrame: CGImage,
 		outputFrame: CVPixelBuffer,
 		previewCheckerboardParams: PreviewCheckerboardParameters
@@ -32,7 +58,14 @@ struct PreviewRenderer {
 		try await renderPreview(previewImage: CIImage(cgImage: previewFrame), outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
 	}
 
-	private static func renderPreview(
+	private func renderOriginal(
+		from videoFrame: CVPixelBuffer,
+		to outputFrame: CVPixelBuffer,
+	) throws {
+		try videoFrame.copy(to: outputFrame)
+	}
+
+	private func renderPreview(
 		previewImage: CIImage,
 		outputFrame: CVPixelBuffer,
 		previewCheckerboardParams: PreviewCheckerboardParameters
@@ -67,7 +100,7 @@ struct PreviewRenderer {
 		)
 	}
 
-	private static func createCheckerboard(
+	private func createCheckerboard(
 		outputRect: CGRect,
 		uniforms: PreviewCheckerboardParameters
 	) -> CIImage {
@@ -77,10 +110,10 @@ struct PreviewRenderer {
 		let scaleX = outputRect.width / uniforms.videoBounds.width
 		let scaleY = outputRect.height / uniforms.videoBounds.height
 
-		filter.setValue(Double(CheckerboardView.gridSize) * scaleX, forKey: "inputWidth")
+		filter.setValue(Double(CheckerboardViewConstants.gridSize) * scaleX, forKey: "inputWidth")
 
-		filter.setValue((uniforms.isDarkMode ? CheckerboardView.firstColorDark : CheckerboardView.firstColorLight).ciColor ?? .black, forKey: "inputColor0")
-		filter.setValue((uniforms.isDarkMode ? CheckerboardView.secondColorDark : CheckerboardView.secondColorLight).ciColor ?? .white, forKey: "inputColor1")
+		filter.setValue((uniforms.isDarkMode ? CheckerboardViewConstants.firstColorDark : CheckerboardViewConstants.firstColorLight).ciColor ?? .black, forKey: "inputColor0")
+		filter.setValue((uniforms.isDarkMode ? CheckerboardViewConstants.secondColorDark : CheckerboardViewConstants.secondColorLight).ciColor ?? .white, forKey: "inputColor1")
 
 		filter.setValue(
 			CIVector(

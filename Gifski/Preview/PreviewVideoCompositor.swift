@@ -41,7 +41,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 				)
 			} catch {
 				assertionFailure()
-				try? self.renderOriginal(from: originalFrame, to: outputFrame)
+				try? await PreviewRenderer.renderOriginal(from: originalFrame, to: outputFrame)
 				asyncVideoCompositionRequest.finish(
 					withComposedVideoFrame: outputFrame
 				)
@@ -57,14 +57,13 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 	) async throws {
 		let fullPreviewStatus = await fullPreviewStatus
 		let compositionTime = OriginalCompositionTime(reportedCompositionTime: reportedCompositionTime, speed: fullPreviewStatus?.settings.speed)
-
 		guard await shouldShowPreview else {
 			if fullPreviewStatus.isGenerating {
 				await MainActor.run {
 					lastGenerateTimeWhileNotShowingPreview = compositionTime
 				}
 			}
-			try renderOriginal(
+			try await PreviewRenderer.renderOriginal(
 				from: originalFrame,
 				to: outputFrame
 			)
@@ -76,7 +75,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 				return
 			}
 
-			try renderOriginal(
+			try await PreviewRenderer.renderOriginal(
 				from: originalFrame,
 				to: outputFrame
 			)
@@ -113,12 +112,6 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		try await outputCache.cacheBuffer(outputFrame, at: compositionTime, with: settings)
 	}
 
-	private func renderOriginal(
-		from videoFrame: CVPixelBuffer,
-		to outputFrame: CVPixelBuffer,
-	) throws {
-		try videoFrame.copy(to: outputFrame)
-	}
 	private func convertFrameToGIF(
 		videoFrame: CVPixelBuffer,
 		settings: SettingsForFullPreview
@@ -166,21 +159,21 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		/**
 		 If settings is nil, match with any settings, returns true if we restored from cache, false if we couldn't and throws an error on error
 		 */
-		func restoreFromCache(to buffer: CVPixelBuffer, at time: OriginalCompositionTime, with settings: SettingsForFullPreview?) throws -> Bool {
+		func restoreFromCache(to buffer: CVPixelBuffer, at time: OriginalCompositionTime, with settings: SettingsForFullPreview?) async throws -> Bool {
 			guard let latest,
 				  latest.writeTime == time,
 				  let cache else {
 				return false
 			}
 			guard let settings else {
-				try cache.copy(to: buffer)
+				try await PreviewRenderer.renderOriginal(from: cache, to: buffer)
 				return true
 			}
 
 			guard latest.settings.areTheSameBesidesTimeRange(settings) else {
 				return false
 			}
-			try cache.copy(to: buffer)
+			try await PreviewRenderer.renderOriginal(from: cache, to: buffer)
 			return true
 		}
 		func cacheBuffer(_ buffer: CVPixelBuffer, at time: OriginalCompositionTime, with settings: SettingsForFullPreview) throws {

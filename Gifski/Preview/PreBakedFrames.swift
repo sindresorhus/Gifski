@@ -12,7 +12,7 @@ struct PreBakedFrames {
 	private let timeRange: ClosedRange<Double>
 	private let numberOfFrames: Int
 
-	private static let bugFixOffset = 0.5
+	private static let bugFixOffset = 0.1
 
 	init(_ imageSource: CGImageSource, settings: SettingsForFullPreview) async throws {
 		numberOfFrames = CGImageSourceGetCount(imageSource)

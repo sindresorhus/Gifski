@@ -34,20 +34,24 @@ struct CropOverlayView: View {
 						context.stroke(holePath, with: .color(.white), lineWidth: 1)
 					}
 				}
-				.pointerStyle(isDragging ? .grabActive : .grabIdle)
-				.contentShape(
-					Path { path in
-						path.addRect(cropFrame.insetBy(dx: 5, dy: 5))
-					}
-				)
-				.cropDragGesture(
-					isDragging: $isDragging,
-					cropRect: $cropRect,
-					frame: frame,
-					dimensions: dimensions,
-					position: .center,
-					dragMode: dragMode
-				)
+				if editable {
+					Color
+						.clear
+						.contentShape(
+							Path { path in
+								path.addRect(cropFrame.insetBy(dx: 5, dy: 5))
+							}
+						)
+						.pointerStyle(isDragging ? .grabActive : .grabIdle)
+						.cropDragGesture(
+							isDragging: $isDragging,
+							cropRect: $cropRect,
+							frame: frame,
+							dimensions: dimensions,
+							position: .center,
+							dragMode: dragMode
+						)
+				}
 				if isDragging {
 					DraggingSections(cropFrame: cropFrame)
 						.stroke(Color.white)
