@@ -3,6 +3,41 @@ import AVFoundation
 
 struct EditScreen: View {
 	@Environment(AppState.self) private var appState
+	var url: URL
+	var asset: AVAsset
+	var metadata: AVAsset.VideoMetadata
+	@State private var outputCropRect: CropRect = .initialCropRect
+
+	private let requestNewFullPreview: RequestNewFullPreview
+	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
+
+	init(url: URL, asset: AVAsset, metadata: AVAsset.VideoMetadata) {
+		self.url = url
+		self.asset = asset
+		self.metadata = metadata
+		(fullPreviewStream, requestNewFullPreview) = createFullPreviewStream()
+	}
+
+	var body: some View {
+		_EditScreen(
+			url: url,
+			asset: asset,
+			metadata: metadata,
+			outputCropRect: $outputCropRect,
+			// Need to
+			overlay: NSHostingView(rootView: CropOverlayView(
+				cropRect: $outputCropRect,
+				dimensions: metadata.dimensions,
+				editable: appState.isCropActive
+			)),
+			requestNewFullPreview: requestNewFullPreview,
+			fullPreviewStream: fullPreviewStream
+		)
+	}
+}
+
+private struct _EditScreen: View {
+	@Environment(AppState.self) private var appState
 	@Default(.outputQuality) private var outputQuality
 	@Default(.bounceGIF) private var bounceGIF
 	@Default(.outputFPS) private var frameRate
@@ -12,7 +47,7 @@ struct EditScreen: View {
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
-	@State private var outputCropRect = CropRect.initialCropRect
+	@Binding var outputCropRect: CropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
@@ -20,32 +55,34 @@ struct EditScreen: View {
 	@State private var isReversePlaybackWarningPresented = false
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
+	@State private var fullPreviewState: FullPreviewGenerationEvent = .initialState
+
+	private let requestNewFullPreview: RequestNewFullPreview
+	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
+	private var overlay: NSView
 
 	init(
 		url: URL,
 		asset: AVAsset,
-		metadata: AVAsset.VideoMetadata
+		metadata: AVAsset.VideoMetadata,
+		outputCropRect: Binding<CropRect>,
+		overlay: NSView,
+		requestNewFullPreview: @escaping RequestNewFullPreview,
+		fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
 	) {
 		self._url = .init(wrappedValue: url)
 		self._asset = .init(wrappedValue: asset)
 		self._modifiedAsset = .init(wrappedValue: asset)
 		self._metadata = .init(wrappedValue: metadata)
+		self._outputCropRect = outputCropRect
+		self.overlay = overlay
+		self.requestNewFullPreview = requestNewFullPreview
+		self.fullPreviewStream = fullPreviewStream
 	}
 
 	var body: some View {
 		VStack {
-			// TODO: Move the trimmer outside the video view.
-			TrimmingAVPlayer(
-				asset: modifiedAsset,
-				loopPlayback: loopGIF,
-				bouncePlayback: bounceGIF,
-				overlay: appState.isCropActive ? AnyView(CropOverlayView(cropRect: $outputCropRect, dimensions: metadata.dimensions, editable: true)) : nil,
-				isTrimmerDraggable: appState.isCropActive
-			) { timeRange in
-				DispatchQueue.main.async {
-					self.timeRange = timeRange
-				}
-			}
+			trimmingAVPlayer
 			controls
 			bottomBar
 		}
@@ -54,9 +91,21 @@ struct EditScreen: View {
 		.navigationDocument(url)
 		.toolbar {
 			ToolbarItemGroup {
+				if fullPreviewState.isGenerating {
+					ProgressView(value: fullPreviewState.progress)
+						.progressViewStyle(.circular)
+						.scaleEffect(0.5)
+						.frame(width: 10, height: 1)
+				}
+				Toggle(isOn: appState.toggleMode(mode: .preview))
+				{
+					Label("Preview", systemImage: appState.shouldShowPreview ? "eye" : "eye.slash")
+				}
+			}
+			ToolbarItemGroup {
 				@Bindable var appState = appState
 				CropToolbarItems(
-					isCropActive: $appState.isCropActive,
+					isCropActive: appState.toggleMode(mode: .editCrop),
 					metadata: metadata,
 					outputCropRect: $outputCropRect
 				)
@@ -74,19 +123,23 @@ struct EditScreen: View {
 		.onChange(of: outputQuality, initial: true) {
 			estimatedFileSizeModel.duration = metadata.duration
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		}
 		// TODO: Make these a single call when tuples are equatable.
 		.onChange(of: resizableDimensions) {
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		}
 		.onChange(of: timeRange) {
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		}
 		.onChange(of: bounceGIF) {
 			estimatedFileSizeModel.updateEstimate()
 		}
 		.onChange(of: frameRate) {
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		}
 		.onChange(of: bounceGIF) {
 			guard bounceGIF else {
@@ -112,13 +165,33 @@ struct EditScreen: View {
 				shouldShow = true
 			}
 		}
+		.task {
+			for await event in fullPreviewStream {
+				switch event {
+				case .empty, .generating:
+					break
+				case .ready(let settings, let asset, _, _):
+					try? await (modifiedAsset as? PreviewableComposition)?.updateFullPreviewTrack(settings: settings, newFullPreviewAsset: asset)
+				}
+				fullPreviewState = event
+			}
+		}
 	}
+
+	private func updatePreviewOnSettingsChange()  {
+		requestNewFullPreview(SettingsForFullPreview(conversion: conversionSettings, speed: Defaults[.outputSpeed], duration: metadata.duration.toTimeInterval ))
+	}
+
 
 	private func setSpeed() async {
 		do {
 			// We could have set the `rate` of the player instead of modifying the asset, but it's just easier to modify the asset as then it matches what we want to generate. Otherwise, we would have to translate trimming ranges to the correct speed, etc.
-			modifiedAsset = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) ?? modifiedAsset
+
+			let changedSpeedAsset = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) ?? modifiedAsset
+			modifiedAsset = try await PreviewableComposition(extractPreviewableCompositionFrom: changedSpeedAsset)
+
 			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
 		} catch {
 			appState.error = error
 		}
@@ -126,6 +199,32 @@ struct EditScreen: View {
 
 	private func setUp() {
 		estimatedFileSizeModel.getConversionSettings = { conversionSettings }
+		updatePreviewOnSettingsChange()
+	}
+
+	/**
+	Too many modifiers on `body` `VStack`, have to move to a helper
+	 */
+	private var trimmingAVPlayer: some View {
+		// TODO: Move the trimmer outside the video view.
+		TrimmingAVPlayer(
+			asset: modifiedAsset,
+			shouldShowPreview: appState.shouldShowPreview,
+			fullPreviewStatus: fullPreviewState.status,
+			loopPlayback: loopGIF,
+			bouncePlayback: bounceGIF,
+			overlay: appState.shouldShowPreview ? nil : overlay,
+			isTrimmerDraggable: appState.isCropActive
+		) { timeRange in
+			DispatchQueue.main.async {
+				self.timeRange = timeRange
+				estimatedFileSizeModel.updateEstimate()
+				updatePreviewOnSettingsChange()
+			}
+		}
+		.onChange(of: outputCropRect) {
+			updatePreviewOnSettingsChange()
+		}
 	}
 
 	private var controls: some View {
@@ -191,7 +290,7 @@ struct EditScreen: View {
 				return .forever
 			}(),
 			bounce: bounceGIF,
-			crop: appState.isCropActive ? outputCropRect : nil
+			crop: outputCropRect
 		)
 	}
 

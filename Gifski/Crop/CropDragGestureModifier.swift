@@ -22,7 +22,7 @@ extension View {
 	}
 }
 
-private struct CropDragGestureModifier: ViewModifier {
+struct CropDragGestureModifier: ViewModifier {
 	@GestureState private var initialCropRect: CropRect?
 
 	@Binding var isDragging: Bool

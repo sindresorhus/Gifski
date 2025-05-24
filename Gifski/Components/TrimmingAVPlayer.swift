@@ -2,14 +2,17 @@ import AVKit
 import SwiftUI
 
 struct TrimmingAVPlayer: NSViewControllerRepresentable {
+	@Environment(\.colorScheme) private var colorScheme
 	typealias NSViewControllerType = TrimmingAVPlayerViewController
 
 	let asset: AVAsset
+	let shouldShowPreview: Bool
+	let fullPreviewStatus: FullPreviewGenerationEvent.Status?
 	var controlsStyle = AVPlayerViewControlsStyle.inline
 	var loopPlayback = false
 	var bouncePlayback = false
 	var speed = 1.0
-	var overlay: AnyView?
+	var overlay: NSView?
 	var isTrimmerDraggable = false
 	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
@@ -23,13 +26,39 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 
 	func updateNSViewController(_ nsViewController: NSViewControllerType, context: Context) {
 		if asset != nsViewController.currentItem.asset {
-			nsViewController.currentItem = .init(asset: asset)
+			let item = AVPlayerItem(asset: asset)
+			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
+				item.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition
+			}
+			item.playbackRange = nsViewController.currentItem.playbackRange
+			nsViewController.currentItem = item
+		}
+
+		let previewCheckerboardParams = PreviewRenderer.PreviewCheckerboardParameters(
+			isDarkMode: colorScheme.isDarkMode,
+			videoBounds: nsViewController.playerView.videoBounds
+		)
+
+		if let previewVideoCompositor = nsViewController.currentItem.customVideoCompositor as? PreviewVideoCompositor,
+		   previewVideoCompositor.fullPreviewStatus != fullPreviewStatus || previewVideoCompositor.shouldShowPreview != shouldShowPreview || previewVideoCompositor.previewCheckerboardParams != previewCheckerboardParams
+
+		{
+			previewVideoCompositor.fullPreviewStatus = fullPreviewStatus
+			previewVideoCompositor.shouldShowPreview = shouldShowPreview
+			previewVideoCompositor.previewCheckerboardParams = previewCheckerboardParams
+
+			// Force AVPlayer redraw by updating video composition."
+			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
+				nsViewController.currentItem.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition
+			}
 		}
 
 		nsViewController.loopPlayback = loopPlayback
 		nsViewController.bouncePlayback = bouncePlayback
 		nsViewController.player.defaultRate = Float(speed)
-		nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
+		if nsViewController.player.rate != 0 {
+			nsViewController.player.rate = nsViewController.player.rate > 0 ? Float(speed) : -Float(speed)
+		}
 		nsViewController.overlay = overlay
 		nsViewController.isTrimmerDraggable = isTrimmerDraggable
 	}
@@ -46,20 +75,23 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	private let controlsStyle: AVPlayerViewControlsStyle
 	private let timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 	private var cancellables = Set<AnyCancellable>()
-	private var underTrimOverlayView: NSHostingView<AnyView>?
 
-	fileprivate var overlay: AnyView? {
+	fileprivate var overlay: NSView? {
 		didSet {
-			if let underTrimOverlayView {
-				underTrimOverlayView.removeFromSuperview()
+			guard oldValue != overlay else {
+				return
+			}
+			if let oldValue {
+				oldValue.removeFromSuperview()
 			}
 
 			guard let overlay else {
-				underTrimOverlayView = nil
+//				underTrimOverlayView = nil
 				return
 			}
 
-			let underTrimOverlayView = NSHostingView(rootView: overlay)
+			let underTrimOverlayView = overlay
+			underTrimOverlayView.removeConstraints(underTrimOverlayView.constraints)
 			playerView.contentOverlayView?.addSubview(underTrimOverlayView)
 			underTrimOverlayView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -75,8 +107,6 @@ final class TrimmingAVPlayerViewController: NSViewController {
 				underTrimOverlayView.widthAnchor.constraint(equalToConstant: videoBounds.size.width),
 				underTrimOverlayView.heightAnchor.constraint(equalToConstant: videoBounds.size.height)
 			])
-
-			self.underTrimOverlayView = underTrimOverlayView
 		}
 	}
 
@@ -411,6 +441,9 @@ private class TrimmerDragViews {
 		trimmerWindowTopConstraint?.constant = Self.newHeight - trimmerConstraints.height
 
 		trimmerBottomConstraint?.animate(to: trimmerConstraints.height, duration: .seconds(0.3)) {
+			guard self.isDraggable else {
+				return
+			}
 			self.avTrimView.isHidden = true
 		}
 	}

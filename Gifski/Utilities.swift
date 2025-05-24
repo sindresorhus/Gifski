@@ -2762,6 +2762,12 @@ extension CMTime {
 
 		return 0...seconds
 	}
+	/**
+	Zero in the video timescale.
+	*/
+	static var videoZero: Self {
+		.init(seconds: 0, preferredTimescale: .video)
+	}
 }
 
 
@@ -5409,6 +5415,13 @@ extension AVPlayerView {
 		try Task.checkCancellation()
 
 		Task {
+			/**
+			 In about 20% of my debug sessions, `beginTrimming` will crash because canBeginTrimming is false, so I added this check. I've seen multiple cases where this guard catches into the else statement and the trimming controls work just fine: in each and every case where canBeginTrimming was false, this function gets called again with a value of true.
+			 */
+			guard canBeginTrimming else {
+				return
+			}
+
 			await beginTrimming()
 		}
 
@@ -5674,5 +5687,84 @@ extension View {
 		readSize {
 			binding.wrappedValue = $0
 		}
+	}
+}
+
+extension ColorScheme {
+	var isDarkMode: Bool {
+		self == .dark
+	}
+}
+
+extension Color {
+	var ciColor: CIColor? {
+		CIColor(color: NSColor(self))
+	}
+}
+
+
+extension CVPixelBuffer {
+	var planeCount: Int {
+		CVPixelBufferGetPlaneCount(self)
+	}
+
+	var width: Int {
+		CVPixelBufferGetWidth(self)
+	}
+
+	var height: Int {
+		CVPixelBufferGetHeight(self)
+	}
+
+	var pixelFormatType: OSType {
+		CVPixelBufferGetPixelFormatType(self)
+	}
+
+	var bytesPerRow: Int {
+		CVPixelBufferGetBytesPerRow(self)
+	}
+
+	var baseAddress: UnsafeMutableRawPointer? {
+		CVPixelBufferGetBaseAddress(self)
+	}
+
+	var creationAttributes: CFDictionary {
+		CVPixelBufferCopyCreationAttributes(self)
+	}
+
+	func baseAddressOfPlane(_ plane: Int) -> UnsafeMutableRawPointer? {
+		CVPixelBufferGetBaseAddressOfPlane(self, plane)
+	}
+
+	func bytesPerRowOfPlane(_ plane: Int) -> Int {
+		CVPixelBufferGetBytesPerRowOfPlane(self, plane)
+	}
+
+	func heightOfPlane(_ plane: Int) -> Int {
+		CVPixelBufferGetHeightOfPlane(self, plane)
+	}
+
+	var colorSpace: CGColorSpace? {
+		let attachments = CVBufferCopyAttachments(self, .shouldPropagate) as? [String: Any]
+		return (attachments?[kCVImageBufferCGColorSpaceKey as String] as! CGColorSpace)
+	}
+}
+
+final class SendableWrapper<T>: @unchecked Sendable {
+	private var unsafeValue: T
+
+	private let lock = NSLock()
+
+	var value: T {
+		get {
+			lock.withLock { unsafeValue }
+		}
+		set {
+			lock.withLock { unsafeValue = newValue }
+		}
+	}
+
+	init(_ value: T) {
+		unsafeValue = value
 	}
 }

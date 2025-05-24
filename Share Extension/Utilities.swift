@@ -40,7 +40,7 @@ extension NSExtensionContext {
 
 
 extension NSItemProvider {
-	func loadTransferable<T: Transferable>(type transferableType: T.Type) async throws -> T {
+	func loadTransferable<T: Transferable & Sendable>(type transferableType: T.Type) async throws -> T {
 		try await withCheckedThrowingContinuation { continuation in
 			_ = loadTransferable(type: transferableType) {
 				continuation.resume(with: $0)

@@ -17,7 +17,6 @@ actor GIFGenerator {
 			onProgress: onProgress
 		)
 	}
-
 	/**
 	Converts a single frame to GIF data.
 	*/
@@ -29,13 +28,11 @@ actor GIFGenerator {
 	) async throws -> Data {
 		let gifski = try Gifski(
 			dimensions: dimensions,
-			quality: max(0.1, quality),
+			quality: quality,
 			loop: .never,
 			fast: fast
 		)
-
-		try gifski.addFrame(frame, presentationTimestamp: 0)
-
+		try gifski.addFrame(frame, presentationTimestamp: 0.0)
 		return try gifski.finish()
 	}
 
