@@ -5789,3 +5789,22 @@ extension CGImageSource {
 		CGImageSourceCreateImageAtIndex(self, index, options)
 	}
 }
+
+final class TempFileTracker {
+	static let shared = TempFileTracker()
+	private var urls: Set<URL> = []
+
+	func register(_ url: URL) {
+		urls.insert(url)
+	}
+	func unregister(_ url: URL) {
+		urls.remove(url)
+	}
+
+	func cleanup() {
+		for url in urls {
+			try? FileManager.default.removeItem(at: url)
+		}
+		urls.removeAll()
+	}
+}

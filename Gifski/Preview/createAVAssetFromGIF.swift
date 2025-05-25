@@ -121,7 +121,7 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 	guard assetWriter.status != .failed else {
 		throw CreateAVAssetError.failedToWrite
 	}
-	return TemporaryAVURLAsset(url: tempPath)
+	return TemporaryAVURLAsset(tempFileURL: tempPath)
 }
 
 private func createPixelBuffer(from cgImage: CGImage, using pool: CVPixelBufferPool) -> CVPixelBuffer? {
@@ -164,8 +164,15 @@ enum CreateAVAssetError: Error {
 	case cannotAppendNewImage
 	case noImages
 }
+
 final class TemporaryAVURLAsset: AVURLAsset, @unchecked Sendable {
+	init(tempFileURL: URL) {
+		super.init(url: tempFileURL, options: nil)
+		TempFileTracker.shared.register(tempFileURL)
+	}
+
 	deinit {
+		TempFileTracker.shared.unregister(self.url)
 		try? FileManager.default.removeItem(at: self.url)
 	}
 }
