@@ -62,8 +62,8 @@ final class PreviewableComposition: AVMutableComposition {
 		guard let compositionFullPreviewTrack = addMutableTrack(withMediaType: .video, preferredTrackID: .fullPreviewVideoTrack) else {
 			throw PreviewableCompositionError.couldNotAddTrack
 		}
-
-		let fullPreviewRange = settings.conversion.timeRange ?? 0...fullPreviewAssetDuration.seconds
+		let assetRange = 0...fullPreviewAssetDuration.seconds
+		let fullPreviewRange = (settings.conversion.timeRange)?.clamped(to: assetRange) ?? assetRange
 		let fullPreviewStartTime = CMTime(seconds: fullPreviewRange.lowerBound, preferredTimescale: .video)
 		compositionFullPreviewTrack.insertEmptyTimeRange(.init(start: .zero, duration: duration))
 		// see [PreBakedFrames](PreBakedFrames) for why this is necessary

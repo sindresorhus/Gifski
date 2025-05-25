@@ -1,6 +1,6 @@
-import CoreImage
 import AppKit
 import CoreGraphics
+import CoreImage.CIFilterBuiltins
 
 actor PreviewRenderer {
 	static let shared = PreviewRenderer()
@@ -62,6 +62,7 @@ actor PreviewRenderer {
 		from videoFrame: CVPixelBuffer,
 		to outputFrame: CVPixelBuffer,
 	) throws {
+		videoFrame.propagateAttachments(to: outputFrame)
 		try videoFrame.copy(to: outputFrame)
 	}
 
@@ -92,6 +93,7 @@ actor PreviewRenderer {
 		let translatedPreview = previewImage.transformed(by: transform)
 		let result = translatedPreview.composited(over: checkerboard)
 
+		previewImage.pixelBuffer?.propagateAttachments(to: outputFrame)
 		context.render(
 			result.cropped(to: outputRect),
 			to: outputFrame,
@@ -104,25 +106,21 @@ actor PreviewRenderer {
 		outputRect: CGRect,
 		uniforms: PreviewCheckerboardParameters
 	) -> CIImage {
-		guard let filter = CIFilter(name: "CICheckerboardGenerator") else {
-			return CIImage.empty()
-		}
 		let scaleX = outputRect.width / uniforms.videoBounds.width
 		let scaleY = outputRect.height / uniforms.videoBounds.height
 
-		filter.setValue(Double(CheckerboardViewConstants.gridSize) * scaleX, forKey: "inputWidth")
-
-		filter.setValue((uniforms.isDarkMode ? CheckerboardViewConstants.firstColorDark : CheckerboardViewConstants.firstColorLight).ciColor ?? .black, forKey: "inputColor0")
-		filter.setValue((uniforms.isDarkMode ? CheckerboardViewConstants.secondColorDark : CheckerboardViewConstants.secondColorLight).ciColor ?? .white, forKey: "inputColor1")
-
-		filter.setValue(
-			CIVector(
-				x: outputRect.midX + uniforms.videoBounds.midX * scaleX,
-				y: outputRect.midY + uniforms.videoBounds.midY * scaleY
-			),
-			forKey: "inputCenter"
+		let checkerBoardGenerator = CIFilter.checkerboardGenerator()
+		checkerBoardGenerator.setDefaults()
+		checkerBoardGenerator.center = .init(
+			x: outputRect.midX + uniforms.videoBounds.midX * scaleX,
+			y: outputRect.midY + uniforms.videoBounds.midY * scaleY
 		)
-		guard let output = filter.outputImage else {
+		checkerBoardGenerator.color0 = (uniforms.isDarkMode ? CheckerboardViewConstants.firstColorDark : CheckerboardViewConstants.firstColorLight).ciColor ?? .black
+		checkerBoardGenerator.color1 = (uniforms.isDarkMode ? CheckerboardViewConstants.secondColorDark : CheckerboardViewConstants.secondColorLight).ciColor ?? .white
+		checkerBoardGenerator.width = Float(Float(CheckerboardViewConstants.gridSize) * Float(scaleX))
+		checkerBoardGenerator.sharpness = 1
+
+		guard let output = checkerBoardGenerator.outputImage else {
 			return CIImage.empty()
 		}
 		return output

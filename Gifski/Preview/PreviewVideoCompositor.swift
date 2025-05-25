@@ -19,6 +19,28 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 	var fullPreviewStatus: FullPreviewGenerationEvent.Status?
 	@MainActor
 	var previewCheckerboardParams: PreviewRenderer.PreviewCheckerboardParameters = .init(isDarkMode: true, videoBounds: .zero)
+
+	/**
+	 - Returns: True if the state needed an update, false if there is no change
+	 */
+	@MainActor
+	func updateState(
+		shouldShowPreview: Bool,
+		fullPreviewStatus: FullPreviewGenerationEvent.Status?,
+		previewCheckerboardParams: PreviewRenderer.PreviewCheckerboardParameters
+	) -> Bool {
+		if shouldShowPreview == self.shouldShowPreview,
+		   fullPreviewStatus == self.fullPreviewStatus,
+		   previewCheckerboardParams == self.previewCheckerboardParams {
+			return false
+		}
+		self.shouldShowPreview = shouldShowPreview
+		self.fullPreviewStatus = fullPreviewStatus
+		self.previewCheckerboardParams = previewCheckerboardParams
+		return true
+	}
+
+
 	/**
 	 see [OutputCache](PreviewVideoCompositor.OutputCache) on why we need this
 	 */
@@ -30,7 +52,6 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 			asyncVideoCompositionRequest.finish(with: PreviewVideoCompositorError.failedToGetVideoFrame)
 			return
 		}
-		originalFrame.propagateAttachments(to: outputFrame)
 
 		let fullPreviewFrame = asyncVideoCompositionRequest.sourceFrame(byTrackID: .fullPreviewVideoTrack)
 		Task.detached(priority: .userInitiated) {
@@ -93,7 +114,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		}
 		guard let fullPreviewFrame else {
 			if let preBakedFrame = fullPreviewStatus.preBaked?.getPreBakedFrame(forTime: compositionTime)  {
-				try await PreviewRenderer.renderPreview(previewFrame: preBakedFrame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
+				try await PreviewRenderer.renderPreview(previewFrame: preBakedFrame, outputFrame: outputFrame, previewCheckerboardParams: await previewCheckerboardParams)
 				return
 			}
 			try await convertToGIFAndRender(originalFrame: originalFrame, outputFrame: outputFrame, settings: fullPreviewStatus.settings, compositionTime: compositionTime)
@@ -103,12 +124,12 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 			return
 		}
 
-		try await PreviewRenderer.renderPreview(previewFrame: fullPreviewFrame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
+		try await PreviewRenderer.renderPreview(previewFrame: fullPreviewFrame, outputFrame: outputFrame, previewCheckerboardParams: await previewCheckerboardParams)
 		return
 	}
 	private func convertToGIFAndRender(originalFrame: CVPixelBuffer, outputFrame: CVPixelBuffer, settings: SettingsForFullPreview, compositionTime: OriginalCompositionTime) async throws {
 		let frame = try await convertFrameToGIF(videoFrame: originalFrame, settings: settings)
-		try await PreviewRenderer.renderPreview(previewFrame: frame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
+		try await PreviewRenderer.renderPreview(previewFrame: frame, outputFrame: outputFrame, previewCheckerboardParams: await previewCheckerboardParams)
 		try await outputCache.cacheBuffer(outputFrame, at: compositionTime, with: settings)
 	}
 
@@ -133,7 +154,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 			fast: true
 		)
 		guard let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
-			  let gifFrame = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+			  let gifFrame = imageSource.createImage(atIndex: 0) else {
 			throw PreviewVideoCompositorError.failedToConvertFramePreviewGif
 		}
 		return gifFrame
@@ -217,6 +238,10 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		let seconds: Double
 		init(reportedCompositionTime: CMTime, speed: Double?) {
 			seconds = reportedCompositionTime.seconds * (speed ?? 1)
+		}
+
+		static func == (lhs: PreviewVideoCompositor.OriginalCompositionTime, rhs: PreviewVideoCompositor.OriginalCompositionTime) -> Bool {
+			abs(lhs.seconds - rhs.seconds) < 0.001
 		}
 	}
 }

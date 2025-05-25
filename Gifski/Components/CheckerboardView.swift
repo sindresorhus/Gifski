@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct CheckerboardViewConstants {
+enum CheckerboardViewConstants {
 	static let gridSize = 8
 	/// I tried just using firstColor directly (instead of splitting between light and dark), but it would not reliably change colors for the preview when switching between light and dark
 	static let firstColorLight = Color(white: 0.98)

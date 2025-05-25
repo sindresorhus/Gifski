@@ -40,13 +40,9 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 		)
 
 		if let previewVideoCompositor = nsViewController.currentItem.customVideoCompositor as? PreviewVideoCompositor,
-		   previewVideoCompositor.fullPreviewStatus != fullPreviewStatus || previewVideoCompositor.shouldShowPreview != shouldShowPreview || previewVideoCompositor.previewCheckerboardParams != previewCheckerboardParams
+		   previewVideoCompositor.updateState(shouldShowPreview: shouldShowPreview, fullPreviewStatus: fullPreviewStatus, previewCheckerboardParams: previewCheckerboardParams)
 
 		{
-			previewVideoCompositor.fullPreviewStatus = fullPreviewStatus
-			previewVideoCompositor.shouldShowPreview = shouldShowPreview
-			previewVideoCompositor.previewCheckerboardParams = previewCheckerboardParams
-
 			// Force AVPlayer redraw by updating video composition."
 			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
 				nsViewController.currentItem.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition

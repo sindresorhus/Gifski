@@ -5745,8 +5745,19 @@ extension CVPixelBuffer {
 	}
 
 	var colorSpace: CGColorSpace? {
-		let attachments = CVBufferCopyAttachments(self, .shouldPropagate) as? [String: Any]
-		return (attachments?[kCVImageBufferCGColorSpaceKey as String] as! CGColorSpace)
+		guard let attachments = CVBufferCopyAttachments(self, .shouldPropagate) else {
+			return nil
+		}
+		let nsAttachments = (attachments as NSDictionary)
+		guard let colorspace = nsAttachments.value(forKey: kCVImageBufferCGColorSpaceKey as String) else {
+			return nil
+		}
+		switch colorspace {
+		case let out as CGColorSpace:
+			return out
+		default:
+			return nil
+		}
 	}
 }
 
@@ -5766,5 +5777,15 @@ final class SendableWrapper<T>: @unchecked Sendable {
 
 	init(_ value: T) {
 		unsafeValue = value
+	}
+}
+
+extension CGImageSource {
+	var count: Int {
+		CGImageSourceGetCount(self)
+	}
+
+	func createImage(atIndex index: Int, options: CFDictionary? = nil) -> CGImage? {
+		CGImageSourceCreateImageAtIndex(self, index, options)
 	}
 }

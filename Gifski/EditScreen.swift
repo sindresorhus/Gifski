@@ -15,7 +15,7 @@ struct EditScreen: View {
 		self.url = url
 		self.asset = asset
 		self.metadata = metadata
-		(fullPreviewStream, requestNewFullPreview) = createFullPreviewStream()
+		(fullPreviewStream, requestNewFullPreview) = FullPreviewStream.create()
 	}
 
 	var body: some View {

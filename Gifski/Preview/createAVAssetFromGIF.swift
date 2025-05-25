@@ -11,10 +11,10 @@ import AVKit
 /**
  Convert a GIF to an AVAAsset
  */
-func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullPreview, onProgress: @escaping (Double) -> Void) async throws -> TemporaryAVURLAsset {
-	let numberOfImages = CGImageSourceGetCount(imageSource)
+func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullPreview, onProgress: @escaping (Double) async -> Void) async throws -> TemporaryAVURLAsset {
+	let numberOfImages = imageSource.count
 	guard numberOfImages > 0,
-		  let firstCGImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
+		  let firstCGImage = imageSource.createImage(atIndex: 0)
 	else {
 		throw CreateAVAssetError.noImages
 	}
@@ -27,15 +27,23 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 	let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: [
 		AVVideoCodecKey: AVVideoCodecType.h264,
 		AVVideoWidthKey: firstCGImage.width,
-		AVVideoHeightKey: firstCGImage.height
+		AVVideoHeightKey: firstCGImage.height,
+		AVVideoColorPropertiesKey: [
+			AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
+			AVVideoTransferFunctionKey: AVVideoTransferFunction_IEC_sRGB,
+			AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2
+		]
 	])
+
 	writerInput.expectsMediaDataInRealTime = false
 	let pixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(
 		assetWriterInput: writerInput,
 		sourcePixelBufferAttributes: [
 			kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB,
 			kCVPixelBufferWidthKey as String: firstCGImage.width,
-			kCVPixelBufferHeightKey as String: firstCGImage.height
+			kCVPixelBufferHeightKey as String: firstCGImage.height,
+			kCVPixelBufferCGImageCompatibilityKey as String: true,
+			kCVPixelBufferCGBitmapContextCompatibilityKey as String: true
 		]
 	)
 	guard assetWriter.canAdd(writerInput) else {
@@ -74,13 +82,15 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 					try Task.checkCancellation()
 					let progress = Double(frameIndex) / Double(numberOfImages)
 					if progress > progressThreshold {
-						onProgress(progress)
+						Task {
+							await onProgress(progress)
+						}
 						progressThreshold = progress + 0.05
 					}
 					defer {
 						frameIndex += 1
 					}
-					guard let cgImage = CGImageSourceCreateImageAtIndex(sendableImageSource.value, frameIndex, nil) else {
+					guard let cgImage = sendableImageSource.value.createImage(atIndex: frameIndex) else {
 						throw CreateAVAssetError.failedToCreateImage
 					}
 					guard let pixelBufferPool = sendablePixelBufferAdaptor.value.pixelBufferPool,
@@ -107,7 +117,6 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 			}
 		}
 	}
-	writerInput.markAsFinished()
 	await assetWriter.finishWriting()
 	guard assetWriter.status != .failed else {
 		throw CreateAVAssetError.failedToWrite
@@ -122,7 +131,7 @@ private func createPixelBuffer(from cgImage: CGImage, using pool: CVPixelBufferP
 		return nil
 	}
 
-	return pixelBuffer.withLockedPlanes { planes in
+	return pixelBuffer.withLockedPlanes { planes -> CVPixelBuffer? in
 		guard planes.count == 1,
 			  let plane = planes.first else {
 			return nil
@@ -133,7 +142,7 @@ private func createPixelBuffer(from cgImage: CGImage, using pool: CVPixelBufferP
 			height: cgImage.height,
 			bitsPerComponent: 8,
 			bytesPerRow: plane.bytesPerRow,
-			space: CGColorSpaceCreateDeviceRGB(),
+			space: cgImage.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
 			bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
 		) else {
 			return nil
