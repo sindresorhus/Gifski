@@ -12,7 +12,7 @@ final class ShareController: ExtensionController {
 		let filename = url.lastPathComponent
 
 		guard
-			let appGroupShareVideoURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.videoShareGroupIdentifier)?.appendingPathComponent(filename, isDirectory: false)
+			let appGroupShareVideoURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.appGroupIdentifier)?.appendingPathComponent(filename, isDirectory: false)
 		else {
 			context.cancel()
 			return []

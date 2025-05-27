@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 
 extension Sequence where Element: Sequence {
 	func flatten() -> [Element.Element] {
-		// TODO: Make this `flatMap(\.self)` when https://github.com/apple/swift/issues/55343 is fixed.
 		flatMap(\.self)
 	}
 }

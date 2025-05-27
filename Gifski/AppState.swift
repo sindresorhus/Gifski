@@ -97,7 +97,7 @@ final class AppState {
 
 		guard
 			let path = url.queryDictionary["path"],
-			let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.videoShareGroupIdentifier)?.appendingPathComponent(path, isDirectory: false)
+			let appGroupShareVideoUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Shared.appGroupIdentifier)?.appendingPathComponent(path, isDirectory: false)
 		else {
 			NSAlert.showModal(
 				for: SSApp.swiftUIMainWindow,

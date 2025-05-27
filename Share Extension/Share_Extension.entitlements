@@ -6,7 +6,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>$(TeamIdentifierPrefix)gifski_video_share_group</string>
+		<string>group.com.sindresorhus.Gifski</string>
 	</array>
 </dict>
 </plist>
