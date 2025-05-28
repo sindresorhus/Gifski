@@ -34,7 +34,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 			nsViewController.currentItem = item
 		}
 
-		let previewCheckerboardParams = PreviewRenderer.PreviewCheckerboardParameters(
+		let previewCheckerboardParams = PreviewRenderer.FragmentUniforms(
 			isDarkMode: colorScheme.isDarkMode,
 			videoBounds: nsViewController.playerView.videoBounds
 		)

@@ -5700,6 +5700,10 @@ extension Color {
 	var ciColor: CIColor? {
 		CIColor(color: NSColor(self))
 	}
+	var simd4: SIMD4<Float> {
+		let color = NSColor(self)
+		return .init(x: Float(color.redComponent), y: Float(color.greenComponent), z: Float(color.blueComponent), w: Float(color.alphaComponent))
+	}
 }
 
 

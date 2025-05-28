@@ -1,63 +1,24 @@
-import AppKit
-import CoreGraphics
-import CoreImage.CIFilterBuiltins
+//
+//  PreviewRenderer.swift
+//  Gifski
+//
+//  Created by Michael Mulet on 4/22/25.
+//
 
-actor PreviewRenderer {
-	static let shared = PreviewRenderer()
+import Foundation
+import Metal
+import MetalKit
 
-	struct PreviewCheckerboardParameters: Equatable {
-		let isDarkMode: Bool
-		let videoBounds: CGRect
-	}
-
+/**
+ Use its static function [renderPreview](PreviewRenderer.renderPreview) to render the preview to a provided buffer
+ */
+struct PreviewRenderer {
 	static func renderOriginal(
 		from videoFrame: CVPixelBuffer,
 		to outputFrame: CVPixelBuffer,
-	) async throws {
-		try await shared.renderOriginal(from: videoFrame, to: outputFrame)
+	) throws {
+		try shared.get().renderOriginal(from: videoFrame, to: outputFrame)
 	}
-
-	static func renderPreview(
-		previewFrame: CVPixelBuffer,
-		outputFrame: CVPixelBuffer,
-		previewCheckerboardParams: PreviewCheckerboardParameters
-	) async throws {
-		try await shared.renderPreview(previewFrame: previewFrame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
-	}
-
-	static func renderPreview(
-		previewFrame: CGImage,
-		outputFrame: CVPixelBuffer,
-		previewCheckerboardParams: PreviewCheckerboardParameters
-	) async throws {
-		try await shared.renderPreview(previewFrame: previewFrame, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
-	}
-
-
-	private func renderPreview(
-		previewFrame: CVPixelBuffer,
-		outputFrame: CVPixelBuffer,
-		previewCheckerboardParams: PreviewCheckerboardParameters
-	) async throws {
-		let previewImage = CIImage(
-			cvPixelBuffer: previewFrame,
-			options: outputFrame.colorSpace.map { space -> [CIImageOption: Any] in
-				[
-					.colorSpace: space
-				]
-			}
-		)
-		try await renderPreview(previewImage: previewImage, outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
-	}
-
-	private func renderPreview(
-		previewFrame: CGImage,
-		outputFrame: CVPixelBuffer,
-		previewCheckerboardParams: PreviewCheckerboardParameters
-	) async throws {
-		try await renderPreview(previewImage: CIImage(cgImage: previewFrame), outputFrame: outputFrame, previewCheckerboardParams: previewCheckerboardParams)
-	}
-
 	private func renderOriginal(
 		from videoFrame: CVPixelBuffer,
 		to outputFrame: CVPixelBuffer,
@@ -66,63 +27,240 @@ actor PreviewRenderer {
 		try videoFrame.copy(to: outputFrame)
 	}
 
-	private func renderPreview(
-		previewImage: CIImage,
-		outputFrame: CVPixelBuffer,
-		previewCheckerboardParams: PreviewCheckerboardParameters
-	) async throws {
-		let context = CIContext()
-		let outputWidth = Double(outputFrame.width)
-		let outputHeight = Double(outputFrame.height)
-		let outputSize = CGSize(width: outputWidth, height: outputHeight)
-		let outputRect = CGRect(origin: .zero, size: outputSize)
-
-		let checkerboard = createCheckerboard(
-			outputRect: outputRect,
-			uniforms: previewCheckerboardParams
-		)
-
-		let previewBounds = previewImage.extent
-
-		let translationX = (outputWidth - previewBounds.width) / 2 - previewBounds.minX
-		let translationY = (outputHeight - previewBounds.height) / 2 - previewBounds.minY
-
-		let transform = CGAffineTransform.identity
-			.translatedBy(x: translationX, y: translationY)
-
-		let translatedPreview = previewImage.transformed(by: transform)
-		let result = translatedPreview.composited(over: checkerboard)
-
-		previewImage.pixelBuffer?.propagateAttachments(to: outputFrame)
-		context.render(
-			result.cropped(to: outputRect),
-			to: outputFrame,
-			bounds: outputRect,
-			colorSpace: outputFrame.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)
-		)
+	/**
+	 Render the preview to the outputFrame
+	 */
+	static func renderPreview(previewFrame: CVPixelBuffer, outputFrame: CVPixelBuffer, fragmentUniforms: FragmentUniforms) async throws {
+		try await shared.get().drawFrame(previewFrame: previewFrame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
+	}
+	/**
+	 Render the preview to the output frame based on a (CGImage)[CGImage]
+	 */
+	static func renderPreview(previewFrame: CGImage, outputFrame: CVPixelBuffer, fragmentUniforms: FragmentUniforms) async throws {
+		try await shared.get().drawFrame(previewFrame: previewFrame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
 	}
 
-	private func createCheckerboard(
-		outputRect: CGRect,
-		uniforms: PreviewCheckerboardParameters
-	) -> CIImage {
-		let scaleX = outputRect.width / uniforms.videoBounds.width
-		let scaleY = outputRect.height / uniforms.videoBounds.height
+	static func renderPreview(previewFrame: MTLTexture, outputFrame: CVPixelBuffer, fragmentUniforms: FragmentUniforms) async throws {
+		try await shared.get().drawGifFrameInCenterMetal(previewTexture: previewFrame, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
+	}
 
-		let checkerBoardGenerator = CIFilter.checkerboardGenerator()
-		checkerBoardGenerator.setDefaults()
-		checkerBoardGenerator.center = .init(
-			x: outputRect.midX + uniforms.videoBounds.midX * scaleX,
-			y: outputRect.midY + uniforms.videoBounds.midY * scaleY
-		)
-		checkerBoardGenerator.color0 = (uniforms.isDarkMode ? CheckerboardViewConstants.firstColorDark : CheckerboardViewConstants.firstColorLight).ciColor ?? .black
-		checkerBoardGenerator.color1 = (uniforms.isDarkMode ? CheckerboardViewConstants.secondColorDark : CheckerboardViewConstants.secondColorLight).ciColor ?? .white
-		checkerBoardGenerator.width = Float(Float(CheckerboardViewConstants.gridSize) * Float(scaleX))
-		checkerBoardGenerator.sharpness = 1
+	static func convertToTexture(cgImage: CGImage) async throws -> MTLTexture {
+		try await shared.get().convertToTexture(cgImage: cgImage)
+	}
 
-		guard let output = checkerBoardGenerator.outputImage else {
-			return CIImage.empty()
+
+	private static var shared = Result {
+		try Self()
+	}
+
+	private func convertToTexture(cgImage: CGImage) async throws -> MTLTexture {
+		try await textureLoader.newTexture(cgImage: cgImage, options: [
+			.SRGB: false
+		])
+	}
+
+	private struct VertexUniforms {
+		var scale: SIMD2<Float>
+	}
+
+	struct FragmentUniforms: Equatable {
+		var videoBounds: SIMD4<Float>
+		var firstColor: SIMD4<Float>
+		var secondColor: SIMD4<Float>
+		var gridSize: SIMD4<Int>
+		/**
+		Construct the checkerboard fragment uniforms from the bounds of the playerView and the videoBounds. This will calculate the necessary size and offset so that the checkboard pattern will match the background `CheckboardView`
+		 */
+		init(isDarkMode: Bool, videoBounds: CGRect) {
+			self.videoBounds = .init(
+				x: Float(videoBounds.minX),
+				y: Float(videoBounds.minY),
+				z: Float(videoBounds.width),
+				w: Float(videoBounds.height)
+			)
+			self.gridSize = .init(x: CheckerboardViewConstants.gridSize, y: 0, z: 0, w: 0)
+			self.firstColor = (isDarkMode ? CheckerboardViewConstants.firstColorDark : CheckerboardViewConstants.firstColorLight ).simd4
+			self.secondColor = (isDarkMode ? CheckerboardViewConstants.secondColorDark : CheckerboardViewConstants.secondColorLight ).simd4
 		}
-		return output
+	}
+
+	private let metalDevice: MTLDevice
+	private let commandQueue: MTLCommandQueue
+	private let pipelineState: MTLRenderPipelineState
+	private let samplerState: MTLSamplerState
+	private let textureCache: CVMetalTextureCache
+	private let previewTextureCache: CVMetalTextureCache
+	private let textureLoader: MTKTextureLoader
+
+	private init() throws {
+		guard let metalDevice = MTLCreateSystemDefaultDevice() else {
+			throw RenderError.noDevice
+		}
+		self.metalDevice = metalDevice
+		guard let commandQueue = metalDevice.makeCommandQueue() else {
+			throw RenderError.noCommandQueue
+		}
+		self.commandQueue = commandQueue
+
+		guard let library = metalDevice.makeDefaultLibrary(),
+			  let meshFunction = library.makeFunction(name: "previewMeshShader"),
+			  let fragmentFunction = library.makeFunction(name: "previewFragment") else {
+			throw RenderError.libraryFailure
+		}
+
+		let pipelineDescriptor = MTLMeshRenderPipelineDescriptor()
+		pipelineDescriptor.meshFunction = meshFunction
+		pipelineDescriptor.fragmentFunction = fragmentFunction
+		pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+		let (pipelineState, _ ) = try metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor, options: [])
+		self.pipelineState = pipelineState
+
+		let samplerDescriptor = MTLSamplerDescriptor()
+		samplerDescriptor.minFilter = .linear
+		samplerDescriptor.magFilter = .linear
+		samplerDescriptor.sAddressMode = .clampToEdge
+		samplerDescriptor.tAddressMode = .clampToEdge
+
+		guard let samplerState = metalDevice.makeSamplerState(descriptor: samplerDescriptor) else {
+			throw RenderError.failedToMakeSampler
+		}
+		self.samplerState = samplerState
+
+		var textureCache: CVMetalTextureCache?
+		CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &textureCache)
+		var previewTextureCache: CVMetalTextureCache?
+		CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &previewTextureCache)
+
+		guard let textureCache,
+			  let previewTextureCache
+		else {
+			throw RenderError.failedToMakeTextureCache
+		}
+		self.textureCache = textureCache
+		self.previewTextureCache = previewTextureCache
+
+		self.textureLoader = MTKTextureLoader(device: metalDevice)
+	}
+
+	private func drawFrame(
+		previewFrame: CVPixelBuffer,
+		outputFrame: CVPixelBuffer,
+		fragmentUniforms: FragmentUniforms
+	) async throws {
+		let gifTexture = try Texture.createFromImage(image: previewFrame, cache: previewTextureCache)
+		try await drawGifFrameInCenterMetal(previewTexture: gifTexture.tex, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
+	}
+
+	private func drawFrame(
+		previewFrame: CGImage,
+		outputFrame: CVPixelBuffer,
+		fragmentUniforms: FragmentUniforms
+	) async throws {
+		let texture = try await convertToTexture(cgImage: previewFrame)
+
+		try await drawGifFrameInCenterMetal(previewTexture: texture, outputFrame: outputFrame, fragmentUniforms: fragmentUniforms)
+	}
+
+	private func drawGifFrameInCenterMetal(
+		previewTexture: MTLTexture,
+		outputFrame: CVPixelBuffer,
+		fragmentUniforms: FragmentUniforms
+	) async throws {
+		let outputTexture = try Texture.createFromImage(image: outputFrame, cache: textureCache)
+		guard let commandBuffer = commandQueue.makeCommandBuffer() else {
+			throw RenderError.failedToCreateCommandBuffer
+		}
+
+		let renderPassDescriptor = MTLRenderPassDescriptor()
+		renderPassDescriptor.colorAttachments[0].texture = outputTexture.tex
+		renderPassDescriptor.colorAttachments[0].loadAction = .clear
+		renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1)
+		renderPassDescriptor.colorAttachments[0].storeAction = .store
+
+		guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+			throw RenderError.failedToMakeRenderCommandEncoder
+		}
+
+		renderEncoder.setRenderPipelineState(pipelineState)
+		renderEncoder.setCullMode(.none)
+
+		renderEncoder.setFragmentTexture(previewTexture, index: 0)
+		renderEncoder.setFragmentSamplerState(samplerState, index: 0)
+
+		var uniforms = VertexUniforms(scale: .init(x: Float(previewTexture.width.toDouble / outputTexture.tex.width.toDouble), y: Float(previewTexture.height.toDouble / outputTexture.tex.height.toDouble)))
+		renderEncoder.setMeshBytes(&uniforms, length: MemoryLayout<VertexUniforms>.size, index: 0)
+
+		var fragmentUniforms = fragmentUniforms
+		renderEncoder.setFragmentBytes(&fragmentUniforms, length: MemoryLayout<FragmentUniforms>.size, index: 0)
+
+		renderEncoder.drawMeshThreadgroups(
+			MTLSize(width: 1, height: 1, depth: 1),
+			threadsPerObjectThreadgroup: MTLSize(width: 1, height: 1, depth: 1),
+			threadsPerMeshThreadgroup: MTLSize(width: 1, height: 1, depth: 1)
+		)
+
+		renderEncoder.endEncoding()
+
+		await withCheckedContinuation { continuation in
+			commandBuffer.addCompletedHandler { _ in
+				continuation.resume()
+			}
+			commandBuffer.commit()
+		}
+		guard commandBuffer.status == .completed else {
+			throw RenderError.failedToRender
+		}
+	}
+
+
+	/**
+	 Need to keep a strong reference to the CVMetalTexture until the GPU command completes, this struct ensures that the CVMetalTexture is not garbage collected as long as the MTLTexture is around [see](https://developer.apple.com/documentation/corevideo/cvmetaltexturecachecreatetexturefromimage(_:_:_:_:_:_:_:_:_:))
+	 */
+	private struct Texture {
+		private let cv: CVMetalTexture
+		let tex: MTLTexture
+		init(cv: CVMetalTexture, tex: MTLTexture) {
+			self.cv = cv
+			self.tex = tex
+		}
+		static func createFromImage(image: CVPixelBuffer, cache: CVMetalTextureCache) throws -> Self {
+			let videoWidth = CVPixelBufferGetWidth(image)
+			let videoHeight = CVPixelBufferGetHeight(image)
+
+			var cv: CVMetalTexture?
+			guard
+				CVMetalTextureCacheCreateTextureFromImage(
+					nil,
+					cache,
+					image,
+					nil,
+					.bgra8Unorm,
+					videoWidth,
+					videoHeight,
+					0,
+					&cv
+				) == kCVReturnSuccess,
+				let cv,
+				let tex = CVMetalTextureGetTexture(cv)
+			else {
+				throw RenderError.failedToCreateTextures
+			}
+			return .init(cv: cv, tex: tex)
+		}
+	}
+
+
+	enum RenderError: Error {
+		case noDevice
+		case noCommandQueue
+		case failedToMakeBuffer
+		case failedToMakeSampler
+		case failedToMakeTextureCache
+		case libraryFailure
+		case invalidState
+		case failedToCreateTextures
+		case failedToCreateCommandBuffer
+		case failedToMakeRenderCommandEncoder
+		case failedToRender
 	}
 }

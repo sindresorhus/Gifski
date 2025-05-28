@@ -16,7 +16,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 	struct State: Equatable {
 		var shouldShowPreview = false
 		var fullPreviewStatus: FullPreviewGenerationEvent.Status?
-		var previewCheckerboardParams: PreviewRenderer.PreviewCheckerboardParameters = .init(isDarkMode: true, videoBounds: .zero)
+		var previewCheckerboardParams: PreviewRenderer.FragmentUniforms = .init(isDarkMode: true, videoBounds: .zero)
 	}
 
 	@MainActor
@@ -54,7 +54,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 				)
 			} catch {
 				assertionFailure()
-				try? await PreviewRenderer.renderOriginal(from: originalFrame, to: outputFrame)
+				try? PreviewRenderer.renderOriginal(from: originalFrame, to: outputFrame)
 				asyncVideoCompositionRequest.finish(
 					withComposedVideoFrame: outputFrame
 				)
@@ -91,11 +91,9 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 			let compositionTime = OriginalCompositionTime(reportedCompositionTime: reportedCompositionTime, speed: fullPreviewStatus?.settings.speed)
 			guard state.shouldShowPreview else {
 				if fullPreviewStatus.isGenerating {
-					await MainActor.run {
-						lastGenerateTimeWhileNotShowingPreview = compositionTime
-					}
+					lastGenerateTimeWhileNotShowingPreview = compositionTime
 				}
-				try await PreviewRenderer.renderOriginal(
+				try PreviewRenderer.renderOriginal(
 					from: originalFrame,
 					to: outputFrame
 				)
@@ -107,7 +105,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 					return
 				}
 
-				try await PreviewRenderer.renderOriginal(
+				try PreviewRenderer.renderOriginal(
 					from: originalFrame,
 					to: outputFrame
 				)
@@ -118,14 +116,14 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 				return
 			}
 			// Need this for the case where the player is paused, not showing the preview, then the user presses the show preview button. Due to a bug in AVPlayer it won't update the PreviewFrame (it's content wil exist (not nil) bit will bel be old and out of date), so we need to regenerate the content rather than use the fullPreviewFrame
-			if let lastGenerateTimeWhileNotShowingPreview = await lastGenerateTimeWhileNotShowingPreview,
+			if let lastGenerateTimeWhileNotShowingPreview,
 			   lastGenerateTimeWhileNotShowingPreview == compositionTime {
 				try await convertToGIFAndRender(state: state, originalFrame: originalFrame, outputFrame: outputFrame, settings: fullPreviewStatus.settings, compositionTime: compositionTime)
 				return
 			}
 			guard let fullPreviewFrame else {
 				if let preBakedFrame = fullPreviewStatus.preBaked?.getPreBakedFrame(forTime: compositionTime)  {
-					try await PreviewRenderer.renderPreview(previewFrame: preBakedFrame, outputFrame: outputFrame, previewCheckerboardParams: state.previewCheckerboardParams)
+					try await PreviewRenderer.renderPreview(previewFrame: preBakedFrame, outputFrame: outputFrame, fragmentUniforms: state.previewCheckerboardParams)
 					return
 				}
 				try await convertToGIFAndRender(state: state, originalFrame: originalFrame, outputFrame: outputFrame, settings: fullPreviewStatus.settings, compositionTime: compositionTime)
@@ -135,12 +133,12 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 				return
 			}
 
-			try await PreviewRenderer.renderPreview(previewFrame: fullPreviewFrame, outputFrame: outputFrame, previewCheckerboardParams: state.previewCheckerboardParams)
+			try await PreviewRenderer.renderPreview(previewFrame: fullPreviewFrame, outputFrame: outputFrame, fragmentUniforms: state.previewCheckerboardParams)
 			return
 		}
 		private func convertToGIFAndRender(state: State, originalFrame: CVPixelBuffer, outputFrame: CVPixelBuffer, settings: SettingsForFullPreview, compositionTime: OriginalCompositionTime) async throws {
 			let frame = try await convertFrameToGIF(videoFrame: originalFrame, settings: settings)
-			try await PreviewRenderer.renderPreview(previewFrame: frame, outputFrame: outputFrame, previewCheckerboardParams: state.previewCheckerboardParams)
+			try await PreviewRenderer.renderPreview(previewFrame: frame, outputFrame: outputFrame, fragmentUniforms: state.previewCheckerboardParams)
 			try await outputCache.cacheBuffer(outputFrame, at: compositionTime, with: settings)
 		}
 
@@ -173,7 +171,6 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		/**
 		 There is a bug in AVplayer described like this: If it is paused and you update the the fullPreviewTrack (a full Preview is complete) the effect of the update don't take place until the user presses play or seeks. It will still get startRequests but the value of the fullPreviewFrame will be invalid (an old fullPreview). So what we need to do is cache the frame and keep it in memory and continue to show this one frame as long as the time matches up.  If we are not previewing at the time we have to save the lastGenerationTimeWhileNotShowing the preview or create this preview later. The only alternative is to reset the AVplayerItem which causes a ghastly flash on the screen.
 		 */
-		@MainActor
 		private var lastGenerateTimeWhileNotShowingPreview: OriginalCompositionTime?
 
 		/**
@@ -199,14 +196,14 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 					return false
 				}
 				guard let settings else {
-					try await PreviewRenderer.renderOriginal(from: cache, to: buffer)
+					try PreviewRenderer.renderOriginal(from: cache, to: buffer)
 					return true
 				}
 
 				guard latest.settings.areTheSameBesidesTimeRange(settings) else {
 					return false
 				}
-				try await PreviewRenderer.renderOriginal(from: cache, to: buffer)
+				try PreviewRenderer.renderOriginal(from: cache, to: buffer)
 				return true
 			}
 			func cacheBuffer(_ buffer: CVPixelBuffer, at time: OriginalCompositionTime, with settings: SettingsForFullPreview) throws {

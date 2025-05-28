@@ -15,6 +15,7 @@
 		0CB0E72D2DB97D5400E012C1 /* SettingsForFullPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E72C2DB97D5400E012C1 /* SettingsForFullPreview.swift */; };
 		0CB0E7412DBB4ABF00E012C1 /* FullPreviewGenerationEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7402DBB4ABF00E012C1 /* FullPreviewGenerationEvent.swift */; };
 		0CB0E74C2DBBED1700E012C1 /* PreBakedFrames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E74B2DBBED1700E012C1 /* PreBakedFrames.swift */; };
+		0CEB41482DE6B1FC009BB37B /* compositePreview.metal in Sources */ = {isa = PBXBuildFile; fileRef = 0CEB41472DE6B1FC009BB37B /* compositePreview.metal */; };
 		0E7925202329BDBE00058B94 /* ShareController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareController.swift */; };
 		0E7925282329BDBE00058B94 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
@@ -93,6 +94,7 @@
 		0CB0E72C2DB97D5400E012C1 /* SettingsForFullPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsForFullPreview.swift; sourceTree = "<group>"; };
 		0CB0E7402DBB4ABF00E012C1 /* FullPreviewGenerationEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullPreviewGenerationEvent.swift; sourceTree = "<group>"; };
 		0CB0E74B2DBBED1700E012C1 /* PreBakedFrames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreBakedFrames.swift; sourceTree = "<group>"; };
+		0CEB41472DE6B1FC009BB37B /* compositePreview.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = compositePreview.metal; sourceTree = "<group>"; };
 		0E79251B2329BDBE00058B94 /* Share Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E79251F2329BDBE00058B94 /* ShareController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 				0CB0E7252DB8833B00E012C1 /* PreviewRenderer.swift */,
 				0CB0E7082DB737B900E012C1 /* PreviewVideoCompositor.swift */,
 				0CB0E72C2DB97D5400E012C1 /* SettingsForFullPreview.swift */,
+				0CEB41472DE6B1FC009BB37B /* compositePreview.metal */,
 			);
 			path = Preview;
 			sourceTree = "<group>";
@@ -468,6 +471,7 @@
 				0CB0E72D2DB97D5400E012C1 /* SettingsForFullPreview.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* App.swift in Sources */,
 				0CB0E7092DB737B900E012C1 /* PreviewVideoCompositor.swift in Sources */,
+				0CEB41482DE6B1FC009BB37B /* compositePreview.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
