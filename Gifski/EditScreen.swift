@@ -8,14 +8,15 @@ struct EditScreen: View {
 	var metadata: AVAsset.VideoMetadata
 	@State private var outputCropRect: CropRect = .initialCropRect
 
-	private let requestNewFullPreview: RequestNewFullPreview
+	private let requestNewFullPreview: FullPreviewStream.RequestNewFullPreview
 	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
+	private let cancelFullPreviewGeneration: FullPreviewStream.CancelGeneratingFullPreview
 
 	init(url: URL, asset: AVAsset, metadata: AVAsset.VideoMetadata) {
 		self.url = url
 		self.asset = asset
 		self.metadata = metadata
-		(fullPreviewStream, requestNewFullPreview) = FullPreviewStream.create()
+		(fullPreviewStream, requestNewFullPreview, cancelFullPreviewGeneration) = FullPreviewStream.create()
 	}
 
 	var body: some View {
@@ -24,14 +25,14 @@ struct EditScreen: View {
 			asset: asset,
 			metadata: metadata,
 			outputCropRect: $outputCropRect,
-			// Need to
 			overlay: NSHostingView(rootView: CropOverlayView(
 				cropRect: $outputCropRect,
 				dimensions: metadata.dimensions,
 				editable: appState.isCropActive
 			)),
 			requestNewFullPreview: requestNewFullPreview,
-			fullPreviewStream: fullPreviewStream
+			fullPreviewStream: fullPreviewStream,
+			cancelFullPreviewGeneration: cancelFullPreviewGeneration
 		)
 	}
 }
@@ -57,8 +58,9 @@ private struct _EditScreen: View {
 	@State private var shouldShow = false
 	@State private var fullPreviewState: FullPreviewGenerationEvent = .initialState
 
-	private let requestNewFullPreview: RequestNewFullPreview
+	private let requestNewFullPreview: FullPreviewStream.RequestNewFullPreview
 	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
+	private let cancelFullPreviewGeneration: FullPreviewStream.CancelGeneratingFullPreview
 	private var overlay: NSView
 
 	init(
@@ -67,8 +69,9 @@ private struct _EditScreen: View {
 		metadata: AVAsset.VideoMetadata,
 		outputCropRect: Binding<CropRect>,
 		overlay: NSView,
-		requestNewFullPreview: @escaping RequestNewFullPreview,
-		fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
+		requestNewFullPreview: @escaping FullPreviewStream.RequestNewFullPreview,
+		fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>,
+		cancelFullPreviewGeneration: @escaping FullPreviewStream.CancelGeneratingFullPreview
 	) {
 		self._url = .init(wrappedValue: url)
 		self._asset = .init(wrappedValue: asset)
@@ -78,6 +81,7 @@ private struct _EditScreen: View {
 		self.overlay = overlay
 		self.requestNewFullPreview = requestNewFullPreview
 		self.fullPreviewStream = fullPreviewStream
+		self.cancelFullPreviewGeneration = cancelFullPreviewGeneration
 	}
 
 	var body: some View {
@@ -103,12 +107,12 @@ private struct _EditScreen: View {
 				}
 			}
 			ToolbarItemGroup {
-				@Bindable var appState = appState
 				CropToolbarItems(
 					isCropActive: appState.toggleMode(mode: .editCrop),
 					metadata: metadata,
 					outputCropRect: $outputCropRect
 				)
+				.focusSection()
 			}
 		}
 		.onReceive(Defaults.publisher(.outputSpeed, options: []).removeDuplicates().debounce(for: .seconds(0.4), scheduler: DispatchQueue.main)) { _ in
@@ -168,6 +172,11 @@ private struct _EditScreen: View {
 		.task {
 			for await event in fullPreviewStream {
 				switch event {
+				case .cancelled:
+					// If the full preview generation has been cancelled, but we not generating anything then just ignore the cancellation
+					if case .ready = fullPreviewState {
+						continue
+					}
 				case .empty, .generating:
 					break
 				case .ready(let settings, let asset, _, _):
@@ -179,6 +188,13 @@ private struct _EditScreen: View {
 	}
 
 	private func updatePreviewOnSettingsChange()  {
+		// Don't update the preview during editCropMode
+		switch appState.mode {
+		case .editCrop:
+			return
+		case .normal, .preview:
+			break
+		}
 		requestNewFullPreview(SettingsForFullPreview(conversion: conversionSettings, speed: Defaults[.outputSpeed], duration: metadata.duration.toTimeInterval ))
 	}
 
@@ -222,7 +238,13 @@ private struct _EditScreen: View {
 				updatePreviewOnSettingsChange()
 			}
 		}
-		.onChange(of: outputCropRect) {
+		.onChange(of: appState.mode) {
+			if appState.mode == .editCrop {
+				Task {
+					await cancelFullPreviewGeneration()
+				}
+			}
+			// Because we don't update the preview during editCrop, the preview may be stale.
 			updatePreviewOnSettingsChange()
 		}
 	}

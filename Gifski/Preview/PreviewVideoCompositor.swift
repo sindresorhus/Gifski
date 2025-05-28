@@ -203,9 +203,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 				latest = Latest(writeTime: time, settings: settings)
 				return
 			}
-			guard let copyable = buffer.makeCompatibleBuffer() else {
-				return
-			}
+			let copyable = try buffer.makeCompatibleBuffer()
 			try buffer.copy(to: copyable)
 			cache = copyable
 			latest = Latest(writeTime: time, settings: settings)

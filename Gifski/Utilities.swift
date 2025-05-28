@@ -5704,6 +5704,13 @@ extension Color {
 
 
 extension CVPixelBuffer {
+	enum CVPixelBufferError: Error {
+		case noBaseAddress
+		case noBaseAddressOfPlane(Int)
+		case creationError(status: CVReturn)
+		case creationErrorNoBuffer
+		case lockFailed(status: CVReturn)
+	}
 	var planeCount: Int {
 		CVPixelBufferGetPlaneCount(self)
 	}
@@ -5724,16 +5731,24 @@ extension CVPixelBuffer {
 		CVPixelBufferGetBytesPerRow(self)
 	}
 
-	var baseAddress: UnsafeMutableRawPointer? {
-		CVPixelBufferGetBaseAddress(self)
+	var baseAddress: UnsafeMutableRawPointer {
+		get throws {
+			guard let maybeBaseAddress = CVPixelBufferGetBaseAddress(self) else {
+				throw CVPixelBufferError.noBaseAddress
+			}
+			return maybeBaseAddress
+		}
 	}
 
 	var creationAttributes: CFDictionary {
 		CVPixelBufferCopyCreationAttributes(self)
 	}
 
-	func baseAddressOfPlane(_ plane: Int) -> UnsafeMutableRawPointer? {
-		CVPixelBufferGetBaseAddressOfPlane(self, plane)
+	func baseAddressOfPlane(_ plane: Int) throws -> UnsafeMutableRawPointer {
+		guard let maybeBaseAddress = CVPixelBufferGetBaseAddressOfPlane(self, plane) else {
+			throw CVPixelBufferError.noBaseAddressOfPlane(plane)
+		}
+		return maybeBaseAddress
 	}
 
 	func bytesPerRowOfPlane(_ plane: Int) -> Int {
@@ -5757,6 +5772,129 @@ extension CVPixelBuffer {
 			return out
 		default:
 			return nil
+		}
+	}
+
+	static func create(
+		allocator: CFAllocator? = kCFAllocatorDefault,
+		width: Int,
+		height: Int,
+		pixelFormatType: OSType,
+		pixelBufferAttributes: CFDictionary?
+	) throws -> CVPixelBuffer {
+		var out: CVPixelBuffer?
+		let status = CVPixelBufferCreate(
+			allocator,
+			width,
+			height,
+			pixelFormatType,
+			pixelBufferAttributes,
+			&out
+		)
+		guard status == kCVReturnSuccess else {
+			throw CVPixelBufferError.creationError(status: status)
+		}
+		guard let out else {
+			throw CVPixelBufferError.creationErrorNoBuffer
+		}
+		return out
+	}
+
+	func copy(to destination: CVPixelBuffer) throws {
+		try withLockedPlanes(flags: [.readOnly]) { sourcePlanes in
+			try destination.withLockedPlanes(flags: []) { destinationPlanes in
+				guard sourcePlanes.count == destinationPlanes.count else {
+					throw CopyError.planesMismatch
+				}
+				for (sourcePlane, destinationPlane) in zip(sourcePlanes, destinationPlanes) {
+					try sourcePlane.copy(to: destinationPlane)
+				}
+			}
+		}
+	}
+
+	func lockBaseAddress(flags: CVPixelBufferLockFlags = []) throws {
+		let status = CVPixelBufferLockBaseAddress(self, flags)
+		guard status == kCVReturnSuccess else {
+			throw CVPixelBufferError.lockFailed(status: status)
+		}
+	}
+	func unlockBaseAddress(flags: CVPixelBufferLockFlags = []) {
+		CVPixelBufferUnlockBaseAddress(self, flags)
+	}
+
+	enum CopyError: Error {
+		case planesMismatch
+		case heightMismatch
+	}
+
+	func withLockedBaseAddress<T>(
+		flags: CVPixelBufferLockFlags = [],
+		_ body: (CVPixelBuffer) throws -> T
+	) throws -> T {
+		try self.lockBaseAddress(flags: flags)
+		defer { self.unlockBaseAddress(flags: flags) }
+		return try body(self)
+	}
+
+	func withLockedPlanes<T>(
+		flags: CVPixelBufferLockFlags = [],
+		_ body: ([LockedPlane]) throws -> T
+	) throws -> T {
+		try withLockedBaseAddress(flags: flags) { buffer in
+			let planeCount = buffer.planeCount
+			if planeCount == 0 {
+				return try body([
+					.init(
+						base: try buffer.baseAddress,
+						bytesPerRow: buffer.bytesPerRow,
+						height: buffer.height
+					)
+				])
+			}
+			let planes = try (0..<planeCount).compactMap { planeIndex -> LockedPlane? in
+				.init(
+					base: try buffer.baseAddressOfPlane(planeIndex),
+					bytesPerRow: buffer.bytesPerRowOfPlane(planeIndex),
+					height: buffer.heightOfPlane(planeIndex)
+				)
+			}
+			guard planes.count == planeCount else {
+				throw CopyError.planesMismatch
+			}
+			return try body(planes)
+		}
+	}
+
+	func makeCompatibleBuffer() throws -> CVPixelBuffer {
+		try Self.create(width: width, height: height, pixelFormatType: pixelFormatType, pixelBufferAttributes: creationAttributes)
+	}
+
+	struct LockedPlane {
+		let base: UnsafeMutableRawPointer
+		let bytesPerRow: Int
+		let height: Int
+
+		func copy(to destination: Self) throws {
+			guard height == destination.height
+			else {
+				throw CopyError.heightMismatch
+			}
+
+			guard bytesPerRow != destination.bytesPerRow else {
+				memcpy(destination.base, base, height * bytesPerRow)
+				return
+			}
+			var destinationBase = destination.base
+			var sourceBase = base
+
+			let minBytesPerRow = min(bytesPerRow, destination.bytesPerRow)
+			for _ in 0..<height {
+				memcpy(destinationBase, sourceBase, minBytesPerRow)
+				sourceBase = sourceBase.advanced(by: bytesPerRow)
+				destinationBase = destinationBase.advanced(by: destination.bytesPerRow)
+			}
+			return
 		}
 	}
 }
@@ -5806,5 +5944,24 @@ final class TempFileTracker {
 			try? FileManager.default.removeItem(at: url)
 		}
 		urls.removeAll()
+	}
+}
+
+extension CVPixelBufferPool {
+	enum CVPixelBufferPoolError: Error {
+		case createFailed(status: CVReturn)
+		case createFailedToCreatePixelBuffer
+	}
+
+	func createPixelBuffer(_ allocator: CFAllocator? = nil) throws -> CVPixelBuffer {
+		var pixelBuffer: CVPixelBuffer?
+		let status = CVPixelBufferPoolCreatePixelBuffer(allocator, self, &pixelBuffer)
+		guard status == kCVReturnSuccess else {
+			throw CVPixelBufferPoolError.createFailed(status: status)
+		}
+		guard let pixelBuffer else {
+			throw CVPixelBufferPoolError.createFailedToCreatePixelBuffer
+		}
+		return pixelBuffer
 	}
 }

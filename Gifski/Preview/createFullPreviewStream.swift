@@ -41,16 +41,16 @@ enum FullPreviewStream {
 	 ## Internals
 	 internally the fullPreviewStream works like this: It sets up its own AsyncStream that waits for calls to( RequestNewFullPreview)[RequestNewFullPreview], once there it cancels any existing requests for generation, then spawns a new task to generate the fullPreview.
 	 */
-	static func create() -> (AsyncStream<FullPreviewGenerationEvent>, RequestNewFullPreview) {
+	static func create() -> (AsyncStream<FullPreviewGenerationEvent>, RequestNewFullPreview, CancelGeneratingFullPreview) {
 		// The output stream as this is a stream of FullPreviewGenerationEvents
 		let ( stateStream, stateStreamContinuation ) = AsyncStream<FullPreviewGenerationEvent>.makeStream(bufferingPolicy: .bufferingNewest(100))
 
 		// The input stream, input new settings to make fullPreviews of
 		let ( newSettingsStream, newSettingsContinuation ) = AsyncStream<(SettingsForFullPreview)>.makeStream(bufferingPolicy: .bufferingNewest(5))
+		let fullPreviewState = FullPreviewState(stateStreamContinuation: stateStreamContinuation)
+
 
 		let mainLoop = Task {
-			let fullPreviewState = FullPreviewState(stateStreamContinuation: stateStreamContinuation)
-
 			for await settingsEvent in newSettingsStream {
 				try Task.checkCancellation()
 
@@ -94,11 +94,17 @@ enum FullPreviewStream {
 		}
 
 		let debouncer = Debouncer(delay: .milliseconds(200))
-		return (stateStream, { (settings: SettingsForFullPreview)  in
-			debouncer {
-				newSettingsContinuation.yield((settings))
+		return (
+			stateStream,
+			{ (settings: SettingsForFullPreview)  in
+				debouncer {
+					newSettingsContinuation.yield((settings))
+				}
+			},
+			{
+				await fullPreviewState.cancelGeneration()
 			}
-		})
+		)
 	}
 
 	private actor FullPreviewState {
@@ -124,7 +130,9 @@ enum FullPreviewStream {
 			automaticRequestID += 1
 			return automaticRequestID
 		}
-
+		/**
+		Cancels the last generationTask and creates a new one based on the provided operation. Please note that this async function returns when the task has *started* not when it has finished.
+		 */
 		func newGeneration(requestID: Int, newSettings: SettingsForFullPreview, operation: @escaping () async -> Void) async {
 			if let generationTask,
 			   !generationTask.isCancelled{
@@ -143,6 +151,11 @@ enum FullPreviewStream {
 			}
 			state = newPreviewState
 			stateStreamContinuation.yield(newPreviewState)
+		}
+
+		func cancelGeneration() {
+			generationTask?.cancel()
+			updatePreview(newPreviewState: .cancelled(requestID: newId()))
 		}
 	}
 
@@ -176,7 +189,7 @@ enum FullPreviewStream {
 	 */
 	fileprivate static func isNecessaryToCreateNewFullPreview(oldState: FullPreviewGenerationEvent, newSettings settings: SettingsForFullPreview, requestID: Int) -> Bool {
 		switch oldState {
-		case .empty:
+		case .empty, .cancelled:
 			return true
 		case .generating(let currentGenerationSettings, _, let oldRequestID),
 				.ready(let currentGenerationSettings, _, _, let oldRequestID):
@@ -194,13 +207,14 @@ enum FullPreviewStream {
 			return true
 		}
 	}
+
+
+	typealias RequestNewFullPreview = (SettingsForFullPreview) -> Void
+
+	typealias CancelGeneratingFullPreview = () async -> Void
 }
 
-/**
- - Parameters:
- - arg0 settings for the full fullPreview
- */
-typealias RequestNewFullPreview = (SettingsForFullPreview) -> Void
+
 
 
 extension Int {

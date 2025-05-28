@@ -33,8 +33,6 @@ struct AppMain: App {
 					.keyboardShortcut("p", modifiers: [.command, .shift])
 					.disabled(!appState.isOnEditScreen)
 					.help("Preview is only available when editing a video")
-			}
-			CommandGroup(replacing: .textEditing) {
 				Toggle("Crop", isOn: appState.toggleMode(mode: .editCrop))
 					.keyboardShortcut("c", modifiers: [.command, .shift])
 					.disabled(!appState.isOnEditScreen)

@@ -7,27 +7,31 @@ struct CropToolbarItems: View {
 	@Binding var isCropActive: Bool
 	let metadata: AVAsset.VideoMetadata
 	@Binding var outputCropRect: CropRect
+	@FocusState private var isCropToggleFocused: Bool
 
 	var body: some View {
-		if isCropActive {
-			AspectRatioPicker(
-				metadata: metadata,
-				outputCropRect: $outputCropRect
-			)
+		HStack {
+			if isCropActive {
+				AspectRatioPicker(
+					metadata: metadata,
+					outputCropRect: $outputCropRect
+				)
+			}
+			Toggle("Crop", systemImage: "crop", isOn: $isCropActive)
+				.focused($isCropToggleFocused)
+				.onChange(of: isCropActive) {
+					isCropToggleFocused = true
+					guard isCropActive else {
+						return
+					}
+					SSApp.runOnce(identifier: "showCropTooltip") {
+						showCropTooltip = true
+					}
+				}
+				.popover(isPresented: $showCropTooltip) {
+					TipsView(title: "Crop Tips", tips: Self.tips)
+				}
 		}
-		Toggle("Crop", systemImage: "crop", isOn: $isCropActive)
-			.onChange(of: isCropActive) {
-				guard isCropActive else {
-					return
-				}
-
-				SSApp.runOnce(identifier: "showCropTooltip") {
-					showCropTooltip = true
-				}
-			}
-			.popover(isPresented: $showCropTooltip) {
-				TipsView(title: "Crop Tips", tips: Self.tips)
-			}
 	}
 
 	private static let tips = [

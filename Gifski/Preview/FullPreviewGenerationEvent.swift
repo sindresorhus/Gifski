@@ -14,12 +14,14 @@ import Metal
  */
 enum FullPreviewGenerationEvent {
 	case empty(error: String?, requestID: Int)
+	case cancelled(requestID: Int)
 	case generating(settings: SettingsForFullPreview, progress: Double, requestID: Int)
 	case ready(settings: SettingsForFullPreview, asset: AVAsset, preBaked: PreBakedFrames, requestID: Int)
 	static let initialState: Self = .empty(error: nil, requestID: -1)
 	var requestID: Int {
 		switch self {
 		case let .empty(_, requestID),
+			let .cancelled(requestID),
 			let .generating(_, _, requestID),
 			let .ready(_, _, _, requestID):
 			return requestID
@@ -27,7 +29,7 @@ enum FullPreviewGenerationEvent {
 	}
 	var progress: Double {
 		switch self {
-		case .empty:
+		case .empty, .cancelled:
 			return 0.0
 		case let .generating(_, progress, _):
 			return progress
@@ -39,13 +41,13 @@ enum FullPreviewGenerationEvent {
 		switch self {
 		case .generating:
 			true
-		case .empty, .ready:
+		case .empty, .ready, .cancelled:
 			false
 		}
 	}
 	var status: Status? {
 		switch self {
-		case .empty:
+		case .empty, .cancelled:
 			return nil
 		case let .generating(settings, _, _):
 			return .init(settings: settings, preBaked: nil, ready: false)
