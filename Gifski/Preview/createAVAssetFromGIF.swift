@@ -20,9 +20,7 @@ func createAVAssetFromGIF(imageSource: CGImageSource, settings: SettingsForFullP
 	}
 
 	let tempPath = FileManager.default.temporaryDirectory.appending(component: "\(UUID()).mov")
-	guard let assetWriter = try? AVAssetWriter(outputURL: tempPath, fileType: .mov) else {
-		throw CreateAVAssetError.failedToCreateAssetWriter
-	}
+	let assetWriter = try AVAssetWriter(outputURL: tempPath, fileType: .mov)
 
 	let writerInput = AVAssetWriterInput(mediaType: .video, outputSettings: [
 		AVVideoCodecKey: AVVideoCodecType.h264,
