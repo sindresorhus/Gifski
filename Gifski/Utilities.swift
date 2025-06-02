@@ -5708,13 +5708,6 @@ extension Color {
 
 
 extension CVPixelBuffer {
-	enum CVPixelBufferError: Error {
-		case noBaseAddress
-		case noBaseAddressOfPlane(Int)
-		case creationError(status: CVReturn)
-		case creationErrorNoBuffer
-		case lockFailed(status: CVReturn)
-	}
 	var planeCount: Int {
 		CVPixelBufferGetPlaneCount(self)
 	}
@@ -5901,71 +5894,498 @@ extension CVPixelBuffer {
 			return
 		}
 	}
-}
 
-final class SendableWrapper<T>: @unchecked Sendable {
-	private var unsafeValue: T
-
-	private let lock = NSLock()
-
-	var value: T {
-		get {
-			lock.withLock { unsafeValue }
+	func convertToGIF(
+		settings: SettingsForFullPreview
+	) async throws -> Data  {
+		//  Not the fastest way to convert CVPixelBuffer to image, but the runtime of `GIFGenerator.convertOneFrame` is so much larger that optimizing this would be a waste
+		let ciImage = CIImage(cvPixelBuffer: self)
+		let ciContext = CIContext()
+		guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent)
+		else {
+			throw ConvertToGIFError.failedToCreateCGContext
 		}
-		set {
-			lock.withLock { unsafeValue = newValue }
+		guard let croppedImage = settings.conversion.croppedImage(image: cgImage) else {
+			throw GIFGenerator.Error.cropNotInBounds
 		}
+		return try await GIFGenerator.convertOneFrame(
+			frame: croppedImage,
+			dimensions: settings.conversion.croppedOutputDimensions,
+			quality: max(0.1, settings.conversion.settings.quality),
+			fast: true
+		)
 	}
 
-	init(_ value: T) {
-		unsafeValue = value
+	enum ConvertToGIFError: Error {
+		case failedToCreateCGContext
+	}
+	/**
+	Setup the video to use sRGB color space, we  set `kCVImageBufferColorPrimariesKey`  and  `kCVImageBufferYCbCrMatrixKey` to 709 because  because sRGB and 709 "share the same primary chromaticities, but they have different transfer functions" [source](https://web.archive.org/web/20250416122435/https://www.image-engineering.de/library/technotes/714-color-spaces-rec-709-vs-srgb) .
+	 */
+	func setSRGBColorSpace() {
+		setAttachment(key: kCVImageBufferColorPrimariesKey, value: kCVImageBufferColorPrimaries_ITU_R_709_2, attachmentMode: .shouldPropagate)
+		setAttachment(key: kCVImageBufferTransferFunctionKey, value: kCVImageBufferTransferFunction_sRGB, attachmentMode: .shouldPropagate)
+		setAttachment(key: kCVImageBufferYCbCrMatrixKey, value: kCVImageBufferYCbCrMatrix_ITU_R_709_2, attachmentMode: .shouldPropagate)
+	}
+
+	func setAttachment(key: CFString, value: CFTypeRef, attachmentMode: CVAttachmentMode) {
+		CVBufferSetAttachment(self, key, value, attachmentMode)
+	}
+	/**
+	 Mark that the pixel buffer will not be modified in any way except by `PreviewRenderer`
+	 */
+	var previewSendable: PreviewRenderer.SendableCVPixelBuffer {
+		PreviewRenderer.SendableCVPixelBuffer(pixelBuffer: self)
+	}
+
+	enum CVPixelBufferError: Error {
+		case noBaseAddress
+		case noBaseAddressOfPlane(Int)
+		case creationError(status: CVReturn)
+		case creationErrorNoBuffer
+		case lockFailed(status: CVReturn)
+	}
+}
+
+protocol CropSettings {
+	var dimensions: (width: Int, height: Int)? { get}
+	var crop: CropRect? { get }
+}
+extension GIFGenerator.Conversion: CropSettings {}
+extension SettingsForFullPreview.SendableConversion: CropSettings {}
+
+extension CropSettings {
+	/**
+	We don't use `croppedOutputDimensions` here because the `CGImage` source may have a different size. We use the size directly from the image.
+
+	If the rect parameter defines an area that is not in the image, it returns nil: https://developer.apple.com/documentation/coregraphics/cgimage/1454683-cropping
+	*/
+	func croppedImage(image: CGImage) -> CGImage? {
+		guard let crop else {
+			return image
+		}
+
+		return image.cropping(to: crop.unnormalize(forDimensions: (image.width, image.height)))
+	}
+
+	var croppedOutputDimensions: (width: Int, height: Int)? {
+		guard let crop else {
+			return dimensions
+		}
+
+		guard let dimensions else {
+			return nil
+		}
+
+		let cropInPixels = crop.unnormalize(forDimensions: dimensions)
+
+		return (
+			cropInPixels.width.toIntAndClampingIfNeeded,
+			cropInPixels.height.toIntAndClampingIfNeeded
+		)
 	}
 }
 
 extension CGImageSource {
+	static func create(withData data: Data, options: CFDictionary? = nil) throws -> CGImageSource {
+		guard let imageSource = CGImageSourceCreateWithData(data as CFData, options) else {
+			throw CGImageSourceError.failedToCreateImageSource
+		}
+		return imageSource
+	}
+
 	var count: Int {
 		CGImageSourceGetCount(self)
 	}
 
-	func createImage(atIndex index: Int, options: CFDictionary? = nil) -> CGImage? {
-		CGImageSourceCreateImageAtIndex(self, index, options)
+	func createImage(atIndex index: Int, options: CFDictionary? = nil) throws -> CGImage {
+		guard let image = CGImageSourceCreateImageAtIndex(self, index, options) else {
+			throw CGImageSourceError.failedToCreateImage(status: CGImageSourceGetStatusAtIndex(self, index))
+		}
+		return image
+	}
+
+	enum CGImageSourceError: Error {
+		case failedToCreateImageSource
+		case failedToCreateImage(status: CGImageSourceStatus)
 	}
 }
 
-final class TempFileTracker {
-	static let shared = TempFileTracker()
-	private var urls: Set<URL> = []
-
-	func register(_ url: URL) {
-		urls.insert(url)
-	}
-	func unregister(_ url: URL) {
-		urls.remove(url)
-	}
-
-	func cleanup() {
-		for url in urls {
-			try? FileManager.default.removeItem(at: url)
-		}
-		urls.removeAll()
+extension CGImage {
+	func convertToData(withNewType type: String, destinationOptions: CFDictionary? = nil, addOptions: CFDictionary? = nil) throws -> Data {
+		let mutableData = NSMutableData()
+		let destination = try CGImageDestination.create(withData: mutableData, type: type, count: 1, options: destinationOptions)
+		destination.add(image: self, properties: addOptions)
+		try destination.finalize()
+		return mutableData as Data
 	}
 }
 
-extension CVPixelBufferPool {
-	enum CVPixelBufferPoolError: Error {
-		case createFailed(status: CVReturn)
-		case createFailedToCreatePixelBuffer
+extension CGImageDestination {
+	static func create(withData: NSMutableData, type: String, count: Int = 1, options: CFDictionary? = nil) throws -> CGImageDestination {
+		guard let imageDestination = CGImageDestinationCreateWithData(withData, type as CFString, count, options) else {
+			throw CGImageDestinationError.failedToCreate
+		}
+		return imageDestination
 	}
 
-	func createPixelBuffer(_ allocator: CFAllocator? = nil) throws -> CVPixelBuffer {
-		var pixelBuffer: CVPixelBuffer?
-		let status = CVPixelBufferPoolCreatePixelBuffer(allocator, self, &pixelBuffer)
-		guard status == kCVReturnSuccess else {
-			throw CVPixelBufferPoolError.createFailed(status: status)
+	func add(image: CGImage, properties: CFDictionary? = nil) {
+		CGImageDestinationAddImage(self, image, properties)
+	}
+
+	func finalize() throws {
+		guard CGImageDestinationFinalize(self) else {
+			throw CGImageDestinationError.failedToFinalize
 		}
-		guard let pixelBuffer else {
-			throw CVPixelBufferPoolError.createFailedToCreatePixelBuffer
+	}
+
+	enum CGImageDestinationError: Error {
+		case failedToCreate
+		case failedToFinalize
+	}
+}
+
+extension Data {
+	func readLittleEndianUInt24(_ start: Int) -> UInt32 {
+		UInt32(self[start]) | UInt32(self[start + 1]) << 8 | UInt32(self[start + 2]) << 16
+	}
+	/**
+	If data holds imageData this will convert to a texture suitable for `PreviewRenderer`
+	 */
+	var convertToTexture: SendableTexture {
+		get async throws {
+			try await PreviewRenderer.shared.convertToTexture(data: self)
 		}
-		return pixelBuffer
+	}
+}
+
+extension Int {
+	func aligned(to alignment: Int) -> Int {
+		((self + alignment - 1) / alignment) * alignment
+	}
+}
+
+extension MTLCommandBuffer {
+	/**
+	 Submits the commands to the GPU and await completion
+	 */
+	func commit() async throws {
+		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+			self.addCompletedHandler { _ in
+				guard self.status == .completed else {
+					continuation.resume(throwing: MTLCommandBufferRenderError.failedToRender(status: self.status))
+					return
+				}
+				continuation.resume()
+			}
+			self.commit()
+		}
+	}
+	/**
+	 Create a Render command encoder, runs your operation, then ends encoding with `endEncoding`
+	 */
+	func withRenderCommandEncoder(renderPassDescriptor: MTLRenderPassDescriptor, operation: (MTLRenderCommandEncoder) throws -> Void) throws {
+		guard let renderEncoder = makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+			throw MTLCommandBufferRenderError.failedToMakeRenderCommandEncoder
+		}
+		try operation(renderEncoder)
+		renderEncoder.endEncoding()
+	}
+}
+enum MTLCommandBufferRenderError: Error {
+	case failedToRender(status: MTLCommandBufferStatus)
+	case failedToMakeRenderCommandEncoder
+}
+
+extension MTLCommandQueue {
+	/**
+	 Creates a command buffer, runs your operation, then commits (sends commnds to the GPU) and awaits completion
+	 */
+	func withCommandBuffer(
+		isolated actor: isolated any Actor,
+		operation: (MTLCommandBuffer) throws -> Void
+	) async throws {
+		guard let commandBuffer = makeCommandBuffer() else {
+			throw MTLCommandQueueRenderError.failedToCreateCommandBuffer
+		}
+		try operation(commandBuffer)
+		try await commandBuffer.commit()
+	}
+}
+
+enum MTLCommandQueueRenderError: Error {
+	case failedToCreateCommandBuffer
+}
+
+extension CGPoint {
+	var simdFloat2: SIMD2<Float> {
+		.init(x: Float(x), y: Float(y))
+	}
+
+	func clamped(within rect: CGRect) -> CGPoint {
+		CGPoint(
+			x: x.clamped(from: rect.minX, to: rect.maxX),
+			y: y.clamped(from: rect.minY, to: rect.maxY)
+		)
+	}
+}
+
+extension CGSize {
+	var simdFloat2: SIMD2<Float> {
+		.init(x: Float(width), y: Float(height))
+	}
+
+	func clamped(within rect: CGRect) -> CGPoint {
+		CGPoint(
+			x: width.clamped(from: rect.minX, to: rect.maxX),
+			y: height.clamped(from: rect.minY, to: rect.maxY)
+		)
+	}
+}
+
+/**
+ Need to keep a strong reference to the CVMetalTexture until the GPU command completes, this struct ensures that the CVMetalTexture is not garbage collected as long as the MTLTexture is around [see](https://developer.apple.com/documentation/corevideo/cvmetaltexturecachecreatetexturefromimage(_:_:_:_:_:_:_:_:_:))
+ */
+struct CVMetalTextureRef {
+	private let cv: CVMetalTexture
+	let tex: MTLTexture
+	fileprivate init(cv: CVMetalTexture, tex: MTLTexture) {
+		self.cv = cv
+		self.tex = tex
+	}
+}
+
+extension CVMetalTextureCache {
+	func createTexture(fromImage image: CVPixelBuffer, pixelFormat: MTLPixelFormat, textureAttributes: CFDictionary? = nil ) throws -> CVMetalTextureRef {
+		var cv: CVMetalTexture?
+		guard
+			CVMetalTextureCacheCreateTextureFromImage(
+				nil,
+				self,
+				image,
+				textureAttributes,
+				pixelFormat,
+				image.width,
+				image.height,
+				0,
+				&cv
+			) == kCVReturnSuccess,
+			let cv,
+			let tex = CVMetalTextureGetTexture(cv)
+		else {
+			throw CVMetalTextureCacheError.failedToCreateTexture
+		}
+		return .init(cv: cv, tex: tex)
+	}
+
+	enum CVMetalTextureCacheError: Error {
+		case failedToCreateTexture
+	}
+}
+
+/**
+ Support for [Adaptable Scalable Texture Compression (ASTC)](https://www.khronos.org/opengl/wiki/ASTC_Texture_Compression) images. ASTC files have a [16-byte header](https://github.com/ARM-software/astc-encoder/blob/main/Docs/FileFormat.md) parse it to get render information like the size of the blocks and the image size
+ */
+struct ASTCImage {
+	private let data: Data
+	private let blockSize: (UInt8, UInt8, UInt8)
+	private let imageSize: (Int, Int, Int)
+	private static let headerSize = 16
+	private static let ASTCBlockSize = 16
+
+	init(data: Data) throws {
+		self.data = data
+		guard data.count >= Self.headerSize else {
+			throw ASTCImageError.invalidDataSize
+		}
+		// Check the magic number
+		guard data[0] == 0x13,
+			  data[1] == 0xAB,
+			  data[2] == 0xA1,
+			  data[3] == 0x5C else {
+			throw ASTCImageError.notASTCData
+		}
+		self.blockSize = (data[4], data[5], data[6])
+		self.imageSize = (
+			Int(data.readLittleEndianUInt24(7)),
+			Int(data.readLittleEndianUInt24(10)),
+			Int(data.readLittleEndianUInt24(13))
+		)
+	}
+
+	var width: Int {
+		imageSize.0
+	}
+	var height: Int {
+		imageSize.1
+	}
+	/**
+	 A metal descriptor that describes this image
+	 */
+	func descriptor() throws -> MTLTextureDescriptor  {
+		MTLTextureDescriptor.texture2DDescriptor(
+			pixelFormat: try .astc_ldr(fromBlockSize: blockSize),
+			width: width,
+			height: height,
+			mipmapped: false
+		)
+	}
+
+	func writeTo(texture: MTLTexture) throws {
+		try data.withUnsafeBytes { bytes in
+			guard let baseAddress = bytes.baseAddress else {
+				throw ASTCImageError.failedToGetASTCBaseAddress
+			}
+			let imageDataStart = baseAddress.advanced(by: Self.headerSize)
+			texture.replace(
+				region: MTLRegionMake2D(0, 0, width, height),
+				mipmapLevel: 0,
+				withBytes: imageDataStart,
+				bytesPerRow: bytesPerRow
+			)
+		}
+	}
+
+	private var bytesPerRow: Int {
+		(Self.ASTCBlockSize * width / Int(blockSize.0)).aligned(to: 16)
+	}
+
+	enum ASTCImageError: Error {
+		case invalidDataSize
+		case notASTCData
+		case failedToGetASTCBaseAddress
+	}
+}
+
+extension MTLPixelFormat {
+	static func astc_ldr(fromBlockSize blockSize: (UInt8, UInt8, UInt8)) throws -> Self {
+		let (width, height, depth) = blockSize
+		guard depth == 1 else {
+			throw MTLPixelASTCCompressionError.notImplemented
+		}
+		if width == 4 && height == 4 {
+			return .astc_4x4_ldr
+		}
+		if width == 8 && height == 8 {
+			return .astc_8x8_ldr
+		}
+		throw MTLPixelASTCCompressionError.notImplemented
+	}
+
+	enum MTLPixelASTCCompressionError: Error {
+		case notImplemented
+	}
+}
+
+/**
+ A task with a progress AsyncStream
+ */
+struct ProgressableTask<Progress: Sendable, Result: Sendable>: Sendable {
+	let progress: AsyncStream<Progress>
+	let task: Task<Result, any Error>
+
+	init(operation: @escaping (AsyncStream<Progress>.Continuation) async throws -> Result){
+		let (progressStream, progressContinuation) = AsyncStream<Progress>.makeStream()
+		progress = progressStream
+		task = Task {
+			do {
+				let out = try await operation(progressContinuation)
+				progressContinuation.finish()
+				return out
+			} catch {
+				progressContinuation.finish()
+				throw error
+			}
+		}
+	}
+
+	func cancel() {
+		task.cancel()
+	}
+
+	var value: Result {
+		get async throws {
+			try await task.value
+		}
+	}
+}
+
+extension ProgressableTask where Progress == Double {
+	func monitorProgressWithCancellation(
+		progressWeight: Double = 1.0,
+		progressOffset: Double = 0.0,
+		progressContinuation: AsyncStream<Progress>.Continuation,
+	) async throws -> Result {
+		await withTaskCancellationHandler {
+			for await currentProgress in progress {
+				progressContinuation.yield(progressOffset + currentProgress * progressWeight)
+			}
+		} onCancel: {
+			cancel()
+		}
+		try Task.checkCancellation()
+		return try await value
+	}
+	/**
+	Compose this task with another task, weighting the progress of the task by `weight`
+	 */
+	func then<Result2>(progressWeight: Double = 0.5, composeWith nextTask: @Sendable @escaping (Result) async throws -> ProgressableTask<Double, Result2>) -> ProgressableTask<Double, Result2> {
+		ProgressableTask<Double, Result2> { progressContinuation  in
+			let result1 = try await monitorProgressWithCancellation(progressWeight: progressWeight, progressContinuation: progressContinuation)
+			try Task.checkCancellation()
+			let task2 = try await nextTask(result1)
+
+			try Task.checkCancellation()
+			return try await task2.monitorProgressWithCancellation(progressWeight: 1 - progressWeight, progressOffset: progressWeight, progressContinuation: progressContinuation)
+		}
+	}
+}
+
+extension GIFGenerator {
+	static func runProgressable(_ conversion: GIFGenerator.Conversion) -> ProgressableTask<Double, Data> {
+		ProgressableTask { progressContinuation in
+			try await GIFGenerator.run(
+				conversion
+			) {
+				progressContinuation.yield($0)
+			}
+		}
+	}
+}
+
+/**
+ Protocol for preview equivalence comparison using the ~= operator. This ignores transient properties that don't affect visual output.
+ */
+protocol PreviewComparable {
+	static func ~= (lhs: Self, rhs: Self) -> Bool
+}
+
+extension CompositePreviewFragmentUniforms: Equatable {
+	init() {
+		self.init(
+			videoOrigin: .one,
+			videoSize: .one,
+			firstColor: .zero,
+			secondColor: .one,
+			gridSize: 1
+		)
+	}
+
+	init(isDarkMode: Bool, videoBounds: CGRect) {
+		self.init(
+			videoOrigin: videoBounds.origin.clamped(within: .init(origin: .zero, width: .infinity, height: .infinity)).simdFloat2,
+			videoSize: videoBounds.size.clamped(within: .init(origin: .zero, width: .infinity, height: .infinity)).simdFloat2,
+			firstColor: (isDarkMode ? CheckerboardViewConstants.firstColorDark : CheckerboardViewConstants.firstColorLight ).simd4,
+			secondColor: (isDarkMode ? CheckerboardViewConstants.secondColorDark : CheckerboardViewConstants.secondColorLight ).simd4,
+			gridSize: Int32(CheckerboardViewConstants.gridSize).clamped(from: 1, to: .max)
+		)
+	}
+
+	public static func == (lhs: CompositePreviewFragmentUniforms, rhs: CompositePreviewFragmentUniforms) -> Bool {
+		lhs.videoOrigin == rhs.videoOrigin &&
+		lhs.videoSize == rhs.videoSize &&
+		lhs.firstColor == rhs.firstColor &&
+		lhs.secondColor == rhs.secondColor &&
+		lhs.gridSize == rhs.gridSize
 	}
 }

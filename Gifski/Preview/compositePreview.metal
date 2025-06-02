@@ -1,136 +1,76 @@
-//
-//  compositePreview.metal
-//  Gifski
-//
-//  Created by Michael Mulet on 4/22/25.
-//
-
 #include <metal_stdlib>
 #include <metal_graphics>
-#include <metal_mesh>
+#include "CompositePreviewShared.h"
+
 using namespace metal;
 
-struct VertexOut {
-	float4 position [[position]];
+struct Vertex {
+	float2 position;
 	float2 texCoords;
-	VertexOut(float3 position, float2 texCoords): texCoords(texCoords) {
-		this->position = float4(position, 1.0);
+
+	Vertex(float2 position, float2 texCoords): position(position), texCoords(texCoords) {
 	}
 };
 
-struct MeshUniforms {
-	float2 scale;
+struct VertexOut {
+	// The position of the vertex in homogenous clip space. In our case, the clip space goes from -1...1 in both the x and y directions. (-1,-1) is the bottom-left of the screen, while (1,1) is the top right. The position goes from  0...1 in the z direction, and it is used by the depth buffer to decide what pixels will occlude other pixels. In our case pixels "closer" to 0 will be "on-top" of pixels "farther" away (1.0 being the maximium depth). w will be kept 1.0 and can be ignored for now.
+	float4 position [[position]];
+	// pass the texture coordinates on to the fragment shader. Tex coords range from 0...1 in s and t (ie, horizontal and vertical)
+	float2 texCoords;
+	// pass wheter or not the triangle is checkeboard to the fragment shader
+	uint isCheckerboard;
+
+	VertexOut(Vertex vert, float2 scale, float z, bool isCheckerboard):
+	position(float4(vert.position * scale, z, 1.0)),
+	texCoords(vert.texCoords),
+	isCheckerboard(isCheckerboard)
+	{
+
+	}
 };
 
-struct PrimitiveOut {
-	/**
-	 whether this primitive is for the original frame or the preview frame
-	 */
-	bool original;
+
+constant int vertexIndices[VERTICES_PER_QUAD] = {0, 1, 2, 2, 1, 3};
+constant Vertex vertices[4] = {
+	Vertex(float2(-1.0, -1.0), float2(0.0, 0.0)),
+	Vertex(float2( 1.0, -1.0), float2(1.0, 0.0)),
+	Vertex(float2(-1.0,  1.0), float2(0.0, 1.0)),
+	Vertex(float2( 1.0,  1.0), float2(1.0, 1.0))
 };
+
+
 
 /**
- Simply makes two quads, one for the original, one for the preview, both are centered, the preview is scaled to the
+ The vertex shader computes the position of each vertex. This function gets called once per vertex (which in our case is VERTICES_PER_QUAD * 2 vertices). This shader just simply looks up the vertex position, and texcoordinates from some precomputed vertex data I include thei shader. After the vertex shader stage completes, the GPU will [rasterize](https://jtsorlinis.github.io/rendering-tutorial/)  each triangle, computing the position of pixel on the screen. Then it will move on to the fragment shader `previewFragment`.
  */
-[[mesh]]
-void previewMeshShader(
-				   mesh<VertexOut, PrimitiveOut, 8, 4, topology::triangle> output,
-	constant MeshUniforms &uniforms [[buffer(0)]]
-) {
-	float2 positions[4] = {
-		float2(-1.0, -1.0),
-		float2( 1.0, -1.0),
-		float2(-1.0,  1.0),
-		float2( 1.0,  1.0)
-	};
-	float2 texCoords[4] = {
-		float2(0.0, 1.0),
-		float2(1.0, 1.0),
-		float2(0.0, 0.0),
-		float2(1.0, 0.0)
-	};
-	uint numVerticesInQuad = 4;
-	uint numIndicesInQuad = 6;
-	for (uint i = 0; i < numVerticesInQuad; ++i) {
-
-		/**
-		 original
-		 */
-		output.set_vertex(i, VertexOut(float3(positions[i], 0.5), texCoords[i] ));
-
-
-		/**
-		 preview
-		 */
-		output.set_vertex(i + numVerticesInQuad, VertexOut(float3(positions[i] * uniforms.scale, 0.1), texCoords[i] ));
-	}
-
-	/**
-	 Offsets for the indices and vertices respectively for setting up the index buffer
-	 */
-	uint2 offsets[2] = {
-		/**
-		 original
-		 */
-		uint2(0,0),
-		/**
-		 preview
-		 */
-		uint2(numIndicesInQuad,numVerticesInQuad)
-	};
-	for(uint i = 0; i < 2; ++i){
-		uint2 offset = offsets[i];
-		output.set_index(0 + offset.x, 0 + offset.y);
-		output.set_index(1 + offset.x, 1 + offset.y);
-		output.set_index(2 + offset.x, 2 + offset.y);
-		output.set_index(3 + offset.x, 2 + offset.y);
-		output.set_index(4 + offset.x, 1 + offset.y);
-		output.set_index(5 + offset.x, 3 + offset.y);
-
-	}
-
-	output.set_primitive(0, PrimitiveOut{.original = true});
-	output.set_primitive(1, PrimitiveOut{.original = true});
-
-	output.set_primitive(2, PrimitiveOut{.original = false});
-	output.set_primitive(3, PrimitiveOut{.original = false});
-
-	output.set_primitive_count(4);
-
-}
-
-struct fragmentIn
-{
-	VertexOut v;
-	PrimitiveOut p;
-};
-
-struct FragmentUniforms {
-	float4 videoBounds;
-	float4 firstColor;
-	float4 secondColor;
-	int4 gridSize;
-};
-
-
-float4 color(float c){
-	return float4(c, c, c, 1.0);
+vertex VertexOut previewVertexShader(uint vertexID [[vertex_id]],
+									 constant CompositePreviewVertexUniforms &uniforms [[buffer(0)]]
+									 ) {
+	bool isCheckerboard = vertexID >= VERTICES_PER_QUAD;
+	return VertexOut(
+					 vertices[vertexIndices[vertexID % VERTICES_PER_QUAD]],
+					 isCheckerboard ? float2(1.0, 1.0) : uniforms.scale,
+					 isCheckerboard ? 0.5 : 0.1,
+					 isCheckerboard
+					 );
 }
 
 /**
- If preview it just draws a texture. if the original, it blurs it.
- */
-fragment float4 previewFragment(fragmentIn in [[stage_in]],
+The preview fragment shader runs for each rasterized pixel . The data from each vertex (`VertexOut`) for each triangle is interpolated (at one of the vertices the data is exactly the same as the input vertex; in the exact middle of the triangle is a blend of each vertex). Returns a color for the pixel.
+*/
+fragment float4 previewFragment(VertexOut in [[stage_in]],
 							   texture2d<float> inputTexture [[texture(0)]],
 							   sampler inputSampler [[sampler(0)]],
-								constant FragmentUniforms &uniforms [[buffer(0)]]
+								constant CompositePreviewFragmentUniforms &uniforms [[buffer(0)]]
 								) {
-	if (!in.p.original) {
-		return inputTexture.sample(inputSampler, in.v.texCoords);
+	if (!in.isCheckerboard) {
+		// grab the color given by the texture at the coordinates given by texCoords
+		return inputTexture.sample(inputSampler, in.texCoords);
 	}
 
-	float2 texCoordsInPixels = in.v.texCoords * uniforms.videoBounds.zw + uniforms.videoBounds.xy;
-	int gridSize = uniforms.gridSize.x;
+	float2 topLeftOriginTexCoords = float2(in.texCoords.x, 1.0 - in.texCoords.y);
+	float2 texCoordsInPixels = topLeftOriginTexCoords * uniforms.videoSize + uniforms.videoOrigin;
+	int gridSize = uniforms.gridSize;
 
 	int checkerX = (int(texCoordsInPixels.x) % (gridSize*2)) >= gridSize ? 1 : 0;
 	int checkerY = (int(texCoordsInPixels.y) % (gridSize*2)) >= gridSize ? 1 : 0;

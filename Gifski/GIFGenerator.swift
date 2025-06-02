@@ -356,36 +356,6 @@ extension GIFGenerator {
 }
 
 extension GIFGenerator.Conversion {
-	var croppedOutputDimensions: (width: Int, height: Int)? {
-		guard let crop else {
-			return dimensions
-		}
-
-		guard let dimensions else {
-			return nil
-		}
-
-		let cropInPixels = crop.unnormalize(forDimensions: dimensions)
-
-		return (
-			cropInPixels.width.toIntAndClampingIfNeeded,
-			cropInPixels.height.toIntAndClampingIfNeeded
-		)
-	}
-
-	/**
-	We don't use `croppedOutputDimensions` here because the `CGImage` source may have a different size. We use the size directly from the image.
-
-	If the rect parameter defines an area that is not in the image, it returns nil: https://developer.apple.com/documentation/coregraphics/cgimage/1454683-cropping
-	*/
-	func croppedImage(image: CGImage) -> CGImage? {
-		guard let crop else {
-			return image
-		}
-
-		return image.cropping(to: crop.unnormalize(forDimensions: (image.width, image.height)))
-	}
-
 	var gifDuration: Duration {
 		get async throws {
 			// TODO: Make this lazy so it's only used for fallback.

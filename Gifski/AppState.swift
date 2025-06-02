@@ -162,7 +162,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 	func applicationWillTerminate(_ notification: Notification) {
 		UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-		TempFileTracker.shared.cleanup()
 	}
 }
 

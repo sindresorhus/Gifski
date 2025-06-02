@@ -8,15 +8,12 @@ struct EditScreen: View {
 	var metadata: AVAsset.VideoMetadata
 	@State private var outputCropRect: CropRect = .initialCropRect
 
-	private let requestNewFullPreview: FullPreviewStream.RequestNewFullPreview
-	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
-	private let cancelFullPreviewGeneration: FullPreviewStream.CancelGeneratingFullPreview
+	let fullPreviewStream = FullPreviewStream()
 
 	init(url: URL, asset: AVAsset, metadata: AVAsset.VideoMetadata) {
 		self.url = url
 		self.asset = asset
 		self.metadata = metadata
-		(fullPreviewStream, requestNewFullPreview, cancelFullPreviewGeneration) = FullPreviewStream.create()
 	}
 
 	var body: some View {
@@ -30,9 +27,7 @@ struct EditScreen: View {
 				dimensions: metadata.dimensions,
 				editable: appState.isCropActive
 			)),
-			requestNewFullPreview: requestNewFullPreview,
-			fullPreviewStream: fullPreviewStream,
-			cancelFullPreviewGeneration: cancelFullPreviewGeneration
+			fullPreviewStream: fullPreviewStream
 		)
 	}
 }
@@ -58,9 +53,8 @@ private struct _EditScreen: View {
 	@State private var shouldShow = false
 	@State private var fullPreviewState: FullPreviewGenerationEvent = .initialState
 
-	private let requestNewFullPreview: FullPreviewStream.RequestNewFullPreview
-	private let fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>
-	private let cancelFullPreviewGeneration: FullPreviewStream.CancelGeneratingFullPreview
+	private let fullPreviewDebouncer = Debouncer(delay: .milliseconds(200))
+	private let fullPreviewStream: FullPreviewStream
 	private var overlay: NSView
 
 	init(
@@ -69,9 +63,7 @@ private struct _EditScreen: View {
 		metadata: AVAsset.VideoMetadata,
 		outputCropRect: Binding<CropRect>,
 		overlay: NSView,
-		requestNewFullPreview: @escaping FullPreviewStream.RequestNewFullPreview,
-		fullPreviewStream: AsyncStream<FullPreviewGenerationEvent>,
-		cancelFullPreviewGeneration: @escaping FullPreviewStream.CancelGeneratingFullPreview
+		fullPreviewStream: FullPreviewStream
 	) {
 		self._url = .init(wrappedValue: url)
 		self._asset = .init(wrappedValue: asset)
@@ -79,9 +71,7 @@ private struct _EditScreen: View {
 		self._metadata = .init(wrappedValue: metadata)
 		self._outputCropRect = outputCropRect
 		self.overlay = overlay
-		self.requestNewFullPreview = requestNewFullPreview
 		self.fullPreviewStream = fullPreviewStream
-		self.cancelFullPreviewGeneration = cancelFullPreviewGeneration
 	}
 
 	var body: some View {
@@ -101,9 +91,13 @@ private struct _EditScreen: View {
 						.scaleEffect(0.5)
 						.frame(width: 10, height: 1)
 				}
+				if let fullPreviewStateErorrMessage = fullPreviewState.errorMessage  {
+					Text(fullPreviewStateErorrMessage)
+				}
+
 				Toggle(isOn: appState.toggleMode(mode: .preview))
 				{
-					Label("Preview", systemImage: appState.shouldShowPreview ? "eye" : "eye.slash")
+					Label("Preview", systemImage: appState.shouldShowPreview && fullPreviewState.canShowPreview ? "eye" : "eye.slash")
 				}
 			}
 			ToolbarItemGroup {
@@ -170,18 +164,7 @@ private struct _EditScreen: View {
 			}
 		}
 		.task {
-			for await event in fullPreviewStream {
-				switch event {
-				case .cancelled:
-					// If the full preview generation has been cancelled, but we not generating anything then just ignore the cancellation
-					if case .ready = fullPreviewState {
-						continue
-					}
-				case .empty, .generating:
-					break
-				case .ready(let settings, let asset, _, _):
-					try? await (modifiedAsset as? PreviewableComposition)?.updateFullPreviewTrack(settings: settings, newFullPreviewAsset: asset)
-				}
+			for await event in fullPreviewStream.eventStream {
 				fullPreviewState = event
 			}
 		}
@@ -195,7 +178,12 @@ private struct _EditScreen: View {
 		case .normal, .preview:
 			break
 		}
-		requestNewFullPreview(SettingsForFullPreview(conversion: conversionSettings, speed: Defaults[.outputSpeed], duration: metadata.duration.toTimeInterval ))
+		fullPreviewDebouncer {
+			Task {
+				let conversion = conversionSettings
+				await fullPreviewStream.requestNewFullPreview(asset: conversion.asset, settingsEvent: SettingsForFullPreview(conversion: conversion, speed: Defaults[.outputSpeed], framesPerSecondsWithoutSpeedAdjustment: Defaults[.outputFPS], duration: metadata.duration.toTimeInterval ))
+			}
+		}
 	}
 
 
@@ -217,6 +205,12 @@ private struct _EditScreen: View {
 		estimatedFileSizeModel.getConversionSettings = { conversionSettings }
 		updatePreviewOnSettingsChange()
 	}
+	/**
+	Paused because the preview is generating the new preview
+	 */
+	var previewPaused: Bool {
+		appState.shouldShowPreview && fullPreviewState.isGenerating
+	}
 
 	/**
 	Too many modifiers on `body` `VStack`, have to move to a helper
@@ -226,10 +220,12 @@ private struct _EditScreen: View {
 		TrimmingAVPlayer(
 			asset: modifiedAsset,
 			shouldShowPreview: appState.shouldShowPreview,
-			fullPreviewStatus: fullPreviewState.status,
+			fullPreviewState: fullPreviewState,
 			loopPlayback: loopGIF,
 			bouncePlayback: bounceGIF,
+			speed: previewPaused ? 0.0 : 1.0,
 			overlay: appState.shouldShowPreview ? nil : overlay,
+			isPlayPauseButtonEnabled: !previewPaused,
 			isTrimmerDraggable: appState.isCropActive
 		) { timeRange in
 			DispatchQueue.main.async {
@@ -241,7 +237,7 @@ private struct _EditScreen: View {
 		.onChange(of: appState.mode) {
 			if appState.mode == .editCrop {
 				Task {
-					await cancelFullPreviewGeneration()
+					await fullPreviewStream.cancelFullPreviewGeneration()
 				}
 			}
 			// Because we don't update the preview during editCrop, the preview may be stale.

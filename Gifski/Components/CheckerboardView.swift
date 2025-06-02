@@ -8,8 +8,8 @@ enum CheckerboardViewConstants {
 	static let secondColorLight = Color(white: 0.82)
 	static let secondColorDark = Color(white: 0.26)
 
-	static var firstColor = Color(light: firstColorLight, dark: firstColorDark)
-	static var secondColor = Color(light: secondColorLight, dark: secondColorDark)
+	static let firstColor = Color(light: firstColorLight, dark: firstColorDark)
+	static let secondColor = Color(light: secondColorLight, dark: secondColorDark)
 }
 
 struct CheckerboardView: View {

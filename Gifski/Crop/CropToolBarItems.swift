@@ -278,7 +278,7 @@ private struct CustomPixelField: View {
 			),
 			minMax: minMax,
 			alignment: isWidth ? .right : .left,
-			font: .fieldFont,
+			font: .fieldFont(),
 			//swiftlint:disable:next trailing_closure
 			onInvalid: { invalidValue in
 				customPixelSize[keyPath: side] = Double(invalidValue.clamped(to: minMax))
@@ -342,7 +342,7 @@ private struct CustomAspectField: View {
 			),
 			minMax: minMax,
 			alignment: side == \.width ? .right : .left,
-			font: .fieldFont
+			font: .fieldFont()
 		)
 		.frame(width: 26.0)
 	}
@@ -378,5 +378,7 @@ private struct TipsView: View {
 }
 
 extension NSFont {
-	fileprivate static let fieldFont = monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+	fileprivate static func fieldFont() -> NSFont {
+		monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+	}
 }

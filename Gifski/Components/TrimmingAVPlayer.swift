@@ -7,12 +7,13 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 
 	let asset: AVAsset
 	let shouldShowPreview: Bool
-	let fullPreviewStatus: FullPreviewGenerationEvent.Status?
+	let fullPreviewState: FullPreviewGenerationEvent
 	var controlsStyle = AVPlayerViewControlsStyle.inline
 	var loopPlayback = false
 	var bouncePlayback = false
 	var speed = 1.0
 	var overlay: NSView?
+	var isPlayPauseButtonEnabled = true
 	var isTrimmerDraggable = false
 	var timeRangeDidChange: ((ClosedRange<Double>) -> Void)?
 
@@ -27,26 +28,14 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	func updateNSViewController(_ nsViewController: NSViewControllerType, context: Context) {
 		if asset != nsViewController.currentItem.asset {
 			let item = AVPlayerItem(asset: asset)
-			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
-				item.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition
-			}
+			forceAVPlayerToRedraw(item: item)
 			item.playbackRange = nsViewController.currentItem.playbackRange
 			nsViewController.currentItem = item
 		}
 
-		let previewCheckerboardParams = PreviewRenderer.FragmentUniforms(
-			isDarkMode: colorScheme.isDarkMode,
-			videoBounds: nsViewController.playerView.videoBounds
-		)
-
-		if let previewVideoCompositor = nsViewController.currentItem.customVideoCompositor as? PreviewVideoCompositor,
-		   previewVideoCompositor.updateState(state: .init(shouldShowPreview: shouldShowPreview, fullPreviewStatus: fullPreviewStatus, previewCheckerboardParams: previewCheckerboardParams))
-
+		if updatePreviewState(nsViewController)
 		{
-			// Force AVPlayer redraw by updating video composition."
-			if let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition {
-				nsViewController.currentItem.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition
-			}
+			forceAVPlayerToRedraw(item: nsViewController.currentItem)
 		}
 
 		nsViewController.loopPlayback = loopPlayback
@@ -57,6 +46,32 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 		}
 		nsViewController.overlay = overlay
 		nsViewController.isTrimmerDraggable = isTrimmerDraggable
+		nsViewController.isPlayPauseButtonEnabled = isPlayPauseButtonEnabled
+	}
+	/**
+	Update the preview State
+	- Returns: True if state was upated and needs a redraw, false otherwise
+	 */
+	func updatePreviewState(_ controller: NSViewControllerType) -> Bool {
+		guard let previewVideoCompositor = controller.currentItem.customVideoCompositor as? PreviewVideoCompositor else {
+			return false
+		}
+		let previewCheckerboardParams = CompositePreviewFragmentUniforms(
+			isDarkMode: colorScheme.isDarkMode,
+			videoBounds: controller.playerView.videoBounds
+		)
+
+
+		return previewVideoCompositor.updateState(state: .init(shouldShowPreview: shouldShowPreview, fullPreviewState: fullPreviewState, previewCheckerboardParams: previewCheckerboardParams))
+	}
+	/**
+	Resets the item's video compsition, forcing a redraw
+	 */
+	func forceAVPlayerToRedraw(item: AVPlayerItem) {
+		guard let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition else {
+			return
+		}
+		item.videoComposition = assetVideoComposition.mutableCopy() as? AVMutableVideoComposition
 	}
 }
 
@@ -82,7 +97,6 @@ final class TrimmingAVPlayerViewController: NSViewController {
 			}
 
 			guard let overlay else {
-//				underTrimOverlayView = nil
 				return
 			}
 
@@ -109,6 +123,15 @@ final class TrimmingAVPlayerViewController: NSViewController {
 	fileprivate var isTrimmerDraggable = false {
 		didSet {
 			trimmerDragViews?.isDraggable = isTrimmerDraggable
+		}
+	}
+
+	fileprivate var isPlayPauseButtonEnabled = true {
+		didSet {
+			guard isPlayPauseButtonEnabled != oldValue else {
+				return
+			}
+			playerView.setPlayPauseButton(enabled: isPlayPauseButtonEnabled)
 		}
 	}
 
@@ -306,6 +329,28 @@ final class TrimmingAVPlayerView: AVPlayerView {
 		.toCancellable
 	}
 
+	fileprivate func setPlayPauseButton(enabled: Bool) {
+		guard
+			let avTrimView = firstSubview(deep: true, where: { $0.simpleClassName == "AVTrimView" }),
+			let superview = avTrimView.superview
+		else {
+			return
+		}
+		guard let playPauseButton = (superview.subviews
+			.first { $0 != avTrimView }?
+			.subviews
+			.first {
+				guard let button = ($0 as? NSButton),
+					  button.action?.description == "playPauseButtonPressed:" else {
+					return false
+				}
+				return true
+			} as? NSButton) else {
+			return
+		}
+		playPauseButton.isEnabled = enabled
+	}
+
 	fileprivate func hideTrimButtons() {
 		// This method is a collection of hacks, so it might be acting funky on different OS versions.
 		guard
@@ -352,7 +397,7 @@ final class TrimmingAVPlayerView: AVPlayerView {
 	*/
 	override func cancelOperation(_ sender: Any?) {}
 }
-
+@MainActor
 private class TrimmerDragViews {
 	private var avTrimView: NSView
 
@@ -445,11 +490,14 @@ private class TrimmerDragViews {
 	}
 
 	private func hideDrag() {
-		drawHandleView.removeFromSuperview()
-		avTrimView.isHidden = false
-		trimmerBottomConstraint?.animate(to: trimmerConstraints.bottomOffset, duration: .seconds(0.3))
-		fullTrimmerHeightConstraint?.constant = trimmerConstraints.height
-		trimmerWindowTopConstraint?.constant = 0
+		Task {
+			// Defer the NSHostingView removal to avoid reentrant layout, which happens if this code runs on the main actor
+			drawHandleView.removeFromSuperview()
+			avTrimView.isHidden = false
+			trimmerBottomConstraint?.animate(to: trimmerConstraints.bottomOffset, duration: .seconds(0.3))
+			fullTrimmerHeightConstraint?.constant = trimmerConstraints.height
+			trimmerWindowTopConstraint?.constant = 0
+		}
 	}
 
 	/**
@@ -495,6 +543,7 @@ private class TrimmerDragViews {
 	/**
 	Grab the constraints on the trimmer while it is still constrained to its superview, so that when we move it to a new superview it will have no visual change.
 	*/
+	@MainActor
 	private struct TrimmerConstraints {
 		let bottomOffset: Double
 		let leadingOffset: Double
