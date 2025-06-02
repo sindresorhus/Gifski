@@ -19,7 +19,10 @@ struct SettingsForFullPreview: Equatable, Sendable {
 		self.conversion = SendableConversion(conversion: conversion)
 	}
 
-	func settingsAreDifferentEnoughForANewFullPreview(newSettings: Self, areCurrentlyGenerating: Bool, oldRequestID: Int, newRequestID: Int) -> Bool {
+	func areSettingsDifferentEnoughForANewFullPreview(newSettings: Self, areCurrentlyGenerating: Bool, oldRequestID: Int, newRequestID: Int) -> Bool {
+		guard speed == newSettings.speed else {
+			return true
+		}
 		if self == newSettings {
 			newRequestID.p("Skipping - Same as \(oldRequestID)")
 			return false

@@ -86,7 +86,7 @@ struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
 	 - Returns: `true` if a new generation is required, `false` otherwise.
 	 */
 	func isNecessaryToCreateNewFullPreview(newSettings: SettingsForFullPreview, newRequestID: Int) -> Bool {
-		settings?.settingsAreDifferentEnoughForANewFullPreview(newSettings: newSettings, areCurrentlyGenerating: isGenerating, oldRequestID: requestID, newRequestID: newRequestID) ?? true
+		settings?.areSettingsDifferentEnoughForANewFullPreview(newSettings: newSettings, areCurrentlyGenerating: isGenerating, oldRequestID: requestID, newRequestID: newRequestID) ?? true
 	}
 	private var settings: SettingsForFullPreview? {
 		switch self.state {
