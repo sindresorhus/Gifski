@@ -81,7 +81,7 @@ private struct AspectRatioPicker: View {
 				)
 
 				guard newRatio.aspectRatio != self.customAspectRatio?.aspectRatio else {
-					// Prevent simplifaction (like `25:5` -> `5:1`), only assign if the aspect ratio is new.
+					// Prevent simplification (like `25:5` -> `5:1`), only assign if the aspect ratio is new.
 					return
 				}
 

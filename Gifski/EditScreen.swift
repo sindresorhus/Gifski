@@ -91,8 +91,8 @@ private struct _EditScreen: View {
 						.scaleEffect(0.5)
 						.frame(width: 10, height: 1)
 				}
-				if let fullPreviewStateErorrMessage = fullPreviewState.errorMessage  {
-					Text(fullPreviewStateErorrMessage)
+				if let fullPreviewStateErrorMessage = fullPreviewState.errorMessage  {
+					Text(fullPreviewStateErrorMessage)
 				}
 
 				Toggle(isOn: appState.toggleMode(mode: .preview))

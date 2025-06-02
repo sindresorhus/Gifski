@@ -32,20 +32,20 @@ actor PreviewRenderer {
 			// convert our pixel buffer to a texture
 			let outputTexture = try context.textureCache.createTexture(fromImage: outputFrame.pixelBuffer, pixelFormat: Self.colorAttachmentPixelFormat)
 			// remove isolation
-			let previewTexure = previewFrame.getTexture(isolated: self)
+			let previewTexture = previewFrame.getTexture(isolated: self)
 
 			// setup the scale of our preview frame
 			let scale: SIMD2<Float> = .init(
-				x: outputTexture.tex.width > 0 ? Float(previewTexure.width.toDouble / outputTexture.tex.width.toDouble) : 1.0,
-				y: outputTexture.tex.height > 0 ? Float(previewTexure.height.toDouble / outputTexture.tex.height.toDouble) : 1.0
+				x: outputTexture.tex.width > 0 ? Float(previewTexture.width.toDouble / outputTexture.tex.width.toDouble) : 1.0,
+				y: outputTexture.tex.height > 0 ? Float(previewTexture.height.toDouble / outputTexture.tex.height.toDouble) : 1.0
 			)
-			// The render command encoder will create a render command (render on the GPU) (the command will run when the command buffer commits (which happens automatiaclly at the end of this closure))
+			// The render command encoder will create a render command (render on the GPU) (the command will run when the command buffer commits (which happens automatically at the end of this closure))
 			try commandBuffer.withRenderCommandEncoder(renderPassDescriptor: PreviewRendererContext.makeRenderPassDescriptor(outputTexture: outputTexture, depthTexture: getDepthTexture(width: outputTexture.tex.width, height: outputTexture.tex.height))) { renderEncoder in
 				context.applyContext(to: renderEncoder)
 				// Turn of back culling (this means we don't care what order triangles are wound, we can list the vertices in any order)
 				renderEncoder.setCullMode(.none)
 				// send the texture to the fragment shader (which chooses the color of each pixel)
-				renderEncoder.setFragmentTexture(previewTexure, index: 0)
+				renderEncoder.setFragmentTexture(previewTexture, index: 0)
 
 				do {
 					// send data to the vertex shader, in this case, what scale the preview image is
@@ -57,7 +57,7 @@ actor PreviewRenderer {
 					var fragmentUniforms = fragmentUniforms
 					renderEncoder.setFragmentBytes(&fragmentUniforms, length: MemoryLayout<CompositePreviewFragmentUniforms>.stride, index: 0)
 				}
-				// tell the encoder to draw. We want to draw 2 quads (one for the preview, one for the checkerboard pattern). The next  code to look at will be the vertexshader in `previewVertexShader`.
+				// tell the encoder to draw. We want to draw 2 quads (one for the preview, one for the checkerboard pattern). The next  code to look at will be the vertex shader in `previewVertexShader`.
 				renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: Int(VERTICES_PER_QUAD) * 2)
 			}
 		}

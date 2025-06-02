@@ -33,7 +33,7 @@ final class AppState {
 	}
 
 	/**
-	Provides a binding for a toggle button to access a certain mode, getter returns true if in that mode. Setter will toggle the mode on, but return to inital mode if set to off (if we are in the specified mode)
+	Provides a binding for a toggle button to access a certain mode, getter returns true if in that mode. Setter will toggle the mode on, but return to initial mode if set to off (if we are in the specified mode)
 	 */
 	func toggleMode(mode: Mode) -> Binding<Bool> {
 		.init(get: {

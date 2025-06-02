@@ -50,7 +50,7 @@ struct PreviewRendererContext {
 		pipelineDescriptor.fragmentFunction = fragmentFunction
 		// this is the output of the render pass
 		pipelineDescriptor.colorAttachments[0].pixelFormat = PreviewRenderer.colorAttachmentPixelFormat
-		// this is a texture which stores the "depth" of each pixel. it is used to decide wheter a pixel will occlude another pixel
+		// this is a texture which stores the "depth" of each pixel. it is used to decide whether a pixel will occlude another pixel
 		pipelineDescriptor.depthAttachmentPixelFormat = PreviewRenderer.depthAttachmentPixelFormat
 		return try metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
 	}
@@ -84,7 +84,7 @@ struct PreviewRendererContext {
 	 */
 	private static func setupSamplerState(_ metalDevice: MTLDevice) throws -> MTLSamplerState {
 		let samplerDescriptor = MTLSamplerDescriptor()
-		// linearly inerpolate colors between texels
+		// linearly interpolate colors between texels
 		samplerDescriptor.minFilter = .linear
 		samplerDescriptor.magFilter = .linear
 		// if we sample outside of our texture (0-1) use the same color as the edge

@@ -13,11 +13,11 @@ struct Vertex {
 };
 
 struct VertexOut {
-	// The position of the vertex in homogenous clip space. In our case, the clip space goes from -1...1 in both the x and y directions. (-1,-1) is the bottom-left of the screen, while (1,1) is the top right. The position goes from  0...1 in the z direction, and it is used by the depth buffer to decide what pixels will occlude other pixels. In our case pixels "closer" to 0 will be "on-top" of pixels "farther" away (1.0 being the maximium depth). w will be kept 1.0 and can be ignored for now.
+	// The position of the vertex in homogenous clip space. In our case, the clip space goes from -1...1 in both the x and y directions. (-1,-1) is the bottom-left of the screen, while (1,1) is the top right. The position goes from  0...1 in the z direction, and it is used by the depth buffer to decide what pixels will occlude other pixels. In our case pixels "closer" to 0 will be "on-top" of pixels "farther" away (1.0 being the maximum depth). w will be kept 1.0 and can be ignored for now.
 	float4 position [[position]];
 	// pass the texture coordinates on to the fragment shader. Tex coords range from 0...1 in s and t (ie, horizontal and vertical)
 	float2 texCoords;
-	// pass wheter or not the triangle is checkeboard to the fragment shader
+	// pass whether or not the triangle is checkerboard to the fragment shader
 	uint isCheckerboard;
 
 	VertexOut(Vertex vert, float2 scale, float z, bool isCheckerboard):
@@ -41,7 +41,7 @@ constant Vertex vertices[4] = {
 
 
 /**
- The vertex shader computes the position of each vertex. This function gets called once per vertex (which in our case is VERTICES_PER_QUAD * 2 vertices). This shader just simply looks up the vertex position, and texcoordinates from some precomputed vertex data I include thei shader. After the vertex shader stage completes, the GPU will [rasterize](https://jtsorlinis.github.io/rendering-tutorial/)  each triangle, computing the position of pixel on the screen. Then it will move on to the fragment shader `previewFragment`.
+ The vertex shader computes the position of each vertex. This function gets called once per vertex (which in our case is VERTICES_PER_QUAD * 2 vertices). This shader just simply looks up the vertex position, and tex coordinates from some precomputed vertex data I include the shader. After the vertex shader stage completes, the GPU will [rasterize](https://jtsorlinis.github.io/rendering-tutorial/)  each triangle, computing the position of pixel on the screen. Then it will move on to the fragment shader `previewFragment`.
  */
 vertex VertexOut previewVertexShader(uint vertexID [[vertex_id]],
 									 constant CompositePreviewVertexUniforms &uniforms [[buffer(0)]]

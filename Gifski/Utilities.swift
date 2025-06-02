@@ -6099,7 +6099,7 @@ enum MTLCommandBufferRenderError: Error {
 
 extension MTLCommandQueue {
 	/**
-	 Creates a command buffer, runs your operation, then commits (sends commnds to the GPU) and awaits completion
+	 Creates a command buffer, runs your operation, then commits (sends commands to the GPU) and awaits completion
 	 */
 	func withCommandBuffer(
 		isolated actor: isolated any Actor,

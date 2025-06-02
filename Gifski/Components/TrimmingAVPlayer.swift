@@ -50,7 +50,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 	}
 	/**
 	Update the preview State
-	- Returns: True if state was upated and needs a redraw, false otherwise
+	- Returns: True if state was updated and needs a redraw, false otherwise
 	 */
 	func updatePreviewState(_ controller: NSViewControllerType) -> Bool {
 		guard let previewVideoCompositor = controller.currentItem.customVideoCompositor as? PreviewVideoCompositor else {
@@ -65,7 +65,7 @@ struct TrimmingAVPlayer: NSViewControllerRepresentable {
 		return previewVideoCompositor.updateState(state: .init(shouldShowPreview: shouldShowPreview, fullPreviewState: fullPreviewState, previewCheckerboardParams: previewCheckerboardParams))
 	}
 	/**
-	Resets the item's video compsition, forcing a redraw
+	Resets the item's video composition, forcing a redraw
 	 */
 	func forceAVPlayerToRedraw(item: AVPlayerItem) {
 		guard let assetVideoComposition = (asset as? PreviewableComposition)?.videoComposition else {
