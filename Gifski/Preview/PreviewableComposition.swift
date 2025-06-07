@@ -11,12 +11,12 @@ final class PreviewableComposition: AVMutableComposition {
 		super.init()
 		let (assetTracks, duration) = try await asset.load(.tracks, .duration)
 		guard let assetTrack = assetTracks.first else {
-			throw PreviewableCompositionError.assetHasNoTracks
+			throw Error.assetHasNoTracks
 		}
 		let (trackSize, frameDuration) = try await assetTrack.load(.naturalSize, .minFrameDuration)
 		guard let compositionOriginalTrack = addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)
 		else {
-			throw PreviewableCompositionError.couldNotCreateTracks
+			throw Error.couldNotCreateTracks
 		}
 		try compositionOriginalTrack.insertTimeRange(
 			CMTimeRange(start: .videoZero, duration: duration),
@@ -34,7 +34,7 @@ final class PreviewableComposition: AVMutableComposition {
 		videoComposition.customVideoCompositorClass = PreviewVideoCompositor.self
 	}
 
-	enum PreviewableCompositionError: Error {
+	enum Error: Swift.Error {
 		case assetHasNoTracks
 		case couldNotCreateTracks
 	}

@@ -71,11 +71,11 @@ actor PreviewRenderer {
 
 	private init() throws {
 		guard let metalDevice = MTLCreateSystemDefaultDevice() else {
-			throw RenderError.noDevice
+			throw Error.noDevice
 		}
 		self.metalDevice = metalDevice
 		guard metalDevice.supportsFamily(.common1) else {
-			throw RenderError.unsupportedDevice
+			throw Error.unsupportedDevice
 		}
 
 		self.textureLoader = MTKTextureLoader(device: metalDevice)
@@ -95,7 +95,7 @@ actor PreviewRenderer {
 		}
 	}
 
-	enum RenderError: Error {
+	enum Error: Swift.Error {
 		case noDevice
 		case unsupportedDevice
 		case noCommandQueue

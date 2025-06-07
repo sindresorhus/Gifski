@@ -14,7 +14,7 @@ struct PreviewRendererContext {
 
 	init(_ metalDevice: MTLDevice) throws {
 		guard let commandQueue = metalDevice.makeCommandQueue() else {
-			throw PreviewRenderer.RenderError.noCommandQueue
+			throw PreviewRenderer.Error.noCommandQueue
 		}
 		self.commandQueue = commandQueue
 		self.textureCache = try Self.setupTextureCache(metalDevice)
@@ -42,7 +42,7 @@ struct PreviewRendererContext {
 		guard let library = metalDevice.makeDefaultLibrary(),
 			  let vertexFunction = library.makeFunction(name: "previewVertexShader"),
 			  let fragmentFunction = library.makeFunction(name: "previewFragment") else {
-			throw PreviewRenderer.RenderError.libraryFailure
+			throw PreviewRenderer.Error.libraryFailure
 		}
 
 		let pipelineDescriptor = MTLRenderPipelineDescriptor()
@@ -92,7 +92,7 @@ struct PreviewRendererContext {
 		samplerDescriptor.tAddressMode = .clampToEdge
 
 		guard let samplerState = metalDevice.makeSamplerState(descriptor: samplerDescriptor) else {
-			throw PreviewRenderer.RenderError.failedToMakeSampler
+			throw PreviewRenderer.Error.failedToMakeSampler
 		}
 		return samplerState
 	}
@@ -107,7 +107,7 @@ struct PreviewRendererContext {
 		depthStencilDescriptor.isDepthWriteEnabled = true
 
 		guard let depthStencilState = metalDevice.makeDepthStencilState(descriptor: depthStencilDescriptor) else {
-			throw PreviewRenderer.RenderError.failedToMakeDepthStencilState
+			throw PreviewRenderer.Error.failedToMakeDepthStencilState
 		}
 		return depthStencilState
 	}
@@ -120,7 +120,7 @@ struct PreviewRendererContext {
 		CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &textureCache)
 
 		guard let textureCache else {
-			throw PreviewRenderer.RenderError.failedToMakeTextureCache
+			throw PreviewRenderer.Error.failedToMakeTextureCache
 		}
 		return textureCache
 	}

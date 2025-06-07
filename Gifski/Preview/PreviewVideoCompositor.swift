@@ -36,7 +36,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 				  let sourceTrackID = asyncVideoCompositionRequest.sourceTrackIDs.first,
 				  let originalFrame = asyncVideoCompositionRequest.sourceFrame(byTrackID: sourceTrackID.int32Value)
 			else {
-				asyncVideoCompositionRequest.finish(with: PreviewVideoCompositorError.failedToGetVideoFrame)
+				asyncVideoCompositionRequest.finish(with: Error.failedToGetVideoFrame)
 				return
 			}
 			do {
@@ -54,7 +54,7 @@ final class PreviewVideoCompositor: NSObject, AVVideoCompositing {
 		}
 	}
 
-	enum PreviewVideoCompositorError: Error {
+	enum Error: Swift.Error {
 		case failedToGetVideoFrame
 	}
 

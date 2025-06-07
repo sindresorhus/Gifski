@@ -7,8 +7,10 @@ Textures that can only be accessed the the `PreviewRenderer` actor
  */
 struct SendableTexture: @unchecked Sendable {
 	private let texture: MTLTexture
-
-	init(isolated: isolated PreviewRenderer, texture: MTLTexture) {
+	/**
+	Kept fileprivate, because in this file we can ensure that the `SendableTexture` is isolated to the `PreviewRenderer`
+	 */
+	fileprivate init(texture: MTLTexture) {
 		self.texture = texture
 	}
 
@@ -35,10 +37,10 @@ extension PreviewRenderer {
 			// Use the callback version of `newTexture` so that Swift 6 will compile.
 			let callback: MTKTextureLoader.Callback = { texture, error in
 				guard let texture else {
-					continuation.resume(throwing: error ?? PreviewRenderer.RenderError.failedToMakeSendableTexture)
+					continuation.resume(throwing: error ?? PreviewRenderer.Error.failedToMakeSendableTexture)
 					return
 				}
-				continuation.resume(returning: SendableTexture(isolated: self, texture: texture))
+				continuation.resume(returning: SendableTexture(texture: texture))
 			}
 			switch source {
 			case .data(let data):
@@ -124,14 +126,14 @@ extension MTLDevice {
 		descriptor.storageMode = .managed
 		descriptor.usage = [.shaderRead]
 		guard let texture = makeTexture(descriptor: descriptor) else {
-			throw MetalDeviceError.failedToCreateTextures
+			throw ConvertToASTCTextureError.failedToCreateTextures
 		}
 		try astcImage.writeTo(texture: texture)
-		return SendableTexture(isolated: isolated, texture: texture)
+		return SendableTexture(texture: texture)
 	}
 }
 
-enum MetalDeviceError: Error {
+enum ConvertToASTCTextureError: Error {
 	case failedToCreateTextures
 }
 

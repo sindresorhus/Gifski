@@ -408,3 +408,15 @@ extension GIFGenerator {
 		}
 	}
 }
+
+extension GIFGenerator {
+	static func runProgressable(_ conversion: GIFGenerator.Conversion) -> ProgressableTask<Double, Data> {
+		ProgressableTask { progressContinuation in
+			try await GIFGenerator.run(
+				conversion
+			) {
+				progressContinuation.yield($0)
+			}
+		}
+	}
+}

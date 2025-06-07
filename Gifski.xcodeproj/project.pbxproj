@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C9BA6F62DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9BA6F52DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift */; };
 		0CB0E7092DB737B900E012C1 /* PreviewVideoCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7082DB737B900E012C1 /* PreviewVideoCompositor.swift */; };
 		0CB0E7262DB8833B00E012C1 /* PreviewRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7252DB8833B00E012C1 /* PreviewRenderer.swift */; };
 		0CB0E7292DB971D800E012C1 /* FullPreviewStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7282DB971D800E012C1 /* FullPreviewStream.swift */; };
@@ -86,6 +87,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0C9BA6F52DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CVPixelBuffer+convertToGIF.swift"; sourceTree = "<group>"; };
 		0CB0E7082DB737B900E012C1 /* PreviewVideoCompositor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewVideoCompositor.swift; sourceTree = "<group>"; };
 		0CB0E7252DB8833B00E012C1 /* PreviewRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewRenderer.swift; sourceTree = "<group>"; };
 		0CB0E7282DB971D800E012C1 /* FullPreviewStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullPreviewStream.swift; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 				0CEB41472DE6B1FC009BB37B /* compositePreview.metal */,
 				0CC9BF9E2DEC11980011D74D /* CompositePreviewShared.h */,
 				0CC9BFA12DECF99A0011D74D /* SendableTexture.swift */,
+				0C9BA6F52DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift */,
 			);
 			path = Preview;
 			sourceTree = "<group>";
@@ -463,6 +466,7 @@
 				0CB0E72B2DB9784300E012C1 /* PreviewableComposition.swift in Sources */,
 				E3961F802AC9F2A700708EB7 /* Intents.swift in Sources */,
 				0CB0E7292DB971D800E012C1 /* FullPreviewStream.swift in Sources */,
+				0C9BA6F62DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift in Sources */,
 				E30C8EEF29387E7A002E053F /* Gifski.swift in Sources */,
 				E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */,
 				0CB0E7262DB8833B00E012C1 /* PreviewRenderer.swift in Sources */,
