@@ -37,7 +37,7 @@ extension PreviewRenderer {
 			// Use the callback version of `newTexture` so that Swift 6 will compile.
 			let callback: MTKTextureLoader.Callback = { texture, error in
 				guard let texture else {
-					continuation.resume(throwing: error ?? PreviewRenderer.Error.failedToMakeSendableTexture)
+					continuation.resume(throwing: error ?? CreateSendableTextureError.failedToMakeSendableTexture)
 					return
 				}
 				continuation.resume(returning: SendableTexture(texture: texture))
@@ -49,6 +49,10 @@ extension PreviewRenderer {
 				textureLoader.newTexture(cgImage: image, options: options, completionHandler: callback)
 			}
 		}
+	}
+
+	enum CreateSendableTextureError: Error {
+		case failedToMakeSendableTexture
 	}
 
 	/**

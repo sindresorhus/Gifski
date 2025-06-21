@@ -5729,23 +5729,31 @@ extension CVPixelBuffer {
 	}
 
 	var baseAddress: UnsafeMutableRawPointer {
-		get throws {
+		get throws(BaseAddressError) {
 			guard let maybeBaseAddress = CVPixelBufferGetBaseAddress(self) else {
-				throw Error.noBaseAddress
+				throw BaseAddressError.noBaseAddress
 			}
 			return maybeBaseAddress
 		}
+	}
+
+	enum BaseAddressError: Swift.Error {
+		case noBaseAddress
 	}
 
 	var creationAttributes: CFDictionary {
 		CVPixelBufferCopyCreationAttributes(self)
 	}
 
-	func baseAddressOfPlane(_ plane: Int) throws -> UnsafeMutableRawPointer {
+	func baseAddressOfPlane(_ plane: Int) throws(BaseAddressOfPlaneError) -> UnsafeMutableRawPointer {
 		guard let maybeBaseAddress = CVPixelBufferGetBaseAddressOfPlane(self, plane) else {
-			throw Error.noBaseAddressOfPlane(plane)
+			throw BaseAddressOfPlaneError.noBaseAddressOfPlane(plane)
 		}
 		return maybeBaseAddress
+	}
+
+	enum BaseAddressOfPlaneError: Swift.Error {
+		case noBaseAddressOfPlane(Int)
 	}
 
 	func bytesPerRowOfPlane(_ plane: Int) -> Int {
@@ -5778,7 +5786,7 @@ extension CVPixelBuffer {
 		height: Int,
 		pixelFormatType: OSType,
 		pixelBufferAttributes: CFDictionary?
-	) throws -> CVPixelBuffer {
+	) throws(CreationError) -> CVPixelBuffer {
 		var out: CVPixelBuffer?
 		let status = CVPixelBufferCreate(
 			allocator,
@@ -5789,17 +5797,23 @@ extension CVPixelBuffer {
 			&out
 		)
 		guard status == kCVReturnSuccess else {
-			throw Error.creationError(status: status)
+			throw CreationError.creationError(status: status)
 		}
 		guard let out else {
-			throw Error.creationErrorNoBuffer
+			throw CreationError.noBuffer
 		}
 		return out
 	}
 
-	func copy(to destination: CVPixelBuffer) throws {
-		try withLockedPlanes(flags: [.readOnly]) { sourcePlanes in
-			try destination.withLockedPlanes(flags: []) { destinationPlanes in
+	enum CreationError: Swift.Error {
+		case creationError(status: CVReturn)
+		case noBuffer
+	}
+	typealias CopyToError = BaseAddressLockedError<LockedPlanesError<BaseAddressLockedError<LockedPlanesError<CopyError>>>>
+
+	func copy(to destination: CVPixelBuffer) throws(CopyToError) {
+		try withLockedPlanes(flags: [.readOnly]) { sourcePlanes throws(BaseAddressLockedError<LockedPlanesError<CopyError>>) in
+			try destination.withLockedPlanes(flags: []) { destinationPlanes throws(CopyError) in
 				guard sourcePlanes.count == destinationPlanes.count else {
 					throw CopyError.planesMismatch
 				}
@@ -5810,12 +5824,16 @@ extension CVPixelBuffer {
 		}
 	}
 
-	func lockBaseAddress(flags: CVPixelBufferLockFlags = []) throws {
+	func lockBaseAddress(flags: CVPixelBufferLockFlags = []) throws(LockError) {
 		let status = CVPixelBufferLockBaseAddress(self, flags)
 		guard status == kCVReturnSuccess else {
-			throw Error.lockFailed(status: status)
+			throw LockError.lockFailed(status: status)
 		}
 	}
+	enum LockError: Swift.Error {
+		case lockFailed(status: CVReturn)
+	}
+
 	func unlockBaseAddress(flags: CVPixelBufferLockFlags = []) {
 		CVPixelBufferUnlockBaseAddress(self, flags)
 	}
@@ -5825,45 +5843,90 @@ extension CVPixelBuffer {
 		case heightMismatch
 	}
 
-	func withLockedBaseAddress<T>(
+	func withLockedBaseAddress<T, ErrorType>(
 		flags: CVPixelBufferLockFlags = [],
-		_ body: (CVPixelBuffer) throws -> T
-	) throws -> T {
-		try self.lockBaseAddress(flags: flags)
+		_ body: (CVPixelBuffer) throws(ErrorType) -> T
+	) throws(BaseAddressLockedError<ErrorType>) -> T {
+		typealias E = BaseAddressLockedError<ErrorType>
+		try E.wrap { () throws(LockError) in
+			try self.lockBaseAddress(flags: flags)
+		}
 		defer { self.unlockBaseAddress(flags: flags) }
-		return try body(self)
-	}
-
-	func withLockedPlanes<T>(
-		flags: CVPixelBufferLockFlags = [],
-		_ body: ([LockedPlane]) throws -> T
-	) throws -> T {
-		try withLockedBaseAddress(flags: flags) { buffer in
-			let planeCount = buffer.planeCount
-			if planeCount == 0 {
-				return try body([
-					.init(
-						base: try buffer.baseAddress,
-						bytesPerRow: buffer.bytesPerRow,
-						height: buffer.height
-					)
-				])
-			}
-			let planes = try (0..<planeCount).compactMap { planeIndex -> LockedPlane? in
-				.init(
-					base: try buffer.baseAddressOfPlane(planeIndex),
-					bytesPerRow: buffer.bytesPerRowOfPlane(planeIndex),
-					height: buffer.heightOfPlane(planeIndex)
-				)
-			}
-			guard planes.count == planeCount else {
-				throw CopyError.planesMismatch
-			}
-			return try body(planes)
+		return try E.wrapBody { () throws(ErrorType) in
+			try body(self)
 		}
 	}
 
-	func makeCompatibleBuffer() throws -> CVPixelBuffer {
+	enum BaseAddressLockedError<BodyError>: ErrorWrapping {
+		case lockError(LockError)
+		case bodyError(BodyError)
+		static func wrapError(_ error: LockError) -> Self {
+			.lockError(error)
+		}
+		static func wrapBodyError(_ error: BodyError) -> Self {
+			 .bodyError(error)
+		}
+	}
+
+	func withLockedPlanes<T, ErrorType>(
+		flags: CVPixelBufferLockFlags = [],
+		_ body: ([LockedPlane]) throws(ErrorType) -> T
+	) throws(BaseAddressLockedError<LockedPlanesError<ErrorType>>) -> T {
+		typealias E = LockedPlanesError<ErrorType>
+		return try withLockedBaseAddress(flags: flags) { (buffer: CVPixelBuffer) throws(E) -> T  in
+			let planeCount = buffer.planeCount
+			if planeCount == 0 {
+				let planes: [LockedPlane] = [
+					.init(
+						base: try E.wrap { () throws(BaseAddressError) in
+							try buffer.baseAddress
+						},
+						bytesPerRow: buffer.bytesPerRow,
+						height: buffer.height
+					)
+				]
+				return try E.wrapBody { () throws(ErrorType) in
+					try body(planes)
+				}
+			}
+			let planes = try (0..<planeCount).compactThrowingMap { planeIndex throws(E) -> LockedPlane? in
+					.init(
+						base: try E.wrap2 { () throws(BaseAddressOfPlaneError) in
+							try buffer.baseAddressOfPlane(planeIndex)
+						},
+						bytesPerRow: buffer.bytesPerRowOfPlane(planeIndex),
+						height: buffer.heightOfPlane(planeIndex)
+					)
+			}
+			guard planes.count == planeCount else {
+				throw E.copyError(CopyError.planesMismatch)
+			}
+			return try E.wrapBody { () throws(ErrorType) in
+				try body(planes)
+			}
+		}
+	}
+
+
+	enum LockedPlanesError<BodyError>: ErrorWrapping2 {
+		case baseAddressError(BaseAddressError)
+		case planesAddressError(BaseAddressOfPlaneError)
+		case copyError(CopyError)
+		case bodyError(BodyError)
+
+		static func wrapError(_ error: BaseAddressError) -> Self {
+			.baseAddressError(error)
+		}
+		static func wrapBodyError(_ error: BodyError) -> Self {
+			 .bodyError(error)
+		}
+
+		static func wrapError2(_ error: BaseAddressOfPlaneError) -> Self {
+			 .planesAddressError(error)
+		}
+	}
+
+	func makeCompatibleBuffer() throws(CreationError) -> CVPixelBuffer {
 		try Self.create(width: width, height: height, pixelFormatType: pixelFormatType, pixelBufferAttributes: creationAttributes)
 	}
 
@@ -5872,7 +5935,7 @@ extension CVPixelBuffer {
 		let bytesPerRow: Int
 		let height: Int
 
-		func copy(to destination: Self) throws {
+		func copy(to destination: Self) throws(CopyError) {
 			guard height == destination.height
 			else {
 				throw CopyError.heightMismatch
@@ -5913,72 +5976,86 @@ extension CVPixelBuffer {
 	var previewSendable: PreviewRenderer.SendableCVPixelBuffer {
 		PreviewRenderer.SendableCVPixelBuffer(pixelBuffer: self)
 	}
-
-	enum Error: Swift.Error {
-		case noBaseAddress
-		case noBaseAddressOfPlane(Int)
-		case creationError(status: CVReturn)
-		case creationErrorNoBuffer
-		case lockFailed(status: CVReturn)
-	}
 }
 
 extension CGImageSource {
 	// swiftlint:disable:next discouraged_optional_collection
-	static func create(withData data: Data, options: [String: Any]? = nil) throws -> CGImageSource {
+	static func create(withData data: Data, options: [String: Any]? = nil) throws(CreateError) -> CGImageSource {
 		guard let imageSource = CGImageSourceCreateWithData(data as CFData, options as CFDictionary?) else {
-			throw Error.failedToCreateImageSource
+			throw CreateError.failedToCreateImageSource
 		}
 		return imageSource
+	}
+
+	enum CreateError: Error {
+		case failedToCreateImageSource
 	}
 
 	var count: Int {
 		CGImageSourceGetCount(self)
 	}
 
-	func createImage(atIndex index: Int, options: CFDictionary? = nil) throws -> CGImage {
+	func createImage(atIndex index: Int, options: CFDictionary? = nil) throws(CreateImageError) -> CGImage {
 		guard let image = CGImageSourceCreateImageAtIndex(self, index, options) else {
-			throw Error.failedToCreateImage(status: CGImageSourceGetStatusAtIndex(self, index))
+			throw CreateImageError.failedToCreateImage(status: CGImageSourceGetStatusAtIndex(self, index))
 		}
 		return image
 	}
-
-	enum Error: Swift.Error {
-		case failedToCreateImageSource
+	enum CreateImageError: Error {
 		case failedToCreateImage(status: CGImageSourceStatus)
 	}
 }
 
 extension CGImage {
-	func convertToData(withNewType type: String, destinationOptions: CFDictionary? = nil, addOptions: CFDictionary? = nil) throws -> Data {
+	func convertToData(withNewType type: String, destinationOptions: CFDictionary? = nil, addOptions: CFDictionary? = nil) throws(ConvertToDataError) -> Data {
 		let mutableData = NSMutableData()
-		let destination = try CGImageDestination.create(withData: mutableData, type: type, count: 1, options: destinationOptions)
+		let destination = try ConvertToDataError.wrap { () throws(CGImageDestination.CreateError) in
+			try CGImageDestination.create(withData: mutableData, type: type, count: 1, options: destinationOptions)
+		}
 		destination.addImage(self, properties: addOptions)
-		try destination.finalize()
+		try ConvertToDataError.wrapBody { () throws(CGImageDestination.FinalizeError) in
+			try destination.finalize()
+		}
 		return mutableData as Data
+	}
+
+	enum ConvertToDataError: ErrorWrapping {
+		case createError(CGImageDestination.CreateError)
+		case finalizeError(CGImageDestination.FinalizeError)
+
+		static func wrapError(_ error: CGImageDestination.CreateError) -> Self {
+			.createError(error)
+		}
+
+		static func wrapBodyError(_ error: CGImageDestination.FinalizeError) -> Self {
+			.finalizeError(error)
+		}
 	}
 }
 
 extension CGImageDestination {
-	static func create(withData: NSMutableData, type: String, count: Int = 1, options: CFDictionary? = nil) throws -> CGImageDestination {
+	static func create(withData: NSMutableData, type: String, count: Int = 1, options: CFDictionary? = nil) throws(CreateError) -> CGImageDestination {
 		guard let imageDestination = CGImageDestinationCreateWithData(withData, type as CFString, count, options) else {
-			throw Error.failedToCreate
+			throw CreateError.failedToCreate
 		}
 		return imageDestination
+	}
+
+	enum CreateError: Error {
+		case failedToCreate
 	}
 
 	func addImage(_ image: CGImage, properties: CFDictionary? = nil) {
 		CGImageDestinationAddImage(self, image, properties)
 	}
 
-	func finalize() throws {
+	func finalize() throws(FinalizeError) {
 		guard CGImageDestinationFinalize(self) else {
-			throw Error.failedToFinalize
+			throw FinalizeError.failedToFinalize
 		}
 	}
 
-	enum Error: Swift.Error {
-		case failedToCreate
+	enum FinalizeError: Error {
 		case failedToFinalize
 	}
 }
@@ -5999,8 +6076,8 @@ extension MTLCommandBuffer {
 	/**
 	 Submits the commands to the GPU and await completion
 	 */
-	func commit() async throws {
-		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+	func commit() async throws(MTLCommandBufferRenderError) {
+		try await withCheckedTypedThrowingContinuation { (continuation: CheckedTypedThrowingContinuation<Void, MTLCommandBufferRenderError>) in
 			self.addCompletedHandler { [weak self] _ in
 				guard let self else {
 					continuation.resume(throwing: MTLCommandBufferRenderError.functionOutlivedTheCommandBuffer)
@@ -6018,40 +6095,58 @@ extension MTLCommandBuffer {
 	/**
 	 Create a Render command encoder, runs your operation, then ends encoding with `endEncoding`
 	 */
-	func withRenderCommandEncoder(renderPassDescriptor: MTLRenderPassDescriptor, operation: (MTLRenderCommandEncoder) throws -> Void) throws {
+	func withRenderCommandEncoder<ErrorType>(renderPassDescriptor: MTLRenderPassDescriptor, operation: (MTLRenderCommandEncoder) throws(ErrorType) -> Void) throws(MTLCommandBufferRenderCommandEncoderError<ErrorType>) {
 		guard let renderEncoder = makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
-			throw MTLCommandBufferRenderError.failedToMakeRenderCommandEncoder
+			throw MTLCommandBufferRenderCommandEncoderError<ErrorType>.failedToMakeRenderCommandEncoder
 		}
 		defer {
 			renderEncoder.endEncoding()
 		}
-		try operation(renderEncoder)
+		do {
+			try operation(renderEncoder)
+		} catch {
+			throw MTLCommandBufferRenderCommandEncoderError<ErrorType>.operationError(error)
+		}
 	}
+}
+
+enum MTLCommandBufferRenderCommandEncoderError<OperationError>: Error {
+	case failedToMakeRenderCommandEncoder
+	case operationError(OperationError)
 }
 enum MTLCommandBufferRenderError: Error {
 	case failedToRender(status: MTLCommandBufferStatus)
 	case functionOutlivedTheCommandBuffer
-	case failedToMakeRenderCommandEncoder
 }
 
 extension MTLCommandQueue {
 	/**
 	 Creates a command buffer, runs your operation, then commits (sends commands to the GPU) and awaits completion
 	 */
-	func withCommandBuffer(
+	func withCommandBuffer<OperationError>(
 		isolated actor: isolated any Actor,
-		operation: (MTLCommandBuffer) throws -> Void
-	) async throws {
+		operation: (MTLCommandBuffer) throws(OperationError) -> Void
+	) async throws(MTLCommandQueueRenderError<OperationError>) {
 		guard let commandBuffer = makeCommandBuffer() else {
 			throw MTLCommandQueueRenderError.failedToCreateCommandBuffer
 		}
-		try operation(commandBuffer)
-		try await commandBuffer.commit()
+		do {
+			try operation(commandBuffer)
+		} catch {
+			throw MTLCommandQueueRenderError.operationError(error)
+		}
+		do {
+			try await commandBuffer.commit()
+		} catch {
+			throw MTLCommandQueueRenderError.rendererError(error)
+		}
 	}
 }
 
-enum MTLCommandQueueRenderError: Error {
+enum MTLCommandQueueRenderError<OperationError>: Error {
 	case failedToCreateCommandBuffer
+	case rendererError(MTLCommandBufferRenderError)
+	case operationError(OperationError)
 }
 
 extension CGPoint {
@@ -6093,7 +6188,7 @@ struct CVMetalTextureRef {
 }
 
 extension CVMetalTextureCache {
-	func createTexture(fromImage image: CVPixelBuffer, pixelFormat: MTLPixelFormat, textureAttributes: CFDictionary? = nil ) throws -> CVMetalTextureRef {
+	func createTexture(fromImage image: CVPixelBuffer, pixelFormat: MTLPixelFormat, textureAttributes: CFDictionary? = nil ) throws(Error) -> CVMetalTextureRef {
 		var cv: CVMetalTexture?
 		let result = CVMetalTextureCacheCreateTextureFromImage(
 			nil,
@@ -6187,17 +6282,17 @@ struct ASTCImage {
 	private static let headerSize = 16
 	private static let ASTCBlockSize = 16
 
-	init(data: Data) throws {
+	init(data: Data) throws(CreateError) {
 		self.data = data
 		guard data.count >= Self.headerSize else {
-			throw Error.invalidDataSize
+			throw CreateError.invalidDataSize
 		}
 		// Check the magic number
 		guard data[0] == 0x13,
 			  data[1] == 0xAB,
 			  data[2] == 0xA1,
 			  data[3] == 0x5C else {
-			throw Error.notASTCData
+			throw CreateError.notASTCData
 		}
 		self.blockSize = (data[4], data[5], data[6])
 		self.imageSize = (
@@ -6205,6 +6300,11 @@ struct ASTCImage {
 			Int(data.readLittleEndianUInt24(10)),
 			Int(data.readLittleEndianUInt24(13))
 		)
+	}
+
+	enum CreateError: Error {
+		case invalidDataSize
+		case notASTCData
 	}
 
 	var width: Int {
@@ -6216,7 +6316,7 @@ struct ASTCImage {
 	/**
 	 A metal descriptor that describes this image
 	 */
-	func descriptor() throws -> MTLTextureDescriptor  {
+	func descriptor() throws(MTLPixelFormat.ASTCPixelFormatError) -> MTLTextureDescriptor  {
 		MTLTextureDescriptor.texture2DDescriptor(
 			pixelFormat: try .astc_ldr(fromBlockSize: blockSize),
 			width: width,
@@ -6225,10 +6325,10 @@ struct ASTCImage {
 		)
 	}
 
-	func writeTo(texture: MTLTexture) throws {
-		try data.withUnsafeBytes { bytes in
+	func writeTo(texture: MTLTexture) throws(WriteError) {
+		try data.withUnsafeBytesWithTypedError { bytes throws(WriteError) in
 			guard let baseAddress = bytes.baseAddress else {
-				throw Error.failedToGetASTCBaseAddress
+				throw WriteError.failedToGetASTCBaseAddress
 			}
 			let imageDataStart = baseAddress.advanced(by: Self.headerSize)
 			texture.replace(
@@ -6240,17 +6340,15 @@ struct ASTCImage {
 		}
 	}
 
+	enum WriteError: Error {
+		case failedToGetASTCBaseAddress
+	}
+
 	private var bytesPerRow: Int {
 		blocksPerRow * Self.ASTCBlockSize
 	}
 	private var blocksPerRow: Int {
 		Int(ceil(Double(width) / Double(blockSize.0)))
-	}
-
-	enum Error: Swift.Error {
-		case invalidDataSize
-		case notASTCData
-		case failedToGetASTCBaseAddress
 	}
 }
 
@@ -6263,7 +6361,7 @@ extension MTLPixelFormat {
 	 
 	 - Returns: the appropriate pixel format given an astc block size.
 	 */
-	static func astc_ldr(fromBlockSize blockSize: (UInt8, UInt8, UInt8)) throws -> Self {
+	static func astc_ldr(fromBlockSize blockSize: (UInt8, UInt8, UInt8)) throws(ASTCPixelFormatError) -> Self {
 		let (width, height, depth) = blockSize
 		guard depth == 1 else {
 			throw ASTCPixelFormatError.notImplemented
@@ -6287,6 +6385,7 @@ extension MTLPixelFormat {
  */
 struct ProgressableTask<Progress: Sendable, Result: Sendable>: Sendable {
 	let progress: AsyncStream<Progress>
+	// `Failure` has to be `any Error` because Task may be cancelled and throw `CancellationError`
 	let task: Task<Result, any Error>
 
 	init(operation: @escaping (AsyncStream<Progress>.Continuation) async throws -> Result){
@@ -6380,5 +6479,146 @@ extension CompositePreviewFragmentUniforms: Equatable {
 		lhs.firstColor == rhs.firstColor &&
 		lhs.secondColor == rhs.secondColor &&
 		lhs.gridSize == rhs.gridSize
+	}
+}
+
+
+/**
+`withCheckedThrowingContinuation` always passes in a `CheckedContinuation<T, any Error>`, this acts as a `CheckedContinuation<T, ErrorType>`. Narrowing the type of the error by wrapping a `CheckedContinuation<T, any Error>`
+ */
+struct CheckedTypedThrowingContinuation<T, ErrorType: Error>: Sendable {
+	private let continuation: CheckedContinuation<T, any Error>
+
+	init(continuation: CheckedContinuation<T, any Error>) {
+		self.continuation = continuation
+	}
+
+
+	func resume(returning value: sending T) {
+		continuation.resume(returning: value)
+	}
+
+	func resume(throwing error: ErrorType) {
+		continuation.resume(throwing: error)
+	}
+
+	func resume(with result: sending Result<T, ErrorType>) {
+		continuation.resume(with: result)
+	}
+
+	func resume() where T == () {
+		continuation.resume()
+	}
+}
+
+/**
+ see [CheckedTypedThrowingContinuation](CheckedTypedThrowingContinuation)
+ */
+func withCheckedTypedThrowingContinuation<T, ErrorType>(isolation: isolated (any Actor)? = #isolation, function: String = #function, _ body: (CheckedTypedThrowingContinuation<T, ErrorType>) -> Void) async throws(ErrorType) -> sending T {
+	do {
+		return try await withCheckedThrowingContinuation(isolation: isolation, function: function) { continuation in
+			body(CheckedTypedThrowingContinuation(continuation: continuation))
+		}
+	} catch let error as ErrorType {
+		throw error
+	} catch {
+		assertionFailure()
+		// will not happen because the body is type checked to use only ErrorType errors
+		exit(-1)
+	}
+}
+
+extension Data {
+	func withUnsafeBytesWithTypedError<ResultType, ErrorType>(_ body: (UnsafeRawBufferPointer) throws(ErrorType) -> ResultType) throws(ErrorType) -> ResultType {
+		do {
+			return try withUnsafeBytes(body)
+		} catch let error as ErrorType {
+			throw error
+		} catch {
+			assertionFailure()
+			// will not happen because `withUnsafeBytes` rethrows
+			exit(-1)
+		}
+	}
+}
+
+extension Sequence {
+	func compactThrowingMap<ElementOfResult, ErrorType>(_ transform: (Self.Element) throws(ErrorType) -> ElementOfResult?) throws(ErrorType) -> [ElementOfResult] {
+		do {
+			return try compactMap(transform)
+		} catch let error as ErrorType {
+			throw error
+		} catch {
+			// will not happen because the `transform` is type checked to use only ErrorType errors
+			assertionFailure()
+			exit(-1)
+		}
+	}
+}
+
+
+extension Task where Success == Never, Failure == Never {
+	/**
+	as [per the docs](https://developer.apple.com/documentation/swift/task/checkcancellation%28%29), "The error is always an instance of CancellationError" so it is safe to cast the error as `CancellationError`
+	 */
+	static func typedCheckCancellation() throws(CancellationError) {
+		do {
+			try checkCancellation()
+		} catch let error as CancellationError {
+			throw error
+		} catch {
+			// will not happen because the docs say this only throws CancellationError
+			assertionFailure()
+		}
+	}
+}
+
+/**
+Wrap nested errors
+ */
+protocol ErrorWrapping: Error {
+	associatedtype WrappedError
+	associatedtype CallbackBodyError
+
+	static func wrapError(_ error: WrappedError) -> Self
+	static func wrapBodyError(_ error: CallbackBodyError) -> Self
+}
+
+extension ErrorWrapping {
+	static func wrap<T>(
+		_ body: () throws(WrappedError) -> T
+	) throws(Self) -> T {
+		do {
+			return try body()
+		} catch {
+			throw Self.wrapError(error)
+		}
+	}
+
+	static func wrapBody<T>(
+		_ body: () throws(CallbackBodyError) -> T
+	) throws(Self) -> T {
+		do {
+			return try body()
+		} catch {
+			throw Self.wrapBodyError(error)
+		}
+	}
+}
+
+protocol ErrorWrapping2: ErrorWrapping {
+	associatedtype WrappedError2
+	static func wrapError2(_ error: WrappedError2) -> Self
+}
+
+extension ErrorWrapping2 {
+	static func wrap2<T>(
+		_ body: () throws(WrappedError2) -> T
+	) throws(Self) -> T {
+		do {
+			return try body()
+		} catch {
+			throw Self.wrapError2(error)
+		}
 	}
 }

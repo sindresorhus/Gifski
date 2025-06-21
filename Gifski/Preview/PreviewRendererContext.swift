@@ -14,7 +14,7 @@ struct PreviewRendererContext {
 
 	init(_ metalDevice: MTLDevice) throws {
 		guard let commandQueue = metalDevice.makeCommandQueue() else {
-			throw PreviewRenderer.Error.noCommandQueue
+			throw CreateError.noCommandQueue
 		}
 		self.commandQueue = commandQueue
 		self.textureCache = try Self.setupTextureCache(metalDevice)
@@ -23,6 +23,11 @@ struct PreviewRendererContext {
 		self.samplerState = try Self.setupSamplerState(metalDevice)
 		self.depthStencilState = try Self.setupDepthStencilState(metalDevice)
 	}
+
+	enum CreateError: Error {
+		case noCommandQueue
+	}
+
 	/**
 	 Set the render command encoder to use the context we have created
 	 */
@@ -42,7 +47,7 @@ struct PreviewRendererContext {
 		guard let library = metalDevice.makeDefaultLibrary(),
 			  let vertexFunction = library.makeFunction(name: "previewVertexShader"),
 			  let fragmentFunction = library.makeFunction(name: "previewFragment") else {
-			throw PreviewRenderer.Error.libraryFailure
+			throw SetupPipleStateError.libraryFailure
 		}
 
 		let pipelineDescriptor = MTLRenderPipelineDescriptor()
@@ -53,6 +58,10 @@ struct PreviewRendererContext {
 		// this is a texture which stores the "depth" of each pixel. it is used to decide whether a pixel will occlude another pixel
 		pipelineDescriptor.depthAttachmentPixelFormat = PreviewRenderer.depthAttachmentPixelFormat
 		return try metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
+	}
+
+	enum SetupPipleStateError: Error {
+		case libraryFailure
 	}
 
 	/**
@@ -82,7 +91,7 @@ struct PreviewRendererContext {
 	/**
 	 The sampler is how we retrieve texture data inside the shader. Set it up such that we will linearly interpret all pixel data.
 	 */
-	private static func setupSamplerState(_ metalDevice: MTLDevice) throws -> MTLSamplerState {
+	private static func setupSamplerState(_ metalDevice: MTLDevice) throws(SetupSamplerStateError) -> MTLSamplerState {
 		let samplerDescriptor = MTLSamplerDescriptor()
 		// linearly interpolate colors between texels
 		samplerDescriptor.minFilter = .linear
@@ -92,14 +101,18 @@ struct PreviewRendererContext {
 		samplerDescriptor.tAddressMode = .clampToEdge
 
 		guard let samplerState = metalDevice.makeSamplerState(descriptor: samplerDescriptor) else {
-			throw PreviewRenderer.Error.failedToMakeSampler
+			throw SetupSamplerStateError.failedToMakeSampler
 		}
 		return samplerState
 	}
+	enum SetupSamplerStateError: Error {
+		case failedToMakeSampler
+	}
+
 	/**
 	 Set up a depth buffer so that the preview will appear above the checkerboard pattern on all devices
 	 */
-	private static func setupDepthStencilState(_ metalDevice: MTLDevice) throws -> MTLDepthStencilState {
+	private static func setupDepthStencilState(_ metalDevice: MTLDevice) throws(SetupDepthStencilStateError) -> MTLDepthStencilState {
 		let depthStencilDescriptor = MTLDepthStencilDescriptor()
 		// for each pixel, if the depth is less than the current depth buffer, then draw, other wise don't draw
 		depthStencilDescriptor.depthCompareFunction = .less
@@ -107,21 +120,29 @@ struct PreviewRendererContext {
 		depthStencilDescriptor.isDepthWriteEnabled = true
 
 		guard let depthStencilState = metalDevice.makeDepthStencilState(descriptor: depthStencilDescriptor) else {
-			throw PreviewRenderer.Error.failedToMakeDepthStencilState
+			throw SetupDepthStencilStateError.failedToMakeDepthStencilState
 		}
 		return depthStencilState
+	}
+
+	enum SetupDepthStencilStateError: Error {
+		case failedToMakeDepthStencilState
 	}
 
 	/**
 	 Set up a texture cache to write out output pixel buffer to.
 	 */
-	private static func setupTextureCache(_ metalDevice: MTLDevice) throws -> CVMetalTextureCache {
+	private static func setupTextureCache(_ metalDevice: MTLDevice) throws(TextureCacheError) -> CVMetalTextureCache {
 		var textureCache: CVMetalTextureCache?
 		CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &textureCache)
 
 		guard let textureCache else {
-			throw PreviewRenderer.Error.failedToMakeTextureCache
+			throw TextureCacheError.failedToCreateTextureCache
 		}
 		return textureCache
+	}
+
+	enum TextureCacheError: Error {
+		case failedToCreateTextureCache
 	}
 }

@@ -130,11 +130,15 @@ struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
 		let settings: SettingsForFullPreview
 		let gifData: [SendableTexture?]
 
-		func getGIF(at compositionTime: CMTime) throws -> SendableTexture {
+		func getGIF(at compositionTime: CMTime) throws(GetGIFError) -> SendableTexture {
 			guard let image = gifData[getCurrentGIFIndex(at: compositionTime)] else {
-				throw Error.failedToGetGIFFrame
+				throw GetGIFError.failedToGetGIFFrame
 			}
 			return image
+		}
+
+		enum GetGIFError: Error {
+			case failedToGetGIFFrame
 		}
 
 		private func getCurrentGIFIndex(at compositionTime: CMTime) -> Int {
@@ -154,9 +158,6 @@ struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
 			reportedCompositionTime.seconds * settings.speed
 		}
 
-		enum Error: Swift.Error {
-			case failedToGetGIFFrame
-		}
 
 		/**
 		 Are equal if the settings that led to the creation of a full preview are equal
