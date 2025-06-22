@@ -23,7 +23,7 @@ extension CVPixelBuffer {
 		)
 	}
 
-	enum ConvertToGIFError: Swift.Error {
+	enum ConvertToGIFError: Error {
 		case failedToCreateCGContext
 	}
 }
