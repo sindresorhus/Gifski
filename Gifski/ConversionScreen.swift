@@ -69,11 +69,9 @@ struct ConversionScreen: View {
 	}
 
 	func convert() async throws {
-		appState.isConverting = true
 		startTime = .now
 
 		defer {
-			appState.isConverting = false
 			timeRemaining = nil
 			DockProgress.resetProgress()
 		}

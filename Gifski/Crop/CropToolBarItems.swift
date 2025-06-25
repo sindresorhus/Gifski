@@ -181,14 +181,17 @@ private struct AspectToggle: View {
 	var dimensions: CGSize
 
 	var body: some View {
-		Toggle(aspectRatio.description, isOn: .init(
-			get: {
-				aspectRatio.aspectRatio.isAlmostEqual(to: currentAspect)
-			},
-			set: { _ in
-				outputCropRect = outputCropRect.withAspectRatio(for: aspectRatio, forDimensions: dimensions)
-			}
-		))
+		Toggle(
+			aspectRatio.description,
+			isOn: .init(
+				get: {
+					aspectRatio.aspectRatio.isAlmostEqual(to: currentAspect)
+				},
+				set: { _ in
+					outputCropRect = outputCropRect.withAspectRatio(for: aspectRatio, forDimensions: dimensions)
+				}
+			)
+		)
 	}
 }
 

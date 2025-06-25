@@ -2,9 +2,10 @@ import Foundation
 import AVKit
 
 protocol CropSettings {
-	var dimensions: (width: Int, height: Int)? { get}
+	var dimensions: (width: Int, height: Int)? { get }
 	var crop: CropRect? { get }
 }
+
 extension GIFGenerator.Conversion: CropSettings {}
 
 extension CropSettings {

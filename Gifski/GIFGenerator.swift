@@ -11,12 +11,14 @@ actor GIFGenerator {
 		onProgress: @escaping (Double) -> Void
 	) async throws -> Data {
 		let converter = Self()
+
 		return try await converter.run(
 			conversion,
 			isEstimation: isEstimation,
 			onProgress: onProgress
 		)
 	}
+
 	/**
 	Converts a single frame to GIF data.
 	*/
@@ -32,7 +34,9 @@ actor GIFGenerator {
 			loop: .never,
 			fast: fast
 		)
+
 		try gifski.addFrame(frame, presentationTimestamp: 0.0)
+
 		return try gifski.finish()
 	}
 
@@ -412,9 +416,7 @@ extension GIFGenerator {
 extension GIFGenerator {
 	static func runProgressable(_ conversion: GIFGenerator.Conversion) -> ProgressableTask<Double, Data> {
 		ProgressableTask { progressContinuation in
-			try await GIFGenerator.run(
-				conversion
-			) {
+			try await GIFGenerator.run(conversion) {
 				progressContinuation.yield($0)
 			}
 		}

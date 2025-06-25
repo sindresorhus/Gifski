@@ -126,30 +126,6 @@ extension CropRect {
 	}
 
 	/**
-	Computes the minimum and maximum aspect ratio for a crop rect.
-	*/
-	private func aspectRatioBounds(
-		aspectWidth: Double,
-		aspectHeight: Double,
-		forDimensions dimensions: CGSize
-	) -> ClosedRange<Double> {
-		if width == 1.0 || height == 1.0 {
-			return (Self.minRectWidthHeight / dimensions.height)...(dimensions.width / Self.minRectWidthHeight)
-		}
-
-		let cropRectInPixels = unnormalize(forDimensions: dimensions)
-		let aspectSize = CGSize(width: aspectWidth, height: aspectHeight)
-
-		let newLongestSide = withAspectRatioInsideCurrentRectLongestSide(
-			cropRectInPixels: cropRectInPixels,
-			aspectSize: aspectSize,
-			withinVideoDimensions: dimensions
-		)
-
-		return (Self.minRectWidthHeight / newLongestSide)...(newLongestSide / Self.minRectWidthHeight)
-	}
-
-	/**
 	The range of valid numbers for the aspect ratio.
 	*/
 	static let defaultAspectRatioBounds = 1...99

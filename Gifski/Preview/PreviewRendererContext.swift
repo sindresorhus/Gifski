@@ -2,65 +2,78 @@ import Foundation
 import MetalKit
 
 /**
- The static state context we setup at runtime and use later
- */
+The static state context we setup at runtime and use later.
+*/
 struct PreviewRendererContext {
-	let commandQueue: MTLCommandQueue
-	let textureCache: CVMetalTextureCache
-
 	private let pipelineState: MTLRenderPipelineState
 	private let depthStencilState: MTLDepthStencilState
 	private let samplerState: MTLSamplerState
+
+	let commandQueue: MTLCommandQueue
+	let textureCache: CVMetalTextureCache
 
 	init(_ metalDevice: MTLDevice) throws {
 		guard let commandQueue = metalDevice.makeCommandQueue() else {
 			throw PreviewRenderer.Error.noCommandQueue
 		}
-		self.commandQueue = commandQueue
-		self.textureCache = try Self.setupTextureCache(metalDevice)
 
 		self.pipelineState = try Self.setupPipelineState(metalDevice)
 		self.samplerState = try Self.setupSamplerState(metalDevice)
 		self.depthStencilState = try Self.setupDepthStencilState(metalDevice)
+		self.commandQueue = commandQueue
+		self.textureCache = try Self.setupTextureCache(metalDevice)
 	}
+
 	/**
-	 Set the render command encoder to use the context we have created
-	 */
+	Set the render command encoder to use the context we have created.
+	*/
 	func applyContext(to renderCommandEncoder: MTLRenderCommandEncoder) {
-		// set up the depth buffer
+		// Set up the depth buffer.
 		renderCommandEncoder.setDepthStencilState(depthStencilState)
-		// set up the actual render
+
+		// Set up the actual render.
 		renderCommandEncoder.setRenderPipelineState(pipelineState)
-		// set up the sampler (allow us to read from the texture)
+
+		// Set up the sampler (allow us to read from the texture).
 		renderCommandEncoder.setFragmentSamplerState(samplerState, index: 0)
 	}
 
 	/**
-	 The render pipeline setups our shaders [compositePreview.metal](compositePreview.metal), and sets up to write to a color attachment with a depth buffer
-	 */
+	The render pipeline sets up our shaders in `compositePreview.metal` and sets up to write to a color attachment with a depth buffer.
+	*/
 	private static func setupPipelineState(_ metalDevice: MTLDevice) throws -> MTLRenderPipelineState {
-		guard let library = metalDevice.makeDefaultLibrary(),
-			  let vertexFunction = library.makeFunction(name: "previewVertexShader"),
-			  let fragmentFunction = library.makeFunction(name: "previewFragment") else {
+		guard
+			let library = metalDevice.makeDefaultLibrary(),
+			let vertexFunction = library.makeFunction(name: "previewVertexShader"),
+			let fragmentFunction = library.makeFunction(name: "previewFragment")
+		else {
 			throw PreviewRenderer.Error.libraryFailure
 		}
 
 		let pipelineDescriptor = MTLRenderPipelineDescriptor()
 		pipelineDescriptor.vertexFunction = vertexFunction
 		pipelineDescriptor.fragmentFunction = fragmentFunction
-		// this is the output of the render pass
+
+		// This is the output of the render pass.
 		pipelineDescriptor.colorAttachments[0].pixelFormat = PreviewRenderer.colorAttachmentPixelFormat
-		// this is a texture which stores the "depth" of each pixel. it is used to decide whether a pixel will occlude another pixel
+
+		// This is a texture which stores the "depth" of each pixel. It is used to decide whether a pixel will occlude another pixel.
 		pipelineDescriptor.depthAttachmentPixelFormat = PreviewRenderer.depthAttachmentPixelFormat
+
 		return try metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
 	}
 
 	/**
-	 Create a render pass descriptor to match our pipeline. Here we pass in the actual data (ie the textures)
-	 */
-	static func makeRenderPassDescriptor(outputTexture: CVMetalTextureRef, depthTexture: MTLTexture) -> MTLRenderPassDescriptor {
+	Create a render pass descriptor to match our pipeline. Here we pass in the actual data (i.e. the textures).
+	*/
+	static func makeRenderPassDescriptor(
+		outputTexture: CVMetalTextureRefeference,
+		depthTexture: MTLTexture
+	) -> MTLRenderPassDescriptor {
 		let renderPassDescriptor = MTLRenderPassDescriptor()
-		renderPassDescriptor.colorAttachments[0].texture = outputTexture.tex
+
+		renderPassDescriptor.colorAttachments[0].texture = outputTexture.texture
+
 		// before the render pass clear the output to the clear color
 		renderPassDescriptor.colorAttachments[0].loadAction = .clear
 		// which in this case is black
@@ -80,48 +93,60 @@ struct PreviewRendererContext {
 	}
 
 	/**
-	 The sampler is how we retrieve texture data inside the shader. Set it up such that we will linearly interpret all pixel data.
-	 */
+	The sampler is how we retrieve texture data inside the shader. We set it up such that we will linearly interpret all pixel data.
+	*/
 	private static func setupSamplerState(_ metalDevice: MTLDevice) throws(PreviewRenderer.Error) -> MTLSamplerState {
 		let samplerDescriptor = MTLSamplerDescriptor()
-		// linearly interpolate colors between texels
+
+		// Linearly interpolate colors between texels.
 		samplerDescriptor.minFilter = .linear
 		samplerDescriptor.magFilter = .linear
-		// if we sample outside of our texture (0-1) use the same color as the edge
+
+		// If we sample outside of our texture (0-1) use the same color as the edge.
 		samplerDescriptor.sAddressMode = .clampToEdge
 		samplerDescriptor.tAddressMode = .clampToEdge
 
 		guard let samplerState = metalDevice.makeSamplerState(descriptor: samplerDescriptor) else {
 			throw .failedToMakeSampler
 		}
+
 		return samplerState
 	}
+
 	/**
-	 Set up a depth buffer so that the preview will appear above the checkerboard pattern on all devices
-	 */
-	private static func setupDepthStencilState(_ metalDevice: MTLDevice) throws(PreviewRenderer.Error) -> MTLDepthStencilState {
+	Set up a depth buffer so that the preview will appear above the checkerboard pattern on all devices.
+	*/
+	private static func setupDepthStencilState(
+		_ metalDevice: MTLDevice
+	) throws(PreviewRenderer.Error) -> MTLDepthStencilState {
 		let depthStencilDescriptor = MTLDepthStencilDescriptor()
-		// for each pixel, if the depth is less than the current depth buffer, then draw, other wise don't draw
+
+		// For each pixel, if the depth is less than the current depth buffer, then draw, other wise don't draw.
 		depthStencilDescriptor.depthCompareFunction = .less
-		// each time you do draw (it is less than current depth buffer), store the current depth in the depth buffer
+
+		// Each time you do draw (it is less than current depth buffer), store the current depth in the depth buffer.
 		depthStencilDescriptor.isDepthWriteEnabled = true
 
 		guard let depthStencilState = metalDevice.makeDepthStencilState(descriptor: depthStencilDescriptor) else {
 			throw .failedToMakeDepthStencilState
 		}
+
 		return depthStencilState
 	}
 
 	/**
-	 Set up a texture cache to write out output pixel buffer to.
-	 */
-	private static func setupTextureCache(_ metalDevice: MTLDevice) throws(PreviewRenderer.Error) -> CVMetalTextureCache {
+	Set up a texture cache to write out output pixel buffer to.
+	*/
+	private static func setupTextureCache(
+		_ metalDevice: MTLDevice
+	) throws(PreviewRenderer.Error) -> CVMetalTextureCache {
 		var textureCache: CVMetalTextureCache?
 		CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &textureCache)
 
 		guard let textureCache else {
 			throw .failedToMakeTextureCache
 		}
+
 		return textureCache
 	}
 }

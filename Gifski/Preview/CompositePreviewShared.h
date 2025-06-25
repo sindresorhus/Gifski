@@ -23,18 +23,20 @@ typedef uint32_t shared_uint;
 SHARED_CONSTANT const shared_uint VERTICES_PER_QUAD = 6;
 typedef struct {
 	/**
-	 Must be >= 0
-	 */
+	Must be >= 0.
+	*/
 	shared_float2 videoOrigin;
+
 	/**
-	 Must be >= 0
-	 */
+	Must be >= 0
+	*/
 	shared_float2 videoSize;
 	shared_float4 firstColor;
 	shared_float4 secondColor;
+
 	/**
 	Must be >= 1;
-	 */
+	*/
 	int gridSize;
 } CompositePreviewFragmentUniforms;
 

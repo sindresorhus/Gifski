@@ -7,16 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C9BA6F62DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9BA6F52DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift */; };
-		0CB0E7092DB737B900E012C1 /* PreviewVideoCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7082DB737B900E012C1 /* PreviewVideoCompositor.swift */; };
-		0CB0E7262DB8833B00E012C1 /* PreviewRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7252DB8833B00E012C1 /* PreviewRenderer.swift */; };
-		0CB0E7292DB971D800E012C1 /* FullPreviewStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7282DB971D800E012C1 /* FullPreviewStream.swift */; };
-		0CB0E72B2DB9784300E012C1 /* PreviewableComposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E72A2DB9784300E012C1 /* PreviewableComposition.swift */; };
-		0CB0E72D2DB97D5400E012C1 /* SettingsForFullPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E72C2DB97D5400E012C1 /* SettingsForFullPreview.swift */; };
-		0CB0E7412DBB4ABF00E012C1 /* FullPreviewGenerationEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7402DBB4ABF00E012C1 /* FullPreviewGenerationEvent.swift */; };
-		0CC9BFA22DECF99A0011D74D /* SendableTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC9BFA12DECF99A0011D74D /* SendableTexture.swift */; };
-		0CC9BFA42DED043B0011D74D /* PreviewRendererContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC9BFA32DED043B0011D74D /* PreviewRendererContext.swift */; };
-		0CEB41482DE6B1FC009BB37B /* compositePreview.metal in Sources */ = {isa = PBXBuildFile; fileRef = 0CEB41472DE6B1FC009BB37B /* compositePreview.metal */; };
 		0E7925202329BDBE00058B94 /* ShareController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareController.swift */; };
 		0E7925282329BDBE00058B94 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
@@ -87,17 +77,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0C9BA6F52DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CVPixelBuffer+convertToGIF.swift"; sourceTree = "<group>"; };
-		0CB0E7082DB737B900E012C1 /* PreviewVideoCompositor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewVideoCompositor.swift; sourceTree = "<group>"; };
-		0CB0E7252DB8833B00E012C1 /* PreviewRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewRenderer.swift; sourceTree = "<group>"; };
-		0CB0E7282DB971D800E012C1 /* FullPreviewStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullPreviewStream.swift; sourceTree = "<group>"; };
-		0CB0E72A2DB9784300E012C1 /* PreviewableComposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewableComposition.swift; sourceTree = "<group>"; };
-		0CB0E72C2DB97D5400E012C1 /* SettingsForFullPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsForFullPreview.swift; sourceTree = "<group>"; };
-		0CB0E7402DBB4ABF00E012C1 /* FullPreviewGenerationEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullPreviewGenerationEvent.swift; sourceTree = "<group>"; };
-		0CC9BF9E2DEC11980011D74D /* CompositePreviewShared.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CompositePreviewShared.h; sourceTree = "<group>"; };
-		0CC9BFA12DECF99A0011D74D /* SendableTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendableTexture.swift; sourceTree = "<group>"; };
-		0CC9BFA32DED043B0011D74D /* PreviewRendererContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewRendererContext.swift; sourceTree = "<group>"; };
-		0CEB41472DE6B1FC009BB37B /* compositePreview.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = compositePreview.metal; sourceTree = "<group>"; };
 		0E79251B2329BDBE00058B94 /* Share Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E79251F2329BDBE00058B94 /* ShareController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -143,6 +122,11 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		E39128F52E0DF96C0010E6CF /* Preview */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Preview;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -168,24 +152,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0CB0E7272DB971A400E012C1 /* Preview */ = {
-			isa = PBXGroup;
-			children = (
-				0CB0E7282DB971D800E012C1 /* FullPreviewStream.swift */,
-				0CB0E7402DBB4ABF00E012C1 /* FullPreviewGenerationEvent.swift */,
-				0CB0E72A2DB9784300E012C1 /* PreviewableComposition.swift */,
-				0CB0E7252DB8833B00E012C1 /* PreviewRenderer.swift */,
-				0CC9BFA32DED043B0011D74D /* PreviewRendererContext.swift */,
-				0CB0E7082DB737B900E012C1 /* PreviewVideoCompositor.swift */,
-				0CB0E72C2DB97D5400E012C1 /* SettingsForFullPreview.swift */,
-				0CEB41472DE6B1FC009BB37B /* compositePreview.metal */,
-				0CC9BF9E2DEC11980011D74D /* CompositePreviewShared.h */,
-				0CC9BFA12DECF99A0011D74D /* SendableTexture.swift */,
-				0C9BA6F52DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift */,
-			);
-			path = Preview;
-			sourceTree = "<group>";
-		};
 		0E79251C2329BDBE00058B94 /* Share Extension */ = {
 			isa = PBXGroup;
 			children = (
@@ -268,7 +234,7 @@
 				E31053F12DCBD2EA008B7E7F /* Crop */,
 				E31053F82DCBD325008B7E7F /* Components */,
 				E3961F7F2AC9F2A700708EB7 /* Intents.swift */,
-				0CB0E7272DB971A400E012C1 /* Preview */,
+				E39128F52E0DF96C0010E6CF /* Preview */,
 				E3D08F6D1E5D7BFD00F465DF /* Utilities.swift */,
 				E3AE62881E5CD2F300035A2F /* Assets.xcassets */,
 				E356A15D21028942000148AD /* Other */,
@@ -315,6 +281,7 @@
 			fileSystemSynchronizedGroups = (
 				E31053F12DCBD2EA008B7E7F /* Crop */,
 				E31053F82DCBD325008B7E7F /* Components */,
+				E39128F52E0DF96C0010E6CF /* Preview */,
 			);
 			name = Gifski;
 			packageProductDependencies = (
@@ -453,31 +420,21 @@
 			files = (
 				E3D08F6E1E5D7BFD00F465DF /* Utilities.swift in Sources */,
 				E339F011203820ED003B78FB /* GIFGenerator.swift in Sources */,
-				0CB0E7412DBB4ABF00E012C1 /* FullPreviewGenerationEvent.swift in Sources */,
 				E33552F12ACAC3280023AAE9 /* AppState.swift in Sources */,
 				E3A6BD112245345C00F62256 /* Constants.swift in Sources */,
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
-				0CC9BFA42DED043B0011D74D /* PreviewRendererContext.swift in Sources */,
 				8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */,
-				0CC9BFA22DECF99A0011D74D /* SendableTexture.swift in Sources */,
 				E3908B7426754568000723A7 /* EstimatedFileSize.swift in Sources */,
 				E33552F32ACAC5D80023AAE9 /* StartScreen.swift in Sources */,
 				E37F68E42ACADA40007F1A7F /* EditScreen.swift in Sources */,
-				0CB0E72B2DB9784300E012C1 /* PreviewableComposition.swift in Sources */,
 				E3961F802AC9F2A700708EB7 /* Intents.swift in Sources */,
-				0CB0E7292DB971D800E012C1 /* FullPreviewStream.swift in Sources */,
-				0C9BA6F62DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift in Sources */,
 				E30C8EEF29387E7A002E053F /* Gifski.swift in Sources */,
 				E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */,
-				0CB0E7262DB8833B00E012C1 /* PreviewRenderer.swift in Sources */,
 				E37F68E02ACAD9D1007F1A7F /* CompletedScreen.swift in Sources */,
 				E33552EF2ACAC3190023AAE9 /* MainScreen.swift in Sources */,
 				E37F68E22ACAD9F1007F1A7F /* ConversionScreen.swift in Sources */,
 				85A5C44822CA41B500CAA94D /* VideoValidator.swift in Sources */,
-				0CB0E72D2DB97D5400E012C1 /* SettingsForFullPreview.swift in Sources */,
 				E3AE62871E5CD2F300035A2F /* App.swift in Sources */,
-				0CB0E7092DB737B900E012C1 /* PreviewVideoCompositor.swift in Sources */,
-				0CEB41482DE6B1FC009BB37B /* compositePreview.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

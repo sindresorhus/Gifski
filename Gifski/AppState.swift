@@ -11,6 +11,15 @@ final class AppState {
 		guard case .edit = navigationPath.last else {
 			return false
 		}
+
+		return true
+	}
+
+	var isConverting: Bool {
+		guard case .conversion = navigationPath.last else {
+			return false
+		}
+
 		return true
 	}
 
@@ -22,7 +31,8 @@ final class AppState {
 		case editCrop
 		case preview
 	}
-	var mode: Mode = .normal
+
+	var mode = Mode.normal
 
 	var shouldShowPreview: Bool {
 		mode == .preview
@@ -33,25 +43,29 @@ final class AppState {
 	}
 
 	/**
-	Provides a binding for a toggle button to access a certain mode, getter returns true if in that mode. Setter will toggle the mode on, but return to initial mode if set to off (if we are in the specified mode)
-	 */
-	func toggleMode(mode: Mode) -> Binding<Bool> {
-		.init(get: {
-			self.mode == mode
-		}, set: { newValue in
-			if newValue {
-				self.mode = mode
-				return
-			}
-			guard self.mode == mode else {
-				return
-			}
-			self.mode = .normal
-		})
-	}
+	Provides a binding for a toggle button to access a certain mode.
 
-	// TODO: This can be inferred by checking the last element of navigationPath.
-	var isConverting = false
+	The getter returns true if in that mode. Setter will toggle the mode on, but return to initial mode if set to off (if we are in the specified mode).
+	*/
+	func toggleMode(mode: Mode) -> Binding<Bool> {
+		.init(
+			get: {
+				self.mode == mode
+			},
+			set: { newValue in
+				if newValue {
+					self.mode = mode
+					return
+				}
+
+				guard self.mode == mode else {
+					return
+				}
+
+				self.mode = .normal
+			}
+		)
+	}
 
 	var error: Error?
 

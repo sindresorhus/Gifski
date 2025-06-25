@@ -3,12 +3,12 @@ import AVFoundation
 
 struct EditScreen: View {
 	@Environment(AppState.self) private var appState
+	@State private var outputCropRect = CropRect.initialCropRect
+	@State private var fullPreviewStream = FullPreviewStream()
+
 	var url: URL
 	var asset: AVAsset
 	var metadata: AVAsset.VideoMetadata
-	@State private var outputCropRect: CropRect = .initialCropRect
-
-	let fullPreviewStream = FullPreviewStream()
 
 	init(url: URL, asset: AVAsset, metadata: AVAsset.VideoMetadata) {
 		self.url = url
@@ -43,7 +43,6 @@ private struct _EditScreen: View {
 	@State private var asset: AVAsset
 	@State private var modifiedAsset: AVAsset
 	@State private var metadata: AVAsset.VideoMetadata
-	@Binding var outputCropRect: CropRect
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
 	@State private var loopCount = 0
@@ -51,11 +50,12 @@ private struct _EditScreen: View {
 	@State private var isReversePlaybackWarningPresented = false
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
-	@State private var fullPreviewState: FullPreviewGenerationEvent = .initialState
+	@State private var fullPreviewState = FullPreviewGenerationEvent.initialState
+	@State private var fullPreviewDebouncer = Debouncer(delay: .milliseconds(200))
 
-	private let fullPreviewDebouncer = Debouncer(delay: .milliseconds(200))
-	private let fullPreviewStream: FullPreviewStream
+	@Binding private var outputCropRect: CropRect
 	private var overlay: NSView
+	private let fullPreviewStream: FullPreviewStream
 
 	init(
 		url: URL,
@@ -88,15 +88,20 @@ private struct _EditScreen: View {
 				if fullPreviewState.isGenerating {
 					ProgressView(value: fullPreviewState.progress)
 						.progressViewStyle(.circular)
-						.scaleEffect(0.5)
-						.frame(width: 10, height: 1)
+						.controlSize(.mini)
+						.scaleEffect(0.8)
+						.overlay {
+							if let fullPreviewStateErrorMessage = fullPreviewState.errorMessage {
+								Color.clear
+									.popover(isPresented: .constant(true)) {
+										Text(fullPreviewStateErrorMessage)
+											.padding()
+											.frame(maxWidth: 300)
+									}
+							}
+						}
 				}
-				if let fullPreviewStateErrorMessage = fullPreviewState.errorMessage  {
-					Text(fullPreviewStateErrorMessage)
-				}
-
-				Toggle(isOn: appState.toggleMode(mode: .preview))
-				{
+				Toggle(isOn: appState.toggleMode(mode: .preview)) {
 					Label("Preview", systemImage: appState.shouldShowPreview && fullPreviewState.canShowPreview ? "eye" : "eye.slash")
 				}
 			}
@@ -170,22 +175,27 @@ private struct _EditScreen: View {
 		}
 	}
 
-	private func updatePreviewOnSettingsChange()  {
-		// Don't update the preview during editCropMode
-		switch appState.mode {
-		case .editCrop:
+	private func updatePreviewOnSettingsChange() {
+		guard appState.mode != .editCrop else {
 			return
-		case .normal, .preview:
-			break
 		}
+
 		fullPreviewDebouncer {
 			Task {
 				let conversion = conversionSettings
-				await fullPreviewStream.requestNewFullPreview(asset: conversion.asset, settingsEvent: SettingsForFullPreview(conversion: conversion, speed: Defaults[.outputSpeed], framesPerSecondsWithoutSpeedAdjustment: Defaults[.outputFPS], duration: metadata.duration.toTimeInterval ))
+
+				await fullPreviewStream.requestNewFullPreview(
+					asset: conversion.asset,
+					settingsEvent: .init(
+						conversion: conversion,
+						speed: Defaults[.outputSpeed],
+						framesPerSecondsWithoutSpeedAdjustment: Defaults[.outputFPS],
+						duration: metadata.duration.toTimeInterval
+					)
+				)
 			}
 		}
 	}
-
 
 	private func setSpeed() async {
 		do {
@@ -205,16 +215,14 @@ private struct _EditScreen: View {
 		estimatedFileSizeModel.getConversionSettings = { conversionSettings }
 		updatePreviewOnSettingsChange()
 	}
+
 	/**
-	Paused because the preview is generating the new preview
-	 */
+	Paused because the preview is generating the new preview.
+	*/
 	var previewPaused: Bool {
 		appState.shouldShowPreview && fullPreviewState.isGenerating
 	}
 
-	/**
-	Too many modifiers on `body` `VStack`, have to move to a helper
-	 */
 	private var trimmingAVPlayer: some View {
 		// TODO: Move the trimmer outside the video view.
 		TrimmingAVPlayer(
@@ -240,6 +248,7 @@ private struct _EditScreen: View {
 					await fullPreviewStream.cancelFullPreviewGeneration()
 				}
 			}
+
 			// Because we don't update the preview during editCrop, the preview may be stale.
 			updatePreviewOnSettingsChange()
 		}

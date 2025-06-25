@@ -3,30 +3,16 @@ import AVFoundation
 import Metal
 
 /**
- Events that will be emitted by the PreviewStream, they represent the state or a generation request
- */
-struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
-	static let initialState: Self = .init(requestID: -1, state: .initialState)
-
-	static func empty(error: String? = nil, requestID: Int) -> Self{
-		.init(requestID: requestID, state: .empty(error: error))
-	}
-
-	static func cancelled(requestID: Int) -> Self {
-		.init(requestID: requestID, state: .cancelled)
-	}
-	static func generating(settings: SettingsForFullPreview, progress: Double, requestID: Int) -> Self {
-		.init(requestID: requestID, state: .generating(.init(settings: settings, progress: progress)))
-	}
-
-	static func ready(settings: SettingsForFullPreview, gifData: [SendableTexture?], requestID: Int) -> Self {
-		.init(requestID: requestID, state: .ready(.init(settings: settings, gifData: gifData)))
-	}
-
+Events that will be emitted by `PreviewStream`, which represent the state or a generation request.
+*/
+struct FullPreviewGenerationEvent: Equatable, Sendable {
 	let requestID: Int
+	private let state: State
+}
 
+extension FullPreviewGenerationEvent {
 	var canShowPreview: Bool {
-		switch self.state {
+		switch state {
 		case .empty, .cancelled:
 			false
 		case .generating, .ready:
@@ -35,7 +21,7 @@ struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
 	}
 
 	var errorMessage: String? {
-		switch self.state {
+		switch state {
 		case .empty(error: let error):
 			error
 		case .generating, .ready, .cancelled:
@@ -44,10 +30,10 @@ struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
 	}
 
 	var progress: Double {
-		switch self.state {
+		switch state {
 		case .empty, .cancelled:
 			0.0
-		case let .generating(generating):
+		case .generating(let generating):
 			generating.progress
 		case .ready:
 			1.0
@@ -55,7 +41,7 @@ struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
 	}
 
 	var isGenerating: Bool {
-		switch self.state {
+		switch state {
 		case .generating:
 			true
 		case .empty, .ready, .cancelled:
@@ -64,49 +50,93 @@ struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
 	}
 
 	/**
-	 - Returns the texture that represents the current Preview Frame, or nil if there is no preview for this frame
-	 */
+	- Returns: The texture that represents the current preview frame, or `nil` if there is no preview for this frame.
+	*/
 	func getPreviewFrame(
 		originalFrame: CVPixelBuffer,
 		compositionTime: CMTime
 	) async throws -> SendableTexture? {
-		switch self.state {
+		switch state {
 		case .empty, .cancelled:
 			nil
-		case let .generating(generating):
+		case .generating(let generating):
 			try await originalFrame.convertToGIF(settings: generating.settings).convertToTexture()
-		case let .ready( fullPreview):
+		case .ready(let fullPreview):
 			try fullPreview.getGIF(at: compositionTime)
 		}
 	}
 
 	/**
-	 See if we can skip generating a fullPreview based on the last state
+	Check if we can skip generating a full preview based on the last state.
 
-	 - Returns: `true` if a new generation is required, `false` otherwise.
-	 */
-	func isNecessaryToCreateNewFullPreview(newSettings: SettingsForFullPreview, newRequestID: Int) -> Bool {
-		settings?.areSettingsDifferentEnoughForANewFullPreview(newSettings: newSettings, areCurrentlyGenerating: isGenerating, oldRequestID: requestID, newRequestID: newRequestID) ?? true
+	- Returns: `true` if a new generation is required, `false` otherwise.
+	*/
+	func isNecessaryToCreateNewFullPreview(
+		newSettings: SettingsForFullPreview,
+		newRequestID: Int
+	) -> Bool {
+		settings?.areSettingsDifferentEnoughForANewFullPreview(
+			newSettings: newSettings,
+			areCurrentlyGenerating: isGenerating,
+			oldRequestID: requestID,
+			newRequestID: newRequestID
+		) ?? true
 	}
+
 	private var settings: SettingsForFullPreview? {
-		switch self.state {
+		switch state {
 		case .empty, .cancelled:
 			nil
-		case let .generating(generating):
+		case .generating(let generating):
 			generating.settings
-		case let .ready(fullPreview):
+		case .ready(let fullPreview):
 			fullPreview.settings
 		}
 	}
+}
 
-	private let state: State
+extension FullPreviewGenerationEvent {
+	static let initialState = Self(requestID: -1, state: .initialState)
 
+	static func empty(error: String? = nil, requestID: Int) -> Self {
+		.init(requestID: requestID, state: .empty(error: error))
+	}
+
+	static func cancelled(requestID: Int) -> Self {
+		.init(requestID: requestID, state: .cancelled)
+	}
+
+	static func generating(
+		settings: SettingsForFullPreview,
+		progress: Double,
+		requestID: Int
+	) -> Self {
+		.init(
+			requestID: requestID,
+			state: .generating(.init(settings: settings, progress: progress))
+		)
+	}
+
+	static func ready(
+		settings: SettingsForFullPreview,
+		gifData: [SendableTexture?],
+		requestID: Int
+	) -> Self {
+		.init(
+			requestID: requestID,
+			state: .ready(.init(settings: settings, gifData: gifData))
+		)
+	}
+}
+
+extension FullPreviewGenerationEvent {
 	private enum State: Equatable {
 		case empty(error: String?)
 		case cancelled
 		case generating(Generating)
 		case ready(FullPreview)
-		static let initialState: Self = .empty(error: nil)
+
+		static let initialState = Self.empty(error: nil)
 
 		func sameCase(as other: Self) -> Bool {
 			switch (self, other) {
@@ -125,64 +155,77 @@ struct FullPreviewGenerationEvent: Equatable, Sendable, PreviewComparable {
 		let settings: SettingsForFullPreview
 		let progress: Double
 	}
+}
 
-	private struct FullPreview: Equatable {
+extension FullPreviewGenerationEvent {
+	fileprivate struct FullPreview {
 		let settings: SettingsForFullPreview
 		let gifData: [SendableTexture?]
+	}
+}
 
-		func getGIF(at compositionTime: CMTime) throws(Error) -> SendableTexture {
-			guard let image = gifData[getCurrentGIFIndex(at: compositionTime)] else {
-				throw .failedToGetGIFFrame
-			}
-			return image
+extension FullPreviewGenerationEvent.FullPreview: Equatable {
+	/**
+	They are equal if the settings that led to the creation of a full preview are equal.
+	*/
+	static func == (lhs: Self, rhs: Self) -> Bool {
+		lhs.settings == rhs.settings
+	}
+}
+
+extension FullPreviewGenerationEvent.FullPreview {
+	enum Error: Swift.Error {
+		case failedToGetGIFFrame
+	}
+
+	func getGIF(at compositionTime: CMTime) throws(Error) -> SendableTexture {
+		guard let image = gifData[getCurrentGIFIndex(at: compositionTime)] else {
+			throw .failedToGetGIFFrame
 		}
 
-		enum Error: Swift.Error {
-			case failedToGetGIFFrame
-		}
+		return image
+	}
 
-		private func getCurrentGIFIndex(at compositionTime: CMTime) -> Int {
-			let timeRangeInOriginalSpeed = settings.conversion.timeRange ?? (0...settings.assetDuration)
+	private func getCurrentGIFIndex(at compositionTime: CMTime) -> Int {
+		let timeRangeInOriginalSpeed = settings.conversion.timeRange ?? (0...settings.assetDuration)
 
-			let gifTimeInOriginalSpeed = originalCompositionTime(from: compositionTime) - timeRangeInOriginalSpeed.lowerBound
-			let adjustedFramesPerSecond = Double(settings.framesPerSecondsWithoutSpeedAdjustment) / settings.speed
+		let gifTimeInOriginalSpeed = originalCompositionTime(from: compositionTime) - timeRangeInOriginalSpeed.lowerBound
+		let adjustedFramesPerSecond = Double(settings.framesPerSecondsWithoutSpeedAdjustment) / settings.speed
 
-			return Int(floor(gifTimeInOriginalSpeed * adjustedFramesPerSecond ))
-				.clamped(from: 0, to: gifData.count - 1)
-		}
-
-		/**
-		 Time that been scaled. The composition will speed up or slowdown the time.   for example if the player is at 2x speed. This struct it takes the reported time of 0.5 and multiplies it by 2, to get 1 second the original  time in the composition.
-		 */
-		private func originalCompositionTime(from reportedCompositionTime: CMTime) -> Double {
-			reportedCompositionTime.seconds * settings.speed
-		}
-
-
-		/**
-		 Are equal if the settings that led to the creation of a full preview are equal
-		 */
-		static func == (lhs: Self, rhs: Self) -> Bool {
-			lhs.settings == rhs.settings
-		}
+		return Int(floor(gifTimeInOriginalSpeed * adjustedFramesPerSecond))
+			.clamped(from: 0, to: gifData.count - 1)
 	}
 
 	/**
-	 PreviewComparable compares if the image on the screen is visually different between the two states.
-	 */
+	Time that has been scaled.
+
+	The composition will speed up or slow down the time. For example, if the player is at 2x speed. This struct takes the reported time of 0.5 and multiplies it by 2, to get 1 second of the original time in the composition.
+	*/
+	private func originalCompositionTime(from reportedCompositionTime: CMTime) -> Double {
+		reportedCompositionTime.seconds * settings.speed
+	}
+}
+
+extension FullPreviewGenerationEvent: PreviewComparable {
+	/**
+	`PreviewComparable` compares if the image on the screen is visually different between the two states.
+	*/
 	static func ~= (lhs: Self, rhs: Self) -> Bool {
-		// If we have two settings, compare if the settings are the same
+		// If we have two settings, compare if the settings are the same.
 		if let lhsSettings = lhs.settings {
 			if let rhsSettings = rhs.settings {
 				return lhs.state.sameCase(as: rhs.state) && lhsSettings == rhsSettings
 			}
+
 			return false
 		}
-		// lhs is `no Preview`, so if rhs has `settings` we know we are different
+
+		// lhs is `no preview`, so if rhs has `settings` we know we are different.
 		if rhs.settings != nil {
 			return false
 		}
-		// lhs has `no preview` and rhs has `no preview`; we are the same
+
+		// lhs has `no preview` and rhs has `no preview` so they are the same.
 		return true
 	}
 }

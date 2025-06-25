@@ -23,12 +23,16 @@ struct CropOverlayView: View {
 					let entireCanvasPath = Path { path in
 						path.addRect(.init(origin: .zero, size: size))
 					}
+
 					context.fill(entireCanvasPath, with: .color(.black.opacity(0.5)))
+
 					let holePath = Path { path in
 						path.addRect(cropFrame)
 					}
+
 					context.blendMode = .clear
 					context.fill(holePath, with: .color(.black))
+
 					if editable {
 						context.blendMode = .normal
 						context.stroke(holePath, with: .color(.white), lineWidth: 1)
@@ -347,8 +351,4 @@ struct CropOverlayView: View {
 			}
 		}
 	}
-}
-
-extension Color {
-	private static let cropSideWhite = Color.white.opacity(0.75)
 }
