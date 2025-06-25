@@ -7,27 +7,31 @@ struct CropToolbarItems: View {
 	@Binding var isCropActive: Bool
 	let metadata: AVAsset.VideoMetadata
 	@Binding var outputCropRect: CropRect
+	@FocusState private var isCropToggleFocused: Bool
 
 	var body: some View {
-		if isCropActive {
-			AspectRatioPicker(
-				metadata: metadata,
-				outputCropRect: $outputCropRect
-			)
+		HStack {
+			if isCropActive {
+				AspectRatioPicker(
+					metadata: metadata,
+					outputCropRect: $outputCropRect
+				)
+			}
+			Toggle("Crop", systemImage: "crop", isOn: $isCropActive)
+				.focused($isCropToggleFocused)
+				.onChange(of: isCropActive) {
+					isCropToggleFocused = true
+					guard isCropActive else {
+						return
+					}
+					SSApp.runOnce(identifier: "showCropTooltip") {
+						showCropTooltip = true
+					}
+				}
+				.popover(isPresented: $showCropTooltip) {
+					TipsView(title: "Crop Tips", tips: Self.tips)
+				}
 		}
-		Toggle("Crop", systemImage: "crop", isOn: $isCropActive)
-			.onChange(of: isCropActive) {
-				guard isCropActive else {
-					return
-				}
-
-				SSApp.runOnce(identifier: "showCropTooltip") {
-					showCropTooltip = true
-				}
-			}
-			.popover(isPresented: $showCropTooltip) {
-				TipsView(title: "Crop Tips", tips: Self.tips)
-			}
 	}
 
 	private static let tips = [
@@ -77,7 +81,7 @@ private struct AspectRatioPicker: View {
 				)
 
 				guard newRatio.aspectRatio != self.customAspectRatio?.aspectRatio else {
-					// Prevent simplifaction (like `25:5` -> `5:1`), only assign if the aspect ratio is new.
+					// Prevent simplification (like `25:5` -> `5:1`), only assign if the aspect ratio is new.
 					return
 				}
 
@@ -374,5 +378,7 @@ private struct TipsView: View {
 }
 
 extension NSFont {
-	fileprivate static let fieldFont = monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+	fileprivate static var fieldFont: NSFont {
+		monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+	}
 }

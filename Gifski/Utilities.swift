@@ -2762,6 +2762,12 @@ extension CMTime {
 
 		return 0...seconds
 	}
+	/**
+	Zero in the video timescale.
+	*/
+	static var videoZero: Self {
+		.init(seconds: 0, preferredTimescale: .video)
+	}
 }
 
 
@@ -5409,6 +5415,13 @@ extension AVPlayerView {
 		try Task.checkCancellation()
 
 		Task {
+			/**
+			 In about 20% of my debug sessions, `beginTrimming` will crash because canBeginTrimming is false, so I added this check. I've seen multiple cases where this guard catches into the else statement and the trimming controls work just fine: in each and every case where canBeginTrimming was false, this function gets called again with a value of true.
+			 */
+			guard canBeginTrimming else {
+				return
+			}
+
 			await beginTrimming()
 		}
 
@@ -5674,5 +5687,715 @@ extension View {
 		readSize {
 			binding.wrappedValue = $0
 		}
+	}
+}
+
+extension ColorScheme {
+	var isDarkMode: Bool {
+		self == .dark
+	}
+}
+
+extension Color {
+	var ciColor: CIColor? {
+		CIColor(color: NSColor(self))
+	}
+	var simd4: SIMD4<Float> {
+		let color = NSColor(self)
+		return .init(x: Float(color.redComponent), y: Float(color.greenComponent), z: Float(color.blueComponent), w: Float(color.alphaComponent))
+	}
+}
+
+
+extension CVPixelBuffer {
+	var planeCount: Int {
+		CVPixelBufferGetPlaneCount(self)
+	}
+
+	var width: Int {
+		CVPixelBufferGetWidth(self)
+	}
+
+	var height: Int {
+		CVPixelBufferGetHeight(self)
+	}
+
+	var pixelFormatType: OSType {
+		CVPixelBufferGetPixelFormatType(self)
+	}
+
+	var bytesPerRow: Int {
+		CVPixelBufferGetBytesPerRow(self)
+	}
+
+	var baseAddress: UnsafeMutableRawPointer {
+		get throws(BaseAddressError) {
+			guard let maybeBaseAddress = CVPixelBufferGetBaseAddress(self) else {
+				throw .noBaseAddress
+			}
+			return maybeBaseAddress
+		}
+	}
+
+	enum BaseAddressError: Error {
+		case noBaseAddress
+	}
+
+	var creationAttributes: CFDictionary {
+		CVPixelBufferCopyCreationAttributes(self)
+	}
+
+	func baseAddressOfPlane(_ plane: Int) throws(BaseAddressOfPlaneError) -> UnsafeMutableRawPointer {
+		guard let maybeBaseAddress = CVPixelBufferGetBaseAddressOfPlane(self, plane) else {
+			throw .noBaseAddressOfPlane(plane)
+		}
+		return maybeBaseAddress
+	}
+
+	enum BaseAddressOfPlaneError: Error {
+		case noBaseAddressOfPlane(Int)
+	}
+
+	func bytesPerRowOfPlane(_ plane: Int) -> Int {
+		CVPixelBufferGetBytesPerRowOfPlane(self, plane)
+	}
+
+	func heightOfPlane(_ plane: Int) -> Int {
+		CVPixelBufferGetHeightOfPlane(self, plane)
+	}
+
+	var colorSpace: CGColorSpace? {
+		guard let attachments = CVBufferCopyAttachments(self, .shouldPropagate) else {
+			return nil
+		}
+		let nsAttachments = (attachments as NSDictionary)
+		guard let colorspace = nsAttachments.value(forKey: kCVImageBufferCGColorSpaceKey as String) else {
+			return nil
+		}
+		switch colorspace {
+		case let out as CGColorSpace:
+			return out
+		default:
+			return nil
+		}
+	}
+
+	static func create(
+		allocator: CFAllocator? = kCFAllocatorDefault,
+		width: Int,
+		height: Int,
+		pixelFormatType: OSType,
+		pixelBufferAttributes: CFDictionary?
+	) throws(CreationError) -> CVPixelBuffer {
+		var out: CVPixelBuffer?
+		let status = CVPixelBufferCreate(
+			allocator,
+			width,
+			height,
+			pixelFormatType,
+			pixelBufferAttributes,
+			&out
+		)
+		guard status == kCVReturnSuccess else {
+			throw .creationError(status: status)
+		}
+		guard let out else {
+			throw .noBuffer
+		}
+		return out
+	}
+
+	enum CreationError: Error {
+		case creationError(status: CVReturn)
+		case noBuffer
+	}
+
+	func copy(to destination: CVPixelBuffer) throws {
+		try withLockedPlanes(flags: [.readOnly]) { sourcePlanes in
+			try destination.withLockedPlanes(flags: []) { destinationPlanes in
+				guard sourcePlanes.count == destinationPlanes.count else {
+					throw CopyError.planesMismatch
+				}
+				for (sourcePlane, destinationPlane) in zip(sourcePlanes, destinationPlanes) {
+					try sourcePlane.copy(to: destinationPlane)
+				}
+			}
+		}
+	}
+
+	func lockBaseAddress(flags: CVPixelBufferLockFlags = []) throws(LockError) {
+		let status = CVPixelBufferLockBaseAddress(self, flags)
+		guard status == kCVReturnSuccess else {
+			throw .lockFailed(status: status)
+		}
+	}
+	enum LockError: Error {
+		case lockFailed(status: CVReturn)
+	}
+
+	func unlockBaseAddress(flags: CVPixelBufferLockFlags = []) {
+		CVPixelBufferUnlockBaseAddress(self, flags)
+	}
+
+	enum CopyError: Error {
+		case planesMismatch
+		case heightMismatch
+	}
+
+	func withLockedBaseAddress<T>(
+		flags: CVPixelBufferLockFlags = [],
+		_ body: (CVPixelBuffer) throws -> T
+	) throws -> T {
+		try self.lockBaseAddress(flags: flags)
+		defer { self.unlockBaseAddress(flags: flags) }
+		return try body(self)
+	}
+
+	func withLockedPlanes<T>(
+		flags: CVPixelBufferLockFlags = [],
+		_ body: ([LockedPlane]) throws -> T
+	) throws -> T {
+		try withLockedBaseAddress(flags: flags) { buffer in
+			let planeCount = buffer.planeCount
+			if planeCount == 0 {
+				return try body([
+					.init(
+						base: try buffer.baseAddress,
+						bytesPerRow: buffer.bytesPerRow,
+						height: buffer.height
+					)
+				])
+			}
+			let planes = try (0..<planeCount).compactMap { planeIndex -> LockedPlane? in
+				.init(
+					base: try buffer.baseAddressOfPlane(planeIndex),
+					bytesPerRow: buffer.bytesPerRowOfPlane(planeIndex),
+					height: buffer.heightOfPlane(planeIndex)
+				)
+			}
+			guard planes.count == planeCount else {
+				throw CopyError.planesMismatch
+			}
+			return try body(planes)
+		}
+	}
+
+	func makeCompatibleBuffer() throws(CreationError) -> CVPixelBuffer {
+		try Self.create(width: width, height: height, pixelFormatType: pixelFormatType, pixelBufferAttributes: creationAttributes)
+	}
+
+	struct LockedPlane {
+		let base: UnsafeMutableRawPointer
+		let bytesPerRow: Int
+		let height: Int
+
+		func copy(to destination: Self) throws(CopyError) {
+			guard height == destination.height
+			else {
+				throw .heightMismatch
+			}
+
+			guard bytesPerRow != destination.bytesPerRow else {
+				memcpy(destination.base, base, height * bytesPerRow)
+				return
+			}
+			var destinationBase = destination.base
+			var sourceBase = base
+
+			let minBytesPerRow = min(bytesPerRow, destination.bytesPerRow)
+			for _ in 0..<height {
+				memcpy(destinationBase, sourceBase, minBytesPerRow)
+				sourceBase = sourceBase.advanced(by: bytesPerRow)
+				destinationBase = destinationBase.advanced(by: destination.bytesPerRow)
+			}
+			return
+		}
+	}
+
+	/**
+	Setup the video to use sRGB color space, we  set `kCVImageBufferColorPrimariesKey`  and  `kCVImageBufferYCbCrMatrixKey` to 709 because  because sRGB and 709 "share the same primary chromaticities, but they have different transfer functions" [source](https://web.archive.org/web/20250416122435/https://www.image-engineering.de/library/technotes/714-color-spaces-rec-709-vs-srgb) .
+	 */
+	func setSRGBColorSpace() {
+		setAttachment(key: kCVImageBufferColorPrimariesKey, value: kCVImageBufferColorPrimaries_ITU_R_709_2, attachmentMode: .shouldPropagate)
+		setAttachment(key: kCVImageBufferTransferFunctionKey, value: kCVImageBufferTransferFunction_sRGB, attachmentMode: .shouldPropagate)
+		setAttachment(key: kCVImageBufferYCbCrMatrixKey, value: kCVImageBufferYCbCrMatrix_ITU_R_709_2, attachmentMode: .shouldPropagate)
+	}
+
+	func setAttachment(key: CFString, value: CFTypeRef, attachmentMode: CVAttachmentMode) {
+		CVBufferSetAttachment(self, key, value, attachmentMode)
+	}
+	/**
+	 Mark that the pixel buffer will not be modified in any way except by `PreviewRenderer`
+	 */
+	var previewSendable: PreviewRenderer.SendableCVPixelBuffer {
+		PreviewRenderer.SendableCVPixelBuffer(pixelBuffer: self)
+	}
+}
+
+extension CGImageSource {
+	// swiftlint:disable:next discouraged_optional_collection
+	static func create(withData data: Data, options: [String: Any]? = nil) throws(CreateError) -> CGImageSource {
+		guard let imageSource = CGImageSourceCreateWithData(data as CFData, options as CFDictionary?) else {
+			throw .failedToCreateImageSource
+		}
+		return imageSource
+	}
+
+	enum CreateError: Error {
+		case failedToCreateImageSource
+	}
+
+	var count: Int {
+		CGImageSourceGetCount(self)
+	}
+
+	func createImage(atIndex index: Int, options: CFDictionary? = nil) throws(CreateImageError) -> CGImage {
+		guard let image = CGImageSourceCreateImageAtIndex(self, index, options) else {
+			throw .failedToCreateImage(status: CGImageSourceGetStatusAtIndex(self, index))
+		}
+		return image
+	}
+	enum CreateImageError: Error {
+		case failedToCreateImage(status: CGImageSourceStatus)
+	}
+}
+
+extension CGImage {
+	func convertToData(withNewType type: String, destinationOptions: CFDictionary? = nil, addOptions: CFDictionary? = nil) throws -> Data {
+		let mutableData = NSMutableData()
+		let destination = try CGImageDestination.create(withData: mutableData, type: type, count: 1, options: destinationOptions)
+		destination.addImage(self, properties: addOptions)
+		try destination.finalize()
+		return mutableData as Data
+	}
+}
+
+extension CGImageDestination {
+	static func create(withData: NSMutableData, type: String, count: Int = 1, options: CFDictionary? = nil) throws(CreateError) -> CGImageDestination {
+		guard let imageDestination = CGImageDestinationCreateWithData(withData, type as CFString, count, options) else {
+			throw .failedToCreate
+		}
+		return imageDestination
+	}
+
+	enum CreateError: Error {
+		case failedToCreate
+	}
+
+	func addImage(_ image: CGImage, properties: CFDictionary? = nil) {
+		CGImageDestinationAddImage(self, image, properties)
+	}
+
+	func finalize() throws(FinalizeError) {
+		guard CGImageDestinationFinalize(self) else {
+			throw .failedToFinalize
+		}
+	}
+
+	enum FinalizeError: Error {
+		case failedToFinalize
+	}
+}
+
+extension Data {
+	func readLittleEndianUInt24(_ start: Int) -> UInt32 {
+		UInt32(self[start]) | UInt32(self[start + 1]) << 8 | UInt32(self[start + 2]) << 16
+	}
+	/**
+	If data holds imageData this will convert to a texture suitable for `PreviewRenderer`
+	 */
+	func convertToTexture() async throws -> SendableTexture {
+		try await PreviewRenderer.shared.convertToTexture(data: self)
+	}
+}
+
+extension MTLCommandBuffer {
+	/**
+	 Submits the commands to the GPU and await completion
+	 */
+	func commit() async throws {
+		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+			self.addCompletedHandler { [weak self] _ in
+				guard let self else {
+					continuation.resume(throwing: MTLCommandBufferRenderError.functionOutlivedTheCommandBuffer)
+					return
+				}
+				guard self.status == .completed else {
+					continuation.resume(throwing: MTLCommandBufferRenderError.failedToRender(status: self.status))
+					return
+				}
+				continuation.resume()
+			}
+			self.commit()
+		}
+	}
+	/**
+	 Create a Render command encoder, runs your operation, then ends encoding with `endEncoding`
+	 */
+	func withRenderCommandEncoder(renderPassDescriptor: MTLRenderPassDescriptor, operation: (MTLRenderCommandEncoder) throws -> Void) throws {
+		guard let renderEncoder = makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+			throw MTLCommandBufferRenderError.failedToMakeRenderCommandEncoder
+		}
+		defer {
+			renderEncoder.endEncoding()
+		}
+		try operation(renderEncoder)
+	}
+}
+enum MTLCommandBufferRenderError: Error {
+	case failedToRender(status: MTLCommandBufferStatus)
+	case functionOutlivedTheCommandBuffer
+	case failedToMakeRenderCommandEncoder
+}
+
+extension MTLCommandQueue {
+	/**
+	 Creates a command buffer, runs your operation, then commits (sends commands to the GPU) and awaits completion
+	 */
+	func withCommandBuffer(
+		isolated actor: isolated any Actor,
+		operation: (MTLCommandBuffer) throws -> Void
+	) async throws {
+		guard let commandBuffer = makeCommandBuffer() else {
+			throw MTLCommandQueueRenderError.failedToCreateCommandBuffer
+		}
+		try operation(commandBuffer)
+		try await commandBuffer.commit()
+	}
+}
+
+enum MTLCommandQueueRenderError: Error {
+	case failedToCreateCommandBuffer
+}
+
+extension CGPoint {
+	var simdFloat2: SIMD2<Float> {
+		.init(x: Float(x), y: Float(y))
+	}
+
+	func nearestPointInsideRectBounds(_ rect: CGRect) -> CGPoint {
+		CGPoint(
+			x: x.clamped(from: rect.minX, to: rect.maxX),
+			y: y.clamped(from: rect.minY, to: rect.maxY)
+		)
+	}
+}
+
+extension CGSize {
+	var simdFloat2: SIMD2<Float> {
+		.init(x: Float(width), y: Float(height))
+	}
+
+	func clamped(within rect: CGRect) -> CGPoint {
+		CGPoint(
+			x: width.clamped(from: rect.minX, to: rect.maxX),
+			y: height.clamped(from: rect.minY, to: rect.maxY)
+		)
+	}
+}
+
+/**
+ Need to keep a strong reference to the CVMetalTexture until the GPU command completes, this struct ensures that the CVMetalTexture is not garbage collected as long as the MTLTexture is around [see](https://developer.apple.com/documentation/corevideo/cvmetaltexturecachecreatetexturefromimage(_:_:_:_:_:_:_:_:_:))
+ */
+struct CVMetalTextureRef {
+	private let cv: CVMetalTexture
+	let tex: MTLTexture
+	fileprivate init(cv: CVMetalTexture, tex: MTLTexture) {
+		self.cv = cv
+		self.tex = tex
+	}
+}
+
+extension CVMetalTextureCache {
+	func createTexture(fromImage image: CVPixelBuffer, pixelFormat: MTLPixelFormat, textureAttributes: CFDictionary? = nil ) throws(Error) -> CVMetalTextureRef {
+		var cv: CVMetalTexture?
+		let result = CVMetalTextureCacheCreateTextureFromImage(
+			nil,
+			self,
+			image,
+			textureAttributes,
+			pixelFormat,
+			image.width,
+			image.height,
+			0,
+			&cv
+		)
+		guard result == kCVReturnSuccess else {
+			throw .init(cvReturn: result)
+		}
+		guard let cv,
+			let tex = CVMetalTextureGetTexture(cv)
+		else {
+			throw .failedToCreateTexture
+		}
+		return .init(cv: cv, tex: tex)
+	}
+
+
+	enum Error: Swift.Error, LocalizedError {
+	 case invalidArgument
+	 case allocationFailed
+	 case unsupported
+	 case invalidPixelFormat
+	 case invalidPixelBufferAttributes
+	 case invalidSize
+	 case pixelBufferNotMetalCompatible
+	 case failedToCreateTexture
+	 case unknown(CVReturn)
+
+	 init(cvReturn: CVReturn) {
+		 switch cvReturn {
+		 case kCVReturnInvalidArgument:
+			 self = .invalidArgument
+		 case kCVReturnAllocationFailed:
+			 self = .allocationFailed
+		 case kCVReturnUnsupported:
+			 self = .unsupported
+		 case kCVReturnInvalidPixelFormat:
+			 self = .invalidPixelFormat
+		 case kCVReturnInvalidPixelBufferAttributes:
+			 self = .invalidPixelBufferAttributes
+		 case kCVReturnInvalidSize:
+			 self = .invalidSize
+		 case kCVReturnPixelBufferNotMetalCompatible:
+			 self = .pixelBufferNotMetalCompatible
+		 default:
+			 self = .unknown(cvReturn)
+		 }
+	 }
+
+	 var errorDescription: String? {
+		 switch self {
+		 case .invalidArgument:
+			 return "Invalid argument provided to CVMetalTextureCache"
+		 case .allocationFailed:
+			 return "Memory allocation failed"
+		 case .unsupported:
+			 return "Operation not supported"
+		 case .invalidPixelFormat:
+			 return "Invalid pixel format"
+		 case .invalidPixelBufferAttributes:
+			 return "Invalid pixel buffer attributes"
+		 case .invalidSize:
+			 return "Invalid size"
+		 case .pixelBufferNotMetalCompatible:
+			 return "Pixel buffer is not Metal compatible"
+		 case .failedToCreateTexture:
+			 return "Failed to create Metal texture"
+		 case .unknown(let cvReturn):
+			 return "Unknown CVReturn error: \(cvReturn)"
+		 }
+	 }
+ }
+}
+
+
+
+/**
+ Support for [Adaptable Scalable Texture Compression (ASTC)](https://www.khronos.org/opengl/wiki/ASTC_Texture_Compression) images. ASTC files have a [16-byte header](https://github.com/ARM-software/astc-encoder/blob/main/Docs/FileFormat.md) parse it to get render information like the size of the blocks and the image size
+ */
+struct ASTCImage {
+	private let data: Data
+	private let blockSize: (UInt8, UInt8, UInt8)
+	private let imageSize: (Int, Int, Int)
+	private static let headerSize = 16
+	private static let ASTCBlockSize = 16
+
+	init(data: Data) throws(CreateError) {
+		self.data = data
+		guard data.count >= Self.headerSize else {
+			throw .invalidDataSize
+		}
+		// Check the magic number
+		guard data[0] == 0x13,
+			  data[1] == 0xAB,
+			  data[2] == 0xA1,
+			  data[3] == 0x5C else {
+			throw .notASTCData
+		}
+		self.blockSize = (data[4], data[5], data[6])
+		self.imageSize = (
+			Int(data.readLittleEndianUInt24(7)),
+			Int(data.readLittleEndianUInt24(10)),
+			Int(data.readLittleEndianUInt24(13))
+		)
+	}
+
+	enum CreateError: Error {
+		case invalidDataSize
+		case notASTCData
+	}
+
+	var width: Int {
+		imageSize.0
+	}
+	var height: Int {
+		imageSize.1
+	}
+	/**
+	 A metal descriptor that describes this image
+	 */
+	func descriptor() throws(MTLPixelFormat.ASTCPixelFormatError) -> MTLTextureDescriptor  {
+		MTLTextureDescriptor.texture2DDescriptor(
+			pixelFormat: try .astc_ldr(fromBlockSize: blockSize),
+			width: width,
+			height: height,
+			mipmapped: false
+		)
+	}
+
+	func writeTo(texture: MTLTexture) throws {
+		try data.withUnsafeBytes { bytes in
+			guard let baseAddress = bytes.baseAddress else {
+				throw WriteError.failedToGetASTCBaseAddress
+			}
+			let imageDataStart = baseAddress.advanced(by: Self.headerSize)
+			texture.replace(
+				region: MTLRegionMake2D(0, 0, width, height),
+				mipmapLevel: 0,
+				withBytes: imageDataStart,
+				bytesPerRow: bytesPerRow
+			)
+		}
+	}
+
+	enum WriteError: Error {
+		case failedToGetASTCBaseAddress
+	}
+
+	private var bytesPerRow: Int {
+		blocksPerRow * Self.ASTCBlockSize
+	}
+	private var blocksPerRow: Int {
+		Int(ceil(Double(width) / Double(blockSize.0)))
+	}
+}
+
+extension MTLPixelFormat {
+	/**
+	 [ASTC](https://registry.khronos.org/OpenGL/extensions/OES/OES_texture_compression_astc.txt) low dynamic range at a given block size. "...the number of bits per pixel that ASTC takes up is determined by the block size used. So the 4x4 version of ASTC, the smallest block size, takes up 8 bits per pixel, while the 12x12 version takes up only 0.89bpp." [*](https://www.khronos.org/opengl/wiki/ASTC_Texture_Compression)
+
+	 - Parameters:
+		 - blockSize: Block size in (x, y ,z)
+	 
+	 - Returns: the appropriate pixel format given an astc block size.
+	 */
+	static func astc_ldr(fromBlockSize blockSize: (UInt8, UInt8, UInt8)) throws(ASTCPixelFormatError) -> Self {
+		let (width, height, depth) = blockSize
+		guard depth == 1 else {
+			throw .notImplemented
+		}
+		if width == 4 && height == 4 {
+			return .astc_4x4_ldr
+		}
+		if width == 8 && height == 8 {
+			return .astc_8x8_ldr
+		}
+		throw .notImplemented
+	}
+
+	enum ASTCPixelFormatError: Error {
+		case notImplemented
+	}
+}
+
+/**
+ A task with a progress AsyncStream
+ */
+struct ProgressableTask<Progress: Sendable, Result: Sendable>: Sendable {
+	let progress: AsyncStream<Progress>
+	let task: Task<Result, any Error>
+
+	init(operation: @escaping (AsyncStream<Progress>.Continuation) async throws -> Result){
+		let (progressStream, progressContinuation) = AsyncStream<Progress>.makeStream()
+		progress = progressStream
+		task = Task {
+			do {
+				let out = try await operation(progressContinuation)
+				progressContinuation.finish()
+				return out
+			} catch {
+				progressContinuation.finish()
+				throw error
+			}
+		}
+	}
+
+	func cancel() {
+		task.cancel()
+	}
+
+	var value: Result {
+		get async throws {
+			try await task.value
+		}
+	}
+}
+
+extension ProgressableTask where Progress == Double {
+	func monitorProgressWithCancellation(
+		progressWeight: Double = 1.0,
+		progressOffset: Double = 0.0,
+		progressContinuation: AsyncStream<Progress>.Continuation,
+	) async throws -> Result {
+		await withTaskCancellationHandler {
+			for await currentProgress in progress {
+				progressContinuation.yield(progressOffset + currentProgress * progressWeight)
+			}
+		} onCancel: {
+			cancel()
+		}
+		try Task.checkCancellation()
+		return try await value
+	}
+	/**
+	Compose this task with another task, weighting the progress of the task by `weight`
+	 */
+	func then<Result2>(progressWeight: Double = 0.5, composeWith nextTask: @Sendable @escaping (Result) async throws -> ProgressableTask<Double, Result2>) -> ProgressableTask<Double, Result2> {
+		ProgressableTask<Double, Result2> { progressContinuation  in
+			let result1 = try await monitorProgressWithCancellation(progressWeight: progressWeight, progressContinuation: progressContinuation)
+			try Task.checkCancellation()
+			let task2 = try await nextTask(result1)
+
+			try Task.checkCancellation()
+			return try await task2.monitorProgressWithCancellation(progressWeight: 1 - progressWeight, progressOffset: progressWeight, progressContinuation: progressContinuation)
+		}
+	}
+}
+
+/**
+ Protocol for preview equivalence comparison using the ~= operator. This ignores transient properties that don't affect visual output.
+ */
+protocol PreviewComparable {
+	static func ~= (lhs: Self, rhs: Self) -> Bool
+}
+
+extension CompositePreviewFragmentUniforms: Equatable {
+	init() {
+		self.init(
+			videoOrigin: .one,
+			videoSize: .one,
+			firstColor: .zero,
+			secondColor: .one,
+			gridSize: 1
+		)
+	}
+
+	init(isDarkMode: Bool, videoBounds: CGRect) {
+		self.init(
+			videoOrigin: videoBounds.origin.nearestPointInsideRectBounds(.init(origin: .zero, width: .infinity, height: .infinity)).simdFloat2,
+			videoSize: videoBounds.size.clamped(within: .init(origin: .zero, width: .infinity, height: .infinity)).simdFloat2,
+			firstColor: (isDarkMode ? CheckerboardViewConstants.firstColorDark : CheckerboardViewConstants.firstColorLight ).simd4,
+			secondColor: (isDarkMode ? CheckerboardViewConstants.secondColorDark : CheckerboardViewConstants.secondColorLight ).simd4,
+			gridSize: Int32(CheckerboardViewConstants.gridSize).clamped(from: 1, to: .max)
+		)
+	}
+
+	public static func == (lhs: CompositePreviewFragmentUniforms, rhs: CompositePreviewFragmentUniforms) -> Bool {
+		lhs.videoOrigin == rhs.videoOrigin &&
+		lhs.videoSize == rhs.videoSize &&
+		lhs.firstColor == rhs.firstColor &&
+		lhs.secondColor == rhs.secondColor &&
+		lhs.gridSize == rhs.gridSize
 	}
 }

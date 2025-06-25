@@ -34,20 +34,24 @@ struct CropOverlayView: View {
 						context.stroke(holePath, with: .color(.white), lineWidth: 1)
 					}
 				}
-				.pointerStyle(isDragging ? .grabActive : .grabIdle)
-				.contentShape(
-					Path { path in
-						path.addRect(cropFrame.insetBy(dx: 5, dy: 5))
-					}
-				)
-				.cropDragGesture(
-					isDragging: $isDragging,
-					cropRect: $cropRect,
-					frame: frame,
-					dimensions: dimensions,
-					position: .center,
-					dragMode: dragMode
-				)
+				if editable {
+					Color
+						.clear
+						.contentShape(
+							Path { path in
+								path.addRect(cropFrame.insetBy(dx: 5, dy: 5))
+							}
+						)
+						.pointerStyle(isDragging ? .grabActive : .grabIdle)
+						.cropDragGesture(
+							isDragging: $isDragging,
+							cropRect: $cropRect,
+							frame: frame,
+							dimensions: dimensions,
+							position: .center,
+							dragMode: dragMode
+						)
+				}
 				if isDragging {
 					DraggingSections(cropFrame: cropFrame)
 						.stroke(Color.white)
@@ -81,7 +85,7 @@ struct CropOverlayView: View {
 			var body: some View {
 				Color.clear()
 					.bindHostingWindow($window)
-					.onDissapear {
+					.onDisappear {
 						/*
 						By the time this is called `window` is already nil
 						*/
@@ -89,25 +93,25 @@ struct CropOverlayView: View {
 					}
 					.accessHostingWindow { window in
 						 /**
-						 When view dissapears this is never called.
+						 When view disappears this is never called.
 						 */
 					}
 					.onChange(of: window) { old, new in
 						 /**
-						 When the veiw dissapears this is never called.
+						 When the view disappears this is never called.
 						 */
 					}
 			}
 		}
 		```
 
-		This is because on view dissapear the following events happen in order:
+		This is because on view disappear the following events happen in order:
 
 		1. `viewDidMoveToWindow` with `window` == nil
 
 		2. Then `onDisappear` is called
 
-		∞. ` accessHostingWindow` and `onChange` are never called because SwiftUI does not build the view again when dissapearing
+		∞. ` accessHostingWindow` and `onChange` are never called because SwiftUI does not build the view again when disappearing
 
 		I need a custom setter to capture all changes before the the view disappears, and I can't use `accessHostingWindow` or `onChange(of:)` or `onDisappear`
 		*/
