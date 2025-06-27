@@ -17,7 +17,7 @@ extension Defaults.Keys {
 }
 
 enum Route: Hashable {
-	case edit(URL, AVAsset, AVAsset.VideoMetadata)
+	case edit(URL, AVAsset, [AVAsset], AVAsset.VideoMetadata)
 	case conversion(GIFGenerator.Conversion)
 	case completed(Data, URL)
 }

@@ -6588,3 +6588,52 @@ extension CGAffineTransform {
 		translatedBy(x: point.x, y: point.y)
 	}
 }
+
+
+
+extension Sequence {
+	/**
+	 Transform each input as part of a task group
+	 */
+	func taskGroupMap<T>(
+		_ transform: @escaping (Element) async throws -> T
+	) async throws -> [T] {
+		try await withThrowingTaskGroup { group in
+			for (offset, element) in enumerated() {
+				group.addTask {
+					StableMapItem(offset: offset, data: try await transform(element))
+				}
+			}
+			return try await group.accumulate()
+		}
+	}
+}
+
+extension ThrowingTaskGroup where ChildTaskResult: Stable {
+	/**
+	Accumulate all results into an array and sorts them back into the original order
+	 */
+	func accumulate() async throws -> [ChildTaskResult.Data] {
+		let unorderedResult = try await reduce(into: []) {
+			$0.append($1)
+		}
+		return unorderedResult.sorted {
+			$0.offset < $1.offset
+		}
+		.map(\.data)
+	}
+}
+
+struct StableMapItem<Data>: Stable {
+	let offset: Int
+	let data: Data
+}
+
+/**
+Used with ThrowingTaskGroup to keep the order of child tasks stable
+ */
+protocol Stable {
+	associatedtype Data
+	var offset: Int { get }
+	var data: Data { get }
+}

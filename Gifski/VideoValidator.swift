@@ -1,7 +1,7 @@
 import AVFoundation
 
 enum VideoValidator {
-	static func validate(_ inputUrl: URL) async throws -> (asset: AVAsset, metadata: AVAsset.VideoMetadata) {
+	static func validate(_ inputUrl: URL) async throws -> (asset: AVAsset, audioAssets: [AVAsset], metadata: AVAsset.VideoMetadata) {
 //		Crashlytics.record(
 //			key: "Does input file exist",
 //			value: inputUrl.exists
@@ -147,13 +147,22 @@ enum VideoValidator {
 			)
 		}
 
+		let audioTracks = (try await asset.loadTracks(withMediaType: .audio))
+
+		let audioAssets = try await audioTracks.taskGroupMap {
+			guard let newAsset = try await $0.extractToNewAsset() else {
+				throw NSError.appError("Could not extract the audio from your video.", recoverySuggestion: "")
+			}
+			return newAsset
+		}
 		// Trim asset
 		do {
 			let trimmedAsset = try await newAsset.trimmingBlankFramesFromFirstVideoTrack()
-			return (trimmedAsset, newVideoMetadata)
+			// Not trimming the audioTracks because the time range of the audio tracks don't affect the GIF export or the GUI.
+			return (trimmedAsset, audioAssets, newVideoMetadata)
 		} catch AVAssetTrack.VideoTrimmingError.codecNotSupported {
 			// Allow user to continue
-			return (newAsset, newVideoMetadata)
+			return (newAsset, audioAssets, newVideoMetadata)
 		} catch {
 			throw NSError.appError(
 				"Could not trim empty leading frames from video.",

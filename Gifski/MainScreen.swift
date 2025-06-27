@@ -11,8 +11,8 @@ struct MainScreen: View {
 			StartScreen()
 				.navigationDestination(for: Route.self) {
 					switch $0 {
-					case .edit(let url, let asset, let metadata): // TODO: Make a `Job` struct for this?
-						EditScreen(url: url, asset: asset, metadata: metadata)
+					case .edit(let url, let asset, let audioAssets, let metadata): // TODO: Make a `Job` struct for this?
+						EditScreen(url: url, asset: asset, audioAssets: audioAssets, metadata: metadata)
 					case .conversion(let conversion):
 						ConversionScreen(conversion: conversion)
 					case .completed(let data, let url):

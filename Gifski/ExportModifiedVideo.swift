@@ -7,7 +7,6 @@ struct ExportModifiedVideo: View {
 	@Binding var exportID: UUID?
 	@State private var state = ConvertState.empty(error: nil)
 	@State private var isFileExporterPresented = false
-	@Environment(\.dismiss) private var dismiss
 
 	var body: some View {
 		VStack(spacing: 20) {
@@ -18,9 +17,8 @@ struct ExportModifiedVideo: View {
 				}
 			case let .generating(progress: progress):
 				ExportProgress(text: "Exporting", progress: progress)
-
-			case let .finished(url, aspectRatio):
-				VideoPlayer(player: AVPlayer(url: url))
+			case let .finished(_, _, player, aspectRatio):
+				VideoPlayer(player: player)
 					.aspectRatio(aspectRatio, contentMode: .fit)
 					.clipShape(RoundedRectangle(cornerRadius: 8))
 				Button("Save") {
@@ -34,11 +32,11 @@ struct ExportModifiedVideo: View {
 		.task(priority: .medium) {
 			do {
 				guard let exportID,
-					  let conversion = appState.videoExports[exportID] else {
+					  let input = appState.videoExports[exportID] else {
 					self.state = .empty(error: "Could not find video to export")
 					return
 				}
-				let task = Self.exportModifiedVideo(conversion: conversion)
+				let task = Self.exportModifiedVideo(input: input)
 				self.state = .generating(progress: 0)
 				await withTaskCancellationHandler {
 					for await progress in task.progress {
@@ -55,7 +53,12 @@ struct ExportModifiedVideo: View {
 				self.state = .generating(progress: 1)
 				try await Task.sleep(for: .seconds(1.0))
 
-				self.state = .finished(url: outputURL, aspectRatio: aspectRatio)
+				self.state = .finished(
+					filename: input.conversion.sourceURL.filenameWithoutExtension + " modified.mov",
+					url: outputURL,
+					player: AVPlayer(url: outputURL),
+					aspectRatio: aspectRatio
+				)
 			} catch {
 				if Task.isCancelled || error.isCancelled {
 					return
@@ -67,11 +70,6 @@ struct ExportModifiedVideo: View {
 			do {
 				let url = try $0.get()
 				try? url.setAppAsItemCreator()
-				if let exportURL {
-					try FileManager.default.removeItem(at: exportURL)
-				}
-				dismiss()
-				state = .empty(error: nil)
 			} catch {
 				state = .empty(error: error.localizedDescription)
 			}
@@ -79,14 +77,27 @@ struct ExportModifiedVideo: View {
 		.fileDialogCustomizationID("export")
 		.fileDialogMessage("Choose where to save the video")
 		.fileDialogConfirmationLabel("Save")
+		.onDisappear {
+			removeTempExport()
+		}
+	}
+	struct Input {
+		let conversion: GIFGenerator.Conversion
+		let audioAssets: [AVAsset]
 	}
 
 	private var defaultFileName: String {
 		switch state {
-		case let .finished(url, _):
-			url.filename
+		case let .finished(filename, _, _, _):
+			filename
 		default:
 			"Untitled.mov"
+		}
+	}
+
+	private func removeTempExport() {
+		exportURL.map {
+			try? FileManager.default.removeItem(at: $0)
 		}
 	}
 
@@ -98,7 +109,7 @@ struct ExportModifiedVideo: View {
 
 	private var exportURL: URL? {
 		switch state {
-		case let .finished(url, _):
+		case let .finished(_, url, _, _):
 			url
 		default:
 			nil
@@ -108,14 +119,14 @@ struct ExportModifiedVideo: View {
 	private enum ConvertState: Equatable, Sendable {
 		case empty(error: String?)
 		case generating(progress: Double)
-		case finished(url: URL, aspectRatio: Double)
+		case finished(filename: String, url: URL, player: AVPlayer, aspectRatio: Double)
 	}
 
-	private static func exportModifiedVideo(conversion: GIFGenerator.Conversion) -> ProgressableTask<Double, (URL, Double)> {
+	private static func exportModifiedVideo(input: Input) -> ProgressableTask<Double, (URL, Double)> {
 		ProgressableTask { progressContinuation in
-			let exportComposition = try await ExportComposition(conversion: conversion)
+			let exportComposition = try await ExportComposition(input: input)
 
-			let outputURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent( conversion.sourceURL.filenameWithoutExtension + " modified.mov")
+			let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent( "\(UUID().uuidString).mov")
 
 			try? FileManager.default.removeItem(at: outputURL)
 			guard let exportSession = AVAssetExportSession(asset: exportComposition.composition, presetName: AVAssetExportPresetHighestQuality) else {
@@ -151,7 +162,8 @@ struct ExportModifiedVideo: View {
 		let videoComposition: AVMutableVideoComposition
 		let aspectRatio: Double
 
-		init(conversion: GIFGenerator.Conversion) async throws {
+		init(input: ExportModifiedVideo.Input) async throws {
+			let conversion = input.conversion
 			let asset = conversion.asset
 			let duration = try await asset.load(.duration)
 			guard let videoTrack = try await asset.firstVideoTrack else {
@@ -160,17 +172,12 @@ struct ExportModifiedVideo: View {
 
 			let (trackSize, frameDuration) = try await videoTrack.load(.naturalSize, .minFrameDuration)
 			composition = AVMutableComposition()
-			guard let compositionTrack = composition.addMutableTrack(
-				withMediaType: .video,
-				preferredTrackID: kCMPersistentTrackID_Invalid
-			) else {
-				throw Error.unableToAddCompositionTrack
+			let timeRange = (conversion.timeRange ?? 0...duration.seconds).cmTimeRange
+
+			let compositionTrack = try await Self.insertTrack(composition: composition, asset: asset, trackType: .video, timeRange: timeRange)
+			for audioAsset in input.audioAssets {
+				try await Self.insertTrack(composition: composition, asset: audioAsset, trackType: .audio, timeRange: timeRange)
 			}
-			try compositionTrack.insertTimeRange(
-				(conversion.timeRange ?? 0...duration.seconds).cmTimeRange,
-				of: videoTrack,
-				at: .zero
-			)
 
 			let dimensions: CGSize = conversion.dimensions.map {
 				.init(width: Double($0.0), height: Double($0.1))
@@ -185,6 +192,58 @@ struct ExportModifiedVideo: View {
 				duration: duration
 			)
 			aspectRatio = cropRectInPixels.width / cropRectInPixels.height
+		}
+
+		@discardableResult
+		private static func insertTrack(composition: AVMutableComposition, asset: AVAsset, trackType: TrackType, timeRange: CMTimeRange) async throws -> AVMutableCompositionTrack{
+			guard let compositionTrack = composition.addMutableTrack(
+				withMediaType: trackType.mediaType,
+				preferredTrackID: kCMPersistentTrackID_Invalid
+			) else {
+				throw Error.unableToAddCompositionTrack
+			}
+			let track = try await trackType.track(for: asset)
+			try compositionTrack.insertTimeRange(
+				timeRange,
+				of: track,
+				at: .zero
+			)
+			return compositionTrack
+		}
+
+		private enum TrackType {
+			case audio
+			case video
+
+			var mediaType: AVMediaType {
+				switch self {
+				case .audio:
+					.audio
+				case .video:
+					.video
+				}
+			}
+
+			func track(for asset: AVAsset) async throws -> AVAssetTrack {
+				guard let track = try await _track(for: asset) else {
+					switch self {
+					case .audio:
+						throw ExportComposition.Error.noAudioTrack
+					case .video:
+						throw ExportComposition.Error.noVideoTrack
+					}
+				}
+				return track
+			}
+
+			private func _track(for asset: AVAsset) async throws -> AVAssetTrack? {
+				switch self {
+				case .video:
+					try await asset.firstVideoTrack
+				case .audio:
+					try await asset.firstAudioTrack
+				}
+			}
 		}
 
 		/**
@@ -213,6 +272,7 @@ struct ExportModifiedVideo: View {
 		}
 		enum Error: Swift.Error {
 			case noVideoTrack
+			case noAudioTrack
 			case unableToAddCompositionTrack
 
 
@@ -220,6 +280,8 @@ struct ExportModifiedVideo: View {
 				switch self {
 				case .noVideoTrack:
 					"The video asset does not contain a video track."
+				case .noAudioTrack:
+					"The audio asset does not contain an audio track."
 				case .unableToAddCompositionTrack:
 					"Failed to add a composition track to the video."
 				}

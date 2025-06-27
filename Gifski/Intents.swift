@@ -383,7 +383,7 @@ struct ConvertIntent: AppIntent, ProgressReportingIntent {
 	}
 
 	private func generateGIF(videoURL: URL) async throws -> Data {
-		let (videoAsset, metadata) = try await VideoValidator.validate(videoURL)
+		let (videoAsset, _, metadata) = try await VideoValidator.validate(videoURL)
 
 		guard !isPreview else {
 			guard let frame = try await videoAsset.image(at: .init(seconds: metadata.duration.toTimeInterval / 3.0, preferredTimescale: .video)) else {

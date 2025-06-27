@@ -44,7 +44,7 @@ final class AppState {
 
 	var onExportAsVideo: (() -> Void)?
 
-	var videoExports: [UUID: GIFGenerator.Conversion] = [:]
+	var videoExports: [UUID: ExportModifiedVideo.Input] = [:]
 
 
 	/**
@@ -98,8 +98,8 @@ final class AppState {
 		Task { [self] in
 			do {
 				// TODO: Simplify the validator.
-				let (asset, metadata) = try await VideoValidator.validate(url)
-				navigationPath = [.edit(url, asset, metadata)]
+				let (asset, audioAssets, metadata) = try await VideoValidator.validate(url)
+				navigationPath = [.edit(url, asset, audioAssets, metadata)]
 			} catch {
 				self.error = error
 			}

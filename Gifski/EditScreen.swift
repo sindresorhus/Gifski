@@ -8,11 +8,13 @@ struct EditScreen: View {
 
 	var url: URL
 	var asset: AVAsset
+	var audioAssets: [AVAsset]
 	var metadata: AVAsset.VideoMetadata
 
-	init(url: URL, asset: AVAsset, metadata: AVAsset.VideoMetadata) {
+	init(url: URL, asset: AVAsset, audioAssets: [AVAsset], metadata: AVAsset.VideoMetadata) {
 		self.url = url
 		self.asset = asset
+		self.audioAssets = audioAssets
 		self.metadata = metadata
 	}
 
@@ -20,6 +22,7 @@ struct EditScreen: View {
 		_EditScreen(
 			url: url,
 			asset: asset,
+			audioAssets: audioAssets,
 			metadata: metadata,
 			outputCropRect: $outputCropRect,
 			overlay: NSHostingView(rootView: CropOverlayView(
@@ -42,7 +45,9 @@ private struct _EditScreen: View {
 	@Default(.suppressKeyframeWarning) private var suppressKeyframeWarning
 	@State private var url: URL
 	@State private var asset: AVAsset
+	@State private var audioAssets: [AVAsset]
 	@State private var modifiedAsset: AVAsset
+	@State private var modifiedAssetAudioAssets: [AVAsset]
 	@State private var metadata: AVAsset.VideoMetadata
 	@State private var estimatedFileSizeModel = EstimatedFileSizeModel()
 	@State private var timeRange: ClosedRange<Double>?
@@ -61,6 +66,7 @@ private struct _EditScreen: View {
 	init(
 		url: URL,
 		asset: AVAsset,
+		audioAssets: [AVAsset],
 		metadata: AVAsset.VideoMetadata,
 		outputCropRect: Binding<CropRect>,
 		overlay: NSView,
@@ -69,6 +75,8 @@ private struct _EditScreen: View {
 		self._url = .init(wrappedValue: url)
 		self._asset = .init(wrappedValue: asset)
 		self._modifiedAsset = .init(wrappedValue: asset)
+		self._audioAssets = .init(initialValue: audioAssets)
+		self._modifiedAssetAudioAssets = .init(wrappedValue: audioAssets)
 		self._metadata = .init(wrappedValue: metadata)
 		self._outputCropRect = outputCropRect
 		self.overlay = overlay
@@ -182,7 +190,7 @@ private struct _EditScreen: View {
 
 	private func onExportAsVideo() {
 		let id = UUID()
-		appState.videoExports[id] = conversionSettings
+		appState.videoExports[id] = .init(conversion: conversionSettings, audioAssets: modifiedAssetAudioAssets)
 		openWindow(id: "exportProgress", value: id)
 	}
 
@@ -211,9 +219,18 @@ private struct _EditScreen: View {
 	private func setSpeed() async {
 		do {
 			// We could have set the `rate` of the player instead of modifying the asset, but it's just easier to modify the asset as then it matches what we want to generate. Otherwise, we would have to translate trimming ranges to the correct speed, etc.
+			let outputSpeed = Defaults[.outputSpeed]
+			async let changedSpeedAssetResult = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: outputSpeed)
+			async let changedSpeedAudioAssetsResult = try await audioAssets.taskGroupMap {
+				try await $0.firstAudioTrack?.extractToNewAssetAndChangeSpeed(to: outputSpeed)
+			}
 
-			let changedSpeedAsset = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: Defaults[.outputSpeed]) ?? modifiedAsset
+			let changedSpeedAsset = (try await changedSpeedAssetResult) ?? modifiedAsset
 			modifiedAsset = try await PreviewableComposition(extractPreviewableCompositionFrom: changedSpeedAsset)
+
+			modifiedAssetAudioAssets = (try await changedSpeedAudioAssetsResult).enumerated().map { index, asset in
+				asset ?? modifiedAssetAudioAssets[index]
+			}
 
 			estimatedFileSizeModel.updateEstimate()
 			updatePreviewOnSettingsChange()
