@@ -2116,6 +2116,10 @@ extension CGSize {
 		.init(width: lhs.width * rhs, height: lhs.height * rhs)
 	}
 
+	static func / (lhs: Self, rhs: Self) -> Self {
+		.init(width: lhs.width / rhs.width, height: lhs.height / rhs.height)
+	}
+
 	init(widthHeight: Double) {
 		self.init(width: widthHeight, height: widthHeight)
 	}
@@ -2786,6 +2790,12 @@ extension CMTimeRange {
 		}
 
 		return start.seconds...end.seconds
+	}
+}
+
+extension ClosedRange where Bound == Double {
+	var cmTimeRange: CMTimeRange {
+		.init(start: .init(seconds: lowerBound, preferredTimescale: .video), end: .init(seconds: upperBound, preferredTimescale: .video))
 	}
 }
 
@@ -6079,6 +6089,14 @@ extension CGPoint {
 			y: y.clamped(from: rect.minY, to: rect.maxY)
 		)
 	}
+
+	static func / (lhs: CGPoint, rhs: CGSize) -> CGPoint {
+		.init(x: lhs.x / rhs.width, y: lhs.y / rhs.height)
+	}
+
+	static prefix func - (lhs: CGPoint) -> CGPoint {
+		.init(x: -lhs.x, y: -lhs.y)
+	}
 }
 
 extension CGSize {
@@ -6397,5 +6415,15 @@ extension CompositePreviewFragmentUniforms: Equatable {
 		lhs.firstColor == rhs.firstColor &&
 		lhs.secondColor == rhs.secondColor &&
 		lhs.gridSize == rhs.gridSize
+	}
+}
+
+extension CGAffineTransform {
+	init(scaledBy size: CGSize) {
+		self = Self(scaleX: size.width, y: size.height)
+	}
+
+	func translatedBy(point: CGPoint) -> CGAffineTransform {
+		translatedBy(x: point.x, y: point.y)
 	}
 }

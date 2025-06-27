@@ -12,40 +12,12 @@ struct ConversionScreen: View {
 	let conversion: GIFGenerator.Conversion
 
 	var body: some View {
-		VStack {
-			ProgressView(value: progress)
-				.progressViewStyle(
-					.ssCircular(
-						fill: LinearGradient(
-							gradient: .init(
-								colors: [
-									.purple,
-									.pink,
-									.orange
-								]
-							),
-							startPoint: .top,
-							endPoint: .bottom
-						),
-						lineWidth: 30,
-						text: "Converting"
-					)
-				)
-				.frame(width: 300, height: 300)
-				.overlay {
-					Group {
-						if let timeRemaining {
-							Text(timeRemaining)
-								.font(.subheadline)
-								.monospacedDigit()
-								.offset(y: 24)
-						}
-					}
-					.animation(.default, value: timeRemaining == nil)
-				}
-				.offset(y: -16) // Makes it centered (needed because of toolbar).
-		}
-		.fillFrame()
+		ExportProgress(
+			text: "Converting",
+			progress: progress,
+			timeRemaining: timeRemaining
+		)
+		.offset(y: -16) // Makes it centered (needed because of toolbar).
 		.onKeyboardShortcut(.escape, modifiers: []) {
 			dismiss()
 		}
@@ -152,5 +124,50 @@ struct ConversionScreen: View {
 		formatter.includesTimeRemainingPhrase = true
 		formatter.allowedUnits = remaining < .seconds(60) ? .second : [.hour, .minute]
 		timeRemaining = formatter.string(from: remaining.toTimeInterval)
+	}
+}
+
+struct ExportProgress: View {
+	var text: String
+	var progress: Double
+	var timeRemaining: String?
+
+	static let width: Double = 300
+	static let height: Double = 300
+
+	var body: some View {
+		VStack {
+			ProgressView(value: progress)
+				.progressViewStyle(
+					.ssCircular(
+						fill: LinearGradient(
+							gradient: .init(
+								colors: [
+									.purple,
+									.pink,
+									.orange
+								]
+							),
+							startPoint: .top,
+							endPoint: .bottom
+						),
+						lineWidth: 30,
+						text: text
+					)
+				)
+				.frame(width: Self.width, height: Self.height)
+				.overlay {
+					Group {
+						if let timeRemaining {
+							Text(timeRemaining)
+								.font(.subheadline)
+								.monospacedDigit()
+								.offset(y: 24)
+						}
+					}
+					.animation(.default, value: timeRemaining == nil)
+				}
+		}
+		.fillFrame()
 	}
 }

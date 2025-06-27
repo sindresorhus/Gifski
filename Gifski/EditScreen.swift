@@ -34,6 +34,7 @@ struct EditScreen: View {
 
 private struct _EditScreen: View {
 	@Environment(AppState.self) private var appState
+	@Environment(\.openWindow) private var openWindow
 	@Default(.outputQuality) private var outputQuality
 	@Default(.bounceGIF) private var bounceGIF
 	@Default(.outputFPS) private var frameRate
@@ -155,6 +156,10 @@ private struct _EditScreen: View {
 		.opacity(shouldShow ? 1 : 0)
 		.onAppear {
 			setUp()
+			appState.onExportAsVideo = onExportAsVideo
+		}
+		.onDisappear {
+			appState.onExportAsVideo = nil
 		}
 		.task {
 			try? await Task.sleep(for: .seconds(0.3))
@@ -168,6 +173,12 @@ private struct _EditScreen: View {
 				fullPreviewState = event
 			}
 		}
+	}
+
+	private func onExportAsVideo() {
+		let id = UUID()
+		appState.videoExports[id] = conversionSettings
+		openWindow(id: "exportProgress", value: id)
 	}
 
 	private func updatePreviewOnSettingsChange()  {

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0C9BA6F62DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9BA6F52DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift */; };
+		0C9BF1CC2E0C8C180087D301 /* ExportModifiedVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9BF1CB2E0C8C180087D301 /* ExportModifiedVideo.swift */; };
 		0CB0E7092DB737B900E012C1 /* PreviewVideoCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7082DB737B900E012C1 /* PreviewVideoCompositor.swift */; };
 		0CB0E7262DB8833B00E012C1 /* PreviewRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7252DB8833B00E012C1 /* PreviewRenderer.swift */; };
 		0CB0E7292DB971D800E012C1 /* FullPreviewStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB0E7282DB971D800E012C1 /* FullPreviewStream.swift */; };
@@ -88,6 +89,7 @@
 
 /* Begin PBXFileReference section */
 		0C9BA6F52DF4BF3C00E2007B /* CVPixelBuffer+convertToGIF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CVPixelBuffer+convertToGIF.swift"; sourceTree = "<group>"; };
+		0C9BF1CB2E0C8C180087D301 /* ExportModifiedVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportModifiedVideo.swift; sourceTree = "<group>"; };
 		0CB0E7082DB737B900E012C1 /* PreviewVideoCompositor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewVideoCompositor.swift; sourceTree = "<group>"; };
 		0CB0E7252DB8833B00E012C1 /* PreviewRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewRenderer.swift; sourceTree = "<group>"; };
 		0CB0E7282DB971D800E012C1 /* FullPreviewStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullPreviewStream.swift; sourceTree = "<group>"; };
@@ -251,6 +253,7 @@
 			isa = PBXGroup;
 			children = (
 				E3AE62861E5CD2F300035A2F /* App.swift */,
+				0C9BF1CB2E0C8C180087D301 /* ExportModifiedVideo.swift */,
 				E3A6BD102245345C00F62256 /* Constants.swift */,
 				E33552F02ACAC3280023AAE9 /* AppState.swift */,
 				E3FC365B2377FA0000CF7C59 /* Shared.swift */,
@@ -459,6 +462,7 @@
 				C2040B8920435871004EE259 /* GifskiWrapper.swift in Sources */,
 				0CC9BFA42DED043B0011D74D /* PreviewRendererContext.swift in Sources */,
 				8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */,
+				0C9BF1CC2E0C8C180087D301 /* ExportModifiedVideo.swift in Sources */,
 				0CC9BFA22DECF99A0011D74D /* SendableTexture.swift in Sources */,
 				E3908B7426754568000723A7 /* EstimatedFileSize.swift in Sources */,
 				E33552F32ACAC5D80023AAE9 /* StartScreen.swift in Sources */,

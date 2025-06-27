@@ -28,6 +28,12 @@ struct AppMain: App {
 				.keyboardShortcut("o")
 				.disabled(appState.isConverting)
 			}
+			CommandGroup(replacing: .importExport) {
+				Button("Export as Video…") {
+					appState.onExportAsVideo?()
+				}
+				.disabled(appState.onExportAsVideo == nil)
+			}
 			CommandGroup(replacing: .textEditing) {
 				Toggle("Preview", isOn: appState.toggleMode(mode: .preview))
 					.keyboardShortcut("p", modifiers: [.command, .shift])
@@ -48,6 +54,15 @@ struct AppMain: App {
 				SendFeedbackButton()
 			}
 		}
+		WindowGroup(id: "exportProgress", for: UUID.self) { progressID in
+			ExportModifiedVideo(exportID: progressID)
+				.environment(appState)
+		}
+		.windowResizability(.contentSize)
+		.windowToolbarStyle(.unifiedCompact)
+		.defaultPosition(.center)
+		.restorationBehavior(.disabled)
+		.handlesExternalEvents(matching: [])
 	}
 
 	private func setUpConfig() {
