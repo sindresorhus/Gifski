@@ -2,7 +2,7 @@
 
 This is a step-by-step guide on how to create a Quick Action shortcut in the Shortcuts app to convert videos to GIFs using Gifski.
 
-In the end you'll have a quick action that let's you quick convert videos to GIFs like this:
+In the end you'll have a quick action that lets you quickly convert videos to GIFs like this:
 
 <img src="Usage-Example.jpg" width="720" height="450">
 
@@ -59,8 +59,7 @@ This will allow you to select files to convert if you ever run the Shortcut outs
 <img src="Step6.jpg" width="720" height="450">
 
 
-## Step 7: Add the Gifski `Convert Video to GIF` Action
-- In the right sidebar, click on the `Action Library` button (the one with the stars in a rounded rectangle).`
+- In the right sidebar, click on the `Action Library` button (the one with the stars in a rounded rectangle).
 - Then type in `gifski` and `Convert Video to Animated Gif` should appear.
 - Drag the `Convert Video to Animated Gif` action into your shortcut, right below the `Ask For` action if you added it, and above the `Stop and Output` action.
 
@@ -82,7 +81,7 @@ This will allow you to select files to convert if you ever run the Shortcut outs
 
 ## Step 10: Change the Output Behavior (Optional)
 - By default, if there is nowhere to save the GIF, it will do nothing.
-- click on the `Do Nothing` button in the `Stop and Output Animated Gif` action and change it to `Respond`.
+- Click on the `Do Nothing` button in the `Stop and Output Animated Gif` action and change it to `Respond`.
 <img src="StepA.jpg" width="720" height="450">
 
 ### All done!

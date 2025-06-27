@@ -97,11 +97,11 @@ or like this:
 
 <img src="Stuff/QuickAction/Usage-Example-2.jpg" width="720" height="450">
 
-Here is how it looks like in the Shortcut app:
+Here is how it looks in the Shortcut app:
 
 <img src="Stuff/QuickAction/Example-Shortcut.jpg" width="720" height="450">
 
-Don't know how to create a shortcuts? Read this [step by step guide or watch the tutorial video](Stuff/QuickAction/How%20To%20Create%20a%20Quick%20Action%20Shortcut.md)
+Don't know how to create a shortcut? Follow this [step-by-step guide](Stuff/QuickAction/How%20To%20Create%20a%20Quick%20Action%20Shortcut.md), which includes a tutorial video.
 
 ## FAQ
 
