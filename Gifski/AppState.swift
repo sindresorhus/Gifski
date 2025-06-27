@@ -42,6 +42,11 @@ final class AppState {
 		mode == .editCrop
 	}
 
+	var onExportAsVideo: (() -> Void)?
+
+	var videoExports: [UUID: GIFGenerator.Conversion] = [:]
+
+
 	/**
 	Provides a binding for a toggle button to access a certain mode.
 

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0CBD7F2E2E0F044C00E2C5E4 /* ExportModifiedVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CBD7F2D2E0F044C00E2C5E4 /* ExportModifiedVideo.swift */; };
 		0E7925202329BDBE00058B94 /* ShareController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E79251F2329BDBE00058B94 /* ShareController.swift */; };
 		0E7925282329BDBE00058B94 /* Share Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0E79251B2329BDBE00058B94 /* Share Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8588EB0D22A424B800030A59 /* ResizableDimensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8588EB0C22A424B800030A59 /* ResizableDimensions.swift */; };
@@ -77,6 +78,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0CBD7F2D2E0F044C00E2C5E4 /* ExportModifiedVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportModifiedVideo.swift; sourceTree = "<group>"; };
 		0E79251B2329BDBE00058B94 /* Share Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Share Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E79251F2329BDBE00058B94 /* ShareController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; lineEnding = 0; path = ShareController.swift; sourceTree = "<group>"; usesTabs = 1; };
 		0E7925242329BDBE00058B94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				E33552EE2ACAC3190023AAE9 /* MainScreen.swift */,
 				E33552F22ACAC5D80023AAE9 /* StartScreen.swift */,
 				E37F68E32ACADA40007F1A7F /* EditScreen.swift */,
+				0CBD7F2D2E0F044C00E2C5E4 /* ExportModifiedVideo.swift */,
 				E37F68E12ACAD9F1007F1A7F /* ConversionScreen.swift */,
 				E37F68DF2ACAD9D1007F1A7F /* CompletedScreen.swift */,
 				E3908B7326754568000723A7 /* EstimatedFileSize.swift */,
@@ -429,6 +432,7 @@
 				E37F68E42ACADA40007F1A7F /* EditScreen.swift in Sources */,
 				E3961F802AC9F2A700708EB7 /* Intents.swift in Sources */,
 				E30C8EEF29387E7A002E053F /* Gifski.swift in Sources */,
+				0CBD7F2E2E0F044C00E2C5E4 /* ExportModifiedVideo.swift in Sources */,
 				E3FC365C2377FA0000CF7C59 /* Shared.swift in Sources */,
 				E37F68E02ACAD9D1007F1A7F /* CompletedScreen.swift in Sources */,
 				E33552EF2ACAC3190023AAE9 /* MainScreen.swift in Sources */,
