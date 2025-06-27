@@ -87,6 +87,19 @@ brew install SwiftLint
 xcode-select --install
 ```
 
+## Tips
+
+You can create a Quick Action shortcut in the Shortcuts app to quickly convert videos to GIFs like this:
+
+<img src="Stuff/QuickAction/Usage-Example.jpg" width="720" height="450">
+<img src="Stuff/QuickAction/Usage-Example-2.jpg" width="720" height="450">
+
+Here is how it looks like in the Shortcut app:
+
+<img src="Stuff/QuickAction/Example-Shortcut.jpg" width="720" height="450">
+
+Don't know how to create a shortcuts? Read this [step by step guide or watch the tutorial video](Stuff/QuickAction/How To Create a Quick Action Shortcut.md)
+
 ## FAQ
 
 #### The generated GIFs are huge!
