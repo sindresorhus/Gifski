@@ -89,19 +89,12 @@ xcode-select --install
 
 ## Quick Action Shortcut
 
-You can create a Quick Action shortcut in the Shortcuts app to quickly convert videos to GIFs like this:
+Gifski allows you to streamline your workflow by creating a Quick Action shortcut in the Shortcuts app, enabling fast video to GIF conversions with just a few clicks. This feature integrates directly into macOS, letting you trigger conversions from the Finder or other apps without opening Gifski manually. With customizable shortcut options, you can tailor the action to fit your specific needs, making the conversion process both efficient and user-friendly.
 
-<img src="Stuff/QuickAction/Usage-Example.jpg" width="720" height="450">
-
-or like this:
-
-<img src="Stuff/QuickAction/Usage-Example-2.jpg" width="720" height="450">
-
-Here is how it looks in the Shortcut app:
+Here is an example shortcut that converts a video to a GIF:
 
 <img src="Stuff/QuickAction/Example-Shortcut.jpg" width="720" height="450">
 
-Don't know how to create a shortcut? Follow this [step-by-step guide](Stuff/QuickAction/How%20To%20Create%20a%20Quick%20Action%20Shortcut.md), which includes a tutorial video.
 
 ## FAQ
 
