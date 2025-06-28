@@ -180,11 +180,13 @@ actor GIFGenerator {
 					let timestampSlippage = actualTime - requestedTime
 					let actualReverseTimestamp = max(0, expectedReverseTimestamp + timestampSlippage.seconds)
 
-					try gifski?.addFrame(
-						image,
-						frameNumber: reverseFrameNumber,
-						presentationTimestamp: actualReverseTimestamp
-					)
+					if frameNumber != reverseFrameNumber {
+						try gifski?.addFrame(
+							image,
+							frameNumber: reverseFrameNumber,
+							presentationTimestamp: actualReverseTimestamp
+						)
+					}
 				}
 
 				index += 1
