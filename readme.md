@@ -91,9 +91,11 @@ xcode-select --install
 
 ## Quick Action shortcut
 
-Gifski allows you to streamline your workflow by creating a Quick Action shortcut in the Shortcuts app, enabling fast video to GIF conversions with just a few clicks. This feature integrates directly into macOS, letting you trigger conversions from the Finder or other apps without opening Gifski manually. With customizable shortcut options, you can tailor the action to fit your specific needs, making the conversion process both efficient and user-friendly.
+Convert videos to GIFs directly from Finder using the built-in [Quick Action](https://support.apple.com/en-mz/guide/mac-help/mchl97ff9142/mac) shortcut. It works without opening Gifski, and you can create multiple shortcuts with different settings, such as quality, dimensions, or looping, to match your workflow.
 
-[Download shortcut](Stuff/Quick%20Convert%20With%20Gifski.shortcut)
+[Download shortcut](https://www.icloud.com/shortcuts/8a00497b180742139474d5470857d699)
+
+**Requires the [TestFlight version](https://testflight.apple.com/join/iCyHNNIA) of Gifski**
 
 ## FAQ
 
