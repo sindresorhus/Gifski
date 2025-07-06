@@ -87,6 +87,16 @@ brew install SwiftLint
 xcode-select --install
 ```
 
+## Tips
+
+## Quick Action shortcut
+
+Convert videos to GIFs directly from Finder using the built-in [Quick Action](https://support.apple.com/en-mz/guide/mac-help/mchl97ff9142/mac) shortcut. It works without opening Gifski, and you can create multiple shortcuts with different settings, such as quality, dimensions, or looping, to match your workflow.
+
+[Download shortcut](https://www.icloud.com/shortcuts/8a00497b180742139474d5470857d699)
+
+**Requires the [TestFlight version](https://testflight.apple.com/join/iCyHNNIA) of Gifski**
+
 ## FAQ
 
 #### The generated GIFs are huge!
