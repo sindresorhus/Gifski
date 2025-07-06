@@ -87,13 +87,13 @@ brew install SwiftLint
 xcode-select --install
 ```
 
-## Quick Action Shortcut
+## Tips
+
+## Quick Action shortcut
 
 Gifski allows you to streamline your workflow by creating a Quick Action shortcut in the Shortcuts app, enabling fast video to GIF conversions with just a few clicks. This feature integrates directly into macOS, letting you trigger conversions from the Finder or other apps without opening Gifski manually. With customizable shortcut options, you can tailor the action to fit your specific needs, making the conversion process both efficient and user-friendly.
 
-[Download an example Quick Convert With Gifski.shortcut](Stuff/Quick%20Convert%20With%20Gifski.shortcut)
-
-
+[Download shortcut](Stuff/Quick%20Convert%20With%20Gifski.shortcut)
 
 ## FAQ
 
