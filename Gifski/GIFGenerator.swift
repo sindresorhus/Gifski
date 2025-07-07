@@ -180,6 +180,7 @@ actor GIFGenerator {
 					let timestampSlippage = actualTime - requestedTime
 					let actualReverseTimestamp = max(0, expectedReverseTimestamp + timestampSlippage.seconds)
 
+					// Prevent duplicate frame with the same frame number causing a unwanted frame at the end of the GIF.
 					if frameNumber != reverseFrameNumber {
 						try gifski?.addFrame(
 							image,
