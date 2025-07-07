@@ -32,6 +32,7 @@ struct AppMain: App {
 				Button("Export as Video…") {
 					appState.onExportAsVideo?()
 				}
+				.keyboardShortcut("e", modifiers: [.command])
 				.disabled(appState.onExportAsVideo == nil)
 			}
 			CommandGroup(replacing: .textEditing) {
@@ -54,15 +55,6 @@ struct AppMain: App {
 				SendFeedbackButton()
 			}
 		}
-		WindowGroup(id: "exportProgress", for: UUID.self) { progressID in
-			ExportModifiedVideo(exportID: progressID)
-				.environment(appState)
-		}
-		.windowResizability(.contentSize)
-		.windowToolbarStyle(.unifiedCompact)
-		.defaultPosition(.center)
-		.restorationBehavior(.disabled)
-		.handlesExternalEvents(matching: [])
 	}
 
 	private func setUpConfig() {

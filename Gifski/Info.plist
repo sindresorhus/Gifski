@@ -20,6 +20,7 @@
 			<key>NSExportableTypes</key>
 			<array>
 				<string>com.compuserve.gif</string>
+				<string>public.mpeg-4</string>
 			</array>
 		</dict>
 	</array>

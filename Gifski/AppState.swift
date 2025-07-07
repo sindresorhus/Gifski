@@ -44,9 +44,6 @@ final class AppState {
 
 	var onExportAsVideo: (() -> Void)?
 
-	var videoExports: [UUID: ExportModifiedVideo.Input] = [:]
-
-
 	/**
 	Provides a binding for a toggle button to access a certain mode.
 

@@ -60,6 +60,7 @@ private struct _EditScreen: View {
 	@State private var fullPreviewDebouncer = Debouncer(delay: .milliseconds(200))
 
 	@Binding private var outputCropRect: CropRect
+	@State private var isExportingAsVideo = false
 	private var overlay: NSView
 	private let fullPreviewStream: FullPreviewStream
 
@@ -186,12 +187,13 @@ private struct _EditScreen: View {
 				fullPreviewState = event
 			}
 		}
+		.sheet(isPresented: $isExportingAsVideo) {
+			ExportModifiedVideo(input: .init(conversion: conversionSettings, audioAssets: modifiedAssetAudioAssets, speed: Defaults[.outputSpeed], assetDuration: metadata.duration.toTimeInterval  ))
+		}
 	}
 
 	private func onExportAsVideo() {
-		let id = UUID()
-		appState.videoExports[id] = .init(conversion: conversionSettings, audioAssets: modifiedAssetAudioAssets)
-		openWindow(id: "exportProgress", value: id)
+		isExportingAsVideo = true
 	}
 
 	private func updatePreviewOnSettingsChange() {
@@ -221,7 +223,7 @@ private struct _EditScreen: View {
 			// We could have set the `rate` of the player instead of modifying the asset, but it's just easier to modify the asset as then it matches what we want to generate. Otherwise, we would have to translate trimming ranges to the correct speed, etc.
 			let outputSpeed = Defaults[.outputSpeed]
 			async let changedSpeedAssetResult = try await asset.firstVideoTrack?.extractToNewAssetAndChangeSpeed(to: outputSpeed)
-			async let changedSpeedAudioAssetsResult = try await audioAssets.taskGroupMap {
+			async let changedSpeedAudioAssetsResult = try await audioAssets.concurrentMap {
 				try await $0.firstAudioTrack?.extractToNewAssetAndChangeSpeed(to: outputSpeed)
 			}
 

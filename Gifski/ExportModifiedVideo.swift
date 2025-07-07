@@ -4,9 +4,9 @@ import SwiftUI
 
 struct ExportModifiedVideo: View {
 	@Environment(AppState.self) private var appState
-	@Binding var exportID: UUID?
-	@State private var state = ConvertState.empty(error: nil)
-	@State private var isFileExporterPresented = false
+	@Environment(\.dismiss) private var dismiss
+	let input: Self.Input
+	@State private var state = ConvertState.generating(progress: 0)
 
 	var body: some View {
 		VStack(spacing: 20) {
@@ -15,27 +15,21 @@ struct ExportModifiedVideo: View {
 				if let error {
 					Text(error)
 				}
-			case let .generating(progress: progress):
-				ExportProgress(text: "Exporting", progress: progress)
-			case let .finished(_, _, player, aspectRatio):
-				VideoPlayer(player: player)
-					.aspectRatio(aspectRatio, contentMode: .fit)
-					.clipShape(RoundedRectangle(cornerRadius: 8))
-				Button("Save") {
-					isFileExporterPresented = true
+				Button("Cancel") {
+					dismiss()
 				}
-				.keyboardShortcut("s")
+			case .generating, .finished:
+				ProgressView()
+				if input.gifDuration >= 20 {
+					Button("Cancel") {
+						dismiss()
+					}
+				}
 			}
 		}
-		.frame(width: ExportProgress.width + 50, height: ExportProgress.height + 50)
 		.padding()
 		.task(priority: .medium) {
 			do {
-				guard let exportID,
-					  let input = appState.videoExports[exportID] else {
-					self.state = .empty(error: "Could not find video to export")
-					return
-				}
 				let task = Self.exportModifiedVideo(input: input)
 				self.state = .generating(progress: 0)
 				await withTaskCancellationHandler {
@@ -54,7 +48,7 @@ struct ExportModifiedVideo: View {
 				try await Task.sleep(for: .seconds(1.0))
 
 				self.state = .finished(
-					filename: input.conversion.sourceURL.filenameWithoutExtension + " modified.mov",
+					filename: input.conversion.sourceURL.filenameWithoutExtension + " modified.mp4",
 					url: outputURL,
 					player: AVPlayer(url: outputURL),
 					aspectRatio: aspectRatio
@@ -66,13 +60,25 @@ struct ExportModifiedVideo: View {
 				self.state = .empty(error: error.localizedDescription)
 			}
 		}
-		.fileExporter(isPresented: $isFileExporterPresented, item: exportableMOV, defaultFilename: defaultFileName) {
+		.fileExporter(
+			isPresented: .init(get: {
+				if case .finished = state {
+					return true
+				}
+				return false
+			}, set: { _ in }),
+			item: exportableMP4,
+			defaultFilename: defaultFileName
+		) {
 			do {
 				let url = try $0.get()
 				try? url.setAppAsItemCreator()
+				dismiss()
 			} catch {
 				state = .empty(error: error.localizedDescription)
 			}
+		} onCancellation: {
+			dismiss()
 		}
 		.fileDialogCustomizationID("export")
 		.fileDialogMessage("Choose where to save the video")
@@ -84,6 +90,14 @@ struct ExportModifiedVideo: View {
 	struct Input {
 		let conversion: GIFGenerator.Conversion
 		let audioAssets: [AVAsset]
+		let gifDuration: Double
+
+		init(conversion: GIFGenerator.Conversion, audioAssets: [AVAsset], speed: Double, assetDuration: TimeInterval) {
+			self.conversion = conversion
+			self.audioAssets = audioAssets
+			let range = self.conversion.timeRange ?? 0...assetDuration
+			gifDuration = range.length * speed
+		}
 	}
 
 	private var defaultFileName: String {
@@ -91,7 +105,7 @@ struct ExportModifiedVideo: View {
 		case let .finished(filename, _, _, _):
 			filename
 		default:
-			"Untitled.mov"
+			"Untitled.mp4"
 		}
 	}
 
@@ -101,9 +115,9 @@ struct ExportModifiedVideo: View {
 		}
 	}
 
-	private var exportableMOV: ExportableMOV? {
+	private var exportableMP4: ExportableMP4? {
 		exportURL.map {
-			ExportableMOV(url: $0)
+			ExportableMP4(url: $0)
 		}
 	}
 
@@ -126,7 +140,7 @@ struct ExportModifiedVideo: View {
 		ProgressableTask { progressContinuation in
 			let exportComposition = try await ExportComposition(input: input)
 
-			let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent( "\(UUID().uuidString).mov")
+			let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent( "\(UUID().uuidString).mp4")
 
 			try? FileManager.default.removeItem(at: outputURL)
 			guard let exportSession = AVAssetExportSession(asset: exportComposition.composition, presetName: AVAssetExportPresetHighestQuality) else {
@@ -149,7 +163,7 @@ struct ExportModifiedVideo: View {
 			defer {
 				progressTask.cancel()
 			}
-			try await exportSession.export(to: outputURL, as: .mov)
+			try await exportSession.export(to: outputURL, as: .mp4)
 			return (outputURL, exportComposition.aspectRatio)
 		}
 	}
@@ -264,7 +278,7 @@ struct ExportModifiedVideo: View {
 			instruction.timeRange = CMTimeRange(start: .zero, duration: duration)
 
 			let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compositionTrack)
-			layerInstruction.setTransform(.init(scaledBy: scale).translatedBy(point: -cropRectInPixels.origin / scale), at: .zero)
+			layerInstruction.setTransform(.init(scaledBy: scale).translated(by: -cropRectInPixels.origin / scale), at: .zero)
 			instruction.layerInstructions = [layerInstruction]
 
 			videoComposition.instructions = [instruction]
@@ -299,10 +313,10 @@ struct ExportModifiedVideo: View {
 		}
 	}
 
-	private struct ExportableMOV: Transferable {
+	private struct ExportableMP4: Transferable {
 		let url: URL
 		static var transferRepresentation: some TransferRepresentation {
-			FileRepresentation(exportedContentType: .quickTimeMovie) { .init($0.url) }
+			FileRepresentation(exportedContentType: .mpeg4Movie) { .init($0.url) }
 				.suggestedFileName { $0.url.filename }
 		}
 	}

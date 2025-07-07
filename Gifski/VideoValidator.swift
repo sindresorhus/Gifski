@@ -149,7 +149,7 @@ enum VideoValidator {
 
 		let audioTracks = (try await asset.loadTracks(withMediaType: .audio))
 
-		let audioAssets = try await audioTracks.taskGroupMap {
+		let audioAssets = try await audioTracks.concurrentMap {
 			guard let newAsset = try await $0.extractToNewAsset() else {
 				throw NSError.appError("Could not extract the audio from your video.", recoverySuggestion: "")
 			}

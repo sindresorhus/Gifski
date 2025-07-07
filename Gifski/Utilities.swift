@@ -2797,7 +2797,7 @@ extension CMTimeRange {
 	}
 }
 
-extension ClosedRange where Bound == Double {
+extension ClosedRange<Double> {
 	var cmTimeRange: CMTimeRange {
 		.init(start: .init(seconds: lowerBound, preferredTimescale: .video), end: .init(seconds: upperBound, preferredTimescale: .video))
 	}
@@ -5430,8 +5430,8 @@ extension AVPlayerView {
 
 		Task {
 			/**
-			 In about 20% of my debug sessions, `beginTrimming` will crash because canBeginTrimming is false, so I added this check. I've seen multiple cases where this guard catches into the else statement and the trimming controls work just fine: in each and every case where canBeginTrimming was false, this function gets called again with a value of true.
-			 */
+			In about 20% of debug sessions, `beginTrimming` will crash because `canBeginTrimming` is false. We have seen multiple cases where this guard catches into the else statement and the trimming controls work just fine: in each and every case where `canBeginTrimming` was false, this function gets called again with a value of true.
+			*/
 			guard canBeginTrimming else {
 				return
 			}
@@ -6584,56 +6584,37 @@ extension CGAffineTransform {
 		self = Self(scaleX: size.width, y: size.height)
 	}
 
-	func translatedBy(point: CGPoint) -> CGAffineTransform {
+	func translated(by point: CGPoint) -> Self {
 		translatedBy(x: point.x, y: point.y)
 	}
 }
 
 
 
-extension Sequence {
-	/**
-	 Transform each input as part of a task group
-	 */
-	func taskGroupMap<T>(
-		_ transform: @escaping (Element) async throws -> T
+extension Sequence where Element: Sendable {
+	func concurrentMap<T: Sendable>(
+		withPriority priority: TaskPriority? = nil,
+		_ transform: @Sendable (Element) async throws -> T
 	) async throws -> [T] {
-		try await withThrowingTaskGroup { group in
-			for (offset, element) in enumerated() {
-				group.addTask {
-					StableMapItem(offset: offset, data: try await transform(element))
+		try await withoutActuallyEscaping(transform) { escapingTransform in
+			try await withThrowingTaskGroup(of: (offset: Int, value: T).self) { group -> [T] in
+				for (offset, element) in enumerated() {
+					group.addTask(priority: priority) {
+						await (offset, try escapingTransform(element))
+					}
 				}
+
+				var result = [(offset: Int, value: T)]()
+				result.reserveCapacity(underestimatedCount)
+
+				while let next = try await group.next() {
+					result.append(next)
+				}
+
+				return result
+					.sorted { $0.offset < $1.offset }
+					.map(\.value)
 			}
-			return try await group.accumulate()
 		}
 	}
-}
-
-extension ThrowingTaskGroup where ChildTaskResult: Stable {
-	/**
-	Accumulate all results into an array and sorts them back into the original order
-	 */
-	func accumulate() async throws -> [ChildTaskResult.Data] {
-		let unorderedResult = try await reduce(into: []) {
-			$0.append($1)
-		}
-		return unorderedResult.sorted {
-			$0.offset < $1.offset
-		}
-		.map(\.data)
-	}
-}
-
-struct StableMapItem<Data>: Stable {
-	let offset: Int
-	let data: Data
-}
-
-/**
-Used with ThrowingTaskGroup to keep the order of child tasks stable
- */
-protocol Stable {
-	associatedtype Data
-	var offset: Int { get }
-	var data: Data { get }
 }
