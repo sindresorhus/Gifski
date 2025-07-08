@@ -2130,6 +2130,8 @@ extension CGSize {
 		.init(width: lhs.width / rhs.width, height: lhs.height / rhs.height)
 	}
 
+	static let one = Self(widthHeight: 1)
+
 	init(widthHeight: Double) {
 		self.init(width: widthHeight, height: widthHeight)
 	}
@@ -6586,35 +6588,5 @@ extension CGAffineTransform {
 
 	func translated(by point: CGPoint) -> Self {
 		translatedBy(x: point.x, y: point.y)
-	}
-}
-
-
-
-extension Sequence where Element: Sendable {
-	func concurrentMap<T: Sendable>(
-		withPriority priority: TaskPriority? = nil,
-		_ transform: @Sendable (Element) async throws -> T
-	) async throws -> [T] {
-		try await withoutActuallyEscaping(transform) { escapingTransform in
-			try await withThrowingTaskGroup(of: (offset: Int, value: T).self) { group -> [T] in
-				for (offset, element) in enumerated() {
-					group.addTask(priority: priority) {
-						await (offset, try escapingTransform(element))
-					}
-				}
-
-				var result = [(offset: Int, value: T)]()
-				result.reserveCapacity(underestimatedCount)
-
-				while let next = try await group.next() {
-					result.append(next)
-				}
-
-				return result
-					.sorted { $0.offset < $1.offset }
-					.map(\.value)
-			}
-		}
 	}
 }
