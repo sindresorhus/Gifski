@@ -6579,6 +6579,7 @@ extension CompositePreviewFragmentUniforms: Equatable {
 	}
 }
 
+
 extension CGAffineTransform {
 	init(scaledBy size: CGSize) {
 		self = Self(scaleX: size.width, y: size.height)
@@ -6588,7 +6589,6 @@ extension CGAffineTransform {
 		translatedBy(x: point.x, y: point.y)
 	}
 }
-
 
 
 extension Sequence where Element: Sendable {
