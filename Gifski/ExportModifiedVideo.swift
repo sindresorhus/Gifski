@@ -9,11 +9,11 @@ struct ExportModifiedVideoView: View {
 
 	var body: some View {
 		ZStack{}
-			.sheet(isPresented: isExportModifiedVideoProgressSheetPresented) {
+			.sheet(isPresented: isProgressSheetPresented) {
 				ProgressView()
 			}
 			.fileExporter(
-				isPresented: isExportModifiedVideoFileExporterPresented,
+				isPresented: isFileExporterPresented,
 				item: exportableMP4,
 				defaultFilename: defaultExportModifiedFileName
 			) {
@@ -27,6 +27,11 @@ struct ExportModifiedVideoView: View {
 			.fileDialogCustomizationID("export")
 			.fileDialogMessage("Choose where to save the video")
 			.fileDialogConfirmationLabel("Save")
+			.alert2(
+				"Export video Limitation",
+				message: "Exporting a video with audio is not supported. The audio track will be ignored.",
+				isPresented: isAudioWarningPresented
+			)
 	}
 
 	private var exportableMP4: ExportableMP4? {
@@ -40,7 +45,7 @@ struct ExportModifiedVideoView: View {
 		sourceURL.filenameWithoutExtension + " modified.mp4"
 	}
 
-	private var isExportModifiedVideoProgressSheetPresented: Binding<Bool> {
+	private var isProgressSheetPresented: Binding<Bool> {
 		.init(
 			get: {
 				if case .exporting = state {
@@ -59,14 +64,15 @@ struct ExportModifiedVideoView: View {
 		)
 	}
 
-	private var isExportModifiedVideoFileExporterPresented: Binding<Bool> {
+	private var isFileExporterPresented: Binding<Bool> {
 		.init(
 			get: {
 				if case .exported = state {
 					return true
 				}
 				return false
-			}, set: {
+			},
+			set: {
 				guard !$0,
 				   case let .exported(url) = state else {
 					return
@@ -77,8 +83,27 @@ struct ExportModifiedVideoView: View {
 		)
 	}
 
+	private var isAudioWarningPresented: Binding<Bool> {
+		.init(
+			get: {
+				if case .audioWarning = state {
+					return true
+				}
+				return false
+			},
+			set: {
+				guard !$0,
+					  case .audioWarning = state else{
+					return
+				}
+				appState.onExportAsVideo?()
+			}
+		)
+	}
+
 	enum State {
 		case idle
+		case audioWarning
 		case exporting(Task<Void, Never>)
 		case exported(URL)
 	}

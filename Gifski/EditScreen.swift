@@ -80,7 +80,10 @@ private struct _EditScreen: View {
 			trimmingAVPlayer
 			controls
 			bottomBar
-			ExportModifiedVideoView(state: $exportModifiedVideoState, sourceURL: url)
+			ExportModifiedVideoView(
+				state: $exportModifiedVideoState,
+				sourceURL: url
+			)
 		}
 		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
@@ -167,7 +170,7 @@ private struct _EditScreen: View {
 		.onDisappear {
 			appState.onExportAsVideo = nil
 			switch exportModifiedVideoState {
-			case .idle:
+			case .idle, .audioWarning:
 				break
 			case .exporting(let task):
 				task.cancel()
@@ -190,9 +193,21 @@ private struct _EditScreen: View {
 	}
 
 	private func onExportAsVideo() {
-		guard case .idle = exportModifiedVideoState else {
+		switch exportModifiedVideoState {
+		case .idle, .audioWarning:
+			break
+		case .exporting, .exported:
 			return
 		}
+
+		if metadata.originalVideoHasAudio {
+			if (SSApp.ranOnce(identifier: "audioTrackExportWarning") {
+				exportModifiedVideoState = .audioWarning
+			}) {
+				return
+			}
+		}
+
 		exportModifiedVideoState = .exporting(Task {
 			do {
 				let outputURL = try await exportModifiedVideo(conversion: conversionSettings)
