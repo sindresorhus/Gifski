@@ -118,7 +118,7 @@ enum VideoValidator {
 			)
 		}
 
-		guard try await asset.videoMetadata != nil else {
+		guard let oldVideoMetadata = try await asset.videoMetadata else {
 			throw NSError.appError(
 				"The video metadata is not readable.",
 				recoverySuggestion: "Please open an issue on https://github.com/sindresorhus/Gifski or email sindresorhus@gmail.com. ZIP the video and attach it.\n\nInclude this info:\n\n\(try await asset.debugInfo)"
@@ -139,13 +139,15 @@ enum VideoValidator {
 		// We extract the video track into a new asset to remove the audio and to prevent problems if the video track duration is shorter than the total asset duration. If we don't do this, the video will show as black in the trim view at the duration where there's no video track, and it will confuse users. Also, if the user trims the video to just the black no video track part, the conversion would continue, but there's nothing to convert, so it would be stuck at 0%.
 		guard
 			let newAsset = try await firstVideoTrack.extractToNewAsset(),
-			let newVideoMetadata = try await newAsset.videoMetadata
+			var newVideoMetadata = try await newAsset.videoMetadata
 		else {
 			throw NSError.appError(
 				"Could not read the video.",
 				recoverySuggestion: "This should not happen. Email sindresorhus@gmail.com and include this info:\n\n\(try await asset.debugInfo)"
 			)
 		}
+
+		newVideoMetadata.originalVideoHasAudio = oldVideoMetadata.originalVideoHasAudio
 
 		// Trim asset
 		do {

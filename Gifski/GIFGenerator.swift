@@ -380,6 +380,92 @@ extension GIFGenerator.Conversion {
 			return .seconds(bounce ? (duration * 2) : duration)
 		}
 	}
+
+	var videoWithoutBounceDuration: Duration {
+		get async throws {
+			.seconds(try await gifDuration.toTimeInterval / (bounce ? 2 : 1))
+		}
+	}
+
+	/**
+	- Returns: The current scale of the `dimensions` compared to the dimensions of the video track.
+	 */
+	var scale: CGSize {
+		get async throws {
+			guard let trackSize = try await trackSize else {
+				return .one
+			}
+			guard let dimensions = dimensionsAsSize else {
+				return trackSize
+			}
+			return dimensions / trackSize
+		}
+	}
+
+	/**
+	- Returns: Dimensions of the first video track
+	 */
+	var trackSize: CGSize? {
+		get async throws {
+			try await asset.firstVideoTrack?.dimensions
+		}
+	}
+
+	var dimensionsAsSize: CGSize? {
+		dimensions.map {
+			.init(width: Double($0.0), height: Double($0.1))
+		}
+	}
+
+	/**
+	The size of the output render without taking crop into account
+	 */
+	var renderSize: CGSize {
+		get async throws {
+			if let dimensionsAsSize {
+				return dimensionsAsSize
+			}
+			guard let trackSize = try await trackSize else {
+				throw Error.invalidDimensions
+			}
+			return trackSize
+		}
+	}
+
+	/**
+	- Returns: Crop rect in pixels, if there is no crop rect then it returns the full render size.
+	 */
+	var cropRectInPixels: CGRect {
+		get async throws {
+			(crop ?? .initialCropRect).unnormalize(forDimensions: try await renderSize)
+		}
+	}
+
+	/**
+	- Returns: The time range used to export the modified video (ie not the GIF export)
+	 */
+	var exportModifiedVideoTimeRange: CMTimeRange {
+		get async throws {
+			if let timeRange {
+				return timeRange.cmTimeRange
+			}
+			return (0...(try await videoWithoutBounceDuration.toTimeInterval)).cmTimeRange
+		}
+	}
+
+	var firstVideoTrack: AVAssetTrack {
+		get async throws {
+			guard let videoTrack = try await asset.firstVideoTrack else {
+				throw Error.noVideoTrack
+			}
+			return videoTrack
+		}
+	}
+
+	enum Error: Swift.Error {
+		case invalidDimensions
+		case noVideoTrack
+	}
 }
 
 extension GIFGenerator {

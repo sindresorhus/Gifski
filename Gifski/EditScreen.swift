@@ -54,6 +54,7 @@ private struct _EditScreen: View {
 	@State private var fullPreviewDebouncer = Debouncer(delay: .milliseconds(200))
 
 	@Binding private var outputCropRect: CropRect
+	@State private var exportModifiedVideoState: ExportModifiedVideoView.State = .idle
 	private var overlay: NSView
 	private let fullPreviewStream: FullPreviewStream
 
@@ -79,6 +80,10 @@ private struct _EditScreen: View {
 			trimmingAVPlayer
 			controls
 			bottomBar
+			ExportModifiedVideoView(
+				state: $exportModifiedVideoState,
+				sourceURL: url
+			)
 		}
 		.background(.ultraThickMaterial)
 		.navigationTitle(url.lastPathComponent)
@@ -160,6 +165,18 @@ private struct _EditScreen: View {
 		.opacity(shouldShow ? 1 : 0)
 		.onAppear {
 			setUp()
+			appState.onExportAsVideo = onExportAsVideo
+		}
+		.onDisappear {
+			appState.onExportAsVideo = nil
+			switch exportModifiedVideoState {
+			case .idle, .audioWarning:
+				break
+			case .exporting(let task):
+				task.cancel()
+			case .exported(let uRL):
+				try? FileManager.default.removeItem(at: uRL)
+			}
 		}
 		.task {
 			try? await Task.sleep(for: .seconds(0.3))
@@ -173,6 +190,43 @@ private struct _EditScreen: View {
 				fullPreviewState = event
 			}
 		}
+	}
+
+	private func onExportAsVideo() {
+		switch exportModifiedVideoState {
+		case .idle, .audioWarning:
+			break
+		case .exporting, .exported:
+			// If another alert (like bounce warning) occurs when you activate this callback, the filexporter won't show and the state will be stuck on `.exported`. By reassigning the state this will force a swiftUI draw and bring up the file exporter.
+			exportModifiedVideoState = exportModifiedVideoState
+			return
+		}
+
+		if metadata.originalVideoHasAudio {
+			if (SSApp.ranOnce(identifier: "audioTrackExportWarning") {
+				exportModifiedVideoState = .audioWarning
+			}) {
+				return
+			}
+		}
+
+		exportModifiedVideoState = .exporting(Task {
+			do {
+				let outputURL = try await exportModifiedVideo(conversion: conversionSettings)
+				try await MainActor.run {
+					try Task.checkCancellation()
+					exportModifiedVideoState = .exported(outputURL)
+				}
+			} catch {
+				if Task.isCancelled || error.isCancelled {
+					return
+				}
+				await MainActor.run {
+					exportModifiedVideoState = .idle
+					appState.error = error
+				}
+			}
+		})
 	}
 
 	private func updatePreviewOnSettingsChange() {

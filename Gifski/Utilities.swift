@@ -1364,6 +1364,7 @@ extension AVAsset {
 		let duration: Duration
 		let frameRate: Double
 		let fileSize: Int
+		var originalVideoHasAudio: Bool
 	}
 
 	var videoMetadata: VideoMetadata? {
@@ -1372,6 +1373,7 @@ extension AVAsset {
 			async let frameRateResult = frameRate
 			async let fileSizeResult = fileSize
 			async let durationResult = load(.duration)
+			async let hasAudioResult = firstAudioTrack != nil
 
 			guard
 				let dimensions = try await dimensionsResult,
@@ -1382,12 +1384,14 @@ extension AVAsset {
 
 			let fileSize = try await fileSizeResult
 			let duration = try await durationResult
+			let hasAudio = try await hasAudioResult
 
 			return .init(
 				dimensions: dimensions,
 				duration: .seconds(duration.seconds),
 				frameRate: frameRate,
-				fileSize: fileSize
+				fileSize: fileSize,
+				originalVideoHasAudio: hasAudio
 			)
 		}
 	}
@@ -1680,6 +1684,20 @@ extension SSApp {
 			UserDefaults.standard.set(true, forKey: key)
 			execute()
 		}
+	}
+	
+	/**
+	Just like run once, but returns true if it ran
+	 */
+	static func ranOnce(identifier: String, _ execute: () -> Void) -> Bool {
+		let key = "SS_App_runOnce__\(identifier)"
+
+		if !UserDefaults.standard.bool(forKey: key) {
+			UserDefaults.standard.set(true, forKey: key)
+			execute()
+			return true
+		}
+		return false
 	}
 }
 
@@ -2125,6 +2143,12 @@ extension CGSize {
 	static func * (lhs: Self, rhs: Double) -> Self {
 		.init(width: lhs.width * rhs, height: lhs.height * rhs)
 	}
+
+	static func / (lhs: Self, rhs: Self) -> Self {
+		.init(width: lhs.width / rhs.width, height: lhs.height / rhs.height)
+	}
+
+	static let one = Self(widthHeight: 1)
 
 	init(widthHeight: Double) {
 		self.init(width: widthHeight, height: widthHeight)
@@ -2790,6 +2814,12 @@ extension CMTimeRange {
 		}
 
 		return start.seconds...end.seconds
+	}
+}
+
+extension ClosedRange<Double> {
+	var cmTimeRange: CMTimeRange {
+		.init(start: .init(seconds: lowerBound, preferredTimescale: .video), end: .init(seconds: upperBound, preferredTimescale: .video))
 	}
 }
 
@@ -6169,6 +6199,14 @@ extension CGPoint {
 			y: y.clamped(from: rect.minY, to: rect.maxY)
 		)
 	}
+
+	static func / (lhs: CGPoint, rhs: CGSize) -> CGPoint {
+		.init(x: lhs.x / rhs.width, y: lhs.y / rhs.height)
+	}
+
+	static prefix func - (lhs: CGPoint) -> CGPoint {
+		.init(x: -lhs.x, y: -lhs.y)
+	}
 }
 
 extension CGSize {
@@ -6558,5 +6596,15 @@ extension CompositePreviewFragmentUniforms: Equatable {
 		lhs.firstColor == rhs.firstColor &&
 		lhs.secondColor == rhs.secondColor &&
 		lhs.gridSize == rhs.gridSize
+	}
+}
+
+extension CGAffineTransform {
+	init(scaledBy size: CGSize) {
+		self = Self(scaleX: size.width, y: size.height)
+	}
+
+	func translated(by point: CGPoint) -> Self {
+		translatedBy(x: point.x, y: point.y)
 	}
 }
