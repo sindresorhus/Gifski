@@ -213,7 +213,8 @@ private struct _EditScreen: View {
 		exportModifiedVideoState = .exporting(Task {
 			do {
 				let outputURL = try await exportModifiedVideo(conversion: conversionSettings)
-				await MainActor.run {
+				try await MainActor.run {
+					try Task.checkCancellation()
 					exportModifiedVideoState = .exported(outputURL)
 				}
 			} catch {

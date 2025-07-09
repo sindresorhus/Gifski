@@ -2,6 +2,7 @@ import Foundation
 import AVKit
 import SwiftUI
 
+
 struct ExportModifiedVideoView: View {
 	@Environment(AppState.self) private var appState
 	@Binding var state: State
@@ -42,16 +43,18 @@ struct ExportModifiedVideoView: View {
 	}
 
 	private var defaultExportModifiedFileName: String {
-		sourceURL.filenameWithoutExtension + " modified.mp4"
+		"\(sourceURL.filenameWithoutExtension) modified.mp4"
 	}
 
 	private var isProgressSheetPresented: Binding<Bool> {
 		.init(
 			get: {
-				if case .exporting = state {
-					return true
+				switch state {
+				case .exporting:
+					true
+				default:
+					false
 				}
-				return false
 			},
 			set: {
 				guard !$0,
@@ -67,10 +70,12 @@ struct ExportModifiedVideoView: View {
 	private var isFileExporterPresented: Binding<Bool> {
 		.init(
 			get: {
-				if case .exported = state {
-					return true
+				switch state {
+				case .exported:
+					true
+				default:
+					false
 				}
-				return false
 			},
 			set: {
 				guard !$0,
@@ -86,10 +91,12 @@ struct ExportModifiedVideoView: View {
 	private var isAudioWarningPresented: Binding<Bool> {
 		.init(
 			get: {
-				if case .audioWarning = state {
-					return true
+				switch state {
+				case .audioWarning:
+					true
+				default:
+					false
 				}
-				return false
 			},
 			set: {
 				guard !$0,
@@ -106,6 +113,7 @@ struct ExportModifiedVideoView: View {
 		case audioWarning
 		case exporting(Task<Void, Never>)
 		case exported(URL)
+		
 	}
 
 	enum Error: Swift.Error {
