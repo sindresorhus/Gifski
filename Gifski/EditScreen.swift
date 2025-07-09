@@ -197,6 +197,8 @@ private struct _EditScreen: View {
 		case .idle, .audioWarning:
 			break
 		case .exporting, .exported:
+			// If another alert (like bounce warning) occurs when you activate this callback, the filexporter won't show and the state will be stuck on `.exported`. By reassigning the state this will force a swiftUI draw and bring up the file exporter.
+			exportModifiedVideoState = exportModifiedVideoState
 			return
 		}
 
