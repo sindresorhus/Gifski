@@ -61,6 +61,21 @@ private struct _EditScreen: View {
 	private let fullPreviewStream: FullPreviewStream
 	@State private var lastSpeed: Double?
 
+	/// Estimated number of frames based on current duration and FPS settings
+	private var estimatedFrameCount: Int {
+		let duration: Double
+		if let timeRange = timeRange {
+			duration = timeRange.upperBound - timeRange.lowerBound
+		} else {
+			duration = metadata.duration.toTimeInterval
+		}
+		return Int(duration * Double(frameRate))
+	}
+
+	/// Whether the current settings would result in too few frames for a valid GIF
+	private var hasLowFrameCount: Bool {
+		estimatedFrameCount < 2
+	}
 
 	init(
 		url: URL,
@@ -360,8 +375,26 @@ private struct _EditScreen: View {
 		.fixedSize()
 	}
 
+	@ViewBuilder
+	private var lowFrameCountWarning: some View {
+		HStack(spacing: 4) {
+			Image(systemName: "exclamationmark.triangle.fill")
+				.foregroundStyle(.orange)
+			Text("GIF requires at least 2 frames. Current: \(estimatedFrameCount)")
+				.foregroundStyle(.secondary)
+		}
+		.font(.callout)
+		.padding(.horizontal, 8)
+		.padding(.vertical, 4)
+		.background(Color.orange.opacity(0.1))
+		.clipShape(.rect(cornerRadius: 6))
+	}
+
 	private var bottomBar: some View {
 		HStack {
+			if hasLowFrameCount {
+				lowFrameCountWarning
+			}
 			Spacer()
 			Button("Convert") {
 				appState.navigationPath.append(.conversion(conversionSettings))
@@ -370,7 +403,9 @@ private struct _EditScreen: View {
 			.padding(.top, -1) // Makes the bar have equal spacing on top and bottom.
 		}
 		.overlay {
-			EstimatedFileSizeView(model: estimatedFileSizeModel)
+			if !hasLowFrameCount {
+				EstimatedFileSizeView(model: estimatedFileSizeModel)
+			}
 		}
 		.padding()
 		.padding(.top, -16)
