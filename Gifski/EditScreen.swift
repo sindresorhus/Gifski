@@ -49,6 +49,7 @@ private struct _EditScreen: View {
 	@State private var loopCount = 0
 	@State private var isKeyframeRateChecked = false
 	@State private var isReversePlaybackWarningPresented = false
+	@State private var isLowFrameCountWarningDismissed = false
 	@State private var resizableDimensions = Dimensions.percent(1, originalSize: .init(widthHeight: 100))
 	@State private var shouldShow = false
 	@State private var fullPreviewState = FullPreviewGenerationEvent.initialState
@@ -156,6 +157,7 @@ private struct _EditScreen: View {
 		.onChange(of: timeRange) {
 			estimatedFileSizeModel.updateEstimate()
 			updatePreviewOnSettingsChange()
+			isLowFrameCountWarningDismissed = false
 		}
 		.onChange(of: bounceGIF) {
 			estimatedFileSizeModel.updateEstimate()
@@ -163,6 +165,7 @@ private struct _EditScreen: View {
 		.onChange(of: frameRate) {
 			estimatedFileSizeModel.updateEstimate()
 			updatePreviewOnSettingsChange()
+			isLowFrameCountWarningDismissed = false
 		}
 		.onChange(of: bounceGIF) {
 			guard bounceGIF else {
@@ -361,16 +364,39 @@ private struct _EditScreen: View {
 	}
 
 	private var bottomBar: some View {
-		HStack {
-			Spacer()
-			Button("Convert") {
-				appState.navigationPath.append(.conversion(conversionSettings))
+		VStack(spacing: 8) {
+			// Low frame count warning
+			if hasLowFrameCount, !isLowFrameCountWarningDismissed {
+				HStack {
+					Image(systemName: "exclamationmark.triangle.fill")
+						.foregroundStyle(.yellow)
+					Text("An animated GIF requires at least 2 frames. Your current settings would result in \(estimatedFrameCount) frame\(estimatedFrameCount == 1 ? "" : "s"). Try increasing the FPS or extending the trim range.")
+						.font(.callout)
+					Spacer()
+					Button {
+						isLowFrameCountWarningDismissed = true
+					} label: {
+						Image(systemName: "xmark.circle.fill")
+							.foregroundStyle(.secondary)
+					}
+					.buttonStyle(.plain)
+				}
+				.padding(10)
+				.background(.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
 			}
-			.keyboardShortcut(.defaultAction)
-			.padding(.top, -1) // Makes the bar have equal spacing on top and bottom.
-		}
-		.overlay {
-			EstimatedFileSizeView(model: estimatedFileSizeModel)
+
+			HStack {
+				Spacer()
+				Button("Convert") {
+					appState.navigationPath.append(.conversion(conversionSettings))
+				}
+				.keyboardShortcut(.defaultAction)
+				.disabled(hasLowFrameCount)
+				.padding(.top, -1) // Makes the bar have equal spacing on top and bottom.
+			}
+			.overlay {
+				EstimatedFileSizeView(model: estimatedFileSizeModel)
+			}
 		}
 		.padding()
 		.padding(.top, -16)
@@ -395,6 +421,22 @@ private struct _EditScreen: View {
 			crop: outputCropRect,
 			trackPreferredTransform: metadata.trackPreferredTransform
 		)
+	}
+
+	/// The estimated number of frames in the resulting GIF based on current settings.
+	private var estimatedFrameCount: Int {
+		let duration: Double
+		if let timeRange {
+			duration = timeRange.length
+		} else {
+			duration = metadata.duration.toTimeInterval
+		}
+		return Int(duration * Double(frameRate))
+	}
+
+	/// Whether the current settings would result in fewer than 2 frames.
+	private var hasLowFrameCount: Bool {
+		estimatedFrameCount < 2
 	}
 
 	private func showKeyframeRateWarningIfNeeded(maximumKeyframeInterval: Double = 30) {
