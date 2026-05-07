@@ -366,6 +366,7 @@ extension GIFGenerator {
 		var timeRange: ClosedRange<Double>?
 		var quality = 1.0
 		var dimensions: (width: Int, height: Int)?
+		var outputDimensions: (width: Int, height: Int)?
 		var frameRate: Int?
 		var loop: Gifski.Loop
 		var bounce: Bool

@@ -112,7 +112,7 @@ final class EstimatedFileSizeModel {
 		}
 
 		let frameCount = duration.toTimeInterval * Defaults[.outputFPS].toDouble // TODO: Needs to be live.
-		let dimensions = conversionSettings.dimensions ?? (0, 0) // TODO: Get asset dimensions.
+		let dimensions = conversionSettings.croppedOutputDimensions ?? (0, 0) // TODO: Get asset dimensions.
 		var fileSize = (dimensions.width.toDouble * dimensions.height.toDouble * frameCount) / 3
 		fileSize = fileSize * (Defaults[.outputQuality] + 1.5) / 2.5
 

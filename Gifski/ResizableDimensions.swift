@@ -125,6 +125,16 @@ extension Dimensions {
 			return .percent(averagePercent, originalSize: originalSize)
 		}
 	}
+
+	func withOriginalSizePreservingPercent(_ newOriginalSize: CGSize) -> Self {
+		switch self {
+		case .pixels:
+			let newSize = (newOriginalSize * percent).rounded()
+			return .pixels(newSize, originalSize: newOriginalSize)
+		case .percent(let value, _):
+			return .percent(value, originalSize: newOriginalSize)
+		}
+	}
 }
 
 extension Dimensions: CustomStringConvertible {

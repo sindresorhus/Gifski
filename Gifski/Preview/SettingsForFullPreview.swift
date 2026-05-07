@@ -87,6 +87,11 @@ struct SettingsForFullPreview: Equatable, Sendable {
 		var dimensions: (width: Int, height: Int)? {
 			settings.dimensions
 		}
+
+		var outputDimensions: (width: Int, height: Int)? {
+			settings.outputDimensions
+		}
+
 		var trackPreferredTransform: CGAffineTransform? {
 			settings.trackPreferredTransform
 		}
@@ -99,6 +104,7 @@ struct SettingsForFullPreview: Equatable, Sendable {
 			let sourceURL: URL
 			let quality: Double
 			let dimensions: (width: Int, height: Int)?
+			let outputDimensions: (width: Int, height: Int)?
 			let frameRate: Int?
 			let crop: CropRect?
 			let trackPreferredTransform: CGAffineTransform?
@@ -119,6 +125,7 @@ struct SettingsForFullPreview: Equatable, Sendable {
 				sourceURL: conversion.sourceURL,
 				quality: conversion.quality,
 				dimensions: conversion.dimensions,
+				outputDimensions: conversion.outputDimensions,
 				frameRate: conversion.frameRate,
 				crop: conversion.crop,
 				trackPreferredTransform: conversion.trackPreferredTransform
@@ -132,6 +139,7 @@ struct SettingsForFullPreview: Equatable, Sendable {
 				timeRange: timeRange,
 				quality: settings.quality,
 				dimensions: settings.dimensions,
+				outputDimensions: settings.outputDimensions,
 				frameRate: settings.frameRate,
 				loop: settings.loop,
 				bounce: settings.bounce,

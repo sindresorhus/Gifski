@@ -4,6 +4,16 @@ import UniformTypeIdentifiers
 @testable import Gifski
 
 struct Tests {
+	private struct TestCropSettings: CropSettings {
+		var dimensions: (width: Int, height: Int)?
+		var outputDimensions: (width: Int, height: Int)?
+		var crop: CropRect?
+
+		var trackPreferredTransform: CGAffineTransform? {
+			nil
+		}
+	}
+
 	private func instant(afterSeconds seconds: Double, from startInstant: ContinuousClock.Instant) -> ContinuousClock.Instant {
 		startInstant.advanced(by: .seconds(seconds))
 	}
@@ -271,6 +281,59 @@ struct Tests {
 
 		let percentDimensions = Dimensions.percent(0.5, originalSize: originalSize)
 		#expect(!percentDimensions.percentFormatted.hasPrefix("~"))
+	}
+
+	@Test
+	func dimensionsCanChangeOriginalSizePreservingPixelScale() async throws {
+		let dimensions = Dimensions.pixels(
+			CGSize(width: 960, height: 540),
+			originalSize: CGSize(width: 1920, height: 1080)
+		)
+
+		let croppedDimensions = dimensions.withOriginalSizePreservingPercent(CGSize(width: 800, height: 600))
+
+		#expect(croppedDimensions.pixels == CGSize(width: 400, height: 300))
+		#expect(croppedDimensions.percent == 0.5)
+	}
+
+	@Test
+	func dimensionsCanChangeOriginalSizePreservingPercentScale() async throws {
+		let dimensions = Dimensions.percent(
+			0.75,
+			originalSize: CGSize(width: 1920, height: 1080)
+		)
+
+		let croppedDimensions = dimensions.withOriginalSizePreservingPercent(CGSize(width: 640, height: 360))
+
+		#expect(croppedDimensions.pixels == CGSize(width: 480, height: 270))
+		#expect(croppedDimensions.percent == 0.75)
+	}
+
+	@Test
+	func cropRectCanCalculateRenderSizeForCroppedOutputSize() async throws {
+		let cropRect = CropRect(
+			x: 0.25,
+			y: 0.25,
+			width: 0.5,
+			height: 0.75
+		)
+
+		let renderSize = cropRect.renderSize(forCroppedOutputSize: CGSize(width: 400, height: 300))
+
+		#expect(renderSize == CGSize(width: 800, height: 400))
+		#expect(cropRect.unnormalize(forDimensions: renderSize).size.rounded() == CGSize(width: 400, height: 300))
+	}
+
+	@Test
+	func croppedOutputDimensionsUseExplicitOutputDimensions() async throws {
+		let settings = TestCropSettings(
+			dimensions: (width: 2193, height: 1324),
+			outputDimensions: (width: 1097, height: 662),
+			crop: CropRect(x: 0, y: 0, width: 0.5, height: 0.5)
+		)
+
+		#expect(settings.croppedOutputDimensions?.width == 1097)
+		#expect(settings.croppedOutputDimensions?.height == 662)
 	}
 
 	@Test

@@ -100,6 +100,14 @@ extension CropRect {
 		unnormalize(forDimensions: .init(width: Double(dimensions.0), height: Double(dimensions.1)))
 	}
 
+	func renderSize(forCroppedOutputSize croppedOutputSize: CGSize) -> CGSize {
+		.init(
+			width: croppedOutputSize.width / width,
+			height: croppedOutputSize.height / height
+		)
+		.rounded()
+	}
+
 	/**
 	Creates a new `CropRect` with a given aspect ratio.
 

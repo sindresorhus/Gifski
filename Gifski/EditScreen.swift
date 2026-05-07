@@ -371,7 +371,7 @@ private struct _EditScreen: View {
 		HStack(spacing: 0) {
 			Form {
 				DimensionsSetting(
-					videoDimensions: metadata.dimensions,
+					maximumDimensions: outputDimensionsMaximumSize,
 					resizableDimensions: $resizableDimensions
 				)
 				SpeedSetting()
@@ -433,6 +433,17 @@ private struct _EditScreen: View {
 		return Int(duration.toTimeInterval * Double(frameRate)) >= 2
 	}
 
+	private var outputDimensionsMaximumSize: CGSize {
+		outputCropRect
+			.unnormalize(forDimensions: metadata.dimensions)
+			.size
+			.rounded()
+	}
+
+	private var outputRenderSize: CGSize {
+		outputCropRect.renderSize(forCroppedOutputSize: resizableDimensions.pixels)
+	}
+
 	private func convert() {
 		appState.navigationPath.append(.conversion(conversionSettings))
 	}
@@ -443,7 +454,8 @@ private struct _EditScreen: View {
 			sourceURL: url,
 			timeRange: timeRange,
 			quality: outputQuality,
-			dimensions: resizableDimensions.pixels.toInt,
+			dimensions: outputRenderSize.toInt,
+			outputDimensions: resizableDimensions.pixels.toInt,
 			frameRate: frameRate,
 			loop: {
 				guard loopGIF else {
@@ -547,7 +559,7 @@ private struct DimensionsSetting: View {
 	@State private var isSynchronizingTextFields = false
 	@State private var isArrowKeyTipPresented = false
 
-	let videoDimensions: CGSize
+	let maximumDimensions: CGSize
 	@Binding var resizableDimensions: Dimensions // TODO: Rename.
 
 	var body: some View {
@@ -682,13 +694,19 @@ private struct DimensionsSetting: View {
 			updateTextFieldsForCurrentDimensions()
 			showArrowKeyTipIfNeeded()
 		}
+		.onChange(of: maximumDimensions) {
+			updateMaximumDimensions()
+		}
 	}
 
 	private func setUpDimensions() {
-		let dimensions = Dimensions.pixels(videoDimensions, originalSize: videoDimensions)
+		let dimensions = Dimensions.pixels(maximumDimensions, originalSize: maximumDimensions)
 
 		resizableDimensions = dimensions
+		updatePredefinedDimensions()
+	}
 
+	private func updatePredefinedDimensions() {
 		var pixelCommonSizes: [Double] = [
 			960,
 			800,
@@ -704,22 +722,22 @@ private struct DimensionsSetting: View {
 			64
 		]
 
-		if !pixelCommonSizes.contains(dimensions.pixels.width) {
-			pixelCommonSizes.append(dimensions.pixels.width)
+		if !pixelCommonSizes.contains(maximumDimensions.width) {
+			pixelCommonSizes.append(maximumDimensions.width)
 			pixelCommonSizes.sort(by: >)
 		}
 
 		let pixelDimensions = pixelCommonSizes.map { width in
-			let ratio = width / dimensions.pixels.width
-			let height = dimensions.pixels.height * ratio
+			let ratio = width / maximumDimensions.width
+			let height = maximumDimensions.height * ratio
 			return CGSize(width: width, height: height).rounded()
 		}
-		.filter { $0.width <= videoDimensions.width && $0.height <= videoDimensions.height }
+		.filter { $0.width <= maximumDimensions.width && $0.height <= maximumDimensions.height }
 
 		let predefinedPixelDimensions = pixelDimensions
 			// TODO
 //			.filter { resizableDimensions.validate(newSize: $0) }
-			.map { Dimensions.pixels($0, originalSize: videoDimensions) }
+			.map { Dimensions.pixels($0, originalSize: maximumDimensions) }
 
 		let percentCommonSizes: [Double] = [
 			100,
@@ -730,7 +748,7 @@ private struct DimensionsSetting: View {
 		]
 
 		let predefinedPercentDimensions = percentCommonSizes.map {
-			Dimensions.percent($0 / 100, originalSize: videoDimensions)
+			Dimensions.percent($0 / 100, originalSize: maximumDimensions)
 		}
 
 		self.predefinedPixelDimensions = predefinedPixelDimensions
@@ -799,9 +817,15 @@ private struct DimensionsSetting: View {
 		}
 
 		let previousDimensions = resizableDimensions
-		resizableDimensions = .percent(percent.toDouble / 100, originalSize: videoDimensions)
+		resizableDimensions = .percent(percent.toDouble / 100, originalSize: maximumDimensions)
 		synchronizeTextFieldsWithCurrentDimensions()
 		selectPredefinedSizeBasedOnCurrentDimensions(forceCustom: previousDimensions != resizableDimensions)
+	}
+
+	private func updateMaximumDimensions() {
+		resizableDimensions = resizableDimensions.withOriginalSizePreservingPercent(maximumDimensions)
+		updatePredefinedDimensions()
+		updateTextFieldsForCurrentDimensions()
 	}
 
 	private func updateTextFieldsForCurrentDimensions() {

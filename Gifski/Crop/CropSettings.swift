@@ -3,6 +3,7 @@ import AVKit
 
 protocol CropSettings {
 	var dimensions: (width: Int, height: Int)? { get }
+	var outputDimensions: (width: Int, height: Int)? { get }
 	var trackPreferredTransform: CGAffineTransform? { get }
 	var crop: CropRect? { get }
 }
@@ -10,6 +11,10 @@ protocol CropSettings {
 extension GIFGenerator.Conversion: CropSettings {}
 
 extension CropSettings {
+	var outputDimensions: (width: Int, height: Int)? {
+		nil
+	}
+
 	/**
 	We don't use `croppedOutputDimensions` here because the `CGImage` source may have a different size. We use the size directly from the image.
 
@@ -36,6 +41,10 @@ extension CropSettings {
 	}
 
 	var croppedOutputDimensions: (width: Int, height: Int)? {
+		if let outputDimensions {
+			return outputDimensions
+		}
+
 		guard crop != nil else {
 			return dimensions
 		}
