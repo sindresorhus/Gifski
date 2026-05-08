@@ -162,6 +162,10 @@ private struct _EditScreen: View {
 			estimatedFileSizeModel.updateEstimate()
 			updatePreviewOnSettingsChange()
 		}
+		.onChange(of: outputCropRect) {
+			estimatedFileSizeModel.updateEstimate()
+			updatePreviewOnSettingsChange()
+		}
 		.onChange(of: bounceGIF) {
 			estimatedFileSizeModel.updateEstimate()
 
