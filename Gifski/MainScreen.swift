@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MainScreen: View {
 	@Environment(AppState.self) private var appState
@@ -41,14 +42,24 @@ struct MainScreen: View {
 		.border(isDropTargeted ? Color.accentColor : .clear, width: 5, cornerRadius: 10)
 		// Using `onDrop` with delegate instead of `.dropDestination` as it provides better UX with pre-drop validation feedback.
 		.onDrop(
-			of: appState.isConverting || appState.isOpeningVideo ? [] : [.fileURL],
+			of: appState.isConverting || appState.isOpeningVideo
+				? []
+				: [UTType.fileURL.identifier] + NSFilePromiseReceiver.readableDraggedTypes,
 			delegate: AnyDropDelegate(
 				isTargeted: $isDropTargeted.animation(.easeInOut(duration: 0.2)),
 				onValidate: {
 					// Do not check movie type here. During hover, synchronous pasteboard type checks can fail for valid movie files, which prevents the drop highlight from appearing.
-					$0.hasFileURLs
+					$0.hasFileURLs || $0.firstMovieFilePromiseReceiver != nil
 				},
 				onPerform: {
+					/*
+					The macOS screen-recording thumbnail (`screencaptureui`) vends its recording as a file promise. Claim it directly: the source writes the file into a directory we own before it deletes its own temporary file. The plain `file://` path below races with that teardown, so the open would silently fail and the recording would be lost.
+					*/
+					if let promiseReceiver = $0.firstMovieFilePromiseReceiver {
+						appState.start(promiseReceiver)
+						return true
+					}
+
 					// Validate synchronously that the dropped file is a movie before `AppState.start(_:)` resets navigation for the new import.
 					guard $0.firstMovieFileURL != nil else {
 						return false
@@ -65,13 +76,7 @@ struct MainScreen: View {
 						return false
 					}
 
-					Task {
-						guard let url = await itemProvider.getURL() else {
-							return
-						}
-
-						appState.start(url)
-					}
+					appState.start(itemProvider)
 
 					return true
 				}

@@ -166,6 +166,10 @@ final class AppState {
 			return
 		}
 
+		startOpeningVideo(url)
+	}
+
+	private func startOpeningVideo(_ url: URL) {
 		// We intentionally do not call `stop` on this one later for simplicity since we will never get a lot of files.
 		let didStartSecurityScopedAccess = url.startAccessingSecurityScopedResource()
 		let contentType = url.contentType?.identifier ?? "unknown"
@@ -211,6 +215,79 @@ final class AppState {
 				)
 				self.error = error
 			}
+		}
+	}
+
+	func start(_ itemProvider: NSItemProvider) {
+		guard !isOpeningVideo else {
+			ImportLog.shared.info(
+				"Ignored open request while another video is opening",
+				"Ignored open request while another video is opening"
+			)
+			return
+		}
+
+		isOpeningVideo = true
+
+		Task { [self] in
+			guard let url = await itemProvider.getURL() else {
+				isOpeningVideo = false
+				return
+			}
+
+			startOpeningVideo(url)
+		}
+	}
+
+	private func handlePromisedVideoError(_ error: Error) {
+		isOpeningVideo = false
+		let nsError = error as NSError
+		ImportLog.shared.error(
+			"Failed to receive promised video: errorDomain=\(nsError.domain), errorCode=\(nsError.code)",
+			"Failed to receive promised video: errorDomain=\(nsError.domain), errorCode=\(nsError.code), message=\(error.localizedDescription)"
+		)
+		self.error = error
+	}
+
+	/**
+	Open a video from a dragged file promise, such as the macOS screen-recording thumbnail (`screencaptureui`).
+
+	The promise source writes the file into a directory we own before it tears down its own temporary file, so the video remains available. This avoids the race in the plain drag-pasteboard path where the source deletes its temporary file before the async open resolves, losing the recording.
+	*/
+	func start(_ promiseReceiver: NSFilePromiseReceiver) {
+		guard !isOpeningVideo else {
+			ImportLog.shared.info(
+				"Ignored promised video while another video is opening",
+				"Ignored promised video while another video is opening"
+			)
+			return
+		}
+
+		let fileTypes = promiseReceiver.fileTypes.joined(separator: ", ")
+		ImportLog.shared.info(
+			"Receiving promised video: fileTypes=\(fileTypes)",
+			"Receiving promised video: fileTypes=\(fileTypes)"
+		)
+
+		isOpeningVideo = true
+
+		do {
+			let promisedFile = try promiseReceiver.receivePromisedFile()
+
+			Task { [self] in
+				do {
+					for try await url in promisedFile {
+						startOpeningVideo(url)
+						return
+					}
+
+					isOpeningVideo = false
+				} catch {
+					handlePromisedVideoError(error)
+				}
+			}
+		} catch {
+			handlePromisedVideoError(error)
 		}
 	}
 

@@ -1496,6 +1496,57 @@ extension NSPasteboard {
 
 		return urls
 	}
+
+	/**
+	Get the file promise receivers from dragged and dropped files.
+
+	Some drag sources, like the macOS screen-recording thumbnail (`screencaptureui`), vend their file as a promise instead of, or in addition to, a ready-made URL.
+	*/
+	var filePromiseReceivers: [NSFilePromiseReceiver] {
+		readObjects(forClasses: [NSFilePromiseReceiver.self]) as? [NSFilePromiseReceiver] ?? []
+	}
+}
+
+
+extension NSFilePromiseReceiver {
+	/**
+	Claim the file promise and provide the URL of the received file asynchronously.
+
+	The file is written into a unique temporary directory that we own, which the system keeps around until the app quits. This is what makes the file outlive the drag: the source writes it to our destination before it tears down its own temporary file.
+
+	- Note: Only call this when accepting the drop, as it commits to receiving the promise.
+	- Note: A promise can vend multiple files. Only the first one is returned.
+	*/
+	func receivePromisedFile() throws -> AsyncThrowingStream<URL, Error> {
+		let destination = try URL.uniqueTemporaryDirectory()
+
+		return AsyncThrowingStream { continuation in
+			// Writing the promised file can take a while, so Apple advises against receiving it on the main queue. Resuming the stream continuation is isolation-agnostic anyway, and `await` returns the caller to its own actor.
+			let queue = OperationQueue()
+
+			// Serial, so the reader cannot run concurrently with itself and race on `isFinished`.
+			queue.maxConcurrentOperationCount = 1
+
+			// The reader runs once per promised file, but a continuation may only be resumed once, so ignore everything after the first file.
+			var isFinished = false
+
+			receivePromisedFiles(atDestination: destination, operationQueue: queue) { fileURL, error in
+				guard !isFinished else {
+					return
+				}
+
+				isFinished = true
+
+				if let error {
+					continuation.finish(throwing: error)
+					return
+				}
+
+				continuation.yield(fileURL)
+				continuation.finish()
+			}
+		}
+	}
 }
 
 
@@ -5385,6 +5436,21 @@ extension DropInfo {
 	var firstMovieFileURL: URL? {
 		fileURLs().first {
 			$0.contentType?.conforms(to: .movie) == true
+		}
+	}
+
+	/**
+	The first file promise receiver in the current drag operation that promises a movie file.
+
+	Some drag sources, like the macOS screen-recording thumbnail (`screencaptureui`), vend their file as a promise in addition to a ready-made URL. Claiming the promise with `NSFilePromiseReceiver.receivePromisedFile()` makes the source write the file into a destination we own before it tears down its own temporary file, which the plain URL races with.
+
+	The movie check also keeps us out of the way of screenshot drags, which use the same promise mechanism but promise a `public.png` file.
+	*/
+	var firstMovieFilePromiseReceiver: NSFilePromiseReceiver? {
+		NSPasteboard(name: .drag).filePromiseReceivers.first { receiver in
+			receiver.fileTypes.contains {
+				UTType($0)?.conforms(to: .movie) == true
+			}
 		}
 	}
 
