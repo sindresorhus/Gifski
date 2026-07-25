@@ -96,6 +96,7 @@ struct Tests {
 	private func makeTestVideo(
 		frameCount: Int,
 		codec: AVVideoCodecType = .h264,
+		presentationTimeForFrame: (Int) -> CMTime = { .init(value: CMTimeValue($0), timescale: 2) },
 		pixelBufferForFrame: (Int) throws -> CVPixelBuffer
 	) async throws -> URL {
 		let directory = try URL.uniqueTemporaryDirectory()
@@ -139,7 +140,7 @@ struct Tests {
 			try #require(input.isReadyForMoreMediaData)
 
 			let pixelBuffer = try pixelBufferForFrame(frameNumber)
-			let presentationTime = CMTime(value: CMTimeValue(frameNumber), timescale: 2)
+			let presentationTime = presentationTimeForFrame(frameNumber)
 			try #require(adaptor.append(pixelBuffer, withPresentationTime: presentationTime))
 		}
 
@@ -151,6 +152,66 @@ struct Tests {
 		}
 		try #require(writer.status == .completed)
 		return outputURL
+	}
+
+	/**
+	Returns the bundled variable-frame-rate fixture used by the video-composition regression tests.
+	*/
+	private func variableFrameRateTestVideoURL() throws -> URL {
+		guard let url = #bundle.url(forResource: "variable-frame-rate-zero-minimum-duration", withExtension: "mp4") else {
+			throw "Missing variable-frame-rate test fixture.".toError
+		}
+
+		return url
+	}
+
+	/**
+	Returns the presentation timestamps of every non-empty sample, optionally rendering the track through a video composition.
+	*/
+	private func presentationTimestamps(for videoTrack: AVAssetTrack, videoComposition: AVVideoComposition? = nil) async throws -> [CMTime] {
+		let asset = try #require(videoTrack.asset)
+		let reader = try AVAssetReader(asset: asset)
+		let output: AVAssetReaderOutput
+		if let videoComposition {
+			let compositionOutput = AVAssetReaderVideoCompositionOutput(videoTracks: [videoTrack], videoSettings: CVPixelBuffer.bgra32Attributes)
+			compositionOutput.videoComposition = videoComposition
+			output = compositionOutput
+		} else {
+			output = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: nil)
+		}
+		let provider = reader.outputProvider(for: output)
+		try reader.start()
+		defer {
+			if reader.status == .reading {
+				reader.cancelReading()
+			}
+		}
+
+		var timestamps = [CMTime]()
+		while let sampleBuffer = try await provider.next() {
+			guard sampleBuffer.sampleCount > 0 else {
+				continue
+			}
+
+			timestamps.append(sampleBuffer.outputPresentationTimeStamp)
+		}
+
+		return timestamps.sorted()
+	}
+
+	/**
+	Checks that two timestamp collections describe the same presentation timing after normalizing their start times.
+	*/
+	private func expectSamePresentationTiming(_ expectedTimestamps: [CMTime], _ actualTimestamps: [CMTime]) throws {
+		try #require(actualTimestamps.count == expectedTimestamps.count)
+
+		let expectedStart = try #require(expectedTimestamps.first)
+		let actualStart = try #require(actualTimestamps.first)
+		for (expectedTimestamp, actualTimestamp) in zip(expectedTimestamps, actualTimestamps) {
+			let normalizedExpectedTimestamp = (expectedTimestamp - expectedStart).seconds
+			let normalizedActualTimestamp = (actualTimestamp - actualStart).seconds
+			#expect(abs(normalizedActualTimestamp - normalizedExpectedTimestamp) < 0.001)
+		}
 	}
 
 	private func makePixelBuffer(
@@ -258,6 +319,13 @@ struct Tests {
 	private func transparentPixelCount(gifData: Data, frameIndex: Int) throws -> Int {
 		let imageSource = try #require(CGImageSourceCreateWithData(gifData as CFData, nil))
 		let image = try #require(CGImageSourceCreateImageAtIndex(imageSource, frameIndex, nil))
+		return try transparentPixelCount(in: image)
+	}
+
+	/**
+	Counts fully transparent pixels in a decoded image, independently of whether its format declares an alpha channel.
+	*/
+	private func transparentPixelCount(in image: CGImage) throws -> Int {
 		let width = image.width
 		let height = image.height
 		var pixels = [UInt8](repeating: 0, count: width * height * 4)
@@ -352,6 +420,66 @@ struct Tests {
 
 		#expect(!updatedWhileFinished)
 		#expect(state == .finished(URL(filePath: "/dev/null")))
+	}
+
+	@Test
+	func `frame duration is derived from frame rate`() {
+		#expect(CMTime.frameDuration(frameRate: 24) == .init(value: 1, timescale: 24))
+		#expect(CMTime.frameDuration(frameRate: 2000) == .init(value: 1, timescale: 2000))
+	}
+
+	@Test
+	func `frame duration preserves fractional frame rates`() {
+		#expect(CMTime.frameDuration(frameRate: 23.976) == .init(value: 1001, timescale: 24_000))
+		#expect(CMTime.frameDuration(frameRate: 29.97) == .init(value: 1001, timescale: 30_000))
+		#expect(CMTime.frameDuration(frameRate: 59.94) == .init(value: 1001, timescale: 60_000))
+	}
+
+	@Test
+	func `frame duration is nil for unusable frame rates`() {
+		#expect(CMTime.frameDuration(frameRate: 0) == nil)
+		#expect(CMTime.frameDuration(frameRate: -24) == nil)
+		#expect(CMTime.frameDuration(frameRate: .nan) == nil)
+		#expect(CMTime.frameDuration(frameRate: .infinity) == nil)
+		#expect(CMTime.frameDuration(frameRate: .greatestFiniteMagnitude) == nil)
+	}
+
+	@Test
+	func `positive time excludes zero, negative, and non-numeric times`() {
+		#expect(CMTime(value: 1, timescale: 24).isPositive)
+		#expect(!CMTime.zero.isPositive)
+		#expect(!CMTime(value: -1, timescale: 24).isPositive)
+		#expect(!CMTime.invalid.isPositive)
+		#expect(!CMTime.indefinite.isPositive)
+		#expect(!CMTime.positiveInfinity.isPositive)
+	}
+
+	@Test
+	func `common cancellation errors are recognized`() {
+		let errors: [Error] = [
+			CancellationError(),
+			URLError(.cancelled),
+			CocoaError(.userCancelled),
+			NSError(domain: AVFoundationErrorDomain, code: AVError.operationCancelled.rawValue)
+		]
+
+		for error in errors {
+			#expect(error.isCancelled)
+		}
+	}
+
+	@Test
+	func `ordinary errors are not treated as cancellation`() {
+		let errors: [Error] = [
+			URLError(.timedOut),
+			CocoaError(.fileReadNoSuchFile),
+			NSError(domain: AVFoundationErrorDomain, code: AVError.exportFailed.rawValue),
+			NSError(domain: "UnrelatedError", code: URLError.cancelled.rawValue)
+		]
+
+		for error in errors {
+			#expect(!error.isCancelled)
+		}
 	}
 
 	@Test
@@ -623,7 +751,7 @@ struct Tests {
 		}
 
 		let (validatedAsset, metadata) = try await VideoValidator.validate(videoURL)
-		let previewable = try await PreviewableComposition(extractPreviewableCompositionFrom: validatedAsset)
+		let previewable = try await PreviewableComposition(asset: validatedAsset)
 
 		let generator = GIFGenerator()
 		let data = try await generator.run(
@@ -773,17 +901,118 @@ struct Tests {
 	}
 
 	@Test
-	func exportModifiedVideoPreservesAlphaForProRes4444Source() async throws {
-		let videoURL = try await makeTestVideo(frameCount: 3, codec: .proRes4444) { _ in
+	func `modified video export preserves variable frame rate timing`() async throws {
+		let videoURL = try variableFrameRateTestVideoURL()
+
+		let asset = AVURLAsset(url: videoURL)
+		let videoTrack = try #require(try await asset.firstVideoTrack)
+		#expect(try await videoTrack.load(.minFrameDuration) == .zero)
+		let sourceTimestamps = try await presentationTimestamps(for: videoTrack)
+		let sourceFrameIntervals = zip(sourceTimestamps, sourceTimestamps.dropFirst()).map { $1 - $0 }
+		let firstSourceFrameInterval = try #require(sourceFrameIntervals.first)
+		#expect(sourceFrameIntervals.contains { $0 != firstSourceFrameInterval })
+		let previewableComposition = try await PreviewableComposition(asset: asset)
+
+		let outputURL = try await exportModifiedVideo(
+			conversion: .init(
+				asset: previewableComposition,
+				sourceURL: videoURL,
+				quality: 1,
+				dimensions: (width: 8, height: 8),
+				frameRate: 2,
+				loop: .never,
+				bounce: false
+			)
+		)
+		defer {
+			try? outputURL.delete()
+		}
+
+		let outputAsset = AVURLAsset(url: outputURL)
+		let outputVideoTrack = try #require(try await outputAsset.firstVideoTrack)
+		let outputTimestamps = try await presentationTimestamps(for: outputVideoTrack)
+		#expect(outputURL.exists)
+		#expect(try await outputAsset.dimensions == .init(width: 8, height: 8))
+		#expect(try await outputAsset.load(.duration).seconds > 0)
+		try expectSamePresentationTiming(sourceTimestamps, outputTimestamps)
+	}
+
+	@Test
+	func `previewable composition renders variable frame rate video at nominal frame rate`() async throws {
+		let videoURL = try variableFrameRateTestVideoURL()
+
+		let asset = AVURLAsset(url: videoURL)
+		let videoTrack = try #require(try await asset.firstVideoTrack)
+		#expect(try await videoTrack.load(.minFrameDuration) == .zero)
+		#expect(try await videoTrack.frameRate == 4)
+
+		let previewableComposition = try await PreviewableComposition(asset: asset)
+		let previewableVideoTrack = try #require(try await previewableComposition.firstVideoTrack)
+		#expect(previewableComposition.videoComposition.frameDuration == .init(value: 1, timescale: 4))
+		#expect(previewableComposition.videoComposition.sourceTrackIDForFrameTiming == kCMPersistentTrackID_Invalid)
+		let previewTimestamps = try await presentationTimestamps(for: previewableVideoTrack, videoComposition: previewableComposition.videoComposition)
+		// The source frame at 1/6 second becomes a new 4 FPS GIF frame at 1/4 second. Source-timed rendering skips that preview update.
+		#expect(previewTimestamps.contains(.init(value: 1, timescale: 4)))
+	}
+
+	@Test
+	func `previewable composition uses speed adjusted frame rate`() async throws {
+		let videoURL = try await makeTestVideo()
+		defer {
+			try? videoURL.deletingLastPathComponent().delete()
+		}
+
+		let asset = AVURLAsset(url: videoURL)
+		let sourceVideoTrack = try #require(try await asset.firstVideoTrack)
+		let speedAdjustedAsset = try #require(try await sourceVideoTrack.extractToNewAssetAndChangeSpeed(to: 2))
+		let speedAdjustedVideoTrack = try #require(try await speedAdjustedAsset.firstVideoTrack)
+		#expect(try await speedAdjustedVideoTrack.frameRate == 4)
+		#expect(try await speedAdjustedVideoTrack.load(.minFrameDuration) == .init(value: 1, timescale: 2))
+		let speedAdjustedTimestamps = try await presentationTimestamps(for: speedAdjustedVideoTrack)
+
+		let previewableComposition = try await PreviewableComposition(asset: speedAdjustedAsset)
+		#expect(previewableComposition.videoComposition.frameDuration == .init(value: 1, timescale: 4))
+
+		let outputURL = try await exportModifiedVideo(
+			conversion: .init(
+				asset: previewableComposition,
+				sourceURL: videoURL,
+				quality: 1,
+				dimensions: (width: 16, height: 16),
+				frameRate: 2,
+				loop: .never,
+				bounce: false
+			)
+		)
+		defer {
+			try? outputURL.delete()
+		}
+
+		let outputAsset = AVURLAsset(url: outputURL)
+		let outputVideoTrack = try #require(try await outputAsset.firstVideoTrack)
+		let outputTimestamps = try await presentationTimestamps(for: outputVideoTrack)
+		try expectSamePresentationTiming(speedAdjustedTimestamps, outputTimestamps)
+	}
+
+	@Test(arguments: [[0, 2, 4, 6], [0, 1, 4, 6]])
+	func `modified video export preserves alpha and source frame timing`(frameOffsets: [Int]) async throws {
+		let sourceTimestamps = frameOffsets.map { CMTime(value: CMTimeValue($0), timescale: 4) }
+		let videoURL = try await makeTestVideo(
+			frameCount: sourceTimestamps.count,
+			codec: .proRes4444,
+			presentationTimeForFrame: { sourceTimestamps[$0] }
+		) { _ in
 			try makeTransparentPixelBuffer()
 		}
 		defer {
 			try? videoURL.deletingLastPathComponent().delete()
 		}
 
+		let asset = AVURLAsset(url: videoURL)
+		let previewableComposition = try await PreviewableComposition(asset: asset)
 		let outputURL = try await exportModifiedVideo(
 			conversion: .init(
-				asset: AVURLAsset(url: videoURL),
+				asset: previewableComposition,
 				sourceURL: videoURL,
 				quality: 1,
 				dimensions: (width: 16, height: 16),
@@ -798,8 +1027,19 @@ struct Tests {
 
 		// An alpha-capable source must export as an alpha-capable format (HEVC with alpha in a `.mov`) so transparency is not flattened.
 		#expect(outputURL.pathExtension == "mov")
-		let outputTrack = try #require(try await AVURLAsset(url: outputURL).firstVideoTrack)
+		let outputAsset = AVURLAsset(url: outputURL)
+		let outputTrack = try #require(try await outputAsset.firstVideoTrack)
 		#expect(try await outputTrack.hasAlphaChannel)
+		let outputTimestamps = try await presentationTimestamps(for: outputTrack)
+		try expectSamePresentationTiming(sourceTimestamps, outputTimestamps)
+
+		for timestamp in outputTimestamps {
+			let image = try #require(try await outputAsset.image(at: timestamp))
+			// The right half must remain transparent, while the left half must remain opaque.
+			let transparentCount = try transparentPixelCount(in: image)
+			#expect(transparentCount > 96)
+			#expect(transparentCount < 160)
+		}
 	}
 
 	@Test
@@ -1141,7 +1381,7 @@ struct Tests {
 		crop.width = 400
 		crop.height = 300
 
-		var intent = ConvertIntent()
+		let intent = ConvertIntent()
 		intent.dimensionsType = .percent
 		intent.dimensionsPercent = 50
 		intent.crop = crop
@@ -1154,7 +1394,7 @@ struct Tests {
 
 	@Test
 	func appIntentOutputSettingsWithNoCropUsesFullDimensions() throws {
-		var intent = ConvertIntent()
+		let intent = ConvertIntent()
 		intent.dimensionsType = .percent
 		intent.dimensionsPercent = 50
 		intent.crop = nil
@@ -1175,7 +1415,7 @@ struct Tests {
 		crop.width = 400
 		crop.height = 200
 
-		var intent = ConvertIntent()
+		let intent = ConvertIntent()
 		intent.dimensionsType = .pixels
 		intent.dimensionsWidth = 200
 		intent.crop = crop

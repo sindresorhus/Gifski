@@ -55,7 +55,7 @@ struct AppMain: App {
 				Link(
 					"Website",
 					systemImage: "safari",
-					destination: "https://sindresorhus.com/Gifski"
+					destination: "https://sindresorhus.com/gifski"
 				)
 				Link(
 					"Source Code",

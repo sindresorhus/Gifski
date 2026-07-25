@@ -432,6 +432,30 @@ extension CMTime {
 	static var videoZero: Self {
 		.init(seconds: 0, preferredTimescale: .video)
 	}
+
+	/**
+	Whether the time is a finite number greater than zero.
+	*/
+	var isPositive: Bool {
+		isNumeric && seconds.isFinite && self > .zero
+	}
+
+	/**
+	The duration of one frame at the given frame rate, or `nil` if the frame rate is not a positive finite number or the duration is too small to represent.
+	*/
+	static func frameDuration(frameRate: Double) -> Self? {
+		guard
+			frameRate.isFinite,
+			frameRate > 0
+		else {
+			return nil
+		}
+
+		// A timescale much higher than `.video` preserves common fractional rates like 23.976 and 29.97 FPS.
+		let preferredTimescale = CMTimeScale(frameRate.rounded(.up).clamped(to: Double(CMTimeScale.video * 1000)...Double(CMTimeScale.max)))
+		let frameDuration = Self(seconds: 1 / frameRate, preferredTimescale: preferredTimescale)
+		return frameDuration.isPositive ? frameDuration : nil
+	}
 }
 
 
@@ -679,6 +703,20 @@ extension AVAssetTrack {
 	var frameRate: Double? {
 		get async throws {
 			Double(try await load(.nominalFrameRate))
+		}
+	}
+
+	/**
+	A positive frame duration suitable for an `AVVideoComposition`.
+
+	Variable-frame-rate tracks report a zero minimum frame duration, and scaling an `AVCompositionTrack` updates its nominal frame rate but can leave its minimum frame duration unchanged, so this uses the shorter of the two. Assigning a non-positive frame duration to `AVAssetExportSession.videoComposition` throws an Objective-C exception, which Swift cannot catch.
+	*/
+	var videoCompositionFrameDuration: CMTime {
+		get async throws {
+			let (minimumFrameDuration, nominalFrameRate) = try await load(.minFrameDuration, .nominalFrameRate)
+			let nominalFrameDuration = CMTime.frameDuration(frameRate: Double(nominalFrameRate))
+			let frameDurations = [minimumFrameDuration, nominalFrameDuration].compactMap(\.self).filter(\.isPositive)
+			return frameDurations.min() ?? CMTime(value: 1, timescale: 30)
 		}
 	}
 
@@ -1719,6 +1757,7 @@ extension SSApp {
 			$0.dsn = dsn
 			$0.enableSwizzling = false
 			$0.enableAppHangTracking = false // https://github.com/getsentry/sentry-cocoa/issues/2643
+			$0.swiftAsyncStacktraces = true
 		}
 		#endif
 	}
@@ -1735,9 +1774,9 @@ extension SSApp {
 		file: String = #fileID,
 		line: Int = #line
 	) {
-		guard !(error is CancellationError) else {
+		guard !error.isCancelled else {
 			#if DEBUG
-			print("[\(file):\(line)] CancellationError:", error)
+			print("[\(file):\(line)] Cancelled error:", error)
 			#endif
 			return
 		}
@@ -2313,11 +2352,10 @@ extension CGRect {
 
 extension Error {
 	public var isCancelled: Bool {
-		do {
-			throw self
-		} catch is CancellationError, URLError.cancelled, CocoaError.userCancelled {
+		switch self {
+		case is CancellationError, URLError.cancelled, CocoaError.userCancelled, AVError.operationCancelled:
 			return true
-		} catch {
+		default:
 			return false
 		}
 	}

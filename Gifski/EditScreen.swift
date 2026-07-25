@@ -424,7 +424,7 @@ private struct _EditScreen: View {
 			speedAdjustedAsset = extractedAsset
 		}
 
-		let modifiedAsset = try await PreviewableComposition(extractPreviewableCompositionFrom: speedAdjustedAsset)
+		let modifiedAsset = try await PreviewableComposition(asset: speedAdjustedAsset)
 		let modifiedAssetTimeRange = try await modifiedAsset.firstVideoTrack?.load(.timeRange)
 		let timeRange = translatedTimeRange(from: oldModifiedAssetTimeRange, to: modifiedAssetTimeRange)
 

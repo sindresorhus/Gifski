@@ -216,25 +216,25 @@ private func createComposition(
 ) async throws -> (composition: AVMutableComposition, compositionVideoTrack: AVMutableCompositionTrack, sourceVideoTrack: AVAssetTrack) {
 	let composition = AVMutableComposition()
 
-	guard let compositionTrack = composition.addMutableTrack(
+	guard let compositionVideoTrack = composition.addMutableTrack(
 		withMediaType: .video,
 		preferredTrackID: kCMPersistentTrackID_Invalid
 	) else {
 		throw ExportModifiedVideoView.Error.unableToAddCompositionTrack
 	}
-	let videoTrack = try await conversion.firstVideoTrack
-	try compositionTrack.insertTimeRange(
+	let sourceVideoTrack = try await conversion.firstVideoTrack
+	try compositionVideoTrack.insertTimeRange(
 		try await conversion.exportModifiedVideoTimeRange,
-		of: videoTrack,
+		of: sourceVideoTrack,
 		at: .zero
 	)
-	compositionTrack.preferredTransform = try await conversion.geometry(for: videoTrack).preferredTransform
+	compositionVideoTrack.preferredTransform = try await conversion.geometry(for: sourceVideoTrack).preferredTransform
 	// Return the source track too because composition tracks do not reliably carry the natural-size geometry needed by the shared crop/scale code.
-	return (composition, compositionTrack, videoTrack)
+	return (composition, compositionVideoTrack, sourceVideoTrack)
 }
 
 /**
-Create an `AVVideoComposition` that will scale, translate, and crop the `compositionVideoTrack`. When `preservingAlpha` is set, it uses the Core Image based compositor that keeps the source's transparency.
+Creates an `AVVideoComposition` that will scale, translate, and crop the `compositionVideoTrack`. When `preservingAlpha` is set, it uses the Core Image based compositor that keeps the source's transparency.
 */
 private func createVideoComposition(
 	compositionVideoTrack: AVMutableCompositionTrack,
@@ -242,13 +242,14 @@ private func createVideoComposition(
 	conversion: GIFGenerator.Conversion,
 	preservingAlpha: Bool
 ) async throws -> AVVideoComposition {
-	let frameDuration = try await compositionVideoTrack.load(.minFrameDuration)
+	let frameDuration = try await compositionVideoTrack.videoCompositionFrameDuration
 
 	if preservingAlpha {
 		return try await conversion.alphaPreservingVideoComposition(
 			for: compositionVideoTrack,
 			usingGeometryOf: sourceVideoTrack,
-			frameDuration: frameDuration
+			frameDuration: frameDuration,
+			preservesSourceFrameTiming: true
 		)
 	}
 
@@ -258,7 +259,8 @@ private func createVideoComposition(
 		for: compositionVideoTrack,
 		usingGeometryOf: sourceVideoTrack,
 		timeRange: timeRange,
-		frameDuration: frameDuration
+		frameDuration: frameDuration,
+		preservesSourceFrameTiming: true
 	)
 }
 

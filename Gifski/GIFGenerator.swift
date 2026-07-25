@@ -720,14 +720,15 @@ extension GIFGenerator.Conversion {
 	}
 
 	/**
-	Creates an `AVVideoComposition` that crops, scales, and orients the source to this conversion's output settings while preserving the source's alpha channel. `geometryTrack` lets export apply the source track's natural size and orientation while reading frames from an `AVMutableCompositionTrack`.
+	Creates an `AVVideoComposition` that crops, scales, and orients the source to this conversion's output settings while preserving the source's alpha channel. `geometryTrack` lets export apply the source track's natural size and orientation while reading frames from an `AVMutableCompositionTrack`. `preservesSourceFrameTiming` renders frames at the source frame times instead of at a fixed `frameDuration` cadence, which keeps variable-frame-rate timing intact.
 
 	The built-in `AVVideoComposition` compositor (used by `videoComposition(for:…)`) flattens the alpha channel to opaque, which loses transparency from alpha-capable sources like ProRes 4444. The Core Image based `AlphaPreservingCompositor` preserves it.
 	*/
 	func alphaPreservingVideoComposition(
 		for videoTrack: AVAssetTrack,
 		usingGeometryOf geometryTrack: AVAssetTrack? = nil,
-		frameDuration: CMTime
+		frameDuration: CMTime,
+		preservesSourceFrameTiming: Bool = false
 	) async throws -> AVVideoComposition {
 		let (naturalSize, preferredTransform) = try await geometry(for: geometryTrack ?? videoTrack)
 		// Pad the instruction's range by one frame so a final frame landing on the track boundary is still covered.
@@ -751,20 +752,22 @@ extension GIFGenerator.Conversion {
 			customVideoCompositorClass: AlphaPreservingCompositor.self,
 			frameDuration: frameDuration,
 			instructions: [instruction],
-			renderSize: outputSize
+			renderSize: outputSize,
+			sourceTrackIDForFrameTiming: preservesSourceFrameTiming ? videoTrack.trackID : kCMPersistentTrackID_Invalid
 		)
 
 		return AVVideoComposition(configuration: configuration)
 	}
 
 	/**
-	Creates an `AVVideoComposition` that scales, translates, and crops `videoTrack` using this conversion's output settings. `geometryTrack` lets export apply the source track's natural size and orientation while rendering an `AVMutableCompositionTrack`.
+	Creates an `AVVideoComposition` that scales, translates, and crops `videoTrack` using this conversion's output settings. `geometryTrack` lets export apply the source track's natural size and orientation while rendering an `AVMutableCompositionTrack`. `preservesSourceFrameTiming` renders frames at the source frame times instead of at a fixed `frameDuration` cadence, which keeps variable-frame-rate timing intact.
 	*/
 	func videoComposition(
 		for videoTrack: AVAssetTrack,
 		usingGeometryOf geometryTrack: AVAssetTrack? = nil,
 		timeRange: CMTimeRange,
-		frameDuration: CMTime
+		frameDuration: CMTime,
+		preservesSourceFrameTiming: Bool = false
 	) async throws -> AVVideoComposition {
 		let geometryTrack = geometryTrack ?? videoTrack
 		let outputRenderSize = resolvedCrop.unnormalize(forDimensions: try await renderSize(for: geometryTrack)).size
@@ -787,13 +790,14 @@ extension GIFGenerator.Conversion {
 			layerInstructions: [AVVideoCompositionLayerInstruction(configuration: layerConfig)],
 			timeRange: timeRange
 		)
-		let config = AVVideoComposition.Configuration(
+		let configuration = AVVideoComposition.Configuration(
 			frameDuration: frameDuration,
 			instructions: [AVVideoCompositionInstruction(configuration: instructionConfig)],
-			renderSize: outputRenderSize
+			renderSize: outputRenderSize,
+			sourceTrackIDForFrameTiming: preservesSourceFrameTiming ? videoTrack.trackID : kCMPersistentTrackID_Invalid
 		)
 
-		return AVVideoComposition(configuration: config)
+		return AVVideoComposition(configuration: configuration)
 	}
 
 	/**
