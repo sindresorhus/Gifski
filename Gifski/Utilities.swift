@@ -89,9 +89,24 @@ extension BinaryInteger {
 }
 
 extension BinaryFloatingPoint {
-	var toInt: Int? { self >= Self(Int.min) && self <= Self(Int.max) ? Int(self) : nil }
+	/**
+	- Note: Guards against numbers not representable for `Int`.
+	*/
+	var toInt: Int? {
+		// `Self(Int.max)` rounds up to 2^63, which is not representable, so the upper bound must be exclusive.
+		self >= Self(Int.min) && self < Self(Int.max) ? Int(self) : nil
+	}
 
-	var toIntAndClampingIfNeeded: Int { Int(clamped(to: Self(Int.min)...Self(Int.max))) }
+	/**
+	- Note: Values outside the `Int` range are clamped to `Int.min`/`Int.max`. `NaN` becomes `0`.
+	*/
+	var toIntAndClampingIfNeeded: Int {
+		guard !isNaN else {
+			return 0
+		}
+
+		return toInt ?? (self < 0 ? .min : .max)
+	}
 }
 
 
@@ -737,7 +752,7 @@ extension AVAssetTrack {
 	*/
 	var codecIdentifier: String? {
 		get async throws {
-			try await load(.formatDescriptions).first?.mediaSubType.rawValue.fourCharCodeToString().nilIfEmpty
+			try await load(.formatDescriptions).first?.mediaSubType.rawValue.fourCharCodeToString()?.nilIfEmpty
 		}
 	}
 
@@ -926,19 +941,18 @@ extension FourCharCode {
 	/**
 	Create a String representation of a FourCC.
 	*/
-	func fourCharCodeToString() -> String {
-		let a_ = self >> 24
-		let b_ = self >> 16
-		let c_ = self >> 8
-		let d_ = self
-
-		let bytes: [CChar] = [
-			CChar(a_ & 0xFF),
-			CChar(b_ & 0xFF),
-			CChar(c_ & 0xFF),
-			CChar(d_ & 0xFF),
-			0
+	func fourCharCodeToString() -> String? {
+		let bytes = [
+			UInt8(truncatingIfNeeded: self >> 24),
+			UInt8(truncatingIfNeeded: self >> 16),
+			UInt8(truncatingIfNeeded: self >> 8),
+			UInt8(truncatingIfNeeded: self)
 		]
+
+		// A FourCC is ASCII by definition. Check the bytes explicitly, as converting a byte above 127 to `CChar` traps and Foundation's `.ascii` decoding is lenient about such bytes.
+		guard bytes.allSatisfy({ $0 < 128 }) else {
+			return nil
+		}
 
 		// Swift type-checking is too slow for this...
 		//		let bytes: [CChar] = [
@@ -949,7 +963,7 @@ extension FourCharCode {
 		//			0
 		//		]
 
-		return String(cString: bytes).trimmingCharacters(in: .whitespaces)
+		return String(bytes: bytes.prefix { $0 != 0 }, encoding: .utf8)?.trimmingCharacters(in: .whitespaces)
 	}
 }
 
@@ -1044,7 +1058,11 @@ enum AVFormat: String {
 	}
 
 	init?(fourCC: FourCharCode) {
-		self.init(fourCC: fourCC.fourCharCodeToString())
+		guard let string = fourCC.fourCharCodeToString() else {
+			return nil
+		}
+
+		self.init(fourCC: string)
 	}
 
 	var fourCC: String {
@@ -3186,10 +3204,15 @@ final class LoopingPlayer: AVPlayer {
 
 		// Set up the notification observer if not already set up.
 		if cancellable == nil {
+			// We check the item when the notification arrives instead of subscribing to the current item, as subscribing while there is no item would react to every player item.
 			cancellable = NotificationCenter.default
-				.publisher(for: .AVPlayerItemDidPlayToEndTime, object: currentItem)
-				.sink { [weak self] _ in
-					guard let self else {
+				.publisher(for: .AVPlayerItemDidPlayToEndTime)
+				.sink { [weak self] notification in
+					guard
+						let self,
+						let item = notification.object as? AVPlayerItem,
+						item === currentItem
+					else {
 						return
 					}
 
@@ -3501,7 +3524,7 @@ extension CGImage {
 }
 
 extension CGImage.PixelFormat: CustomDebugStringConvertible {
-	var debugDescription: String { "CGImage.PixelFormat(\(title)" }
+	var debugDescription: String { "CGImage.PixelFormat(\(title))" }
 }
 
 extension CGImage.PixelFormat {
@@ -4091,7 +4114,7 @@ extension Sequence where Element: Sendable {
 		concurrencyLimit: Int? = nil,
 		_ transform: @Sendable (Element) async -> T?
 	) async -> [T] {
-		await chunked(by: concurrencyLimit ?? .max).asyncFlatMap { chunk in
+		await chunked(by: (concurrencyLimit ?? .max).clamped(to: 1...)).asyncFlatMap { chunk in
 			await withoutActuallyEscaping(transform) { escapingTransform in
 				await withTaskGroup(of: (offset: Int, value: T?).self) { group -> [T] in
 					for (offset, element) in chunk.enumerated() {
@@ -5079,7 +5102,7 @@ struct CopyButton: View {
 			isShowingSuccess = true
 
 			Task {
-				try await Task.sleep(for: .seconds(1))
+				try? await Task.sleep(for: .seconds(1))
 				isShowingSuccess = false
 			}
 

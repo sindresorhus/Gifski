@@ -184,9 +184,9 @@ struct CompletedScreen: View {
 	private func showDragTipIfNeeded() {
 		SSApp.runOnce(identifier: "CompletedScreen_dragTip") {
 			Task {
-				try await Task.sleep(for: .seconds(1))
+				try? await Task.sleep(for: .seconds(1))
 				isDragTipPresented = true
-				try await Task.sleep(for: .seconds(10))
+				try? await Task.sleep(for: .seconds(10))
 				isDragTipPresented = false
 			}
 		}

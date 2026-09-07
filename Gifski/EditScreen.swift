@@ -1058,9 +1058,9 @@ private struct DimensionsSetting: View {
 	private func showArrowKeyTipIfNeeded() {
 		SSApp.runOnce(identifier: "DimensionsSetting_arrowKeyTip") {
 			Task {
-				try await Task.sleep(for: .seconds(1))
+				try? await Task.sleep(for: .seconds(1))
 				isArrowKeyTipPresented = true
-				try await Task.sleep(for: .seconds(10))
+				try? await Task.sleep(for: .seconds(10))
 				isArrowKeyTipPresented = false
 			}
 		}

@@ -1841,3 +1841,143 @@ private final class LockedGifskiReference: @unchecked Sendable {
 		}
 	}
 }
+
+struct LoopingPlayerTests {
+	private func makeItem() -> AVPlayerItem {
+		AVPlayerItem(url: URL(filePath: "/nonexistent-\(UUID().uuidString).mp4"))
+	}
+
+	private func seekToOneSecond(_ player: AVPlayer) {
+		player.seek(to: CMTime(seconds: 1, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+	}
+
+	private func finish(_ item: AVPlayerItem) {
+		NotificationCenter.default.post(name: .AVPlayerItemDidPlayToEndTime, object: item)
+	}
+
+	@Test
+	func `an unrelated item finishing before an item is set does not start playback`() {
+		let player = LoopingPlayer()
+		player.loopPlayback = true
+		finish(makeItem())
+		#expect(player.rate == 0)
+	}
+
+	@Test
+	func `an item set after an unrelated item finished does not play by itself`() {
+		let player = LoopingPlayer()
+		player.loopPlayback = true
+		finish(makeItem())
+		player.replaceCurrentItem(with: makeItem())
+		#expect(player.rate == 0)
+	}
+
+	@Test
+	func `looping before an item is set loops the item set later`() {
+		let player = LoopingPlayer()
+		player.loopPlayback = true
+		let item = makeItem()
+		player.replaceCurrentItem(with: item)
+		seekToOneSecond(player)
+		finish(item)
+		#expect(player.currentTime().seconds == 0)
+	}
+
+	@Test
+	func `the current item finishing seeks back to the start`() {
+		let item = makeItem()
+		let player = LoopingPlayer(playerItem: item)
+		player.loopPlayback = true
+		seekToOneSecond(player)
+		finish(item)
+		#expect(player.currentTime().seconds == 0)
+	}
+
+	@Test
+	func `an unrelated item finishing does not seek`() {
+		let player = LoopingPlayer(playerItem: makeItem())
+		player.loopPlayback = true
+		seekToOneSecond(player)
+		finish(makeItem())
+		#expect(player.currentTime().seconds == 1)
+	}
+
+	@Test
+	func `a replaced item loops`() {
+		let player = LoopingPlayer(playerItem: makeItem())
+		player.loopPlayback = true
+		let replacement = makeItem()
+		player.replaceCurrentItem(with: replacement)
+		seekToOneSecond(player)
+		finish(replacement)
+		#expect(player.currentTime().seconds == 0)
+	}
+
+	@Test
+	func `the old item finishing after a replacement does not seek`() {
+		let original = makeItem()
+		let player = LoopingPlayer(playerItem: original)
+		player.loopPlayback = true
+		player.replaceCurrentItem(with: makeItem())
+		seekToOneSecond(player)
+		finish(original)
+		#expect(player.currentTime().seconds == 1)
+	}
+
+	@Test
+	func `looping seeks to the start of the playback range`() {
+		let item = makeItem()
+		let player = LoopingPlayer(playerItem: item)
+		item.playbackRange = 0.5...2
+		player.loopPlayback = true
+		seekToOneSecond(player)
+		finish(item)
+		#expect(player.currentTime().seconds == 0.5)
+	}
+
+	@Test
+	func `disabling looping stops seeking`() {
+		let item = makeItem()
+		let player = LoopingPlayer(playerItem: item)
+		player.loopPlayback = true
+		player.loopPlayback = false
+		seekToOneSecond(player)
+		finish(item)
+		#expect(player.currentTime().seconds == 1)
+	}
+
+	@Test
+	func `looping sets the action at item end`() {
+		let player = LoopingPlayer(playerItem: makeItem())
+		player.loopPlayback = true
+		#expect(player.actionAtItemEnd == .none)
+		player.loopPlayback = false
+		#expect(player.actionAtItemEnd == .pause)
+	}
+
+	@Test
+	func `enabling looping twice still loops`() {
+		let item = makeItem()
+		let player = LoopingPlayer(playerItem: item)
+		player.loopPlayback = true
+		player.loopPlayback = true
+		seekToOneSecond(player)
+		finish(item)
+		#expect(player.currentTime().seconds == 0)
+	}
+
+	@Test
+	func `another looping player does not seek this player`() {
+		let item = makeItem()
+		let player = LoopingPlayer(playerItem: item)
+		let otherItem = makeItem()
+		let otherPlayer = LoopingPlayer(playerItem: otherItem)
+		player.loopPlayback = true
+		otherPlayer.loopPlayback = true
+		seekToOneSecond(player)
+		seekToOneSecond(otherPlayer)
+		finish(otherItem)
+		#expect(player.currentTime().seconds == 1)
+		#expect(otherPlayer.currentTime().seconds == 0)
+	}
+}

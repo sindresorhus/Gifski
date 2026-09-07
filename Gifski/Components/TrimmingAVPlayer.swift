@@ -504,6 +504,23 @@ final class TrimmingAVPlayerView: AVPlayerView {
 
 		// First find the constraints for `avTrimView` that pins to the left edge of the button.
 		// Then replace the left edge of a button with the right edge - this will stretch the trim view.
+		if #available(macOS 27, *) {
+			// The play button is now a direct sibling, and the trailing constraint points to a separate container for Trim and Cancel.
+			guard
+				let constraint = superview.constraints.first(where: {
+					($0.secondItem as? NSView) == avTrimView && $0.secondAttribute == .trailing
+				}),
+				let buttonContainer = constraint.firstItem as? NSView
+			else {
+				return
+			}
+
+			buttonContainer.isHidden = true
+			superview.removeConstraint(constraint)
+			constraint.changing(firstAttribute: .trailing).isActive = true
+			return
+		}
+
 		if let constraint = superview.constraints.first(where: {
 			($0.firstItem as? NSView) == avTrimView && $0.firstAttribute == .right
 		}) {
